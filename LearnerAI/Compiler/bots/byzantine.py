@@ -12,6 +12,7 @@ from dataclasses import replace
 
 from ..ir.civ_profile import EffectiveCivData
 from ..ir.community_strategy_packs import _build_demand, _training_demand
+from ..ir.economic_control import EconomyMode
 from ..ir.game_data import Age, Resource
 from ..ir import strategy as _strategy
 
@@ -292,6 +293,8 @@ def _castle_age_transition(effective: EffectiveCivData) -> _strategy.StrategicDe
         execution=_strategy.ExecutionDemandTemplate(
             requirements=(
                 "(current-age == feudal-age)",
+                "(unit-type-count-total villager >= 24)",
+                "(not (players-unit-type-count any-enemy militia-line >= 5))",
                 "(can-research-with-escrow castle-age)",
             ),
             action="(research castle-age)",
@@ -360,6 +363,23 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             )
         )
 
+
+    demands.append(
+        _aged_building_demand(
+            effective=effective,
+            identity="feudal-barracks",
+            owner="infrastructure",
+            posture=_strategy.StrategyPosture.BOOM,
+            priority=_strategy.StrategicPriority.CORE,
+            reason_ref="current-feudal-age",
+            reason_label="Maintain the Barracks provider for Byzantine Feudal counter continuity",
+            building_name="barracks",
+            minimum_age=Age.FEUDAL,
+            lower_bound=0,
+            upper_bound=1,
+        )
+    )
+
     # The stock strategy owns Castle providers (Stable, Siege Workshop,
     # Monastery, University, etc.). The bot adds only the Feudal ranged
     # provider here because the threat-conditioned Skirmisher package needs it
@@ -414,6 +434,25 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
     return tuple(demands)
 
 
+
+def _feudal_economy_controller(controller):
+    policies = tuple(
+        replace(
+            policy,
+            allocation=replace(
+                policy.allocation,
+                food=42,
+                wood=40,
+                gold=18,
+                builders=8,
+            ),
+        )
+        if policy.mode is EconomyMode.COUNTER_FEUDAL
+        else policy
+        for policy in controller.policies
+    )
+    return replace(controller, policies=policies)
+
 def build_byzantine_bot_profile(effective: EffectiveCivData):
     """Build the deployable Byzantine Core v1 profile.
 
@@ -464,9 +503,49 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         ),
     }
 
+    wheelbarrow_id = int(base.demand("research-wheelbarrow").target.entity_id)
+    research_guard_by_identity = {
+        "research-wheelbarrow": (
+            "(unit-type-count-total villager >= 20)",
+        ),
+        "research-double-bit-axe": (
+            f"(research-completed {wheelbarrow_id})",
+        ),
+        "research-horse-collar": (
+            f"(research-completed {wheelbarrow_id})",
+        ),
+        "research-fletching": (
+            "(building-type-count-total 87 >= 1)",
+            "(players-unit-type-count any-enemy archer-line >= 3)",
+        ),
+    }
     guarded_demands = tuple(
-        _with_execution_guards(demand, *guard_by_identity[demand.identity])
-        if demand.identity in guard_by_identity
+        _with_execution_guards(
+            demand,
+            *guard_by_identity.get(demand.identity, ()),
+            *research_guard_by_identity.get(demand.identity, ()),
+            *(
+                (
+                    "(current-age == feudal-age)",
+                    "(building-type-count-total barracks >= 1)",
+                )
+                if demand.identity == "counter-mounted-spears"
+                else ()
+            ),
+            *(
+                (
+                    "(current-age == feudal-age)",
+                    "(building-type-count-total 87 >= 1)",
+                )
+                if demand.identity == "counter-ranged-skirmishers"
+                else ()
+            ),
+        )
+        if (
+            demand.identity in guard_by_identity
+            or demand.identity in research_guard_by_identity
+            or demand.identity in {"counter-mounted-spears", "counter-ranged-skirmishers"}
+        )
         else demand
         for demand in base.demands
     )
@@ -481,6 +560,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         base,
         demands=(*base.demands, *additions),
         profile_id=base.profile_id,
+        economy_controller=_feudal_economy_controller(base.economy_controller),
     )
 
 
