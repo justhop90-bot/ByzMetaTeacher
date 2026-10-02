@@ -112,6 +112,22 @@ jobs:
             /tmp/Byzantine-Core-v1-current.per \
             --report /tmp/native-reports/byzantine-land-delta.json
 
+      - name: Audit fresh Byzantine water transport and recovery
+        env:
+          PYTHONPATH: .:LearnerAI
+        run: |
+          python LearnerAI/Compiler/tests/audit_byzantine_water_recovery.py \
+            /tmp/Byzantine-Core-v1-current.per \
+            --report /tmp/native-reports/byzantine-water-recovery.json
+
+      - name: Upload water recovery audit
+        uses: actions/upload-artifact@v7
+        with:
+          name: byzantine-water-recovery
+          path: /tmp/native-reports/byzantine-water-recovery.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload fresh Byzantine artifact and land delta
         uses: actions/upload-artifact@v7
         with:
