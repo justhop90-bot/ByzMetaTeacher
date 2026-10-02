@@ -12,7 +12,7 @@ from dataclasses import replace
 
 from ..ir.civ_profile import EffectiveCivData
 from ..ir.community_strategy_packs import _build_demand, _training_demand
-from ..ir.game_data import Age, BuildingId, Resource
+from ..ir.game_data import Age, Resource
 from ..ir.strategy import (
     CapabilityIntent,
     CapabilityIntentKind,
@@ -37,6 +37,15 @@ def _persistent(label: str, observation_ref: str) -> StrategicEvidence:
         label,
         observation_ref=observation_ref,
     )
+
+
+def _native_age(age: Age) -> str:
+    return {
+        Age.DARK: "dark-age",
+        Age.FEUDAL: "feudal-age",
+        Age.CASTLE: "castle-age",
+        Age.IMPERIAL: "imperial-age",
+    }[age]
 
 
 def _age_observation(age: Age) -> str:
@@ -68,7 +77,7 @@ def _aged_building_demand(
         for item in effective.buildings
         if item.name.lower().replace(" ", "-") == building_name.lower().replace(" ", "-")
     )
-    guard_parts = [f"(current-age >= {minimum_age.value}-age)"]
+    guard_parts = [f"(current-age >= {_native_age(minimum_age)})"]
     if lower_bound is not None:
         guard_parts.append(
             f"(building-type-count-total {building_name} >= {lower_bound})"
@@ -249,7 +258,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 witness_symbol="villager",
                 lower_bound=lower,
                 upper_bound=upper,
-                age_guard=f"(current-age >= {age.value}-age)",
+                age_guard=f"(current-age >= {_native_age(age)})",
             )
         )
 
@@ -309,7 +318,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
 
     # Houses are metered by current count. This avoids a standing burst of
     # house requests and keeps production alive without a universal scheduler.
-    for index in range(4):
+    for index in range(14):
         demands.append(
             _staged_building(
                 effective=effective,
