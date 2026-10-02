@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from enum import IntEnum, Enum
 
 from ..ast import SourceLocation
-from ..runtime_binding import GoalSlotRequest
-from ..semantic.analyzer import parse_expression
 from .model import GoalRole, SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
@@ -59,6 +57,8 @@ def lower_opening_selector(
     plan: OpeningSelectorPlan,
     profile,
 ) -> NativeControlPlan:
+    from ..runtime_binding import GoalSlotRequest
+    from ..semantic.analyzer import parse_expression
     water = profile.observation(plan.water_observation).expression
     naval = profile.observation(plan.naval_pressure_observation).expression
     arena = profile.observation(plan.arena_observation).expression
