@@ -786,6 +786,11 @@ def default_native_controller_executable_commands() -> tuple[str, ...]:
     return ("attack-now",)
 
 
+def default_native_control_plane_executable_commands() -> tuple[str, ...]:
+    """Return commands promoted through the typed native control plane."""
+    return tuple(command for command, _identity in _NATIVE_CONTROL_ACTION_SPECS)
+
+
 
 def _pending_mapping() -> EngineSemanticMapping:
     return EngineSemanticMapping(
