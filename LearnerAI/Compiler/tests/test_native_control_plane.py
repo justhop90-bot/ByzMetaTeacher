@@ -5,6 +5,8 @@ from Compiler.compiler import compile_source
 from Compiler.ir import (
     GoalRole,
     GoalSlotRequest,
+    GoalSpanKind,
+    GoalSpanRequest,
     SemanticId,
     StorageRequestId,
     StrategicNumberOrigin,
@@ -25,6 +27,91 @@ from Compiler.semantic.rule_execution import EffectiveRule, RuleAction, RulePass
 
 
 class NativePersistentControlPlaneTests(unittest.TestCase):
+    def test_native_control_plane_can_own_and_emit_wall_point_pair(self):
+        owner = SemanticId("control.fixture", "wall")
+        start_request = GoalSpanRequest(
+            StorageRequestId(owner, "wall-start"),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=2,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.Point",
+            start_min=41,
+            start_max=15998,
+        )
+        end_request = GoalSpanRequest(
+            StorageRequestId(owner, "wall-end"),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=2,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.Point",
+            start_min=41,
+            start_max=15998,
+        )
+        plan = NativeControlPlan(
+            states=(
+                NativeControlState("byzantine-wall-start", start_request),
+                NativeControlState("byzantine-wall-end", end_request),
+            ),
+            rules=(
+                NativeControlRule(
+                    "issue-wall-line",
+                    facts=(
+                        Expression(
+                            "(current-age >= feudal-age)",
+                            "current-age",
+                            (">=", "feudal-age"),
+                        ),
+                        Expression(
+                            "(up-point-distance byzantine-wall-start byzantine-wall-end <= 8)",
+                            "up-point-distance",
+                            (
+                                "byzantine-wall-start",
+                                "byzantine-wall-end",
+                                "<=",
+                                "8",
+                            ),
+                        ),
+                    ),
+                    actions=(
+                        Expression(
+                            "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+                            "up-build-line",
+                            (
+                                "byzantine-wall-start",
+                                "byzantine-wall-end",
+                                "c:",
+                                "117",
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        output = compile_source(
+            """
+            demand bootstrap {
+                require (can-build house)
+                action (build house)
+                witness (building-type-count house >= 1)
+                release (building-type-count house >= 1)
+            }
+            """,
+            control_plan=plan,
+        )
+
+        self.assertIn("(defconst byzantine-wall-start 46)", output)
+        self.assertIn("(defconst byzantine-wall-end 44)", output)
+        self.assertIn(
+            "(up-point-distance byzantine-wall-start byzantine-wall-end <= 8)",
+            output,
+        )
+        self.assertIn(
+            "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+            output,
+        )
+
+
     def test_native_control_plan_lowers_goal_s_name_and_timer_storage(self):
         owner = SemanticId("control.fixture", "state")
         goal_request = GoalSlotRequest(
