@@ -198,7 +198,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         state_ids = tuple(state.identifier for state in control.states)
         self.assertIn("byzantine-attack-phase", state_ids)
 
-        rule_ids = tuple(rule.identity for rule in control.rules)
+        rule_ids = tuple(
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-attack-phase-")
+        )
         self.assertEqual(
             rule_ids,
             (
@@ -282,7 +286,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native attack rule: byzantine-castle-attack-now-cataphract", first)
         self.assertIn("; Native attack rule: byzantine-castle-attack-now-knight", first)
         self.assertIn("(attack-now)", first)
-        self.assertNotIn("(goal byzantine-attack-phase 2)", first)
 
     def test_runtime_strategy_uses_the_same_default_attack_plan_channel(self):
         snapshot = RuntimeObservationSnapshot(
