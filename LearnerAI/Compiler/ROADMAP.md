@@ -126,83 +126,64 @@ Exit: no required Byzantine strategy fact depends on invented costs, times, avai
 
 ## Phase 7 — Community strategy synthesis
 
-Priority: P1. Largest qualitative milestone.
+Priority: **CLOSED FOR THE INITIAL STOCK BYZANTINE STRATEGY PACK / OPEN FOR FULL STRATEGIC BREADTH**.
 
-Rule: no new .per language.
+The compiler now has a concrete community-derived stock synthesis layer and a canonical `build_byzantine_strategy()` entry point exercised by the authoritative CI strategy fixture.
 
-Use the existing StrategyProfile, StrategicDemand, StrategyRuntimeState, capability graph, persistent controls, ResourceClaim, DUC, attack, escrow, and lowering layers.
+Implemented and accepted:
+- economy/research package with protected Imperial trajectory;
+- Castle economic expansion / second-TC demand;
+- production capability synthesis;
+- standing Knight/Cataphract floors;
+- Castle siege support and Imperial Bombard Cannon conversion;
+- Monastery/Monk support;
+- defensive Outpost capability;
+- decision-grade enemy pressure observations;
+- recovery-preserving construction/research/training demands;
+- Strategic Number exploration/attack mode synthesis;
+- dock-gated fishing continuity;
+- community strategy evidence/idiom registry;
+- professional strategy/domain contracts;
+- native symbol aliases and line-vs-unit binding repairs required to lower the stock pack.
 
-Pack A — persistent control:
-- goal-backed FSM;
-- one-shot initialization;
-- age-based SN modes;
-- jump dispatch;
-- cooldown timers;
-- persistent reassertion.
+Acceptance:
+- PR #275 merged at `bf38e28d8520bbca1c3d6872a6852ce014906500`;
+- workflow #3040 passed 1,440 compiler tests;
+- native zero-findings acceptance passed;
+- 9/9 native-support determinism passed;
+- native snapshot comparison passed;
+- compiler verification gate passed.
 
-Pack B — production strategy:
-- current-plus-queued targets;
-- queue-capacity policy;
-- production arbitration;
-- counter trains;
-- water/land production split;
-- protected research/production demands.
+What remains open in the strategy layer:
+- full MapProfile/WaterPosture executable synthesis;
+- naval production, water shutdown/rebalance, and transport lifecycle execution;
+- deeper economy policy for farms, houses, dropsites, market balancing, and resource posture conversion;
+- richer late-game, wonder/closer, relic-acquisition, and broad siege/fortification strategy;
+- active Strategic Number evidence closure for all consumed community modes;
+- broader community corpus closure and empirical game/replay acceptance.
 
-Pack C — military control:
-- TSA;
-- military parity;
-- defense toggles;
-- unit-combination tables;
-- DUC micro;
-- attack cadence/reset;
-- target reacquisition.
-
-Pack D — recovery:
-- starvation release;
-- failed-build recovery;
-- provider loss;
-- target loss;
-- composition replacement;
-- obsolete strategy cancellation.
-
-Pack E — map and water:
-- map tables;
-- camp geometry;
-- land/water posture;
-- water shutdown/rebalance;
-- fishing/warboat split.
-
-Every pack must compile into existing semantic objects, reject illegal states, lower deterministically, and pass native zero-findings acceptance.
+Do not reopen the generic compiler substrate to solve these. Use existing StrategyProfile, StrategicDemandSpec, ResourceClaim, DUC, attack, escrow, SN/Timer, and witness machinery.
 
 ## Phase 8 — Community corpus closure
 
-Priority: P1.
+Priority: **IN PROGRESS**.
 
-The repository's initial 32 idioms are a seed, not the definition of community completeness.
+The 32-idiom seed corpus remains only a starting set. The implemented stock pack now has a provenance/registry layer, but community breadth is not yet closed.
 
-Use the measured corpus already present in the repository: Promisory, Naga, Bright Spark, Odette AI, Illuminati, Belisarius, AiBuilder, root loaders, and campaign AI.
+Next corpus work:
+- corroborate map/water/transport patterns across independent lineages;
+- deepen market/resource balancing;
+- catalog TSA/attack cadence and late-game control patterns;
+- expand build-order synthesis patterns;
+- validate wonder/closer patterns;
+- validate relic/Monk control patterns;
+- connect each promoted idiom to a focused compiler fixture.
 
-Classify recurring patterns as:
-DISCOVERED -> CORROBORATED -> SEMANTICIZED -> EXPRESSIBLE -> LOWERABLE -> VERIFIED
+Closure remains:
 
-Do not count descendants of the same historical lineage as independent corroboration.
+`DISCOVERED -> CORROBORATED -> SEMANTICIZED -> EXPRESSIBLE -> LOWERABLE -> VERIFIED`
 
-Mandatory pattern families:
-- commodity/market balancing;
-- goal FSMs;
-- SN mode switching;
-- TSA;
-- military parity;
-- defense toggles;
-- counter trains;
-- starvation release;
-- full DUC micro;
-- lure DUC;
-- water split;
-- build-order synthesis;
-- wonder/late-game control.
-
-Exit: each high-value community pattern has one semantic owner, one executable lowering path, and an explicit runtime OPEN list.
+Runtime behavior that cannot be established statically remains OPEN rather than becoming a false compiler fact.
 
 ## Phase 9 — Philosopher's Stone acceptance
 

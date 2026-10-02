@@ -5,7 +5,7 @@ Status: authoritative current-state guide for `main`.
 Current compiler baseline: the `main` branch is the source of truth for accepted state. The exact commit SHA is the current tip of the repository's default branch.
 Latest compiler verification: use the green `Compiler tests` workflow on `main`.
 
-The latest verified compiler candidate reports **1,434 tests, OK**, with native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
+The latest verified `main` commit `bf38e28d8520bbca1c3d6872a6852ce014906500` passed workflow #3040: **1,440 tests, OK**, native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
 
 ## What this project is
 
@@ -111,7 +111,7 @@ It must not upgrade common community usage into an engine fact.
 
 ## Current frontier
 
-The major generic execution substrates are largely present. The highest-value remaining compiler work is now the broader community strategy synthesis layer: remaining escrow/resource arbitration, active SN evidence closure, Byzantine factual closure, map/scouting strategy packs, recovery packs, water/transport, and broad community corpus closure. The default Byzantine DUC target pipeline and default attack lifecycle control are no longer missing compiler seams.
+The first broad community-strategy synthesis layer is now implemented and wired into the authoritative Byzantine strategy path. The remaining highest-value work is no longer generic compiler plumbing. It is the deeper strategy surface: full map/scouting profile synthesis, full water/naval/transport execution, richer economy/farm/market balancing, broader late-game and wonder/closer behavior, relic acquisition semantics, active Strategic Number evidence closure, remaining Byzantine factual closure, broad community corpus closure, and empirical game/replay acceptance. The default Byzantine DUC target pipeline and default attack lifecycle control remain closed compiler seams; their unresolved runtime behavior stays OPEN.
 
 Production/train arbitration is closed as compiler policy. DUC runtime liveness, retained-filter behavior, group membership, output values, exact target lifetime, native attack acknowledgement, attack-group membership causality, exploration/TSA/town-size interactions, and exact reset lifetime remain OPEN unless independently proven.
 
@@ -202,6 +202,9 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 - default branch: `main`;
 - PR #268 merged the Byzantine DUC target synthesis into `main` as `09c74f5b55df20bee1afefa0db2da86a947a6356`; its post-merge compiler workflow #2990 passed;
 - PR #271 merged the Byzantine attack lifecycle control into `main` as `9779ee2abee7b9b855b04a569c4f2b8a77377cd7`; its post-merge compiler workflow #3003 passed;
+- PR #273 merged the community-derived Byzantine stock strategy synthesis at `041c6d9cfa38cafa5f5cb4f7bfeca76601b86836`;
+- PR #274 merged the native building/unit identity repairs at `da85ef8921384e0234dfee930ad17e9ecfb17dca`;
+- PR #275 merged the canonical `build_byzantine_strategy()` entry point and authoritative CI wiring at `bf38e28d8520bbca1c3d6872a6852ce014906500`; post-merge workflow #3040 passed;
 - open PRs on main are authoritative from GitHub;
 - mainline compiler CI: authoritative through the latest green `Compiler tests` workflow on `main`;
 - the current-state document deliberately does not embed its own commit SHA or workflow number; GitHub's `main` ref and compiler workflow are the authoritative live pointers;
@@ -211,13 +214,13 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 
 ## Next repair discipline
 
-The next repair should start from the now-closed DUC target and attack lifecycle substrates rather than reopening them:
+The next repair should stay downstream of the now-closed DUC, attack, production-arbitration, construction, and stock-strategy seams:
 
 1. write the failing strategy/behavior test first;
 2. reuse existing typed DUC, ResourceClaim, AttackExecution, SN, Timer, escrow, and witness surfaces;
-3. add only the smallest compiler-policy projection required by the community behavior;
+3. implement the smallest missing strategic policy or evidence projection;
 4. preserve all OPEN/UNKNOWN runtime boundaries;
 5. run focused tests, native acceptance, full compiler regression, 9/9 determinism, snapshot comparison, and compiler verification;
 6. merge only after the exact candidate commit is green.
 
-That is the state from which new compiler work should begin.
+Near-term priority order: map/scouting strategy synthesis -> full water/transport execution -> economy/farm/market balancing -> broader late-game/relic/wonder control -> corpus and empirical replay closure.
