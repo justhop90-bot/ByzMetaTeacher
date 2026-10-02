@@ -227,6 +227,7 @@ def _training_demand(
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
     witness_symbol = witness_symbol or action_symbol
+    train_target = action_symbol
     return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
@@ -254,8 +255,8 @@ def _training_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
-                f"(can-train-with-escrow {line})",
-                f"(unit-type-count-total {line} < {minimum})",
+                f"(can-train-with-escrow {train_target})",
+                f"(unit-type-count-total {train_target} < {minimum})",
             ),
             action=f"(train {action_symbol})",
             witness=f"(unit-type-count {witness_symbol} >= {minimum})",
@@ -748,8 +749,8 @@ def community_strategy_demands(
                 requirements=(
                     "(current-age >= feudal-age)",
                     "(building-type-count-total dock >= 1)",
-                    "(can-train-with-escrow fishing-ship-line)",
-                    "(unit-type-count-total fishing-ship-line < 2)",
+                    "(can-train-with-escrow fishing-ship)",
+                    "(unit-type-count-total fishing-ship < 2)",
                 ),
                 action="(train fishing-ship)",
                 witness="(unit-type-count fishing-ship >= 2)",
