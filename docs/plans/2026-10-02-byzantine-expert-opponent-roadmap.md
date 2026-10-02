@@ -62,10 +62,49 @@ Acceptance: persistent late-game surplus is converted into relevant military/eco
 
 Acceptance: the bot changes counters because of meaningful enemy evidence and can turn information into a target or timing advantage.
 
+## Phase 3.5: Walling, choke-point defense, and defensive geometry
+
+Walling is a time-buying control system, not a cosmetic perimeter and not a substitute for an army. The bot should decide whether a wall closes a meaningful route, protects exposed economy, creates a defendable funnel, or preserves a strategic timing window. It should also understand when a wall is harmful because it blocks its own army, traps builders, creates a false sense of safety, or consumes resources needed for the next objective.
+
+Evidence synthesis:
+- **Naga:** the current community AI database lists Naga as supporting general closed-land maps and enemy-strategy adaptation, but explicitly lists **Walling** and **Playing vs walls** as unsupported features. Treat Naga as evidence for breadth, map variation, and adaptive strategy, not as a wall-placement authority. citeturn258570search0
+- **AoE2 community practice:** experienced players use walls to buy reaction time, protect external resources, and preserve an economic or age-up timing. Community reports also show how hard this is for AI: perimeter systems can leave gaps, misuse resource/blocker geometry, fail to prioritize the real entrance, or delay the army because the wall becomes an internal obstruction. Intelligent walling therefore requires map-aware placement, repair awareness, and an explicit escape/response route. citeturn103891search2turn741541search0
+- **Engine/official evidence:** Definitive Edition AI behavior has explicitly been changed to consider how closed a map is before committing to walls, and to build a forward tower enclosed by palisades when there is a large local advantage. This supports a conditional defense model rather than “always wall.” citeturn103891search12
+- **Bruce Shelley:** Ensemble design material describes map-generated choke points as deliberate strategic locations, with walls tying into cliffs to form a defensible “great wall,” while warning that surrendering control of the center can lose the game. His AoE2-era answers also treat fixed fortifications as real tactical thresholds that normal units cannot simply solve without siege. The relevant principle is **control the route that matters, then use appropriate force to exploit or break it**, not “maximize wall length.” citeturn103891search1turn103891search0
+- **Greg Street / Ghostcrawler:** Street's AoE work emphasizes random maps, exploration, and adapting to an unknown terrain layout. His later description of AoE's random maps stresses that players may not know whether terrain or water separates them and must explore to understand the problem. For this bot, that argues against fixed wall templates: defensive geometry must be derived from observed terrain, resources, enemy approach, and the routes that actually matter. His AoE3 design comments also explicitly resist strategies where players simply sit in their towns for twenty minutes before one decisive fight. citeturn967963search2turn967963search7
+
+Implementation contract:
+- [ ] Build a **defensive-geometry observation**: exposed resource, enemy approach, natural blocker, narrow pass/choke, existing wall/building edge, threatened production, and army-response route.
+- [ ] Distinguish **full perimeter**, **resource wall**, **choke wall**, **building-anchor wall**, and **emergency gap closure**. Prefer the smallest structure that closes the strategically relevant route.
+- [ ] Use terrain, forests, cliffs, shoreline, resources, houses, production buildings, and other legal blockers as wall anchors where the native engine makes that reliable.
+- [ ] Never treat “wall requested” as “wall complete.” Witness the actual structure/building state and retain a recovery path for failed or partial walling.
+- [ ] Preserve at least one intentional army/villager exit and avoid walling the bot's own builders or sealing the economy behind the defense.
+- [ ] Add a **defense-window calculation**: the value of a wall is the time and positional advantage it buys relative to its wood/stone/build time and the threat arrival time.
+- [ ] Make defense respond to pressure and map geometry. Do not spend early wood on a full wall when the map is already closed, the wall does not protect a meaningful route, or the next strategic demand has higher urgency.
+- [ ] Under enemy pressure, prefer a short emergency segment that changes the path to a vulnerable resource over a complete perimeter that arrives too late.
+- [ ] Make the wall cooperate with army defense: route enemy units into a controllable approach, keep siege/repair/building access meaningful, and avoid creating a sealed base that delays reinforcements.
+- [ ] Add **choke ownership**: when a narrow approach matters, assign a persistent defensive objective to the approach rather than repeatedly requesting disconnected wall segments.
+- [ ] Add **wall breach / route failure recovery**: detect a destroyed or bypassed segment, reassess the enemy route, close the new gap or reposition the defensive army, and retire obsolete wall demand.
+- [ ] Add **attack-side wall reasoning**: when an enemy is fortified, recognize the protected approach, stop feeding ordinary units into the same route, and choose another route or escalate to siege.
+- [ ] Keep wall construction subordinate to age-up, essential production, starvation prevention, and active military defense. A wall that preserves a Castle timing is strategic infrastructure; a wall that delays it for no meaningful protection is just expensive landscaping.
+
+Focused acceptance scenarios:
+- [ ] Open Arabia with exposed wood/gold: protect the economically valuable approach with the minimum effective closure.
+- [ ] Natural choke / Black Forest style map: recognize that a full perimeter is unnecessary and defend the meaningful entrance instead.
+- [ ] Closed map: suppress unnecessary walling investment and spend the saved resources elsewhere.
+- [ ] Feudal mounted pressure: create or repair the shortest useful closure before the raid arrives; demonstrate that the army still has an exit.
+- [ ] Enemy attack through a different route: retire stale wall demand, reassess geometry, and defend the new approach rather than rebuilding the old one.
+- [ ] Wall breach: witness the breach, close/reposition, and change the defensive posture.
+- [ ] Enemy fortified position: route army and siege around the defended approach where possible, or explicitly scale siege instead of repeatedly attacking the same funnel.
+- [ ] Builder/army pathing: demonstrate that completed walls do not trap builders, block reinforcement routes, or create an avoidable internal choke.
+- [ ] Late-game expansion: wall only strategically exposed new economy/production and do not reproduce the entire starting perimeter.
+
+Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, and protect economically meaningful positions; it does not blindly perimeter-wall, trap itself, repeatedly rebuild obsolete segments, or feed armies into predictable fortified chokes.
+
 ## Phase 4: Army control, attack, and recovery
 - [ ] Audit attack admission versus actual attack execution.
 - [ ] Establish screen/main/siege/raid/reserve roles.
-- [ ] Add fortified-position handling and efficient siege use.
+- [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
 - [ ] Preserve armies under defensive fire where native control permits.
 - [ ] Make army-loss recovery change production and attack posture.
 - [ ] Reassess attack continuation after enemy strength changes.
@@ -74,7 +113,8 @@ Acceptance: the bot changes counters because of meaningful enemy evidence and ca
 Acceptance: fewer wasteful engagements, better siege use, coherent retreat/reposition/re-engage behavior, and meaningful recovery.
 
 ## Phase 5: Economy, construction, and technology coherence
-- [ ] Treat houses, farms, dropsites, camps, mills, markets, and starvation recovery as one economy.
+- [ ] Treat houses, farms, dropsites, camps, mills, markets, starvation recovery, and defensive construction as one economy.
+- [ ] Make wall/building placement preserve villager access, army exits, production paths, and resource routes.
 - [ ] Align villager allocation with current strategic demand rather than only fixed percentages.
 - [ ] Expand production capacity when bank pressure warrants it.
 - [ ] Make research compete correctly with military production and infrastructure.
@@ -92,7 +132,7 @@ Acceptance: economy follows strategy and changes posture when strategy changes.
 Acceptance: Byzantine identity is visible across standard land, Arena, water/hybrid, siege-heavy, trash-war, mounted, ranged, infantry, and mixed-pressure scenarios.
 
 ## Phase 7: Scenario matrix, empirical tuning, release
-- [ ] Run standardized scenarios and record first behavioral failure.
+- [ ] Run standardized scenarios and record first behavioral failure, including wall timing, choke selection, breach recovery, and fortified-route behavior.
 - [ ] Repair one causal defect at a time and preserve regression evidence.
 - [ ] Repeat parser/native/compiler and gameplay verification.
 - [ ] Freeze the release artifact with exact Git SHA, source hash, rule count, validation evidence, and package manifest.
