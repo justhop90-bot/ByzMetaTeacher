@@ -1795,7 +1795,7 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
             return "(true)"
         if len(parts) == 1:
             return parts[0]
-        return "(and " + " ".join(parts) + ")"
+        return _combine_binary_native_guards("and", tuple(parts))
 
     candidate_guards: dict[str, str] = {}
     ordered = tuple(sorted(plan.candidates, key=lambda item: (-item.priority, item.identity)))
