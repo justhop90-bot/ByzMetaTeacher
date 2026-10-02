@@ -1875,7 +1875,12 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
         rules.append(
             NativeControlRule(
                 "strategic-arbitration-observation-initialize",
-                facts=(parse_expression("(true)", SourceLocation(1)),),
+                facts=(
+                    parse_expression(
+                        f"(goal {plan.state_name} 0)",
+                        SourceLocation(1),
+                    ),
+                ),
                 actions=tuple(
                     [
                         *(
