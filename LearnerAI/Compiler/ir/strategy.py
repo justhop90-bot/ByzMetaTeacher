@@ -273,6 +273,7 @@ class StrategicBinding:
     production_arbitration_group: str | None = None
     required_primary_intent: PrimaryStrategicIntent | None = None
     arbitration_state_name: str = "strategic-primary-intent"
+    counter_package_state_names: tuple[str, ...] = ()
     recovery: "CapabilityRecoveryContract | None" = None
     recovery_on_world_loss: bool = False
     admissibility_guards: tuple[Expression, ...] = ()
@@ -1042,6 +1043,14 @@ def lower_strategy_profile(
                     profile.strategic_arbitration.state_name
                     if profile.strategic_arbitration is not None
                     else "strategic-primary-intent"
+                ),
+                counter_package_state_names=tuple(
+                    _counter_package_state_name(package.identity)
+                    for package in sorted(
+                        profile.counter_packages,
+                        key=lambda item: item.identity,
+                    )
+                    if spec.identity in package.demand_identities
                 ),
                 recovery=spec.recovery,
                 recovery_on_world_loss=spec.recovery_on_world_loss,
