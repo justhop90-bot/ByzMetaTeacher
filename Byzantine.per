@@ -746,6 +746,16 @@
 (defconst byzantine-production-siege-target 693)
 (defconst byzantine-production-castle-target 694)
 
+; Defensive geometry / static-artillery conversion.
+(defconst byzantine-defensive-build-point 710)
+(defconst byzantine-bombard-tower-target 713)
+(defconst byzantine-bombard-tower-target-one 1)
+(defconst byzantine-bombard-tower-target-two 2)
+(defconst bt-byzantine-static-stone-reserve 250)
+(defconst bt-byzantine-bombard-stone-surplus 900)
+(defconst bt-byzantine-bombard-gold-surplus 2500)
+(defconst bt-byzantine-bombard-gold-reserve 1000)
+
 ; BYZANTINE META DEFENSE / ECONOMY EXTENSIONS
 ; These are native .per state channels. They deliberately reuse the existing
 ; demand/claim/lifecycle machinery rather than creating a second scheduler.
@@ -5498,6 +5508,15 @@
     (set-strategic-number sn-percent-civilian-builders 5)
 )
 
+; Native tower geometry policy: preserve elevation preference for every
+; point/forward tower placement. The placement command remains the engine
+; executor; this rule only selects its native policy.
+(defrule
+    (up-compare-sn sn-ignore-tower-elevation != 0)
+=>
+    (set-strategic-number sn-ignore-tower-elevation 0)
+)
+
 ;----------------------------------------------------------------
 ; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER
 ; resource-front observation -> native placement radius -> construction witness
@@ -9104,6 +9123,8 @@
     (set-goal demand-adaptive-guard-tower 1)
     (set-goal demand-imperial-keep-floor 1)
     (set-goal demand-imperial-bombard-tower-floor 1)
+    (set-goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+    (set-goal byzantine-defensive-build-point 0)
     (set-goal demand-research-wheelbarrow 1)
     (set-goal demand-research-double-bit-axe 1)
     (set-goal demand-research-horse-collar 1)
@@ -15126,6 +15147,57 @@
     (set-goal byzantine-production-siege-target 3)
 )
 
+; Second Bombard Tower: convert true late-game surplus into a positional
+; artillery anchor only after the first Castle exists and its stone bank is not
+; currently being expanded.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+    (building-type-count-total castle >= 1)
+    (building-type-count-total bombard-tower >= 1)
+    (stone-amount > bt-byzantine-bombard-stone-surplus)
+    (gold-amount > bt-byzantine-bombard-gold-surplus)
+    (population-headroom > 8)
+    (not (town-under-attack))
+    (not (goal byzantine-production-castle-target 2))
+    (not (goal byzantine-production-castle-target 3))
+    (or
+        (goal byzantine-fortification-threat 1)
+        (or
+            (goal byzantine-university-state byzantine-university-state-tower-network)
+            (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        )
+    )
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    )
+=>
+    (set-goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+)
+
+; When stone becomes committed to the next Castle, or the late surplus/posture
+; disappears, return to the single-tower floor.
+(defrule
+    (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+    (or
+        (goal byzantine-production-castle-target 2)
+        (or
+            (goal byzantine-production-castle-target 3)
+            (or
+                (goal byzantine-late-resource-burn 0)
+                (or
+                    (stone-amount < 400)
+                    (population-headroom <= 4)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+)
+
 ; Second Castle: only an Imperial, stone-rich, population-safe Byzantine can
 ; justify the cost. Castle is both a defensive anchor and a Cataphract outlet.
 (defrule
@@ -15665,11 +15737,14 @@
 (defrule
     (goal demand-water-greek-fire 0)
     (not (research-completed 464))
-    (or
-        (goal byzantine-university-state byzantine-university-state-tower-network)
-        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
-    )
     (building-type-count castle >= 1)
+    (or
+        (building-type-count-total bombard-tower >= 1)
+        (or
+            (building-type-count-total bombard-cannon >= 1)
+            (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        )
+    )
 =>
     (set-goal demand-water-greek-fire 1)
 )
@@ -16440,6 +16515,63 @@
     (set-goal construction-retry-barrier-adaptive-guard-tower 1)
 )
 
+(defrule
+    (goal demand-adaptive-guard-tower 1)
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (not (building-type-count 234 >= 2))
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (can-build watch-tower)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: watch-tower c: 1)
+    (up-build place-point 0 c: watch-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+)
+
+(defrule
+    (goal demand-adaptive-guard-tower 1)
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (not (building-type-count 234 >= 2))
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (can-build watch-tower)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: watch-tower c: 1)
+    (up-build place-point 0 c: watch-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+)
+
+(defrule
+    (goal demand-adaptive-guard-tower 1)
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (not (building-type-count 234 >= 2))
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (can-build watch-tower)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: watch-tower c: 1)
+    (up-build place-point 0 c: watch-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+)
+
 ; Action issuance: adaptive-guard-tower | ACTIVE -> ISSUED
 (defrule
     (goal demand-adaptive-guard-tower 1)
@@ -16579,6 +16711,63 @@
     (set-goal construction-retry-barrier-imperial-keep-floor 1)
 )
 
+(defrule
+    (goal demand-imperial-keep-floor 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (up-pending-objects c: 235 == 0)
+    (not (up-pending-placement c: 235))
+    (can-build 235)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: keep c: 1)
+    (up-build place-point 0 c: keep)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-keep-floor 92)
+)
+
+(defrule
+    (goal demand-imperial-keep-floor 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (up-pending-objects c: 235 == 0)
+    (not (up-pending-placement c: 235))
+    (can-build 235)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: keep c: 1)
+    (up-build place-point 0 c: keep)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-keep-floor 92)
+)
+
+(defrule
+    (goal demand-imperial-keep-floor 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (up-pending-objects c: 235 == 0)
+    (not (up-pending-placement c: 235))
+    (can-build 235)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: keep c: 1)
+    (up-build place-point 0 c: keep)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-keep-floor 92)
+)
+
 ; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED
 (defrule
     (goal demand-imperial-keep-floor 1)
@@ -16608,7 +16797,16 @@
 ; Release: imperial-bombard-tower-floor | COMPLETE -> RELEASED
 (defrule
     (goal demand-imperial-bombard-tower-floor 85)
-    (building-type-count 236 > 0)
+    (or
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+            (building-type-count 236 >= 1)
+        )
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+            (building-type-count 236 >= 2)
+        )
+    )
 =>
     (set-goal demand-imperial-bombard-tower-floor 0)
 )
@@ -16616,6 +16814,15 @@
 ; Recovery: imperial-bombard-tower-floor | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-imperial-bombard-tower-floor 0)
+    (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+    (building-type-count 236 < 2)
+=>
+    (set-goal demand-imperial-bombard-tower-floor 1)
+)
+
+(defrule
+    (goal demand-imperial-bombard-tower-floor 0)
+    (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
     (not (building-type-count 236 >= 1))
     (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
 =>
@@ -16631,7 +16838,16 @@
         (goal demand-imperial-bombard-tower-floor 86)
         (goal demand-imperial-bombard-tower-floor 84)
     )
-    (building-type-count 236 >= 1)
+    (or
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+            (building-type-count 236 >= 1)
+        )
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+            (building-type-count 236 >= 2)
+        )
+    )
 =>
     (set-goal demand-imperial-bombard-tower-floor 85)
 )
@@ -16642,7 +16858,16 @@
         (goal demand-imperial-bombard-tower-floor 86)
         (goal demand-imperial-bombard-tower-floor 84)
     )
-    (not (building-type-count 236 >= 1))
+    (or
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+            (not (building-type-count 236 >= 1))
+        )
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+            (not (building-type-count 236 >= 2))
+        )
+    )
     (up-pending-objects c: 236 >= 1)
 =>
     (set-goal demand-imperial-bombard-tower-floor 84)
@@ -16654,7 +16879,16 @@
         (goal demand-imperial-bombard-tower-floor 86)
         (goal demand-imperial-bombard-tower-floor 84)
     )
-    (not (building-type-count 236 >= 1))
+    (or
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+            (not (building-type-count 236 >= 1))
+        )
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+            (not (building-type-count 236 >= 2))
+        )
+    )
     (up-pending-objects c: 236 == 0)
     (up-pending-placement c: 236)
 =>
@@ -16667,7 +16901,16 @@
         (goal demand-imperial-bombard-tower-floor 86)
         (goal demand-imperial-bombard-tower-floor 84)
     )
-    (not (building-type-count 236 >= 1))
+    (or
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+            (not (building-type-count 236 >= 1))
+        )
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+            (not (building-type-count 236 >= 2))
+        )
+    )
     (up-pending-objects c: 236 == 0)
     (not (up-pending-placement c: 236))
 =>
@@ -16675,19 +16918,97 @@
     (set-goal construction-retry-barrier-imperial-bombard-tower-floor 1)
 )
 
+(defrule
+    (goal demand-imperial-bombard-tower-floor 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (gold-amount >= bt-byzantine-bombard-gold-reserve)
+    (up-pending-objects c: 236 == 0)
+    (not (up-pending-placement c: 236))
+    (can-build 236)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: bombard-tower c: 1)
+    (up-build place-point 0 c: bombard-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-bombard-tower-floor 86)
+)
+
+(defrule
+    (goal demand-imperial-bombard-tower-floor 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (gold-amount >= bt-byzantine-bombard-gold-reserve)
+    (up-pending-objects c: 236 == 0)
+    (not (up-pending-placement c: 236))
+    (can-build 236)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: bombard-tower c: 1)
+    (up-build place-point 0 c: bombard-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-bombard-tower-floor 86)
+)
+
+(defrule
+    (goal demand-imperial-bombard-tower-floor 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (gold-amount >= bt-byzantine-bombard-gold-reserve)
+    (up-pending-objects c: 236 == 0)
+    (not (up-pending-placement c: 236))
+    (can-build 236)
+=>
+    (up-copy-point byzantine-defensive-build-point byzantine-wall-resource-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: bombard-tower c: 1)
+    (up-build place-point 0 c: bombard-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-bombard-tower-floor 86)
+)
+
 ; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (not (building-type-count 236 >= 1))
+    (or
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
+            (not (building-type-count 236 >= 1))
+        )
+        (and
+            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
+            (not (building-type-count 236 >= 2))
+        )
+    )
     (goal construction-retry-barrier-imperial-bombard-tower-floor 0)
     (up-pending-objects c: 236 == 0)
     (not (up-pending-placement c: 236))
-    (not (building-type-count 236 > 0))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
-    (or (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5)) (players-unit-type-count any-enemy mangonel-line >= 2))
+    (building-type-count-total castle >= 1)
+    (stone-amount >= bt-byzantine-static-stone-reserve)
+    (gold-amount >= bt-byzantine-bombard-gold-reserve)
+    (or
+        (or
+            (players-unit-type-count any-enemy knight >= 3)
+            (players-unit-type-count any-enemy militia-line >= 5)
+        )
+        (players-unit-type-count any-enemy mangonel-line >= 2)
+    )
     (can-build 236)
 =>
+    (up-assign-builders c: bombard-tower c: 1)
     (build 236)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-imperial-bombard-tower-floor 86)
