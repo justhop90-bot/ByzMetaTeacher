@@ -99,6 +99,45 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertIn("(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)", self.per)
         self.assertIn("(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)", self.per)
 
+    def test_resource_camp_searches_an_eight_point_legal_candidate_ring_before_execution(self):
+        ring = self._section_from(
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        for pair, x, y in (
+            ("byzantine-resource-camp-ring-ne", 3, 3),
+            ("byzantine-resource-camp-ring-e", 3, 0),
+            ("byzantine-resource-camp-ring-se", 3, -3),
+            ("byzantine-resource-camp-ring-s", 0, -3),
+            ("byzantine-resource-camp-ring-sw", -3, -3),
+            ("byzantine-resource-camp-ring-w", -3, 0),
+            ("byzantine-resource-camp-ring-nw", -3, 3),
+            ("byzantine-resource-camp-ring-n", 0, 3),
+        ):
+            self.assertIn(f"(defconst {pair}", ring)
+            self.assertIn(f"(set-goal {pair}-x {x})", ring)
+            self.assertIn(f"(set-goal {pair}-y {y})", ring)
+
+        self.assertIn("(up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)", ring)
+        self.assertIn("(up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne c: 1)", ring)
+        self.assertIn("(up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)", ring)
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)",
+            ring,
+        )
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)",
+            ring,
+        )
+        self.assertIn(
+            "(up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)",
+            ring,
+        )
+        self.assertNotIn(
+            "(up-set-target-point byzantine-resource-camp-point)\n    (set-strategic-number sn-placement-zone-size 4)\n    (up-assign-builders",
+            ring,
+        )
+
     def test_resource_camp_executes_at_persisted_point_through_existing_builder_lifecycle(self):
         for building, demand in (
             ("lumber-camp", "demand-economy-lumber-camp-floor-1"),
