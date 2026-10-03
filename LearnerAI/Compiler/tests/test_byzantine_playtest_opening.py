@@ -87,6 +87,15 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
 
         self.assertIn("(unit-type-count-total monk >= 2)", relic)
         self.assertIn("(up-find-local c: monk c: 1)", relic)
+    def test_lost_relic_monk_recovers_only_to_two_monk_baseline(self):
+        recovery = self._rule_block("; Recovery: castle-monk-floor | LOST MONK -> ACTIVE")
+        self.assertIn("(current-age >= castle-age)", recovery)
+        self.assertIn("(building-type-count-total monastery >= 1)", recovery)
+        self.assertIn("(not (unit-type-count-total monk >= bt-castle-monk-floor))", recovery)
+        self.assertIn("(set-goal demand-castle-monk-floor 1)", recovery)
+        self.assertNotIn("demand-castle-monk-defense-floor", recovery)
+        self.assertIn("(defconst bt-castle-monk-floor 2)", self.per)
+
     def test_defensive_monk_expansion_is_four_not_unconditional(self):
         self.assertIn("(defconst bt-byzantine-defense-monk-floor 4)", self.per)
         block = self._rule_block("; Conditional four-Monk floor.")
