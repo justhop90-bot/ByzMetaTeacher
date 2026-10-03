@@ -9948,6 +9948,7 @@
 (defrule
     (current-age == castle-age)
     (goal byzantine-army-plan-phase 1)
+    (goal byzantine-army-reinforcement 0)
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
     (strategic-number sn-target-player-number >= 1)
@@ -9979,6 +9980,7 @@
 (defrule
     (current-age >= imperial-age)
     (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-reinforcement 0)
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
     (strategic-number sn-target-player-number >= 1)
@@ -10020,6 +10022,7 @@
 (defrule
     (current-age >= imperial-age)
     (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-reinforcement 0)
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
     (strategic-number sn-target-player-number >= 1)
