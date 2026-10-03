@@ -488,7 +488,11 @@ def community_strategy_observations(
             (
                 _observation(
                     f"camp-front-{label}-active",
-                    f"(resource-found {resource.value})",
+                    (
+                        f"(and (current-age >= feudal-age) (resource-found {resource.value}))"
+                        if resource is CampResource.STONE
+                        else f"(resource-found {resource.value})"
+                    ),
                     _airef_provenance(effective, "commands/commands-details.html#resource-found"),
                 ),
                 _observation(
