@@ -387,11 +387,11 @@
 (defconst complete-castle-monastery-capability 53)
 (defconst construction-retry-barrier-castle-monastery-capability 178)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
-(defconst demand-imperial-university-capability 94)
-(defconst issued-imperial-university-capability 97)
-(defconst pending-imperial-university-capability 95)
-(defconst complete-imperial-university-capability 96)
-(defconst construction-retry-barrier-imperial-university-capability 221)
+(defconst demand-castle-university-capability 94)
+(defconst issued-castle-university-capability 97)
+(defconst pending-castle-university-capability 95)
+(defconst complete-castle-university-capability 96)
+(defconst construction-retry-barrier-castle-university-capability 221)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
 (defconst demand-adaptive-outpost 42)
 (defconst issued-adaptive-outpost 45)
@@ -838,6 +838,46 @@
 (defconst byzantine-university-state-hardened-perimeter 2)
 (defconst byzantine-university-state-tower-network 3)
 (defconst byzantine-university-state-imperial-gunline 4)
+
+; Persistent defensive frontier and army reposition state.
+(defconst byzantine-frontier-state 670)
+(defconst byzantine-frontier-state-idle 0)
+(defconst byzantine-frontier-state-acquire 1)
+(defconst byzantine-frontier-state-selected 2)
+(defconst byzantine-frontier-state-anchor-pending 3)
+(defconst byzantine-frontier-state-anchored 4)
+(defconst byzantine-frontier-state-wall-pending 5)
+(defconst byzantine-frontier-state-protected 6)
+(defconst byzantine-frontier-target-kind 671)
+(defconst byzantine-frontier-target-none 0)
+(defconst byzantine-frontier-target-gold 1)
+(defconst byzantine-frontier-target-stone 2)
+(defconst byzantine-frontier-target-wood 3)
+(defconst byzantine-frontier-target-point 672)
+(defconst byzantine-frontier-home-point 673)
+(defconst byzantine-frontier-anchor-point 674)
+(defconst byzantine-frontier-generation 675)
+(defconst byzantine-frontier-anchor-type 676)
+(defconst byzantine-frontier-anchor-guard-tower 1)
+(defconst byzantine-frontier-anchor-watch-tower 2)
+(defconst byzantine-frontier-wall-witness-point 677)
+(defconst byzantine-army-reposition-state 678)
+(defconst byzantine-army-reposition-idle 0)
+(defconst byzantine-army-reposition-withdraw 1)
+(defconst byzantine-army-reposition-staging 2)
+(defconst byzantine-army-reposition-timer 14)
+(defconst byzantine-army-reposition-point 680)
+(defconst byzantine-frontier-search-state 681)
+(defconst byzantine-frontier-search-local-list 682)
+(defconst byzantine-frontier-search-remote-list 683)
+(defconst bt-byzantine-army-reposition-seconds 90)
+(defconst bt-imperial-extreme-cataphract-target 30)
+(defconst bt-imperial-extreme-varangian-target 24)
+(defconst bt-imperial-extreme-arbalester-target 24)
+(defconst bt-imperial-extreme-halberdier-target 30)
+(defconst bt-imperial-extreme-ram-target 8)
+(defconst bt-imperial-extreme-trebuchet-target 8)
+(defconst bt-imperial-extreme-bombard-target 8)
 (defconst byzantine-university-research-claim 516)
 
 ; Defensive University research lifecycles.
@@ -5649,7 +5689,7 @@
 (defrule
     (true)
 =>
-    (set-goal construction-retry-barrier-imperial-university-capability 0)
+    (set-goal construction-retry-barrier-castle-university-capability 0)
 )
 
 (defrule
@@ -8988,7 +9028,7 @@
 (defrule
     (true)
 =>
-    (set-goal demand-imperial-university-capability 0)
+    (set-goal demand-castle-university-capability 0)
     (set-goal byzantine-university-state byzantine-university-state-idle)
     (set-goal byzantine-university-research-claim 0)
     (set-goal demand-adaptive-outpost 1)
@@ -14209,89 +14249,89 @@
     (set-goal demand-castle-monastery-capability 54)
 )
 
-; Pending diagnostics: imperial-university-capability
+; Pending diagnostics: castle-university-capability
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 94 and cannot reissue from pending goal 95
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 95 is active
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 96 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
-; Issuance failure: imperial-university-capability | RETAIN-ACTIVE
-; An unsatisfied issuance guard leaves demand-imperial-university-capability in ACTIVE; it is not PENDING.
-; Release: imperial-university-capability | COMPLETE -> RELEASED
+; Issuance failure: castle-university-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-university-capability in ACTIVE; it is not PENDING.
+; Release: castle-university-capability | COMPLETE -> RELEASED
 (defrule
-    (goal demand-imperial-university-capability 96)
+    (goal demand-castle-university-capability 96)
     (building-type-count university > 0)
 =>
-    (set-goal demand-imperial-university-capability 0)
+    (set-goal demand-castle-university-capability 0)
 )
 
-; Recovery: imperial-university-capability | RELEASED -> ACTIVE on world-state loss
+; Recovery: castle-university-capability | RELEASED -> ACTIVE on world-state loss
 (defrule
-    (goal demand-imperial-university-capability 0)
+    (goal demand-castle-university-capability 0)
     (not (building-type-count university >= 1))
     (current-age >= castle-age)
 =>
-    (set-goal demand-imperial-university-capability 1)
+    (set-goal demand-castle-university-capability 1)
 )
 
-; Construction observation: imperial-university-capability
+; Construction observation: castle-university-capability
 ; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
-; Completion witness: imperial-university-capability | PENDING/ISSUED -> COMPLETE
+; Completion witness: castle-university-capability | PENDING/ISSUED -> COMPLETE
 ; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-imperial-university-capability 97)
-        (goal demand-imperial-university-capability 95)
+        (goal demand-castle-university-capability 97)
+        (goal demand-castle-university-capability 95)
     )
     (building-type-count university >= 1)
 =>
-    (set-goal demand-imperial-university-capability 96)
+    (set-goal demand-castle-university-capability 96)
 )
 
-; Pending admission: imperial-university-capability | ISSUED/PENDING -> PENDING
+; Pending admission: castle-university-capability | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-imperial-university-capability 97)
-        (goal demand-imperial-university-capability 95)
+        (goal demand-castle-university-capability 97)
+        (goal demand-castle-university-capability 95)
     )
     (not (building-type-count university >= 1))
     (up-pending-objects c: 209 >= 1)
 =>
-    (set-goal demand-imperial-university-capability 95)
+    (set-goal demand-castle-university-capability 95)
 )
 
 ; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-imperial-university-capability 97)
-        (goal demand-imperial-university-capability 95)
+        (goal demand-castle-university-capability 97)
+        (goal demand-castle-university-capability 95)
     )
     (not (building-type-count university >= 1))
     (up-pending-objects c: 209 == 0)
     (up-pending-placement c: 209)
 =>
-    (set-goal demand-imperial-university-capability 95)
+    (set-goal demand-castle-university-capability 95)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-imperial-university-capability 97)
-        (goal demand-imperial-university-capability 95)
+        (goal demand-castle-university-capability 97)
+        (goal demand-castle-university-capability 95)
     )
     (not (building-type-count university >= 1))
     (up-pending-objects c: 209 == 0)
     (not (up-pending-placement c: 209))
 =>
-    (set-goal demand-imperial-university-capability 1)
-    (set-goal construction-retry-barrier-imperial-university-capability 1)
+    (set-goal demand-castle-university-capability 1)
+    (set-goal construction-retry-barrier-castle-university-capability 1)
 )
 
-; Action issuance: imperial-university-capability | ACTIVE -> ISSUED
+; Action issuance: castle-university-capability | ACTIVE -> ISSUED
 (defrule
-    (goal demand-imperial-university-capability 1)
+    (goal demand-castle-university-capability 1)
     (not (building-type-count university >= 1))
-    (goal construction-retry-barrier-imperial-university-capability 0)
+    (goal construction-retry-barrier-castle-university-capability 0)
     (up-pending-objects c: 209 == 0)
     (not (up-pending-placement c: 209))
     (not (building-type-count university > 0))
@@ -14301,7 +14341,7 @@
 =>
     (build university)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-imperial-university-capability 97)
+    (set-goal demand-castle-university-capability 97)
 )
 
 ;----------------------------------------------------------------
@@ -14322,15 +14362,15 @@
 ; anchor network around the new forward defensive position instead of treating
 ; defense as a permanent shell around the starting TC.
 
-; University recovery. Losing the building invalidates the research capability,
-; but completed technologies remain world truth and are not reset.
+; University recovery. Losing the building invalidates the current
+; University posture, while completed technologies remain world truth.
 (defrule
     (current-age >= castle-age)
     (not (building-type-count university >= 1))
     (not (goal byzantine-university-state byzantine-university-state-idle))
 =>
     (set-goal byzantine-university-state byzantine-university-state-castle)
-    (set-goal demand-imperial-university-capability 1)
+    (set-goal demand-castle-university-capability 1)
 )
 
 ; CASTLE: Castle Age establishes the University capability.
@@ -14339,47 +14379,59 @@
     (current-age >= castle-age)
 =>
     (set-goal byzantine-university-state byzantine-university-state-castle)
-    (set-goal demand-imperial-university-capability 1)
+    (set-goal demand-castle-university-capability 1)
 )
 
-; CASTLE -> HARDENED_PERIMETER: durable defensive infrastructure must exist.
+; CASTLE -> HARDENED_PERIMETER:
+; one wall/tower is not a perimeter. Require persistent closure/funnel evidence.
 (defrule
     (goal byzantine-university-state byzantine-university-state-castle)
     (building-type-count university >= 1)
     (or
-        (building-type-count 117 >= 1)
-        (or
-                (building-type-count guard-tower >= 1)
-                (building-type-count keep >= 1)
-            )
+        (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
+        (and
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+            (building-type-count 117 >= 2)
+        )
+        (and
+            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+            (gate-count byzantine-wall-native-perimeter >= 1)
+        )
     )
 =>
     (set-goal byzantine-university-state byzantine-university-state-hardened-perimeter)
 )
 
-; HARDENED_PERIMETER -> TOWER_NETWORK: two mutually useful anchors or a
-; defensive tower plus a Castle/Keep establish an actual network.
+; HARDENED_PERIMETER -> TOWER_NETWORK:
+; require two meaningful firing anchors plus a spatial relationship.
 (defrule
     (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
     (building-type-count university >= 1)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
         (and
-            (building-type-count castle >= 1)
-            (building-type-count guard-tower >= 1))
-        (or
-                (building-type-count guard-tower >= 2)
-                (or
-                        (building-type-count keep >= 1)
-                        (building-type-count bombard-tower >= 1)
-                    )
-            )
+            (building-type-count guard-tower >= 2)
+            (building-type-count guard-tower >= 2)
+        )
+        (and
+            (building-type-count guard-tower >= 1)
+            (building-type-count keep >= 1)
+        )
+        (and
+            (building-type-count guard-tower >= 1)
+            (building-type-count bombard-tower >= 1)
+        )
+        (and
+            (building-type-count keep >= 1)
+            (building-type-count bombard-tower >= 1)
+        )
     )
 =>
     (set-goal byzantine-university-state byzantine-university-state-tower-network)
 )
 
-; TOWER_NETWORK -> IMPERIAL_GUNLINE: the artillery layer is not declared from
-; age alone. Chemistry plus an actual heavy gun witness is required.
+; TOWER_NETWORK -> IMPERIAL_GUNLINE:
+; Chemistry plus real artillery remains the witness.
 (defrule
     (goal byzantine-university-state byzantine-university-state-tower-network)
     (current-age >= imperial-age)
@@ -14390,6 +14442,52 @@
     )
 =>
     (set-goal byzantine-university-state byzantine-university-state-imperial-gunline)
+)
+
+; Network degradation preserves the hard perimeter when tower-network evidence disappears.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (building-type-count university >= 1)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
+        (and
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+            (building-type-count 117 >= 2)
+        )
+        (and
+            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+            (gate-count byzantine-wall-native-perimeter >= 1)
+        )
+    )
+    (not
+        (and
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+            (or
+                (and (building-type-count guard-tower >= 2) (building-type-count guard-tower >= 2))
+                (and (building-type-count guard-tower >= 1) (building-type-count keep >= 1))
+                (and (building-type-count guard-tower >= 1) (building-type-count bombard-tower >= 1))
+                (and (building-type-count keep >= 1) (building-type-count bombard-tower >= 1))
+            )
+        )
+    )
+=>
+    (set-goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+)
+
+; Perimeter degradation returns to Castle posture only after durable evidence disappears.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+    (building-type-count university >= 1)
+    (not (goal byzantine-wall-resource-state byzantine-wall-resource-secured))
+    (up-compare-goal byzantine-wall-anchor-pair <= 0)
+    (not
+        (and
+            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+            (gate-count byzantine-wall-native-perimeter >= 1)
+        )
+    )
+=>
+    (set-goal byzantine-university-state byzantine-university-state-castle)
 )
 
 ; Aggressive defensive expansion: once the tower network exists and the
