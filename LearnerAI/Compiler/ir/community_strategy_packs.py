@@ -552,17 +552,15 @@ def community_strategy_observations(
             university.provenance,
         ),
         _observation(
-            "strategy-arabia-loom-admission",
-            "(and (map-type arabia) "
+            "strategy-standard-loom-admission",
             "(and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 13) "
             "(and (building-type-count-total lumber-camp >= 1) "
             "(and (building-type-count-total mining-camp >= 1) "
-            "(food-amount >= 50))))))",
+            "(food-amount >= 50))))",
             tuple(
                 dict.fromkeys(
-                    (*_airef_provenance(effective, "commands/commands-details.html#map-type"),
-                     *lumber_camp.provenance,
+                    (*lumber_camp.provenance,
                      *mining_camp.provenance,
                      *effective.tech(22).provenance)
                 )
@@ -652,14 +650,13 @@ def community_strategy_demands(
             posture=_StrategyPosture.BOOM,
             priority=_StrategicPriority.CORE,
             age_guard=(
-                "(and (map-type arabia) "
                 "(and (current-age == dark-age) "
                 "(and (unit-type-count-total villager >= 13) "
                 "(and (building-type-count-total lumber-camp >= 1) "
                 "(and (building-type-count-total mining-camp >= 1) "
-                "(food-amount >= 50))))))"
+                "(food-amount >= 50))))"
             ),
-            age_observation_ref="strategy-arabia-loom-admission",
+            age_observation_ref="strategy-standard-loom-admission",
             tech_name="loom",
             reason_label="Standard Arabia opening requires Loom before the Feudal click window",
             resources=(Resource.FOOD,),
