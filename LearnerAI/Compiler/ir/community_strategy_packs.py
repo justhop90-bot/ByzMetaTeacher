@@ -537,11 +537,11 @@ def community_strategy_demands(
     demands: list[_StrategicDemandSpec] = []
 
     camp_specs = (
-        (CampResource.WOOD, lumber_camp, 6),
-        (CampResource.GOLD, mining_camp, 5),
-        (CampResource.STONE, mining_camp, 5),
+        (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
+        (CampResource.GOLD, mining_camp, 5, "sn-mining-camp-max-distance"),
+        (CampResource.STONE, mining_camp, 5, "sn-mining-camp-max-distance"),
     )
-    for resource, building, max_count in camp_specs:
+    for resource, building, max_count, distance_sn in camp_specs:
         label = resource.value
         active_ref = f"camp-front-{label}-active"
         remote_ref = f"camp-front-{label}-remote"
