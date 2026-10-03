@@ -121,6 +121,7 @@ def _build_demand(
     release: str | None = None,
     opportunity_cost: _OpportunityCostPolicy | None = None,
     invalidate_ref: str | None = None,
+    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
@@ -279,6 +280,7 @@ def _training_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
+                *additional_requirements,
                 f"(can-train-with-escrow {train_target})",
                 f"(unit-type-count-total {train_target} < {minimum})",
             ),
@@ -415,9 +417,32 @@ def community_strategy_observations(
             monastery.provenance,
         ),
         _observation(
-            "strategy-monastery-exists",
-            f"(building-type-count-total {int(monastery.id)} >= 1)",
-            monastery.provenance,
+            "strategy-monk-support",
+            "(or\n    (town-under-attack)\n    (or\n        (players-unit-type-count any-enemy mangonel-line >= 2)\n        (players-unit-type-count any-enemy monk >= 2)\n    )\n)",
+            tuple(
+                dict.fromkeys(
+                    (
+                        *monastery.provenance,
+                        *effective.unit_line("mangonel-line").provenance,
+                        *effective.unit_line("monk-line").provenance,
+                        *_airef_provenance(effective, "commands/commands-details.html#town-under-attack"),
+                    )
+                )
+            ),
+        ),
+        _observation(
+            "strategy-monk-support-cleared",
+            "(not\n    (or\n        (town-under-attack)\n        (or\n            (players-unit-type-count any-enemy mangonel-line >= 2)\n            (players-unit-type-count any-enemy monk >= 2)\n        )\n    )\n)",
+            tuple(
+                dict.fromkeys(
+                    (
+                        *monastery.provenance,
+                        *effective.unit_line("mangonel-line").provenance,
+                        *effective.unit_line("monk-line").provenance,
+                        *_airef_provenance(effective, "commands/commands-details.html#town-under-attack"),
+                    )
+                )
+            ),
         ),
         _observation(
             "strategy-siege-workshop-capability",
@@ -784,10 +809,21 @@ def community_strategy_demands(
                 owner="support",
                 posture=_StrategyPosture.CASTLE_POWER,
                 priority=_StrategicPriority.OPTIONAL,
-                reason_ref="strategy-castle-age",
-                reason_label="Castle support includes a Monk/relic capability",
+                reason_ref="strategy-monk-support",
+                reason_label="Defensive, siege, or conversion pressure justifies Monk capability",
                 building=monastery,
-                requirements=(" (can-build monastery)".strip(),),
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(or
+    (town-under-attack)
+    (or
+        (players-unit-type-count any-enemy mangonel-line >= 2)
+        (players-unit-type-count any-enemy monk >= 2)
+    )
+)",
+                    "(can-build monastery)",
+                ),
+                invalidate_ref="strategy-monk-support-cleared",
             ),
             _build_demand(
                 identity="imperial-university-capability",
@@ -923,13 +959,21 @@ def community_strategy_demands(
                 owner="support",
                 posture=_StrategyPosture.CASTLE_POWER,
                 priority=_StrategicPriority.OPTIONAL,
-                reason_ref="strategy-monastery-exists",
-                reason_label="Use a bounded Monk support floor once the monastery capability exists",
+                reason_ref="strategy-monk-support",
+                reason_label="Maintain a bounded two-Monk support package only while pressure justifies it",
                 line="monk-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
                 action_symbol="monk",
                 witness_symbol="monk",
+                invalidate_ref="strategy-monk-support-cleared",
+                additional_requirements=("(or
+    (town-under-attack)
+    (or
+        (players-unit-type-count any-enemy mangonel-line >= 2)
+        (players-unit-type-count any-enemy monk >= 2)
+    )
+)",),
             ),
         )
     )
