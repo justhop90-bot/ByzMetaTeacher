@@ -125,6 +125,8 @@
 (defconst byzantine-natural-food-deer-distance 736)
 (defconst byzantine-natural-food-deer-home-point 738)
 (defconst byzantine-natural-food-deer-point 740)
+(defconst byzantine-natural-food-deer-timer 19)
+(defconst bt-byzantine-natural-food-deer-seconds 30)
 (defconst byzantine-natural-food-selector-forage 742)
 (defconst byzantine-natural-food-selector-deer 743)
 (defconst sn-stone-gatherer-percentage 119)
@@ -5634,10 +5636,15 @@
     (not (map-type islands))
     (unit-type-count scout-cavalry-line >= 1)
     (resource-found food)
+    (or
+        (up-timer-status byzantine-natural-food-deer-timer c:== timer-disabled)
+        (up-timer-status byzantine-natural-food-deer-timer c:== timer-triggered)
+    )
 =>
     (up-full-reset-search)
     (up-filter-distance c: -1 c: 40)
     (up-find-resource c: deer-class c: 40)
+    (disable-timer byzantine-natural-food-deer-timer)
     (set-goal byzantine-natural-food-deer-state 1)
 )
 
@@ -5650,6 +5657,14 @@
     (up-get-point position-object byzantine-natural-food-deer-point)
     (up-get-point-distance byzantine-natural-food-deer-home-point byzantine-natural-food-deer-point byzantine-natural-food-deer-distance)
     (set-goal byzantine-natural-food-deer-state 2)
+)
+
+(defrule
+    (goal byzantine-natural-food-deer-state 1)
+    (not (up-set-target-object search-remote c: 0))
+=>
+    (set-goal byzantine-natural-food-deer-state 0)
+    (enable-timer byzantine-natural-food-deer-timer bt-byzantine-natural-food-deer-seconds)
 )
 
 (defrule
@@ -5693,6 +5708,7 @@
     (set-goal byzantine-natural-food-deer-id -1)
     (set-goal byzantine-natural-food-deer-distance -1)
     (set-strategic-number sn-maximum-hunt-drop-distance 0)
+    (enable-timer byzantine-natural-food-deer-timer bt-byzantine-natural-food-deer-seconds)
 )
 
 ; NATIVE FOOD RESOURCE SELECTOR
