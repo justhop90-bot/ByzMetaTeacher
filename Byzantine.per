@@ -11673,7 +11673,9 @@
 )
  
 ; Package loss during a fortified approach returns through the existing army
-; reinforcement path, never directly back to assault.
+; reinforcement path, never directly back to assault. Castle recovery is split
+; by role so each native rule stays below DE's 32-element limit.
+
 (defrule
     (or
         (goal byzantine-siege-approach byzantine-siege-approach-staging)
@@ -11689,40 +11691,111 @@
         )
     )
     (goal byzantine-army-attack-ready 2)
+    (current-age == castle-age)
+    (goal counter-package-infantry_pressure_castle 1)
+    (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-recover)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
+(defrule
     (or
-        (and
-            (current-age == castle-age)
+        (goal byzantine-siege-approach byzantine-siege-approach-staging)
+        (or
+            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
             (or
-                (and
-                    (goal counter-package-infantry_pressure_castle 1)
-                    (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
-                )
-                (and
-                    (not (goal counter-package-infantry_pressure_castle 1))
-                    (not
-                        (or
-                            (unit-type-count-total knight-line >= 2)
-                            (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
-                        )
-                    )
-                )
-                (and
-                    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
-                    (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+                (goal byzantine-siege-approach byzantine-siege-approach-breach)
+                (or
+                    (goal byzantine-siege-approach byzantine-siege-approach-assault)
+                    (goal byzantine-siege-approach byzantine-siege-approach-recover)
                 )
             )
         )
-        (and
-            (current-age >= imperial-age)
+    )
+    (goal byzantine-army-attack-ready 2)
+    (current-age == castle-age)
+    (not (goal counter-package-infantry_pressure_castle 1))
+    (not
+        (or
+            (unit-type-count-total knight-line >= 2)
+            (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+        )
+    )
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-recover)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-siege-approach byzantine-siege-approach-staging)
+        (or
+            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
             (or
-                (unit-type-count-total 359 < bt-imperial-halberdier-floor)
+                (goal byzantine-siege-approach byzantine-siege-approach-breach)
                 (or
-                    (unit-type-count-total trebuchet < bt-imperial-attack-siege-target)
-                    (or
-                        (unit-type-count-total bombard-cannon < bt-imperial-bombard-floor)
-                        (unit-type-count-total battering-ram-line < bt-imperial-attack-siege-target)
-                    )
+                    (goal byzantine-siege-approach byzantine-siege-approach-assault)
+                    (goal byzantine-siege-approach byzantine-siege-approach-recover)
                 )
+            )
+        )
+    )
+    (goal byzantine-army-attack-ready 2)
+    (current-age == castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-recover)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
+(defrule
+    (goal byzantine-siege-approach byzantine-siege-approach-staging)
+    (goal byzantine-army-attack-ready 2)
+    (current-age >= imperial-age)
+    (or
+        (unit-type-count-total 359 < bt-imperial-halberdier-floor)
+        (or
+            (unit-type-count-total trebuchet < bt-imperial-attack-siege-target)
+            (or
+                (unit-type-count-total bombard-cannon < bt-imperial-bombard-floor)
+                (unit-type-count-total battering-ram-line < bt-imperial-attack-siege-target)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-recover)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-siege-approach byzantine-siege-approach-staging)
+        (or
+            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+            (or
+                (goal byzantine-siege-approach byzantine-siege-approach-breach)
+                (or
+                    (goal byzantine-siege-approach byzantine-siege-approach-assault)
+                    (goal byzantine-siege-approach byzantine-siege-approach-recover)
+                )
+            )
+        )
+    )
+    (goal byzantine-army-attack-ready 2)
+    (current-age >= imperial-age)
+    (or
+        (unit-type-count-total 359 < bt-imperial-halberdier-floor)
+        (or
+            (unit-type-count-total trebuchet < bt-imperial-attack-siege-target)
+            (or
+                (unit-type-count-total bombard-cannon < bt-imperial-bombard-floor)
+                (unit-type-count-total battering-ram-line < bt-imperial-attack-siege-target)
             )
         )
     )
@@ -11845,30 +11918,50 @@
     (set-goal byzantine-army-attack-ready 2)
 )
 
-; Reinforcement is driven by loss of the attack package, not by enemy sighting.
+; Reinforcement is driven by loss of the selected combat package, not by
+; enemy sighting. The Castle loss rules mirror initial admission and never use
+; the Monk support floor as an attack requirement.
+
 (defrule
-    (current-age == castle-age)
     (goal byzantine-army-attack-ready 2)
-    (or
-        (and
-            (goal counter-package-infantry_pressure_castle 1)
-            (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
-        )
-        (and
-            (not (goal counter-package-infantry_pressure_castle 1))
-            (not
-                (or
-                    (unit-type-count-total knight-line >= 2)
-                    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
-                )
-            )
-        )
-        (and
-            (goal byzantine-siege-approach byzantine-siege-approach-fortified)
-            (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+    (current-age == castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal counter-package-infantry_pressure_castle 1)
+    (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+=>
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
+)
+
+(defrule
+    (goal byzantine-army-attack-ready 2)
+    (current-age == castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (not (goal counter-package-infantry_pressure_castle 1))
+    (not
+        (or
+            (unit-type-count-total knight-line >= 2)
+            (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
         )
     )
-=> 
+=>
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
+)
+
+(defrule
+    (goal byzantine-army-attack-ready 2)
+    (current-age == castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+=>
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
     (set-goal byzantine-army-reinforcement-target-validation 0)
