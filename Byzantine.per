@@ -4575,6 +4575,12 @@
 (defconst byzantine-resource-camp-placement-state-idle 0)
 (defconst byzantine-resource-camp-placement-state-candidate 1)
 (defconst byzantine-resource-camp-ring-index 789)
+(defconst byzantine-resource-camp-radius-stage 790)
+(defconst byzantine-resource-camp-radius-stage-base 0)
+(defconst byzantine-resource-camp-radius-stage-wide 1)
+(defconst byzantine-resource-camp-radius-stage-remote 2)
+(defconst byzantine-resource-camp-radius-wide 24)
+(defconst byzantine-resource-camp-radius-remote 30)
 (defconst byzantine-offensive-castle-point 723)
 (defconst byzantine-offensive-castle-valid 725)
 (defconst byzantine-offensive-push-state 726)
@@ -4608,6 +4614,12 @@
     (goal byzantine-resource-camp-ring-index -1)
 =>
     (set-goal byzantine-resource-camp-ring-index 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-radius-stage -1)
+=>
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
 )
 
 ; The ring is centered on the persisted resource point but never builds there.
@@ -5617,8 +5629,8 @@
     (set-strategic-number sn-maximum-food-drop-distance 16)
     (set-strategic-number sn-preferred-mill-placement 1)
     (set-strategic-number sn-boar-lure-destination 0)
-    (set-strategic-number sn-maximum-wood-drop-distance 16)
-    (set-strategic-number sn-maximum-gold-drop-distance 16)
+    (set-strategic-number sn-maximum-wood-drop-distance 14)
+    (set-strategic-number sn-maximum-gold-drop-distance 14)
     ; Keep automatic repair on critical structures, siege, houses, towers, walls, and gates.
     ; AIRef defines sn-object-repair-level as a bitmask: 1 critical castle/monastery,
     ; 2 town center, 4 barracks, 2048 houses, 4096 towers, 8192 walls/gates,
@@ -7241,7 +7253,7 @@
 ;----------------------------------------------------------------
 ; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER
 ; Resource observation -> nearest real resource object -> persisted point ->
-; existing demand/builder lifecycle -> exact point-centered native placement.
+; existing demand/builder lifecycle -> legal local candidate placement.
 
 (defrule
     (or
@@ -7254,31 +7266,62 @@
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (current-age < feudal-age)
 =>
     (set-strategic-number sn-lumber-camp-max-distance 14)
     (set-strategic-number sn-mining-camp-max-distance 14)
+    (set-strategic-number sn-maximum-wood-drop-distance 14)
+    (set-strategic-number sn-maximum-gold-drop-distance 14)
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (and (current-age >= feudal-age) (current-age < castle-age))
 =>
     (set-strategic-number sn-lumber-camp-max-distance 18)
     (set-strategic-number sn-mining-camp-max-distance 18)
+    (set-strategic-number sn-maximum-wood-drop-distance 18)
+    (set-strategic-number sn-maximum-gold-drop-distance 18)
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (and (current-age >= castle-age) (current-age < imperial-age))
 =>
     (set-strategic-number sn-lumber-camp-max-distance 18)
     (set-strategic-number sn-mining-camp-max-distance 18)
+    (set-strategic-number sn-maximum-wood-drop-distance 18)
+    (set-strategic-number sn-maximum-gold-drop-distance 18)
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (current-age >= imperial-age)
 =>
     (set-strategic-number sn-lumber-camp-max-distance 20)
     (set-strategic-number sn-mining-camp-max-distance 20)
+    (set-strategic-number sn-maximum-wood-drop-distance 20)
+    (set-strategic-number sn-maximum-gold-drop-distance 20)
+)
+
+; Sparse-resource fallback widens every camp-distance channel together.
+(defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-wide)
+    (set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-wide)
+    (set-strategic-number sn-maximum-wood-drop-distance byzantine-resource-camp-radius-wide)
+    (set-strategic-number sn-maximum-gold-drop-distance byzantine-resource-camp-radius-wide)
+)
+
+(defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-remote)
+    (set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-remote)
+    (set-strategic-number sn-maximum-wood-drop-distance byzantine-resource-camp-radius-remote)
+    (set-strategic-number sn-maximum-gold-drop-distance byzantine-resource-camp-radius-remote)
 )
 
 ; Fast new-resource activation reopens the next existing camp demand.
@@ -7714,12 +7757,34 @@
     (set-goal byzantine-resource-camp-target-valid 1)
     (set-goal byzantine-resource-camp-ring-index 0)
     (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+)
+
+; A sparse first-pass resource set does not release the demand immediately.
+; Widen once, re-search, then widen again before failing closed.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
+=>
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+    (set-goal byzantine-resource-camp-target-valid 0)
 )
 
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
     (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+=>
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+    (set-goal byzantine-resource-camp-target-valid 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
 =>
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
@@ -9194,7 +9259,7 @@
         (dropsite-min-distance gold == -1)
         (and
             (dropsite-min-distance gold > 6)
-            (dropsite-min-distance gold <= 18)
+        (dropsite-min-distance gold s:<= sn-mining-camp-max-distance)
         )
     )
 =>
@@ -9211,7 +9276,7 @@
         (dropsite-min-distance wood == -1)
         (and
             (dropsite-min-distance wood > 6)
-            (dropsite-min-distance wood <= 18)
+        (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)
         )
     )
     (not (resource-found gold))
@@ -9327,7 +9392,7 @@
     (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
     (dropsite-min-distance gold > 6)
-    (dropsite-min-distance gold <= 18)
+        (dropsite-min-distance gold s:<= sn-mining-camp-max-distance)
     (not (goal byzantine-fortification-threat 1))
 =>
     (up-retask-gatherers gold c: byzantine-economy-delta-step)
@@ -9342,7 +9407,7 @@
     (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
     (dropsite-min-distance wood > 6)
-    (dropsite-min-distance wood <= 18)
+        (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)
     (not (goal byzantine-fortification-threat 1))
 =>
     (up-retask-gatherers wood c: byzantine-economy-delta-step)
