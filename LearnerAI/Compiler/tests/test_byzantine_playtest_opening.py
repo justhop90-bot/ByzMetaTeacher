@@ -116,7 +116,14 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         )
 
     def test_imperial_attack_ready_uses_any_sufficient_siege_anchor(self):
-        block = self._rule_block("; ATTACK THRESHOLDS AND REINFORCEMENT")
+        start = self.per.index(
+            "(defrule\n"
+            "    (current-age >= imperial-age)\n"
+            "    (goal byzantine-army-plan-phase 2)\n"
+            "    (goal byzantine-army-attack-ready 0)"
+        )
+        end = self.per.index("\n\n(defrule", start)
+        block = self.per[start:end]
         self.assertIn("(attack-soldier-count >= 12)", block)
         self.assertIn("(unit-type-count-total 359 >= bt-imperial-halberdier-floor)", block)
         self.assertIn("(unit-type-count-total trebuchet >= 1)", block)
