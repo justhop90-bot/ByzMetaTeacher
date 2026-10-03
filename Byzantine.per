@@ -5923,58 +5923,101 @@
     (set-goal counter-package-ranged_pressure_feudal 1)
 )
 
-; Reinforcement admission is target-relative. Rebuilding the local package is
-; insufficient unless the locked opponent still explains that package.
+; Reinforcement admission is target-relative. Each package gets its own
+; bounded witness rule so the native DE 32-element rule ceiling remains intact.
 (defrule
     (goal byzantine-army-reinforcement 1)
     (goal byzantine-army-reinforcement-target-validation 1)
     (goal byzantine-target-player-lock 1)
     (goal byzantine-army-reinforcement-admission 0)
     (current-age == castle-age)
+    (goal counter-package-mounted_pressure_castle 1)
     (or
-        (and
-            (goal counter-package-mounted_pressure_castle 1)
+        (players-unit-type-count target-player knight >= 3)
+        (or
+            (players-unit-type-count target-player camel-rider-line >= 3)
             (or
-                (players-unit-type-count target-player knight >= 3)
-                (or
-                    (players-unit-type-count target-player camel-rider-line >= 3)
-                    (or
-                        (players-unit-type-count target-player scout-cavalry-line >= 6)
-                        (players-building-type-count target-player stable >= 2)
-                    )
-                )
+                (players-unit-type-count target-player scout-cavalry-line >= 6)
+                (players-building-type-count target-player stable >= 2)
             )
         )
+    )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age == castle-age)
+    (goal counter-package-ranged_pressure_feudal 1)
+    (or
+        (players-unit-type-count target-player archer-line >= 3)
+        (players-building-type-count target-player archery-range >= 2)
+    )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age == castle-age)
+    (goal counter-package-infantry_pressure_castle 1)
+    (players-military-population target-player >= 6)
+    (players-unit-type-count target-player militia-line >= 5)
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age == castle-age)
+    (goal counter-package-siege_pressure_castle 1)
+    (or
+        (players-unit-type-count target-player mangonel-line >= 2)
+        (players-building-type-count target-player siege-workshop >= 1)
+    )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age == castle-age)
+    (not (goal counter-package-mounted_pressure_castle 1))
+    (not (goal counter-package-ranged_pressure_feudal 1))
+    (not (goal counter-package-infantry_pressure_castle 1))
+    (not (goal counter-package-siege_pressure_castle 1))
+    (players-military-population target-player <= 5)
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+    (or
+        (players-unit-type-count target-player knight >= 3)
         (or
-            (and
-                (goal counter-package-ranged_pressure_feudal 1)
-                (or
-                    (players-unit-type-count target-player archer-line >= 3)
-                    (players-building-type-count target-player archery-range >= 2)
-                )
-            )
+            (players-unit-type-count target-player camel-rider-line >= 3)
             (or
-                (and
-                    (goal counter-package-infantry_pressure_castle 1)
-                    (players-military-population target-player >= 6)
-                    (players-unit-type-count target-player militia-line >= 5)
-                )
-                (or
-                    (and
-                        (goal counter-package-siege_pressure_castle 1)
-                        (or
-                            (players-unit-type-count target-player mangonel-line >= 2)
-                            (players-building-type-count target-player siege-workshop >= 1)
-                        )
-                    )
-                    (and
-                        (not (goal counter-package-mounted_pressure_castle 1))
-                        (not (goal counter-package-ranged_pressure_feudal 1))
-                        (not (goal counter-package-infantry_pressure_castle 1))
-                        (not (goal counter-package-siege_pressure_castle 1))
-                        (players-military-population target-player <= 5)
-                    )
-                )
+                (players-unit-type-count target-player scout-cavalry-line >= 6)
+                (players-building-type-count target-player stable >= 2)
             )
         )
     )
@@ -5988,53 +6031,54 @@
     (goal byzantine-target-player-lock 1)
     (goal byzantine-army-reinforcement-admission 0)
     (current-age >= imperial-age)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     (or
-        (and
-            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
-            (or
-                (players-unit-type-count target-player knight >= 3)
-                (or
-                    (players-unit-type-count target-player camel-rider-line >= 3)
-                    (or
-                        (players-unit-type-count target-player scout-cavalry-line >= 6)
-                        (players-building-type-count target-player stable >= 2)
-                    )
-                )
-            )
-        )
+        (players-unit-type-count target-player archer-line >= 4)
         (or
-            (and
-                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
-                (or
-                    (players-unit-type-count target-player archer-line >= 4)
-                    (or
-                        (players-unit-type-count target-player cavalry-archer-line >= 4)
-                        (players-building-type-count target-player archery-range >= 2)
-                    )
-                )
-            )
-            (or
-                (and
-                    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
-                    (players-military-population target-player >= 6)
-                    (players-unit-type-count target-player militia-line >= 5)
-                )
-                (or
-                    (and
-                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
-                        (or
-                            (players-unit-type-count target-player mangonel-line >= 2)
-                            (players-building-type-count target-player siege-workshop >= 1)
-                        )
-                    )
-                    (and
-                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
-                        (players-military-population target-player <= 5)
-                    )
-                )
-            )
+            (players-unit-type-count target-player cavalry-archer-line >= 4)
+            (players-building-type-count target-player archery-range >= 2)
         )
     )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (players-military-population target-player >= 6)
+    (players-unit-type-count target-player militia-line >= 5)
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+    (or
+        (players-unit-type-count target-player mangonel-line >= 2)
+        (players-building-type-count target-player siege-workshop >= 1)
+    )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+    (players-military-population target-player <= 5)
 =>
     (set-goal byzantine-army-reinforcement-admission 1)
 )
@@ -7418,15 +7462,44 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
     (not (town-under-attack))
-    (or
-        (not
+    (not
+        (and
             (and
                 (goal opening-plan 1)
                 (map-type arabia)
+            )
+            (and
                 (current-age == dark-age)
                 (unit-type-count-total villager >= 12)
             )
         )
+    )
+    (or
+        (goal demand-economy-lumber-camp-floor-1 1)
+        (or
+            (goal demand-economy-lumber-camp-floor-2 1)
+            (or
+                (goal demand-economy-wood-camp-floor-3 1)
+                (or
+                    (goal demand-economy-wood-camp-floor-4 1)
+                    (or
+                        (goal demand-economy-wood-camp-floor-5 1)
+                        (goal demand-economy-wood-camp-floor-6 1)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (not
         (or
             (goal demand-economy-lumber-camp-floor-1 1)
             (or
@@ -7442,42 +7515,6 @@
                     )
                 )
             )
-        )
-    )
-=>
-    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
-    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
-    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
-)
-
-(defrule
-    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (or
-        (not
-            (or
-                (goal demand-economy-lumber-camp-floor-1 1)
-                (or
-                    (goal demand-economy-lumber-camp-floor-2 1)
-                    (or
-                        (goal demand-economy-wood-camp-floor-3 1)
-                        (or
-                            (goal demand-economy-wood-camp-floor-4 1)
-                            (or
-                                (goal demand-economy-wood-camp-floor-5 1)
-                                (goal demand-economy-wood-camp-floor-6 1)
-                            )
-                        )
-                    )
-                )
-            )
-        )
-        (and
-            (goal opening-plan 1)
-            (map-type arabia)
-            (current-age == dark-age)
-            (unit-type-count-total villager >= 12)
         )
     )
     (or
@@ -7499,6 +7536,32 @@
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
 )
 
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (goal opening-plan 1)
+    (map-type arabia)
+    (current-age == dark-age)
+    (unit-type-count-total villager >= 12)
+    (or
+        (goal demand-economy-gold-camp-floor-1 1)
+        (or
+            (goal demand-economy-gold-camp-floor-2 1)
+            (or
+                (goal demand-economy-gold-camp-floor-3 1)
+                (or
+                    (goal demand-economy-gold-camp-floor-4 1)
+                    (goal demand-economy-gold-camp-floor-5 1)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
@@ -11829,8 +11892,10 @@
     (or
         (unit-type-count-total villager >= 20)
         (and
-            (goal opening-plan 1)
-            (map-type arabia)
+            (and
+                (goal opening-plan 1)
+                (map-type arabia)
+            )
             (unit-type-count-total villager >= 19)
         )
     )
@@ -12124,8 +12189,10 @@
     (current-age >= feudal-age)
     (or
         (not (goal opening-plan 1))
-        (not (map-type arabia))
-        (building-type-count archery-range >= 1)
+        (or
+            (not (map-type arabia))
+            (building-type-count archery-range >= 1)
+        )
     )
     (can-build blacksmith)
 =>
