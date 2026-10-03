@@ -226,10 +226,24 @@ def lower_economy_controller(
             EconomyMode.BASE,
             f"(and (current-age < castle-age) (and {no_pressure} {opening(1)}))",
         ),
-        select_rule(
+        NativeControlRule(
             "economy-controller-select-fast-imperial",
-            EconomyMode.FAST_IMPERIAL,
-            f"(and (current-age >= castle-age) (and (current-age < imperial-age) (and {opening(3)} (and {arena} {no_pressure}))))",
+            facts=tuple(
+                parse_expression(item, SourceLocation(1))
+                for item in (
+                    "(current-age >= castle-age)",
+                    "(current-age < imperial-age)",
+                    opening(3),
+                    arena,
+                    no_pressure,
+                )
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {int(EconomyMode.FAST_IMPERIAL)})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         select_rule(
             "economy-controller-select-castle-conversion",
