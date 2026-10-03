@@ -248,6 +248,7 @@ _OBSERVATION_SPECS = (
     ("players-building-type-count", "observation.world.building-count"),
     ("game-time", "observation.timing.game-time"),
     ("dropsite-min-distance", "observation.placement.dropsite-distance"),
+    ("resource-found", "observation.resource.presence"),
     ("unit-type-count", "observation.unit.count"),
     ("map-type", "observation.map.type"),
     ("warboat-count", "observation.naval.warboat-count"),
