@@ -73,6 +73,108 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             self.per,
         )
 
+    def test_resource_camp_radius_controller_synchronizes_demand_search_and_progressive_widening(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+
+        self.assertIn("(defconst byzantine-resource-camp-radius-stage 790)", self.per)
+        self.assertIn("(defconst byzantine-resource-camp-radius-stage-base 0)", self.per)
+        self.assertIn("(defconst byzantine-resource-camp-radius-stage-wide 1)", self.per)
+        self.assertIn("(defconst byzantine-resource-camp-radius-stage-remote 2)", self.per)
+        self.assertIn("(defconst byzantine-resource-camp-radius-wide 24)", self.per)
+        self.assertIn("(defconst byzantine-resource-camp-radius-remote 30)", self.per)
+
+        for radius in (14, 18, 20):
+            self.assertIn(
+                f"(set-strategic-number sn-lumber-camp-max-distance {radius})",
+                controller,
+            )
+            self.assertIn(
+                f"(set-strategic-number sn-mining-camp-max-distance {radius})",
+                controller,
+            )
+            self.assertIn(
+                f"(set-strategic-number sn-maximum-wood-drop-distance {radius})",
+                controller,
+            )
+            self.assertIn(
+                f"(set-strategic-number sn-maximum-gold-drop-distance {radius})",
+                controller,
+            )
+
+        self.assertIn(
+            "(set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-wood-drop-distance byzantine-resource-camp-radius-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-gold-drop-distance byzantine-resource-camp-radius-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-remote)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-remote)",
+            controller,
+        )
+
+        self.assertIn(
+            "(dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)",
+            controller,
+        )
+        self.assertIn(
+            "(dropsite-min-distance gold s:<= sn-mining-camp-max-distance)",
+            controller,
+        )
+        self.assertIn(
+            "(dropsite-min-distance stone s:<= sn-mining-camp-max-distance)",
+            controller,
+        )
+        self.assertNotIn("(dropsite-min-distance wood <= 18)", controller)
+        self.assertNotIn("(dropsite-min-distance gold <= 18)", controller)
+        self.assertNotIn("(dropsite-min-distance stone <= 18)", controller)
+
+        self.assertIn(
+            "(goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)",
+            controller,
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)",
+            controller,
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-search)",
+            controller,
+        )
+
+        self.assertIn(
+            "(goal byzantine-resource-camp-search-state-remote-list == 0)",
+            controller,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)",
+            controller,
+        )
+
     def test_remote_resource_recovery_never_retasks_into_far_or_fortified_resource(self):
         recovery = self._section_from(
             "; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL",
