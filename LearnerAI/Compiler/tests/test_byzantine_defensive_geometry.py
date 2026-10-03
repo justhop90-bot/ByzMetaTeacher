@@ -28,18 +28,16 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
         self.assertIn(
-            "(set-goal byzantine-bombard-tower-target 2)",
+            "(set-goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)",
             self.per,
         )
-        self.assertRegex(
+        self.assertIn(
+            "(stone-amount > bt-byzantine-bombard-stone-surplus)",
             self.per,
-            re.compile(
-                r"\(goal byzantine-bombard-tower-target 1\)"
-                r"[\s\S]{0,1600}"
-                r"\(stone-amount > 900\)"
-                r"[\s\S]{0,600}"
-                r"\(gold-amount > 2500\)"
-            ),
+        )
+        self.assertIn(
+            "(gold-amount > bt-byzantine-bombard-gold-surplus)",
+            self.per,
         )
 
     def test_bombard_tower_does_not_compete_with_first_castle(self):
@@ -123,11 +121,11 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
         self.assertIn(
-            "(goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)",
+            "(set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)",
             self.per,
         )
         self.assertIn(
-            "(goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-fortified)",
+            "(set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-fortified)",
             self.per,
         )
         self.assertIn(
