@@ -87,9 +87,12 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             "(unit-type-count-total villager >= 12)", gold
         )
 
-    def test_standard_arabia_feudal_sequence_uses_20_villagers_and_range_before_blacksmith(self):
+    def test_standard_arabia_feudal_sequence_uses_19_villagers_and_range_before_blacksmith(self):
         age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
         self.assertIn("(unit-type-count-total villager >= 20)", age)
+        self.assertIn("(goal opening-plan 1)", age)
+        self.assertIn("(map-type arabia)", age)
+        self.assertIn("(unit-type-count-total villager >= 19)", age)
         self.assertNotIn("(unit-type-count-total villager >= 21)", age)
 
         blacksmith = self._rule_block(
