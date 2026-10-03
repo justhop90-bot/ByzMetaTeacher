@@ -167,7 +167,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         )
 
         self.assertIn(
-            "(goal byzantine-resource-camp-search-state-remote-list == 0)",
+            "(up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)",
             controller,
         )
         self.assertIn(
