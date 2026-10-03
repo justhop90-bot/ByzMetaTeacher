@@ -152,11 +152,7 @@ def lower_byzantine_camp_controller(
     ]
 
     seen_distance_states: set[str] = set()
-    seen_distance_states: set[str] = set()
     for policy in plan.policies:
-        if policy.distance_sn in seen_distance_states:
-            continue
-        seen_distance_states.add(policy.distance_sn)
         if policy.distance_sn in seen_distance_states:
             continue
         seen_distance_states.add(policy.distance_sn)
