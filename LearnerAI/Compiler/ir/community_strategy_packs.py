@@ -556,7 +556,12 @@ def community_strategy_demands(
                 f"(can-build {building.name})",
             ]
             if floor >= 3:
-                requirements.insert(1, f"(and {count_guard} {remote_expression})")
+                requirements = [
+                    active_expression,
+                    remote_expression,
+                    count_guard,
+                    f"(can-build {building.name})",
+                ]
             action = f"(build {building.name})"
             witness = f"(building-type-count {building.name} >= {floor})"
             demands.append(
