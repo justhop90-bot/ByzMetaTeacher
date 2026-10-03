@@ -9043,7 +9043,18 @@
     (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)
     (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
     (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-idle)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (set-goal byzantine-frontier-target-point 0)
+    (set-goal byzantine-frontier-home-point 0)
+    (set-goal byzantine-frontier-anchor-point 0)
+    (set-goal byzantine-frontier-generation 0)
+    (set-goal byzantine-frontier-anchor-type 0)
+    (set-goal byzantine-frontier-wall-witness-point 0)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+    (set-goal byzantine-army-reposition-point 0)
     (disable-timer byzantine-wall-geometry-timer)
+    (disable-timer byzantine-army-reposition-timer)
     (set-goal byzantine-food-recovery-state byzantine-food-recovery-idle)
     (disable-timer byzantine-food-recovery-timer)
     (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
@@ -14342,6 +14353,343 @@
     (build university)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-castle-university-capability 97)
+)
+
+;----------------------------------------------------------------
+; PERSISTENT BYZANTINE DEFENSIVE FRONTIER
+;----------------------------------------------------------------
+; The frontier is deliberately small: resource sector -> forward anchor ->
+; connecting wall -> protected sector. It extends the existing DUC wall/tower
+; mechanisms instead of replacing them with another scheduler.
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-idle)
+    (current-age >= castle-age)
+    (goal byzantine-frontier-generation < 2)
+    (not (town-under-attack))
+    (not (goal under-attack yes))
+    (or
+        (goal strategic-primary-intent 3)
+        (or
+            (gold-amount > 6500)
+            (or
+                (wood-amount > 6500)
+                (stone-amount > 1800)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-generation 0)
+=>
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-frontier-home-point)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (up-compare-goal byzantine-frontier-generation >= 1)
+    (up-compare-goal byzantine-frontier-anchor-point > 0)
+=>
+    (up-copy-point byzantine-frontier-home-point byzantine-frontier-anchor-point)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (goal byzantine-frontier-generation 0)
+    (up-compare-goal byzantine-frontier-home-point > 0)
+    (resource-found gold)
+    (or
+        (dropsite-min-distance gold == -1)
+        (dropsite-min-distance gold > 12)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-resource c: gold c: 8)
+    (up-get-search-state byzantine-frontier-search-state)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-gold)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (goal byzantine-frontier-generation 0)
+    (up-compare-goal byzantine-frontier-home-point > 0)
+    (not (resource-found gold))
+    (resource-found stone)
+    (or
+        (dropsite-min-distance stone == -1)
+        (dropsite-min-distance stone > 12)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-resource c: stone c: 8)
+    (up-get-search-state byzantine-frontier-search-state)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-stone)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (goal byzantine-frontier-generation 1)
+    (up-compare-goal byzantine-frontier-home-point > 0)
+    (resource-found stone)
+    (or
+        (dropsite-min-distance stone == -1)
+        (dropsite-min-distance stone > 12)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-resource c: stone c: 8)
+    (up-get-search-state byzantine-frontier-search-state)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-stone)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (goal byzantine-frontier-generation 1)
+    (up-compare-goal byzantine-frontier-home-point > 0)
+    (not (resource-found stone))
+    (resource-found wood)
+    (or
+        (dropsite-min-distance wood == -1)
+        (dropsite-min-distance wood > 12)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-resource c: wood c: 8)
+    (up-get-search-state byzantine-frontier-search-state)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-wood)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (or
+        (goal byzantine-frontier-target-kind byzantine-frontier-target-gold)
+        (or
+            (goal byzantine-frontier-target-kind byzantine-frontier-target-stone)
+            (goal byzantine-frontier-target-kind byzantine-frontier-target-wood)
+        )
+    )
+    (up-compare-goal byzantine-frontier-search-remote-list > 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-frontier-target-point)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-selected)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-gold)
+    (up-compare-goal byzantine-frontier-search-remote-list == 0)
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-idle)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-stone)
+    (up-compare-goal byzantine-frontier-search-remote-list == 0)
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-idle)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (goal byzantine-frontier-target-kind byzantine-frontier-target-wood)
+    (up-compare-goal byzantine-frontier-search-remote-list == 0)
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-idle)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+)
+
+; Naga placement idiom: persist the point, then use place-point.
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-selected)
+    (goal action-claim-build-pass-singleton 0)
+    (goal construction-retry-barrier-adaptive-guard-tower 0)
+    (not (town-under-attack))
+    (current-age >= castle-age)
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (can-build guard-tower)
+=>
+    (up-set-target-point byzantine-frontier-target-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-build place-point 0 c: guard-tower)
+    (set-goal byzantine-frontier-anchor-type byzantine-frontier-anchor-guard-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-anchor-pending)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-selected)
+    (goal action-claim-build-pass-singleton 0)
+    (goal construction-retry-barrier-adaptive-guard-tower 0)
+    (not (town-under-attack))
+    (current-age >= castle-age)
+    (up-pending-objects c: 79 == 0)
+    (not (up-pending-placement c: 79))
+    (can-build watch-tower)
+=>
+    (up-set-target-point byzantine-frontier-target-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-build place-point 0 c: watch-tower)
+    (set-goal byzantine-frontier-anchor-type byzantine-frontier-anchor-watch-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-anchor-pending)
+)
+
+; World-state anchor witness.
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchor-pending)
+    (goal byzantine-frontier-anchor-type byzantine-frontier-anchor-guard-tower)
+    (or
+        (up-point-contains byzantine-frontier-target-point c: guard-tower)
+        (up-point-contains byzantine-frontier-target-point c: 234)
+    )
+=>
+    (up-copy-point byzantine-frontier-anchor-point byzantine-frontier-target-point)
+    (set-goal demand-adaptive-guard-tower 43)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-anchored)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchor-pending)
+    (goal byzantine-frontier-anchor-type byzantine-frontier-anchor-watch-tower)
+    (up-point-contains byzantine-frontier-target-point c: watch-tower)
+=>
+    (up-copy-point byzantine-frontier-anchor-point byzantine-frontier-target-point)
+    (set-goal demand-adaptive-guard-tower 43)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-anchored)
+)
+
+; Failed placement retries the same target.
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchor-pending)
+    (goal byzantine-frontier-anchor-type byzantine-frontier-anchor-guard-tower)
+    (not (up-point-contains byzantine-frontier-target-point c: guard-tower))
+    (not (up-point-contains byzantine-frontier-target-point c: 234))
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (goal demand-adaptive-guard-tower 1)
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-selected)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchor-pending)
+    (goal byzantine-frontier-anchor-type byzantine-frontier-anchor-watch-tower)
+    (not (up-point-contains byzantine-frontier-target-point c: watch-tower))
+    (up-pending-objects c: 79 == 0)
+    (not (up-pending-placement c: 79)
+    )
+    (goal demand-adaptive-guard-tower 1)
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-selected)
+)
+
+; Frontier wall demand and execution.
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchored)
+    (current-age >= castle-age)
+    (stone-amount >= 650)
+    (not (town-under-attack))
+    (goal demand-adaptive-stone-wall 0)
+=>
+    (set-goal byzantine-wall-material byzantine-wall-material-stone)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-required)
+    (set-goal demand-adaptive-stone-wall 1)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchored)
+    (goal demand-adaptive-stone-wall 1)
+    (goal construction-retry-barrier-adaptive-stone-wall 0)
+    (goal action-claim-build-pass-singleton 0)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-frontier-home-point c: 117)
+=>
+    (up-build-line byzantine-frontier-home-point byzantine-frontier-anchor-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-frontier-wall-witness-point 0)
+    (up-copy-point byzantine-frontier-wall-witness-point byzantine-frontier-anchor-point)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+    (goal demand-adaptive-stone-wall 1)
+    (goal construction-retry-barrier-adaptive-stone-wall 0)
+    (goal action-claim-build-pass-singleton 0)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-frontier-home-point c: 117)
+=>
+    (up-build-line byzantine-frontier-home-point byzantine-frontier-anchor-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+    (or
+        (up-point-contains byzantine-frontier-wall-witness-point c: wall-class)
+        (up-point-contains byzantine-frontier-home-point c: wall-class)
+    )
+=>
+    (set-goal demand-adaptive-stone-wall 45)
+    (set-goal byzantine-frontier-state byzantine-frontier-state-protected)
+    (up-modify-goal byzantine-frontier-generation c:+ 1)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-anchored)
+    (not
+        (or
+            (up-point-contains byzantine-frontier-anchor-point c: guard-tower)
+            (up-point-contains byzantine-frontier-anchor-point c: 234)
+            (up-point-contains byzantine-frontier-anchor-point c: watch-tower)
+        )
+    )
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-selected)
+    (set-goal demand-adaptive-guard-tower 1)
+)
+
+(defrule
+    (goal byzantine-frontier-state byzantine-frontier-state-protected)
+    (goal byzantine-frontier-generation < 2)
+    (not (town-under-attack))
+    (or
+        (goal strategic-primary-intent 3)
+        (or
+            (gold-amount > 6500)
+            (or
+                (wood-amount > 6500)
+                (food-amount > 6500)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-acquire)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (set-goal byzantine-frontier-target-point 0)
 )
 
 ;----------------------------------------------------------------
