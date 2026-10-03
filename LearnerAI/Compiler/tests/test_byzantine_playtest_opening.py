@@ -384,9 +384,9 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         )
         for fragment in (
             "(goal byzantine-target-player-lock 0)",
-            "(goal byzantine-focus-stables >= 2)",
-            "(goal byzantine-focus-ranges >= 2)",
-            "(goal byzantine-focus-siege-workshops >= 1)",
+            "(up-compare-goal byzantine-focus-stables g:>= 2)",
+            "(up-compare-goal byzantine-focus-ranges g:>= 2)",
+            "(up-compare-goal byzantine-focus-siege-workshops g:>= 1)",
             "(goal byzantine-target-player-lock 1)",
             "(set-goal counter-package-mounted_pressure_castle 0)",
             "(set-goal counter-package-ranged_pressure_feudal 0)",
