@@ -45,42 +45,30 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertIn(f"{identity}-pending", observations)
             self.assertIn(f"{identity}-complete", observations)
 
-    def test_monastery_and_monk_support_are_evidence_driven(self):
+    def test_monastery_and_monk_relic_baseline_stays_small(self):
         profile = build_byzantine_stock_strategy(self.effective)
         monastery = profile.demand("castle-monastery-capability")
         monks = profile.demand("castle-monk-floor")
 
-        self.assertEqual(monks.target.minimum, 2)
-        self.assertIn("strategy-monk-support", {
-            evidence.observation_ref
-            for evidence in (*monks.reason, *monks.admissibility)
-        })
-        self.assertIn(
-            "strategy-monk-support-cleared",
+        self.assertEqual(monks.target.minimum, 1)
+        self.assertEqual(
             {evidence.observation_ref for evidence in monks.invalidation},
+            set(),
         )
         self.assertIn(
-            "(or (town-under-attack) (or "
-            "(players-unit-type-count any-enemy mangonel-line >= 2) "
-            "(players-unit-type-count any-enemy monk >= 2)))",
-            monks.execution.requirements,
+            "strategy-castle-age",
+            {evidence.observation_ref for evidence in (*monks.reason, *monks.admissibility)},
         )
-
+        self.assertEqual(
+            {evidence.observation_ref for evidence in monastery.invalidation},
+            set(),
+        )
         self.assertIn(
-            "strategy-monk-support",
+            "strategy-castle-age",
             {evidence.observation_ref for evidence in (*monastery.reason, *monastery.admissibility)},
         )
-        self.assertIn(
-            "strategy-monk-support-cleared",
-            {evidence.observation_ref for evidence in monastery.invalidation},
-        )
-        self.assertIn(
-            "(or (town-under-attack) (or "
-            "(players-unit-type-count any-enemy mangonel-line >= 2) "
-            "(players-unit-type-count any-enemy monk >= 2)))",
-            monastery.execution.requirements,
-        )
-
+        self.assertIn("(current-age >= castle-age)", monks.execution.requirements)
+        self.assertIn("(current-age >= castle-age)", monastery.execution.requirements)
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
