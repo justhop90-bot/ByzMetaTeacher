@@ -3631,13 +3631,13 @@
 (defconst bt-imperial-varangian-floor 6)
 (defconst bt-imperial-arbalester-floor 6)
 (defconst bt-imperial-halberdier-floor 8)
-(defconst bt-imperial-late-cataphract-target 18)
-(defconst bt-imperial-late-varangian-target 14)
-(defconst bt-imperial-late-arbalester-target 14)
-(defconst bt-imperial-late-halberdier-target 18)
-(defconst bt-imperial-late-bombard-target 4)
-(defconst bt-imperial-late-trebuchet-target 4)
-(defconst bt-imperial-late-ram-target 4)
+(defconst bt-imperial-late-cataphract-target 30)
+(defconst bt-imperial-late-varangian-target 24)
+(defconst bt-imperial-late-arbalester-target 24)
+(defconst bt-imperial-late-halberdier-target 30)
+(defconst bt-imperial-late-bombard-target 8)
+(defconst bt-imperial-late-trebuchet-target 8)
+(defconst bt-imperial-late-ram-target 8)
 (defconst bt-imperial-bombard-floor 2)
 (defconst bt-imperial-trebuchet-target 2)
 (defconst bt-castle-attack-siege-target 2)
@@ -7361,6 +7361,66 @@
 )
 
 ;----------------------------------------------------------------
+; Extra Imperial production capacity only under genuine wood surplus.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (wood-amount > 6500)
+    (building-type-count stable < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (wood-amount > 6500)
+    (building-type-count archery-range < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (wood-amount > 6500)
+    (building-type-count barracks < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (can-build barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (wood-amount > 6500)
+    (building-type-count siege-workshop < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
 ; BOUNDED LATE-GAME GATHERER DELTA CONTROL
 ;----------------------------------------------------------------
 ; Efficiency rule: late-game gatherer pressure is a small correction, not a
@@ -7915,7 +7975,7 @@
     (population-headroom > 8)
     (building-type-count market >= 1)
     (players-building-type-count any-ally market >= 1)
-    (unit-type-count-total trade-cart < 6)
+    (unit-type-count-total trade-cart < 12)
     (food-amount > 900)
     (wood-amount > 900)
     (gold-amount > 1400)
