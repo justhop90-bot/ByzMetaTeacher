@@ -27,14 +27,14 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
 
         self.assertIn("(resource-found wood)", camp)
         self.assertIn("(dropsite-min-distance wood > 6)", camp)
-        self.assertIn("(dropsite-min-distance wood <= 18)", camp)
+        self.assertIn("(dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)", camp)
         self.assertIn("(can-build lumber-camp)", camp)
         self.assertIn("(set-goal demand-economy-lumber-camp-floor-1 1)", camp)
         self.assertNotIn("(current-age >= castle-age)\n    (resource-found wood)", camp)
 
         self.assertIn("(resource-found gold)", camp)
         self.assertIn("(dropsite-min-distance gold > 6)", camp)
-        self.assertIn("(dropsite-min-distance gold <= 18)", camp)
+        self.assertIn("(dropsite-min-distance gold s:<= sn-mining-camp-max-distance)", camp)
         self.assertIn("(can-build mining-camp)", camp)
         self.assertIn("(set-goal demand-economy-gold-camp-floor-1 1)", camp)
         self.assertNotIn("(current-age >= castle-age)\n    (resource-found gold)", camp)
@@ -42,34 +42,38 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertNotIn("(build lumber-camp)", camp)
         self.assertNotIn("(build mining-camp)", camp)
 
-    def test_resource_walking_distance_is_bounded_and_never_widens_to_36(self):
+    def test_resource_walking_distance_tracks_camp_policy_and_stops_at_sparse_fallback(self):
         init = self._section_from(
             "; Native economy rule: byzantine-community-economy-initialize",
             "; Native economy rule: byzantine-boar-lure-enable",
         )
         self.assertIn(
-            "(set-strategic-number sn-maximum-wood-drop-distance 16)",
+            "(set-strategic-number sn-maximum-wood-drop-distance 14)",
             init,
         )
         self.assertIn(
-            "(set-strategic-number sn-maximum-gold-drop-distance 16)",
+            "(set-strategic-number sn-maximum-gold-drop-distance 14)",
             init,
         )
 
-        self.assertIn(
-            "(set-strategic-number sn-lumber-camp-max-distance 18)",
-            self.per,
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
         )
         self.assertIn(
-            "(set-strategic-number sn-mining-camp-max-distance 18)",
+            "(set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-wide)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-remote)",
+            controller,
+        )
+        self.assertIn(
+            "(defconst byzantine-resource-camp-radius-wide 24)",
             self.per,
         )
-        self.assertNotIn(
-            "(set-strategic-number sn-lumber-camp-max-distance 36)",
-            self.per,
-        )
-        self.assertNotIn(
-            "(set-strategic-number sn-mining-camp-max-distance 36)",
+        self.assertIn(
+            "(defconst byzantine-resource-camp-radius-remote 30)",
             self.per,
         )
 
@@ -181,11 +185,11 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "; PERSISTENT BYZANTINE STANDING ARMY FLOORS",
         )
         self.assertIn(
-            "(dropsite-min-distance gold <= 18)",
+            "(dropsite-min-distance gold s:<= sn-mining-camp-max-distance)",
             recovery,
         )
         self.assertIn(
-            "(dropsite-min-distance wood <= 18)",
+            "(dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)",
             recovery,
         )
         self.assertIn(
