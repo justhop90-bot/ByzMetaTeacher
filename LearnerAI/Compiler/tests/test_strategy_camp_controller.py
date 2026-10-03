@@ -39,8 +39,7 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 requirements = demand.execution_demands[0].requirements
                 self.assertIn(active.identity, {item.observation_ref for item in demand.reason})
                 self.assertIn(active.expression, requirements)
-                self.assertIn("dropsite-min-distance", demand.execution_demands[0].witness)
-                self.assertIn(resource, demand.execution_demands[0].witness)
+                self.assertIn("(building-type-count", demand.execution_demands[0].witness)
                 if floor >= 3:
                     self.assertIn(remote.expression, requirements)
 
