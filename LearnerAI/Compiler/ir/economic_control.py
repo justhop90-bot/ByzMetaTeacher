@@ -152,7 +152,6 @@ def lower_economy_controller(
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
-    feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
     no_pressure = f"(not {pressure})"
     arena = profile.observation("strategy-arena-map").expression
     opening = lambda value: f"(goal {plan.opening_state} {value})"
