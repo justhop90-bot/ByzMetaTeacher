@@ -950,7 +950,7 @@
 ; Lost relic/healing Monk recovery is a short cadence guard. It prevents the
 ; same loss from repeatedly re-opening the normal two-Monk demand while the
 ; replacement is still training. Timer is cadence only, not Monk truth.
-(defconst byzantine-monk-recovery-timer 18)
+(defconst byzantine-monk-recovery-timer 5)
 (defconst bt-byzantine-monk-recovery-seconds 15)
 
 ; Conditional defensive Monk floor raises the normal two-Monk core to four
@@ -8294,14 +8294,6 @@
     (set-goal demand-castle-mangonel-floor 1)
 )
 
-(defrule
-    (current-age == castle-age)
-    (goal demand-castle-monk-floor 0)
-    (unit-type-count-total monk < bt-castle-monk-floor)
-=>
-    (set-goal demand-castle-monk-floor 1)
-)
-
 ; Imperial default backbone: Cataphracts + Halberdiers + standing siege.
 (defrule
     (current-age >= imperial-age)
@@ -11288,6 +11280,7 @@
     (set-goal demand-castle-mangonel-floor 1)
     (set-goal demand-imperial-bombard-floor 1)
     (set-goal demand-castle-monk-floor 1)
+    (disable-timer byzantine-monk-recovery-timer)
     (set-goal demand-imperial-cavalier-floor 1)
     (set-goal demand-imperial-elite-cataphract-upgrade 0)
     (set-goal demand-imperial-elite-varangian-upgrade 0)
