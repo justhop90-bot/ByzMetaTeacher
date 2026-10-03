@@ -553,11 +553,6 @@ def community_strategy_demands(
         )
         for floor in range(1, max_count + 1):
             count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
-            service_witness = (
-                f"(and (building-type-count {_slug(building.name)} >= {floor}) "
-                f"(and (dropsite-min-distance {label} >= 0) "
-                f"(dropsite-min-distance {label} s:<= {distance_sn})))"
-            )
             requirements = [
                 active_expression,
                 count_guard,
