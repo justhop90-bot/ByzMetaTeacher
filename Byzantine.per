@@ -947,8 +947,8 @@
 (defconst bt-byzantine-monk-defense-heal-seconds 30)
 (defconst bt-byzantine-monk-defense-convert-seconds 20)
 
-; Conditional defensive Monk floor remains separate from the evidence-driven
-; baseline support package. There is no unconditional Castle-age Monk floor.
+; Conditional defensive Monk floor raises the normal two-Monk core to four
+; while sustained defensive/siege pressure is live.
 (defconst demand-castle-monk-defense-floor 1002)
 (defconst issued-castle-monk-defense-floor 1005)
 (defconst pending-castle-monk-defense-floor 1003)
@@ -981,7 +981,7 @@
 (defconst byzantine-university-state-imperial-gunline 4)
 (defconst byzantine-army-attack-ready 299)
 (defconst byzantine-fortification-threat 353)
-(defconst bt-byzantine-defense-monk-floor 6)
+(defconst bt-byzantine-defense-monk-floor 4)
 
 (defrule
     (goal byzantine-static-defense-score-state -1)
@@ -1548,13 +1548,13 @@
     (disable-timer byzantine-monk-defense-convert-timer)
 )
 
-; Acquisition: one Monk is sufficient for relic collection. The search
+; Acquisition: preserve one healer while one Monk handles relic collection.
 ; target is reset every pass so stale relic positions do not become permanent truth.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-relic-control-state byzantine-relic-control-idle)
     (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 1)
+    (unit-type-count-total monk >= 2)
     (or
         (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
         (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
@@ -4485,7 +4485,7 @@
 (defconst bt-castle-varangian-floor 3)
 (defconst bt-castle-skirmisher-floor 4)
 (defconst bt-castle-mangonel-floor 2)
-(defconst bt-castle-monk-floor 1)
+(defconst bt-castle-monk-floor 2)
 (defconst bt-imperial-cavalier-target 2)
 (defconst bt-imperial-hussar-target 4)
 (defconst bt-imperial-onager-target 2)
