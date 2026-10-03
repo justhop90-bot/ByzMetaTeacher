@@ -128,7 +128,7 @@ def lower_opening_selector(
                 parse_expression(
                     guard(
                         f"(and (not {water}) (and (not {arena}) "
-                        f"(and (not (map-type hybrid)) (and (not {arabia}) (not {pressure}))))"
+                        f"(and (not (map-type hybrid)) (and (not {arabia}) (not {pressure})))))"
                     ),
                     SourceLocation(1),
                 ),
