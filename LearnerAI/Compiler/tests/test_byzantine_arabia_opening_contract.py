@@ -15,12 +15,11 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
-    def test_loom_is_a_real_arabia_research_lifecycle(self):
+    def test_loom_is_a_real_standard_feudal_research_lifecycle(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("research-loom")
         self.assertEqual(demand.capability_intent.entity_id, 22)
         requirements = demand.execution_demands[0].requirements
-        self.assertIn("(map-type arabia)", requirements)
         self.assertNotIn("(goal opening-plan 1)", " ".join(requirements))
         self.assertNotIn("(goal opening-plan 2)", " ".join(requirements))
         self.assertIn("(current-age == dark-age)", requirements)
@@ -54,6 +53,17 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertIn("archer-line >= 3", expression)
         self.assertIn("knight >= 1", expression)
         self.assertIn("players-building-type-count any-enemy barracks >= 1", expression)
+
+
+    def test_pressure_clear_returns_economy_to_base_arbitration(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        rules = {rule.identity: rule for rule in control.rules}
+        base = rules["economy-controller-select-base"]
+        self.assertIn("(or (goal opening-plan 1) (goal opening-plan 2))", " ".join(f.source for f in base.facts))
+        self.assertNotIn("economy-controller-select-counter-feudal", rules)
 
     def test_castle_bank_is_persistent_and_releases_at_castle(self):
         profile = build_byzantine_strategy(self.effective)
