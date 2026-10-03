@@ -245,6 +245,7 @@ class SemanticDemand:
     action: SemanticAction
     witness: Expression
     release: Expression
+    action_witness_gates: tuple[Expression, ...] = ()
     completion_witness: CompletionWitnessContract | None = None
     release_state: ReleaseStateContract | None = None
     construction_lifecycle: "ConstructionLifecycle | None" = None
