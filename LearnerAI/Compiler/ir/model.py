@@ -245,7 +245,6 @@ class SemanticDemand:
     action: SemanticAction
     witness: Expression
     release: Expression
-    action_witness_gates: tuple[Expression, ...] = ()
     completion_witness: CompletionWitnessContract | None = None
     release_state: ReleaseStateContract | None = None
     construction_lifecycle: "ConstructionLifecycle | None" = None
@@ -265,6 +264,7 @@ class SemanticDemand:
     timer_states: tuple["TimerState", ...] = ()
     persistent_controls: tuple["PersistentControlRef", ...] = ()
     location: SourceLocation | None = None
+    action_witness_gates: tuple[Expression, ...] = ()
 
     @property
     def name(self) -> str:
