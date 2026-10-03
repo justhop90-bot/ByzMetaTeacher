@@ -111,9 +111,12 @@ class ByzantineNativeSeamTest(unittest.TestCase):
         ):
             self.assertIn(fragment, self.per)
 
+        deer_start = self.per.index("; NATIVE NATURAL-FOOD DEER CONTROLLER")
+        deer_end = self.per.index("; NATIVE FOOD RESOURCE SELECTOR", deer_start)
+        deer_block = self.per[deer_start:deer_end]
         self.assertNotIn(
             "(up-request-hunters c: 1)",
-            self.per,
+            deer_block,
             "The new deer controller must not rely on the evidence-only hunter shortcut.",
         )
 
