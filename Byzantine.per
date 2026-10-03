@@ -5660,6 +5660,8 @@
 =>
     (set-strategic-number sn-target-player-number 0)
     (set-goal byzantine-target-player-lock 0)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
 )
 
 (defrule
@@ -5734,6 +5736,8 @@
     (goal byzantine-army-attack-ready 0)
 =>
     (set-goal byzantine-target-player-lock 0)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
 )
 
 (defrule
