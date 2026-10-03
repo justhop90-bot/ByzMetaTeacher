@@ -54,6 +54,42 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         self.assertIn("(stone-amount >= 250)", action_block)
         self.assertIn("(gold-amount >= 1000)", action_block)
 
+    def test_extreme_surplus_adds_a_final_production_capacity_tier(self):
+        # Final throughput tier directly addresses the observed all-resource
+        # late-game bank instead of adding more passive static defense.
+        self.assertIn(
+            "(set-goal byzantine-production-barracks-target 6)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-production-archery-target 5)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-production-stable-target 5)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-production-siege-target 5)",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-production-barracks-target 6)",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-production-archery-target 5)",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-production-stable-target 5)",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-production-siege-target 5)",
+            self.per,
+        )
+
     def test_greek_fire_land_trigger_requires_actual_artillery(self):
         marker = "(set-goal demand-water-greek-fire 1)"
         start = self.per.index(marker) - 2200
