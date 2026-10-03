@@ -779,6 +779,12 @@
 (defconst byzantine-production-stable-target 692)
 (defconst byzantine-production-siege-target 693)
 (defconst byzantine-production-castle-target 694)
+; Community-native combat control. These documented engine controls keep the
+; existing attack lifecycle from falling back to conservative engine defaults.
+(defconst sn-attack-intelligence 103)
+(defconst sn-enable-offensive-priority 254)
+(defconst sn-local-targeting-mode 286)
+(defconst sn-zero-priority-distance 34)
 
 ; Defensive geometry / static-artillery conversion.
 (defconst byzantine-defensive-build-point 710)
@@ -4781,14 +4787,14 @@
 
 ; Native control rule: counter-package-selection-001-infantry_pressure_castle
 (defrule
-    (and (current-age >= castle-age) (players-unit-type-count any-enemy militia-line >= 5))
+    (and (current-age >= castle-age) (players-unit-type-count focus-player militia-line >= 5))
 =>
     (set-goal counter-package-infantry_pressure_castle 1)
 )
 
 ; Native control rule: counter-package-selection-002-mounted_pressure_castle
 (defrule
-    (players-unit-type-count any-enemy knight >= 3)
+    (players-unit-type-count focus-player knight >= 3)
 =>
     (set-goal counter-package-mounted_pressure_castle 1)
 )
@@ -4797,8 +4803,8 @@
 (defrule
     (current-age == feudal-age)
     (or
-        (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-        (players-unit-type-count any-enemy knight >= 1)
+        (players-unit-type-count focus-player scout-cavalry-line >= 3)
+        (players-unit-type-count focus-player knight >= 1)
     )
 =>
     (set-goal counter-package-mounted_pressure_feudal 1)
@@ -4806,14 +4812,14 @@
 
 ; Native control rule: counter-package-selection-004-ranged_pressure_feudal
 (defrule
-    (and (current-age == feudal-age) (players-unit-type-count any-enemy archer-line >= 3))
+    (and (current-age == feudal-age) (players-unit-type-count focus-player archer-line >= 3))
 =>
     (set-goal counter-package-ranged_pressure_feudal 1)
 )
 
 ; Native control rule: counter-package-selection-005-siege_pressure_castle
 (defrule
-    (and (current-age >= castle-age) (players-unit-type-count any-enemy mangonel-line >= 2))
+    (and (current-age >= castle-age) (players-unit-type-count focus-player mangonel-line >= 2))
 =>
     (set-goal counter-package-siege_pressure_castle 1)
 )
@@ -5262,6 +5268,12 @@
     (set-goal strategic-primary-intent 0)
     (set-goal byzantine-natural-food-state byzantine-natural-food-stable)
     (set-goal demand-economy-barracks-floor-1 1)
+    ; Community-native combat controls. The existing attack lifecycle owns
+    ; attack issuance; these only control engine-level group behavior.
+    (set-strategic-number sn-attack-intelligence 1)
+    (set-strategic-number sn-local-targeting-mode 1)
+    (set-strategic-number sn-enable-offensive-priority 1)
+    (set-strategic-number sn-zero-priority-distance 255)
     (disable-self)
 )
 
@@ -8765,8 +8777,11 @@
 ;----------------------------------------------------------------
 ; The attack gate is persistent and army-based. Enemy composition changes the
 ; selected backbone, but does not create the need to attack.
-; Castle: 4 Cataphracts + 4 Skirmishers + 2 Mangonels + 1 Monk.
-; Imperial: selected 6-unit backbone + 8 Halberdiers + 2/2/2 siege.
+; Castle: assembled army >= 8 plus a valid Castle backbone; premium Cataphracts
+; are demanded only under real infantry pressure. Fortified assaults use the
+; existing siege muster.
+; Imperial: attack on an assembled backbone plus one sufficient siege anchor;
+; do not wait for simultaneous Treb + Bombard + Ram floors.
 
 (defrule
     (current-age == castle-age)
@@ -8796,34 +8811,23 @@
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
-    (or
-        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
-        (or
-            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
-            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
-        )
-    )
-    (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)
+    (attack-soldier-count >= 12)
     (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
     (or
         (and
-            (goal byzantine-siege-scale byzantine-siege-scale-standard)
-            (and
-                (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)
-                (and
-                    (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)
-                    (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)
-                )
-            )
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+            (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)
         )
         (and
-            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-            (and
-                (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
-                (and
-                    (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
-                    (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
-                )
+            (or
+                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+            )
+            (or
+                (unit-type-count-total trebuchet >= 1)
+                (unit-type-count-total bombard-cannon >= 1)
+                (unit-type-count-total battering-ram-line >= 1)
+                (unit-type-count-total mangonel-line >= 2)
             )
         )
     )
@@ -9406,7 +9410,7 @@
     (not
         (and
             (up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-castle-army)
-            (up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-castle-mangonel-floor)
+            (up-group-size c: byzantine-siege-muster-mangonel-group >= bt-castle-mangonel-floor)
         )
     )
 =>
