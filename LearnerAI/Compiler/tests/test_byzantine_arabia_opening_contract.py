@@ -21,8 +21,8 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertEqual(demand.capability_intent.entity_id, 22)
         requirements = demand.execution_demands[0].requirements
         self.assertIn("(map-type arabia)", requirements)
-        self.assertIn("(goal opening-plan 1)", requirements[0] + " " + " ".join(requirements))
-        self.assertIn("(goal opening-plan 2)", " ".join(requirements))
+        self.assertNotIn("(goal opening-plan 1)", " ".join(requirements))
+        self.assertNotIn("(goal opening-plan 2)", " ".join(requirements))
         self.assertIn("(current-age == dark-age)", requirements)
         self.assertIn("(unit-type-count-total villager >= 13)", requirements)
         self.assertIn("(building-type-count-total lumber-camp >= 1)", requirements)
