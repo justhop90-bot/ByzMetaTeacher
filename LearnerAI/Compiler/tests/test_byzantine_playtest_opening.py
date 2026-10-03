@@ -66,6 +66,25 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(goal economy-posture 9)", writer)
         self.assertIn("(set-strategic-number sn-gold-gatherer-percentage 38)", writer)
 
+    def test_castle_attack_ready_uses_assembled_backbone_not_fixed_monk_siege_package(self):
+        block = self._rule_block("; ATTACK THRESHOLDS AND REINFORCEMENT")
+        self.assertIn("(attack-soldier-count >= 8)", block)
+        self.assertIn("(goal counter-package-infantry_pressure_castle 1)", block)
+        self.assertIn("(unit-type-count-total knight-line >= 2)", block)
+        self.assertNotIn("(unit-type-count-total monk >= bt-castle-monk-floor)", block)
+
+    def test_premium_castle_demands_invalidate_when_infantry_pressure_clears(self):
+        cat = self._rule_block(
+            "; Strategic invalidation: Castle Cataphract demand is only persistent while infantry pressure is real."
+        )
+        var = self._rule_block(
+            "; Strategic invalidation: Castle Varangian demand clears when infantry pressure clears."
+        )
+        self.assertIn("(goal demand-castle-cataphract-floor 1)", cat)
+        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", cat)
+        self.assertIn("(goal demand-castle-varangian-guard-floor 1)", var)
+        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", var)
+
     def test_castle_attack_groups_are_enabled_for_boom(self):
         block = self._rule_block("; Native control rule: sn-mode-attack-groups-castle-008")
         self.assertIn("(goal strategy-posture 3)", block)
