@@ -10019,6 +10019,9 @@
     (up-reset-attack-now)
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
     (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
 )
 
@@ -10847,6 +10850,9 @@
 => 
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
 )
 
 (defrule
