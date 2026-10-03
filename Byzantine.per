@@ -9076,7 +9076,7 @@
     (set-goal demand-research-two-man-saw 1)
     (set-goal demand-research-bodkin-arrow 1)
     (set-goal demand-research-conscription 1)
-    (set-goal demand-research-chemistry 1)
+    (set-goal demand-research-chemistry 0)
     (set-goal demand-research-gold-mining 1)
     (set-goal demand-research-gold-shaft-mining 1)
     (set-goal demand-research-heavy-plow 1)
@@ -14853,6 +14853,22 @@
     (set-goal demand-adaptive-guard-tower 1)
 )
 
+; Chemistry is a gunline capability unlock, not an unconditional Imperial purchase.
+(defrule
+    (current-age >= imperial-age)
+    (building-type-count university >= 1)
+    (not (research-completed chemistry))
+    (goal demand-research-chemistry 0)
+    (or
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        (goal demand-imperial-bombard-floor 1)
+        (unit-type-count bombard-cannon >= 1)
+        (building-type-count bombard-tower >= 1)
+    )
+=>
+    (set-goal demand-research-chemistry 1)
+)
+
 ; Defensive research demand arming is state-driven and world-state-driven.
 (defrule
     (or
@@ -16592,7 +16608,15 @@
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
         (goal byzantine-university-state byzantine-university-state-tower-network)
     )
-    (building-type-count 117 >= 1)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
+        (goal byzantine-frontier-state byzantine-frontier-state-protected)
+        (building-type-count 117 >= 2)
+        (and
+            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+            (gate-count byzantine-wall-native-perimeter >= 1)
+        )
+    )
     (can-research-with-escrow ri-fortified-wall)
 =>
     (release-escrow food)
@@ -16715,14 +16739,24 @@
             )
     )
     (or
-        (building-type-count guard-tower >= 1)
-        (or
-                (building-type-count castle >= 1)
-                (or
-                        (building-type-count keep >= 1)
-                        (building-type-count bombard-tower >= 1)
-                    )
-            )
+        (and
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+            (building-type-count guard-tower >= 1)
+        )
+        (and
+            (building-type-count guard-tower >= 2)
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+        )
+        (and
+            (building-type-count guard-tower >= 1)
+            (building-type-count keep >= 1)
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+        )
+        (and
+            (building-type-count guard-tower >= 1)
+            (building-type-count bombard-tower >= 1)
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+        )
     )
     (can-research-with-escrow ri-ballistics)
 =>
@@ -16847,14 +16881,15 @@
         (goal byzantine-university-state byzantine-university-state-tower-network)
     )
     (or
-        (up-pending-objects c: 117 >= 1)
-        (or
-                (up-pending-objects c: 72 >= 1)
-                (or
-                        (up-pending-objects c: 234 >= 1)
-                        (up-pending-objects c: 235 >= 1)
-                    )
-            )
+        (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+        (and
+            (up-pending-objects c: 117 >= 1)
+            (up-pending-objects c: 234 >= 1)
+        )
+        (and
+            (up-pending-objects c: 117 >= 1)
+            (up-pending-objects c: 235 >= 1)
+        )
     )
     (can-research-with-escrow ri-treadmill-crane)
 =>
@@ -16910,11 +16945,20 @@
     (building-type-count university >= 1)
     (goal byzantine-university-state byzantine-university-state-imperial-gunline)
     (or
-        (building-type-count guard-tower >= 2)
-        (or
-                (building-type-count keep >= 1)
-                (building-type-count bombard-tower >= 1)
-            )
+        (and
+            (building-type-count guard-tower >= 2)
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+        )
+        (and
+            (building-type-count guard-tower >= 1)
+            (building-type-count keep >= 1)
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+        )
+        (and
+            (building-type-count guard-tower >= 1)
+            (building-type-count bombard-tower >= 1)
+            (up-compare-goal byzantine-wall-anchor-pair > 0)
+        )
     )
     (can-research-with-escrow ri-arrowslits)
 =>
