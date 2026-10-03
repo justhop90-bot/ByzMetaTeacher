@@ -129,6 +129,38 @@
 (defconst bt-byzantine-natural-food-deer-seconds 30)
 (defconst byzantine-natural-food-selector-forage 742)
 (defconst byzantine-natural-food-selector-deer 743)
+; Native aliases used in typed c: operands below. IDs come from the
+; checked-in Byzantine factual manifest / compiler unit-line registry.
+(defconst university 209)
+(defconst monastery 104)
+(defconst blacksmith 103)
+(defconst market 84)
+(defconst mill 68)
+(defconst gate-class 939)
+(defconst palisade-wall 72)
+(defconst stone-wall 117)
+(defconst forage-bush-class 907)
+(defconst deer-class 909)
+(defconst petard 440)
+(defconst trade-cart 128)
+(defconst villager 83)
+(defconst spearman-line 93)
+(defconst skirmisher-line 7)
+(defconst archer-line 4)
+(defconst militia-line 74)
+(defconst cataphract 40)
+(defconst knight-line 38)
+(defconst cataphract-line 40)
+(defconst varangian-guard-line 2703)
+(defconst bombard-cannon 36)
+(defconst trebuchet 331)
+(defconst fishing-ship 13)
+(defconst transport-ship 545)
+(defconst fire-galley 1103)
+(defconst galley 539)
+(defconst fire-ship 529)
+(defconst galleon 442)
+(defconst dromon 1795)
 (defconst sn-stone-gatherer-percentage 119)
 (defconst sn-defer-dropsite-update 273)
 (defconst sn-allow-adjacent-dropsites 272)
@@ -4806,7 +4838,9 @@
 
 ; Native control rule: counter-package-selection-001-infantry_pressure_castle
 (defrule
-    (and (current-age >= castle-age) (goal byzantine-focus-military-pop >= 6) (players-unit-type-count target-player militia-line >= 5))
+    (and (current-age >= castle-age)
+         (and (goal byzantine-focus-military-pop >= 6)
+              (players-unit-type-count target-player militia-line >= 5)))
 =>
     (set-goal counter-package-infantry_pressure_castle 1)
 )
@@ -4831,14 +4865,17 @@
 
 ; Native control rule: counter-package-selection-004-ranged_pressure_feudal
 (defrule
-    (and (current-age == feudal-age) (players-unit-type-count target-player archer-line >= 3))
+    (and (current-age == feudal-age)
+         (players-unit-type-count target-player archer-line >= 3))
 =>
     (set-goal counter-package-ranged_pressure_feudal 1)
 )
 
 ; Native control rule: counter-package-selection-005-siege_pressure_castle
 (defrule
-    (and (current-age >= castle-age) (goal byzantine-focus-military-pop >= 6) (players-unit-type-count target-player mangonel-line >= 2))
+    (and (current-age >= castle-age)
+         (and (goal byzantine-focus-military-pop >= 6)
+              (players-unit-type-count target-player mangonel-line >= 2)))
 =>
     (set-goal counter-package-siege_pressure_castle 1)
 )
@@ -5287,6 +5324,13 @@
     (set-goal strategic-primary-intent 0)
     (set-goal byzantine-natural-food-state byzantine-natural-food-stable)
     (set-goal demand-economy-barracks-floor-1 1)
+    (disable-self)
+)
+
+; Native control rule: byzantine-native-seam-bootstrap
+(defrule
+    (true)
+=>
     ; Community-native combat controls. The existing attack lifecycle owns
     ; attack issuance; these only control engine-level group behavior.
     (set-strategic-number sn-attack-intelligence 1)
@@ -5307,14 +5351,10 @@
     (disable-self)
 )
 
-; Native engine target/priority profile. This is the Byzantine control-plane
-; owner for engine target evaluation and class priorities. It deliberately does
-; not replace the persistent attack lifecycle below.
+; Native engine target evaluation profile.
 (defrule
     (true)
 =>
-    ; Naga-derived, Byzantine-safe target evaluation: siege and time-to-kill matter,
-    ; while distance/randomness do not override objective priority.
     (set-strategic-number sn-target-evaluation-siege-weapon 50)
     (set-strategic-number sn-target-evaluation-damage-capability 20)
     (set-strategic-number sn-target-evaluation-in-progress 0)
@@ -5329,8 +5369,13 @@
     (set-strategic-number sn-target-evaluation-boat 0)
     (set-strategic-number sn-target-evaluation-continent 0)
     (set-strategic-number sn-target-evaluation-kills 0)
+    (disable-self)
+)
 
-    ; Offensive priorities: fortified anchors first, then production, then economy.
+; Byzantine offensive class priorities.
+(defrule
+    (true)
+=>
     (up-set-offense-priority c: castle c: 100)
     (up-set-offense-priority c: keep c: 90)
     (up-set-offense-priority c: bombard-tower c: 85)
@@ -5351,9 +5396,14 @@
     (up-set-offense-priority c: gate-class c: 5)
     (up-set-offense-priority c: palisade-wall c: 2)
     (up-set-offense-priority c: stone-wall c: 0)
+    (disable-self)
+)
 
-    ; Defensive priorities: preserve the economic/military anchors that the
-    ; custom Byzantine geometry scorer already reasons about.
+; Byzantine defensive class priorities. Resource-specific defense SNs remain
+; outside the verified DE executable surface; custom geometry owns those cases.
+(defrule
+    (true)
+=>
     (up-set-defense-priority c: castle c: 5000)
     (up-set-defense-priority c: keep c: 5000)
     (up-set-defense-priority c: bombard-tower c: 4500)
@@ -5363,12 +5413,6 @@
     (up-set-defense-priority c: palisade-wall c: 3000)
     (up-set-defense-priority c: gate-class c: 1250)
     (up-set-defense-priority c: market c: 250)
-    (set-strategic-number sn-town-defend-priority 1)
-    (set-strategic-number sn-gold-defend-priority 1)
-    (set-strategic-number sn-stone-defend-priority 1)
-    (set-strategic-number sn-forage-defend-priority 1)
-    (set-strategic-number sn-relic-defend-priority 1)
-    (set-strategic-number sn-livestock-defend-priority 1)
     (disable-self)
 )
 
@@ -5555,9 +5599,13 @@
 (defrule
     (or
         (strategic-number sn-target-player-number <= 0)
-        (strategic-number sn-target-player-number >= 9)
-        (not (player-in-game target-player))
-        (stance-toward target-player ally)
+        (or
+            (strategic-number sn-target-player-number >= 9)
+            (or
+                (not (player-in-game target-player))
+                (stance-toward target-player ally)
+            )
+        )
     )
 =>
     (set-strategic-number sn-target-player-number 0)
@@ -5686,8 +5734,10 @@
     (goal byzantine-natural-food-deer-state 2)
     (or
         (not (up-set-target-by-id g: byzantine-natural-food-deer-id))
-        (goal byzantine-natural-food-deer-distance > 3400)
-        (current-age > feudal-age)
+        (or
+            (goal byzantine-natural-food-deer-distance > 3400)
+            (current-age > feudal-age)
+        )
     )
 =>
     (set-goal byzantine-natural-food-deer-id -1)
@@ -5700,8 +5750,10 @@
     (goal byzantine-natural-food-deer-state 3)
     (or
         (not (up-set-target-by-id g: byzantine-natural-food-deer-id))
-        (building-type-count-total mill >= 2)
-        (current-age >= castle-age)
+        (or
+            (building-type-count-total mill >= 2)
+            (current-age >= castle-age)
+        )
     )
 =>
     (set-goal byzantine-natural-food-deer-state 0)
