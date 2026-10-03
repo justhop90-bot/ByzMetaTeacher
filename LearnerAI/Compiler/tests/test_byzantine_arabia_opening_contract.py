@@ -7,6 +7,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     lower_strategy_profile,
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.ir.game_data import Resource
 
 
 class ByzantineArabiaOpeningContractTests(unittest.TestCase):
@@ -73,8 +74,12 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
             "research-gold-mining",
         ):
             demand = profile.demand(identity)
-            requirements = demand.execution_demands[0].requirements
-            self.assertIn("(goal byzantine-castle-bank-state 0)", requirements)
+            floors = {
+                floor.resource: floor.minimum
+                for floor in demand.opportunity_cost.protected_floors
+            }
+            self.assertGreaterEqual(floors[Resource.FOOD], 800)
+            self.assertGreaterEqual(floors[Resource.GOLD], 200)
 
 
 if __name__ == "__main__":
