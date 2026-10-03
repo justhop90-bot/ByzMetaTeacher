@@ -83,6 +83,8 @@ The typed Byzantine attack lifecycle is corrected so:
 
 Native attack completion remains an open runtime boundary unless independently proven.
 
+The checked-in runtime artifact had an additional composition gate that required four Cataphracts, four Skirmishers, two Mangonels, and one Monk before any Castle attack could become attack-ready. That gate is replaced by an assembled-backbone contract: at least eight attack soldiers plus a valid Castle backbone, with Cataphracts when infantry pressure is real, Knights otherwise, or the existing Skirmisher floor. Fortified assaults continue through the existing siege-approach state instead of making siege and Monks a universal attack prerequisite.
+
 ## 6. Ownership and non-duplication
 
 | Responsibility | Single owner |
