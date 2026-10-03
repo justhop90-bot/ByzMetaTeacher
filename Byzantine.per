@@ -22574,10 +22574,7 @@
     (current-age >= castle-age)
     (building-type-count-total monastery >= 1)
     (not (unit-type-count-total monk >= bt-castle-monk-floor))
-    (or
-        (up-timer-status byzantine-monk-recovery-timer c:== timer-disabled)
-        (up-timer-status byzantine-monk-recovery-timer c:== timer-triggered)
-    )
+    (up-timer-status byzantine-monk-recovery-timer c:== timer-disabled)
 =>
     (set-goal demand-castle-monk-floor 1)
     (disable-timer byzantine-monk-recovery-timer)
@@ -22600,6 +22597,7 @@
     (unit-type-count monk >= bt-castle-monk-floor)
 =>
     (set-goal demand-castle-monk-floor 54)
+    (disable-timer byzantine-monk-recovery-timer)
 )
 
 ; Pending admission: castle-monk-floor | ISSUED/PENDING -> PENDING
