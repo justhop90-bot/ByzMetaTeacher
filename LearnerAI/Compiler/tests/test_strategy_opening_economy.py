@@ -153,6 +153,18 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             (50, 25, 25),
         )
 
+        for demand in profile.demands:
+            if demand.identity in {
+                "research-wheelbarrow",
+                "research-double-bit-axe",
+                "research-horse-collar",
+                "research-gold-mining",
+            }:
+                self.assertIn(
+                    "(current-age >= castle-age)",
+                    demand.execution_demands[0].requirements,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
