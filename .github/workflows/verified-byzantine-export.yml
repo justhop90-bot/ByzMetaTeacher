@@ -1,0 +1,16 @@
+name: Verified Byzantine export
+
+on:
+  push:
+    paths:
+      - "Byzantine.per"
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Byzantine-main-verified
+          path: Byzantine.per
