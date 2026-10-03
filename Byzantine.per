@@ -4412,6 +4412,21 @@
 (defconst bt-boom-mill-target-2tc 2)
 (defconst bt-boom-mill-target-3tc 3)
 (defconst construction-retry-barrier-economy-barracks-floor-1 266)
+; Field-behavior repair state. Resource-front placement is bounded and
+; independent of Castle-age strategy timing; offensive siege stores the exact
+; nearby enemy Castle point so the standing army can push the siege package into
+; the actual fortified objective instead of issuing an untargeted attack-now.
+(defconst byzantine-resource-camp-state 719)
+(defconst byzantine-resource-camp-point 720)
+(defconst byzantine-resource-camp-kind 722)
+(defconst byzantine-resource-camp-kind-wood 1)
+(defconst byzantine-resource-camp-kind-gold 2)
+(defconst byzantine-offensive-castle-point 723)
+(defconst byzantine-offensive-castle-valid 725)
+(defconst byzantine-offensive-push-state 726)
+(defconst byzantine-offensive-push-idle 0)
+(defconst byzantine-offensive-push-staging 1)
+(defconst byzantine-offensive-push-assault 2)
 
 ; Native control rule: strategy-posture-initialize-000
 (defrule
@@ -5257,7 +5272,8 @@
     (set-strategic-number sn-maximum-food-drop-distance 16)
     (set-strategic-number sn-preferred-mill-placement 1)
     (set-strategic-number sn-boar-lure-destination 0)
-    (set-strategic-number sn-maximum-wood-drop-distance 32)
+    (set-strategic-number sn-maximum-wood-drop-distance 16)
+    (set-strategic-number sn-maximum-gold-drop-distance 16)
     ; Keep automatic repair on critical structures, siege, houses, towers, walls, and gates.
     ; AIRef defines sn-object-repair-level as a bitmask: 1 critical castle/monastery,
     ; 2 town center, 4 barracks, 2048 houses, 4096 towers, 8192 walls/gates,
@@ -6224,8 +6240,10 @@
 
 ;----------------------------------------------------------------
 ; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER
-; resource-front observation -> native placement radius -> construction witness
-; resource-found is observation evidence, not continuous world truth.
+; Resource-front observation -> bounded native placement radius -> construction.
+; The controller deliberately refuses to widen camp/drop distances indefinitely:
+; near resources get a new dropsite, distant resources do not drag villagers
+; across the map to feed a singleton resource node.
 (defrule
     (or
         (up-compare-sn sn-allow-adjacent-dropsites != 0)
@@ -6239,59 +6257,78 @@
 (defrule
     (current-age < feudal-age)
 =>
-    (set-strategic-number sn-lumber-camp-max-distance 16)
-    (set-strategic-number sn-mining-camp-max-distance 16)
+    (set-strategic-number sn-lumber-camp-max-distance 14)
+    (set-strategic-number sn-mining-camp-max-distance 14)
 )
 
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
 =>
-    (set-strategic-number sn-lumber-camp-max-distance 20)
-    (set-strategic-number sn-mining-camp-max-distance 20)
+    (set-strategic-number sn-lumber-camp-max-distance 18)
+    (set-strategic-number sn-mining-camp-max-distance 18)
 )
 
 (defrule
     (and (current-age >= castle-age) (current-age < imperial-age))
 =>
-    (set-strategic-number sn-lumber-camp-max-distance 28)
-    (set-strategic-number sn-mining-camp-max-distance 28)
+    (set-strategic-number sn-lumber-camp-max-distance 18)
+    (set-strategic-number sn-mining-camp-max-distance 18)
 )
 
 (defrule
     (current-age >= imperial-age)
 =>
-    (set-strategic-number sn-lumber-camp-max-distance 36)
-    (set-strategic-number sn-mining-camp-max-distance 36)
+    (set-strategic-number sn-lumber-camp-max-distance 20)
+    (set-strategic-number sn-mining-camp-max-distance 20)
 )
 
+; Byzantine near-resource lumber-camp recovery
 (defrule
-    (or
-        (dropsite-min-distance wood <= -1)
-        (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance)
-    )
-    (strategic-number sn-lumber-camp-max-distance < 36)
+    (resource-found wood)
+    (dropsite-min-distance wood > 6)
+    (dropsite-min-distance wood <= 18)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 6)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
 =>
-    (up-modify-sn sn-lumber-camp-max-distance c:+ 4)
+    (set-strategic-number sn-maximum-wood-drop-distance 16)
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
+; Byzantine near-resource mining-camp recovery
 (defrule
-    (or
-        (dropsite-min-distance gold <= -1)
-        (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)
-    )
-    (strategic-number sn-mining-camp-max-distance < 36)
+    (resource-found gold)
+    (dropsite-min-distance gold > 6)
+    (dropsite-min-distance gold <= 18)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
 =>
-    (up-modify-sn sn-mining-camp-max-distance c:+ 4)
+    (set-strategic-number sn-maximum-gold-drop-distance 16)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
+; The same bounded front rule applies to stone, but Castle/Imperial stone is
+; strategic and therefore does not bypass the existing castle-stone policy.
 (defrule
-    (or
-        (dropsite-min-distance stone <= -1)
-        (dropsite-min-distance stone s:>= sn-mining-camp-max-distance)
-    )
-    (strategic-number sn-mining-camp-max-distance < 36)
+    (current-age >= castle-age)
+    (resource-found stone)
+    (dropsite-min-distance stone > 6)
+    (dropsite-min-distance stone <= 18)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
 =>
-    (up-modify-sn sn-mining-camp-max-distance c:+ 4)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
 ; Per-pass transient action arbitration
@@ -6820,6 +6857,16 @@
 =>
     (set-goal byzantine-fortification-threat 0)
 )
+(defrule
+    (goal byzantine-offensive-castle-valid -1)
+=>
+    (set-goal byzantine-offensive-castle-valid 0)
+)
+(defrule
+    (goal byzantine-offensive-push-state -1)
+=>
+    (set-goal byzantine-offensive-push-state byzantine-offensive-push-idle)
+)
 
 (defrule
     (goal byzantine-remote-resource-state -1)
@@ -6975,41 +7022,9 @@
     (not (town-under-attack))
     (goal byzantine-army-reinforcement 0)
     (timer-triggered byzantine-remote-resource-productivity-timer)
-    (resource-found gold)
-    (gold-amount < 1800)
-    (dropsite-min-distance gold > 18)
-=>
-    (set-goal byzantine-remote-resource-state byzantine-remote-resource-observe)
-)
-
-(defrule
-    (current-age >= castle-age)
-    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
-    (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
-    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
-    (unit-type-count-total villager >= 45)
-    (not (town-under-attack))
-    (goal byzantine-army-reinforcement 0)
-    (timer-triggered byzantine-remote-resource-productivity-timer)
     (resource-found wood)
     (wood-amount < 1400)
     (dropsite-min-distance wood == -1)
-=>
-    (set-goal byzantine-remote-resource-state byzantine-remote-resource-observe)
-)
-
-(defrule
-    (current-age >= castle-age)
-    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
-    (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
-    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
-    (unit-type-count-total villager >= 45)
-    (not (town-under-attack))
-    (goal byzantine-army-reinforcement 0)
-    (timer-triggered byzantine-remote-resource-productivity-timer)
-    (resource-found wood)
-    (wood-amount < 1400)
-    (dropsite-min-distance wood > 18)
 =>
     (set-goal byzantine-remote-resource-state byzantine-remote-resource-observe)
 )
@@ -7022,7 +7037,10 @@
     (gold-amount < 1800)
     (or
         (dropsite-min-distance gold == -1)
-        (dropsite-min-distance gold > 18)
+        (and
+            (dropsite-min-distance gold > 6)
+            (dropsite-min-distance gold <= 18)
+        )
     )
 =>
     (set-goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
@@ -7036,7 +7054,10 @@
     (wood-amount < 1400)
     (or
         (dropsite-min-distance wood == -1)
-        (dropsite-min-distance wood > 18)
+        (and
+            (dropsite-min-distance wood > 6)
+            (dropsite-min-distance wood <= 18)
+        )
     )
     (not (resource-found gold))
 =>
@@ -7150,7 +7171,9 @@
     (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-decide)
     (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
-    (dropsite-min-distance gold > 18)
+    (dropsite-min-distance gold > 6)
+    (dropsite-min-distance gold <= 18)
+    (not (goal byzantine-fortification-threat 1))
 =>
     (up-retask-gatherers gold c: byzantine-economy-delta-step)
     (set-goal demand-economy-gold-camp-floor-2 1)
@@ -7163,7 +7186,9 @@
     (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-decide)
     (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
-    (dropsite-min-distance wood > 18)
+    (dropsite-min-distance wood > 6)
+    (dropsite-min-distance wood <= 18)
+    (not (goal byzantine-fortification-threat 1))
 =>
     (up-retask-gatherers wood c: byzantine-economy-delta-step)
     (set-goal demand-economy-lumber-camp-floor-2 1)
@@ -8908,6 +8933,9 @@
     (goal byzantine-fortification-probe-state byzantine-fortification-probe-castle)
     (up-compare-goal 368 c:> 0)
 =>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-offensive-castle-point)
+    (set-goal byzantine-offensive-castle-valid 1)
     (set-goal byzantine-fortification-probe-found 1)
     (up-reset-search 1 1 1 1)
     (up-set-target-point byzantine-fortification-probe-point)
@@ -8989,6 +9017,7 @@
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (set-goal byzantine-fortification-threat 0)
+    (set-goal byzantine-offensive-castle-valid 0)
     (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-idle)
     (enable-timer byzantine-fortification-probe-timer bt-fortification-probe-seconds)
 )
@@ -9035,6 +9064,53 @@
     (goal byzantine-fortification-threat 0)
 =>
     (set-goal byzantine-siege-approach-claim 0)
+)
+
+; Fortified Castle repair: the probe now owns an exact Castle point.
+; Do not leave the controller stranded in FORTIFIED. Transition into STAGING,
+; then issue one target-object attack-move with the entire military search result.
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (goal byzantine-siege-approach-claim 1)
+    (goal byzantine-offensive-castle-valid 1)
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-staging)
+    (set-goal byzantine-offensive-push-state byzantine-offensive-push-staging)
+)
+
+(defrule
+    (goal byzantine-siege-approach byzantine-siege-approach-staging)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-push-state byzantine-offensive-push-staging)
+    (goal byzantine-offensive-castle-valid 1)
+=>
+    (set-strategic-number sn-percent-attack-soldiers 100)
+    (set-strategic-number sn-number-tasked-units 20)
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-castle-point)
+    (up-filter-distance c: 0 c: 12)
+    (up-find-remote c: 82 c: 1)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-target-objects 0 action-attack-move -1 stance-aggressive)
+    (up-reset-filters)
+    (up-full-reset-search)
+    (set-goal byzantine-offensive-push-state byzantine-offensive-push-assault)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-assault)
+    (set-goal byzantine-army-attack-ready 2)
+)
+
+; Once the group order is issued, restore the normal policy underlay. The
+; attack-move order remains issued to the selected units; later attack-now
+; cycles inherit the ordinary 75% policy instead of permanently mutating it.
+(defrule
+    (goal byzantine-offensive-push-state byzantine-offensive-push-assault)
+    (goal byzantine-army-attack-ready 2)
+=>
+    (set-strategic-number sn-percent-attack-soldiers 75)
+    (set-strategic-number sn-number-tasked-units 0)
 )
 
 ; The attack-ready witness already proves the selected army and required siege
@@ -9095,6 +9171,7 @@
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
 =>
+    (set-strategic-number sn-percent-attack-soldiers 100)
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
@@ -19537,6 +19614,17 @@
     (release-escrow gold)
     (research onager)
     (set-goal demand-research-onager 120)
+)
+
+; Imperial siege-ram repair: a missed one-shot initialization must not
+; strand existing rams at the obsolete upgrade level.
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count-total battering-ram-line >= 1)
+    (not (research-completed 255))
+    (goal demand-research-siege-ram 0)
+=>
+    (set-goal demand-research-siege-ram 1)
 )
 
 ; Pending diagnostics: research-siege-ram
