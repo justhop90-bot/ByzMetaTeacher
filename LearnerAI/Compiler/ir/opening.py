@@ -35,7 +35,7 @@ class OpeningSelectorPlan:
     naval_pressure_observation: str = "strategy-enemy-naval-pressure"
     arena_observation: str = "strategy-arena-map"
     arabia_observation: str = "strategy-arabia-map"
-    enemy_pressure_observation: str = "strategy-opening-pressure"
+    enemy_pressure_observation: str = "strategy-enemy-pressure"
 
     def __post_init__(self) -> None:
         for name, value in (
