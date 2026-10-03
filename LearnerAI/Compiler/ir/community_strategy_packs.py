@@ -286,16 +286,16 @@ def _training_demand(
 
 
 _RESEARCH_PACK = (
-    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
-    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
-    ("research-horse-collar", "economy", "feudal-age", "horse-collar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-wheelbarrow", "economy", "castle-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-double-bit-axe", "economy", "castle-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-horse-collar", "economy", "castle-age", "horse-collar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-hand-cart", "economy", "castle-age", "hand-cart", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-bow-saw", "economy", "castle-age", "bow-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
     ("research-two-man-saw", "economy", "imperial-age", "two-man-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
     ("research-bodkin-arrow", "military", "castle-age", "bodkin-arrow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-conscription", "military", "imperial-age", "conscription", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-chemistry", "military", "imperial-age", "chemistry", _StrategicPriority.SUPPORT, (Resource.GOLD,)),
-    ("research-gold-mining", "economy", "feudal-age", "gold-mining", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-gold-mining", "economy", "castle-age", "gold-mining", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
     ("research-gold-shaft-mining", "economy", "castle-age", "gold-shaft-mining", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-heavy-plow", "economy", "castle-age", "heavy-plow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-fletching", "military", "feudal-age", "fletching", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
