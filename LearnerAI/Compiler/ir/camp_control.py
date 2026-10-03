@@ -135,7 +135,7 @@ def lower_byzantine_camp_controller(
         ),
         NativeControlState(
             plan.separation_sn,
-            __import__("LearnerAI.Compiler.runtime_binding", fromlist=["StrategicNumberRequest"]).StrategicNumberRequest(
+            StrategicNumberRequest(
                 StorageRequestId(
                     SemanticId(plan.controller_id, plan.separation_sn),
                     "camp-placement-strategic-number",
@@ -151,11 +151,15 @@ def lower_byzantine_camp_controller(
         ),
     ]
 
+    seen_distance_states: set[str] = set()
     for policy in plan.policies:
+        if policy.distance_sn in seen_distance_states:
+            continue
+        seen_distance_states.add(policy.distance_sn)
         states.append(
             NativeControlState(
                 policy.distance_sn,
-                __import__("LearnerAI.Compiler.runtime_binding", fromlist=["StrategicNumberRequest"]).StrategicNumberRequest(
+                StrategicNumberRequest(
                     StorageRequestId(
                         SemanticId(plan.controller_id, policy.distance_sn),
                         "camp-placement-strategic-number",
@@ -193,11 +197,6 @@ def lower_byzantine_camp_controller(
             ),
         ),
     ]
-
-    age_caps = (
-        ("dark", 16, 20, 28, 36),
-    )
-    del age_caps
 
     for label, guard, wood_value, mine_value in (
         ("dark", "(current-age < feudal-age)", 16, 16),
