@@ -376,6 +376,18 @@ def analyze(
                     location=location,
                 )
             )
+        action_witness_gates = []
+        for gate_index, raw in enumerate(demand.action_witness_gates):
+            gate = parse_expression(raw, demand.location)
+            _validate_context(
+                gate,
+                registry,
+                {"WITNESS"},
+                f"demand '{demand.name}' action witness gate",
+            )
+            _validate_completion_witness(gate, registry)
+            action_witness_gates.append(gate)
+
         if any(_context_roles(req.expression, registry) == {"TIMING"} for req in requirements):
             if not any(_has_non_timing_evidence(req.expression, registry) for req in requirements):
                 raise CompileError("TIMING-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " uses timing as its only evidence")
@@ -1211,6 +1223,7 @@ def analyze(
                 identity=semantic_id,
                 lifecycle=lifecycle,
                 requirements=tuple(requirements),
+                action_witness_gates=tuple(action_witness_gates),
                 action=SemanticAction(
                     action,
                     "ACTION",
