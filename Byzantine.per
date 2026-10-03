@@ -4551,6 +4551,7 @@
 (defconst byzantine-resource-camp-building-kind 749)
 (defconst byzantine-resource-camp-building-lumber 1)
 (defconst byzantine-resource-camp-building-mining 2)
+; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT
 ; Local resource-camp placement ring. The persisted resource point remains the
 ; economic objective; these eight offsets are legal-tile candidates around it.
 (defconst byzantine-resource-camp-candidate-point 768)
@@ -4609,7 +4610,6 @@
     (set-goal byzantine-resource-camp-ring-index 0)
 )
 
-; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT
 ; The ring is centered on the persisted resource point but never builds there.
 ; Each candidate is bounded into map space and tested with up-can-build-line.
 (defrule
