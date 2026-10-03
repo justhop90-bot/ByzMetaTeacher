@@ -489,7 +489,7 @@ def lower_economy_controller(
 
     return NativeControlPlan(
         states=tuple(states),
-        rules=selection_rules + tuple(writer_rules),
+        rules=bank_rules + selection_rules + tuple(writer_rules),
     )
 
 
@@ -498,6 +498,7 @@ __all__ = (
     "EconomyControllerPlan",
     "EconomyMode",
     "EconomyModePolicy",
+    "CastleBankState",
     "default_byzantine_economy_controller",
     "lower_economy_controller",
 )
