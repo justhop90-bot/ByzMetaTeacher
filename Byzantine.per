@@ -110,6 +110,21 @@
 (defconst sn-cap-civilian-explorers 3)
 (defconst sn-percent-civilian-explorers 0)
 (defconst sn-focus-player-number 251)
+(defconst sn-target-player-number 249)
+; Enemy profile goals are compiler-policy observation state, not completion witnesses.
+(defconst byzantine-focus-military-pop 727)
+(defconst byzantine-focus-civilian-pop 728)
+(defconst byzantine-focus-stables 729)
+(defconst byzantine-focus-ranges 730)
+(defconst byzantine-focus-barracks 731)
+(defconst byzantine-focus-siege-workshops 732)
+(defconst byzantine-focus-castles 733)
+; Natural-food deer observation/controller state.
+(defconst byzantine-natural-food-deer-state 734)
+(defconst byzantine-natural-food-deer-id 735)
+(defconst byzantine-natural-food-deer-distance 736)
+(defconst byzantine-natural-food-deer-home-point 738)
+(defconst byzantine-natural-food-deer-point 740)
 (defconst sn-stone-gatherer-percentage 119)
 (defconst sn-defer-dropsite-update 273)
 (defconst sn-allow-adjacent-dropsites 272)
@@ -4787,14 +4802,14 @@
 
 ; Native control rule: counter-package-selection-001-infantry_pressure_castle
 (defrule
-    (and (current-age >= castle-age) (players-unit-type-count focus-player militia-line >= 5))
+    (and (current-age >= castle-age) (goal byzantine-focus-military-pop >= 6) (players-unit-type-count target-player militia-line >= 5))
 =>
     (set-goal counter-package-infantry_pressure_castle 1)
 )
 
 ; Native control rule: counter-package-selection-002-mounted_pressure_castle
 (defrule
-    (players-unit-type-count focus-player knight >= 3)
+    (players-unit-type-count target-player knight >= 3)
 =>
     (set-goal counter-package-mounted_pressure_castle 1)
 )
@@ -4804,7 +4819,7 @@
     (current-age == feudal-age)
     (or
         (players-unit-type-count focus-player scout-cavalry-line >= 3)
-        (players-unit-type-count focus-player knight >= 1)
+        (players-unit-type-count target-player knight >= 1)
     )
 =>
     (set-goal counter-package-mounted_pressure_feudal 1)
@@ -4812,14 +4827,14 @@
 
 ; Native control rule: counter-package-selection-004-ranged_pressure_feudal
 (defrule
-    (and (current-age == feudal-age) (players-unit-type-count focus-player archer-line >= 3))
+    (and (current-age == feudal-age) (players-unit-type-count target-player archer-line >= 3))
 =>
     (set-goal counter-package-ranged_pressure_feudal 1)
 )
 
 ; Native control rule: counter-package-selection-005-siege_pressure_castle
 (defrule
-    (and (current-age >= castle-age) (players-unit-type-count focus-player mangonel-line >= 2))
+    (and (current-age >= castle-age) (goal byzantine-focus-military-pop >= 6) (players-unit-type-count target-player mangonel-line >= 2))
 =>
     (set-goal counter-package-siege_pressure_castle 1)
 )
@@ -5274,6 +5289,82 @@
     (set-strategic-number sn-local-targeting-mode 1)
     (set-strategic-number sn-enable-offensive-priority 1)
     (set-strategic-number sn-zero-priority-distance 255)
+    (set-strategic-number sn-target-player-number 0)
+    (set-goal byzantine-focus-military-pop 0)
+    (set-goal byzantine-focus-civilian-pop 0)
+    (set-goal byzantine-focus-stables 0)
+    (set-goal byzantine-focus-ranges 0)
+    (set-goal byzantine-focus-barracks 0)
+    (set-goal byzantine-focus-siege-workshops 0)
+    (set-goal byzantine-focus-castles 0)
+    (set-goal byzantine-natural-food-deer-state 0)
+    (set-goal byzantine-natural-food-deer-id -1)
+    (set-goal byzantine-natural-food-deer-distance -1)
+    (disable-self)
+)
+
+; Native engine target/priority profile. This is the Byzantine control-plane
+; owner for engine target evaluation and class priorities. It deliberately does
+; not replace the persistent attack lifecycle below.
+(defrule
+    (true)
+=>
+    ; Naga-derived, Byzantine-safe target evaluation: siege and time-to-kill matter,
+    ; while distance/randomness do not override objective priority.
+    (set-strategic-number sn-target-evaluation-siege-weapon 50)
+    (set-strategic-number sn-target-evaluation-damage-capability 20)
+    (set-strategic-number sn-target-evaluation-in-progress 0)
+    (set-strategic-number sn-target-evaluation-distance 0)
+    (set-strategic-number sn-target-evaluation-hitpoints 0)
+    (set-strategic-number sn-target-evaluation-range 0)
+    (set-strategic-number sn-target-evaluation-rof 0)
+    (set-strategic-number sn-target-evaluation-time-kill-ratio 50)
+    (set-strategic-number sn-target-evaluation-attack-attempts 0)
+    (set-strategic-number sn-target-evaluation-ally-proximity 0)
+    (set-strategic-number sn-target-evaluation-randomness 0)
+    (set-strategic-number sn-target-evaluation-boat 0)
+    (set-strategic-number sn-target-evaluation-continent 0)
+    (set-strategic-number sn-target-evaluation-kills 0)
+
+    ; Offensive priorities: fortified anchors first, then production, then economy.
+    (up-set-offense-priority c: castle c: 100)
+    (up-set-offense-priority c: keep c: 90)
+    (up-set-offense-priority c: bombard-tower c: 85)
+    (up-set-offense-priority c: town-center c: 80)
+    (up-set-offense-priority c: siege-workshop c: 70)
+    (up-set-offense-priority c: barracks c: 55)
+    (up-set-offense-priority c: archery-range c: 55)
+    (up-set-offense-priority c: stable c: 55)
+    (up-set-offense-priority c: university c: 50)
+    (up-set-offense-priority c: monastery c: 45)
+    (up-set-offense-priority c: blacksmith c: 40)
+    (up-set-offense-priority c: market c: 30)
+    (up-set-offense-priority c: lumber-camp c: 25)
+    (up-set-offense-priority c: mining-camp c: 25)
+    (up-set-offense-priority c: mill c: 20)
+    (up-set-offense-priority c: outpost c: 15)
+    (up-set-offense-priority c: house c: 10)
+    (up-set-offense-priority c: gate-class c: 5)
+    (up-set-offense-priority c: palisade-wall c: 2)
+    (up-set-offense-priority c: stone-wall c: 0)
+
+    ; Defensive priorities: preserve the economic/military anchors that the
+    ; custom Byzantine geometry scorer already reasons about.
+    (up-set-defense-priority c: castle c: 5000)
+    (up-set-defense-priority c: keep c: 5000)
+    (up-set-defense-priority c: bombard-tower c: 4500)
+    (up-set-defense-priority c: town-center c: 4000)
+    (up-set-defense-priority c: house c: 1500)
+    (up-set-defense-priority c: outpost c: 1500)
+    (up-set-defense-priority c: palisade-wall c: 3000)
+    (up-set-defense-priority c: gate-class c: 1250)
+    (up-set-defense-priority c: market c: 250)
+    (set-strategic-number sn-town-defend-priority 1)
+    (set-strategic-number sn-gold-defend-priority 1)
+    (set-strategic-number sn-stone-defend-priority 1)
+    (set-strategic-number sn-forage-defend-priority 1)
+    (set-strategic-number sn-relic-defend-priority 1)
+    (set-strategic-number sn-livestock-defend-priority 1)
     (disable-self)
 )
 
@@ -5451,6 +5542,203 @@
 )
 
 ;---------------------------------------------------------------
+;---------------------------------------------------------------
+; TARGET PLAYER + FOCUS PROFILE PLANE
+;---------------------------------------------------------------
+; Focus-player is observation context. Target-player is the persistent offensive
+; identity. They may synchronize, but one is never silently treated as the other.
+
+(defrule
+    (or
+        (strategic-number sn-target-player-number <= 0)
+        (strategic-number sn-target-player-number >= 9)
+        (not (player-in-game target-player))
+        (stance-toward target-player ally)
+    )
+=>
+    (set-strategic-number sn-target-player-number 0)
+)
+
+(defrule
+    (strategic-number sn-target-player-number <= 0)
+    (strategic-number sn-focus-player-number >= 1)
+    (strategic-number sn-focus-player-number <= 8)
+    (player-in-game focus-player)
+    (not (stance-toward focus-player ally))
+=>
+    (up-modify-sn sn-target-player-number s:= sn-focus-player-number)
+)
+
+(defrule
+    (goal byzantine-scout-phase >= 2)
+    (strategic-number sn-target-player-number >= 1)
+    (strategic-number sn-target-player-number <= 8)
+    (player-in-game target-player)
+    (not (stance-toward target-player ally))
+    (strategic-number sn-focus-player-number s:!= sn-target-player-number)
+=>
+    (up-modify-sn sn-focus-player-number s:= sn-target-player-number)
+)
+
+(defrule
+    (strategic-number sn-focus-player-number >= 1)
+    (strategic-number sn-focus-player-number <= 8)
+    (player-in-game focus-player)
+=>
+    (up-get-focus-fact military-population 0 byzantine-focus-military-pop)
+    (up-get-focus-fact civilian-population 0 byzantine-focus-civilian-pop)
+    (up-get-focus-fact building-type-count stable byzantine-focus-stables)
+    (up-get-focus-fact building-type-count archery-range byzantine-focus-ranges)
+    (up-get-focus-fact building-type-count barracks byzantine-focus-barracks)
+    (up-get-focus-fact building-type-count siege-workshop byzantine-focus-siege-workshops)
+    (up-get-focus-fact building-type-count castle byzantine-focus-castles)
+)
+
+; Building intent is now usable as corroborating enemy evidence, not a substitute
+; for actual unit-count observations.
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-focus-ranges >= 2)
+=>
+    (set-goal counter-package-ranged_pressure_feudal 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-focus-stables >= 2)
+=>
+    (set-goal counter-package-mounted_pressure_castle 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-focus-siege-workshops >= 1)
+=>
+    (set-goal counter-package-siege_pressure_castle 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-focus-military-pop >= 6)
+    (players-unit-type-count target-player militia-line >= 5)
+=>
+    (set-goal counter-package-infantry_pressure_castle 1)
+)
+
+; NATIVE NATURAL-FOOD DEER CONTROLLER
+(defrule
+    (goal byzantine-natural-food-deer-state 0)
+    (current-age == dark-age)
+    (not (map-type islands))
+    (unit-type-count scout-cavalry-line >= 1)
+    (resource-found food)
+=>
+    (up-full-reset-search)
+    (up-filter-distance c: -1 c: 40)
+    (up-find-resource c: deer-class c: 40)
+    (set-goal byzantine-natural-food-deer-state 1)
+)
+
+(defrule
+    (goal byzantine-natural-food-deer-state 1)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-get-object-data object-data-id byzantine-natural-food-deer-id)
+    (up-get-point position-self byzantine-natural-food-deer-home-point)
+    (up-get-point position-object byzantine-natural-food-deer-point)
+    (up-get-point-distance byzantine-natural-food-deer-home-point byzantine-natural-food-deer-point byzantine-natural-food-deer-distance)
+    (set-goal byzantine-natural-food-deer-state 2)
+)
+
+(defrule
+    (goal byzantine-natural-food-deer-state 2)
+    (up-set-target-by-id g: byzantine-natural-food-deer-id)
+    (up-compare-goal byzantine-natural-food-deer-distance <= 3400)
+    (current-age <= feudal-age)
+=>
+    (set-strategic-number sn-maximum-hunt-drop-distance 34)
+    (up-request-hunters c: 1)
+    (up-full-reset-search)
+    (up-find-local c: scout-cavalry-line c: 1)
+    (up-find-remote c: deer-class c: 1)
+    (up-target-objects 0 action-move -1 stance-defensive)
+    (set-goal byzantine-natural-food-deer-state 3)
+)
+
+(defrule
+    (goal byzantine-natural-food-deer-state 2)
+    (or
+        (not (up-set-target-by-id g: byzantine-natural-food-deer-id))
+        (goal byzantine-natural-food-deer-distance > 3400)
+        (current-age > feudal-age)
+    )
+=>
+    (set-goal byzantine-natural-food-deer-id -1)
+    (set-goal byzantine-natural-food-deer-distance -1)
+    (set-goal byzantine-natural-food-deer-state 0)
+    (set-strategic-number sn-maximum-hunt-drop-distance 0)
+)
+
+(defrule
+    (goal byzantine-natural-food-deer-state 3)
+    (or
+        (not (up-set-target-by-id g: byzantine-natural-food-deer-id))
+        (building-type-count-total mill >= 2)
+        (current-age >= castle-age)
+    )
+=>
+    (set-goal byzantine-natural-food-deer-state 0)
+    (set-goal byzantine-natural-food-deer-id -1)
+    (set-goal byzantine-natural-food-deer-distance -1)
+    (set-strategic-number sn-maximum-hunt-drop-distance 0)
+)
+
+; NATIVE FOOD RESOURCE SELECTOR
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 0)
+    (current-age >= feudal-age)
+    (building-type-count-total mill == 1)
+    (resource-found food)
+=>
+    (up-full-reset-search)
+    (up-filter-distance c: -1 c: 16)
+    (up-find-resource c: forage-bush-class c: 16)
+    (set-goal demand-economy-food-mill-feudal-berries 704)
+)
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 704)
+    (up-set-target-object search-remote c: 0)
+=>
+    (set-strategic-number sn-preferred-mill-placement 0)
+    (set-goal demand-economy-food-mill-feudal-berries 1)
+)
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 704)
+    (not (up-set-target-object search-remote c: 0))
+=>
+    (up-full-reset-search)
+    (up-filter-distance c: -1 c: 16)
+    (up-find-resource c: deer-class c: 16)
+    (set-goal demand-economy-food-mill-feudal-berries 705)
+)
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 705)
+    (up-set-target-object search-remote c: 0)
+=>
+    (set-strategic-number sn-preferred-mill-placement 1)
+    (set-goal demand-economy-food-mill-feudal-berries 1)
+)
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 705)
+    (not (up-set-target-object search-remote c: 0))
+=>
+    (set-goal demand-economy-food-mill-feudal-berries 1)
+)
+
 ;---------------------------------------------------------------
 ; PRO SCOUTING / NAGA INFORMATION LOOP
 ;---------------------------------------------------------------
@@ -8531,6 +8819,7 @@
     (players-building-type-count any-enemy 117 >= 5)
     (unit-type-count-total petard < 3)
     (goal action-claim-train-arbitration 0)
+    (up-train-site-ready c: petard)
     (can-train petard)
 =>
     (train petard)
@@ -8750,6 +9039,7 @@
     (food-amount > 900)
     (wood-amount > 900)
     (gold-amount > 1400)
+    (up-train-site-ready c: trade-cart)
     (can-train trade-cart)
 =>
     (train trade-cart)
@@ -10664,6 +10954,7 @@
 (defrule
     (unit-type-count-total villager < 110)
     (population-headroom > 0)
+    (up-train-site-ready c: villager)
     (can-train villager)
     (not (goal byzantine-resource-claim 1))
     (not (goal byzantine-resource-claim 2))
@@ -10743,6 +11034,7 @@
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
+    (up-train-site-ready c: spearman-line)
     (can-train-with-escrow spearman-line)
     (unit-type-count-total spearman-line < 2)
 =>
@@ -11022,6 +11314,7 @@
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
+    (up-train-site-ready c: spearman-line)
     (can-train-with-escrow spearman-line)
     (unit-type-count-total spearman-line < 4)
 =>
@@ -11106,6 +11399,7 @@
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     )
     (current-age >= feudal-age)
+    (up-train-site-ready c: skirmisher-line)
     (can-train-with-escrow skirmisher-line)
     (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
 =>
@@ -11183,6 +11477,7 @@
     (building-type-count archery-range >= 1)
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (up-train-site-ready c: archer-line)
     (can-train-with-escrow archer-line)
     (unit-type-count-total archer-line < bt-feudal-archer-floor)
 =>
@@ -11268,6 +11563,7 @@
     (building-type-count stable >= 1)
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (up-train-site-ready c: scout-cavalry-line)
     (can-train-with-escrow scout-cavalry-line)
     (unit-type-count-total scout-cavalry-line < bt-feudal-scout-floor)
 =>
@@ -11403,6 +11699,7 @@
     (research-completed ri-man-at-arms)
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (up-train-site-ready c: militia-line)
     (can-train-with-escrow militia-line)
     (unit-type-count-total militia-line < bt-feudal-maa-floor)
 =>
@@ -11578,6 +11875,7 @@
     (not (unit-type-count 329 >= 3))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: 329)
     (can-train-with-escrow 329)
     (unit-type-count-total camel-rider-line < 3)
 =>
@@ -11657,6 +11955,7 @@
     (not (unit-type-count cataphract >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: cataphract)
     (can-train-with-escrow cataphract)
     (unit-type-count-total cataphract-line < 2)
 =>
@@ -11736,6 +12035,7 @@
     (not (unit-type-count knight-line >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: knight-line)
     (can-train-with-escrow knight-line)
     (unit-type-count-total knight-line < 2)
 =>
@@ -21163,6 +21463,7 @@
     (not (up-pending-objects c: 40 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: cataphract-line)
     (can-train-with-escrow cataphract-line)
     (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
 =>
@@ -21179,6 +21480,7 @@
     (not (up-pending-objects c: 40 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: cataphract-line)
     (can-train-with-escrow cataphract-line)
     (or
         (unit-type-count-total cataphract-line < bt-imperial-cataphract-floor)
@@ -21280,6 +21582,7 @@
     (not (up-pending-objects c: 2703 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: varangian-guard-line)
     (can-train-with-escrow varangian-guard-line)
     (unit-type-count-total varangian-guard-line < bt-castle-varangian-floor)
 =>
@@ -21297,6 +21600,7 @@
     (not (up-pending-objects c: 2703 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: varangian-guard-line)
     (can-train-with-escrow varangian-guard-line)
     (or
         (unit-type-count-total varangian-guard-line < bt-imperial-varangian-floor)
@@ -21387,6 +21691,7 @@
     (not (unit-type-count mangonel-line >= bt-castle-mangonel-floor))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: mangonel-line)
     (can-train-with-escrow mangonel-line)
     (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
 =>
@@ -21488,6 +21793,7 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (research-completed 47)
+    (up-train-site-ready c: bombard-cannon)
     (can-train-with-escrow bombard-cannon)
 =>
     (train bombard-cannon)
@@ -21565,6 +21871,7 @@
     (not (unit-type-count monk >= bt-castle-monk-floor))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: monk)
     (can-train-with-escrow monk)
     (unit-type-count-total monk < bt-castle-monk-floor)
 =>
@@ -21645,6 +21952,7 @@
     (not (unit-type-count monk >= bt-byzantine-defense-monk-floor))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: monk)
     (can-train-with-escrow monk)
     (unit-type-count-total monk < bt-byzantine-defense-monk-floor)
 =>
@@ -21727,6 +22035,7 @@
         (unit-type-count cavalier >= 1)
     )
     (current-age >= imperial-age)
+    (up-train-site-ready c: cavalier)
     (can-train-with-escrow cavalier)
     (unit-type-count-total cavalier < bt-imperial-cavalier-target)
 =>
@@ -21813,6 +22122,7 @@
         )
     )
     (current-age >= imperial-age)
+    (up-train-site-ready c: hussar)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < bt-imperial-hussar-target)
 =>
@@ -21898,6 +22208,7 @@
         )
     )
     (current-age >= imperial-age)
+    (up-train-site-ready c: onager)
     (can-train-with-escrow onager)
     (unit-type-count-total onager < bt-imperial-onager-target)
 =>
@@ -21995,6 +22306,7 @@
     (not (up-pending-objects c: 1258 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: battering-ram-line)
     (can-train-with-escrow battering-ram-line)
 =>
     (train battering-ram-line)
@@ -22094,6 +22406,7 @@
     (not (up-pending-objects c: 331 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: trebuchet)
     (can-train-with-escrow trebuchet)
 =>
     (train trebuchet)
@@ -22162,6 +22475,7 @@
     (not (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: arbalest)
     (can-train-with-escrow arbalest)
     (or
         (unit-type-count-total arbalest < bt-imperial-arbalester-floor)
@@ -22253,6 +22567,7 @@
     (not (unit-type-count 329 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: 329)
     (can-train-with-escrow 329)
     (unit-type-count-total 329 < 2)
 =>
@@ -22336,6 +22651,7 @@
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
     )
     (current-age >= imperial-age)
+    (up-train-site-ready c: 359)
     (can-train-with-escrow 359)
     (or
         (unit-type-count-total 359 < bt-imperial-halberdier-floor)
@@ -22443,6 +22759,7 @@
         )
     )
     (current-age >= imperial-age)
+    (up-train-site-ready c: 330)
     (can-train-with-escrow 330)
     (unit-type-count-total 330 < bt-imperial-heavy-camel-target)
 =>
@@ -23129,6 +23446,7 @@
         )
     )
     (building-type-count-total dock >= 1)
+    (up-train-site-ready c: fishing-ship)
     (can-train-with-escrow fishing-ship)
     (unit-type-count-total fishing-ship < 2)
 =>
@@ -23210,6 +23528,7 @@
     (current-age >= dark-age)
     (map-type islands)
     (building-type-count-total dock >= 1)
+    (up-train-site-ready c: transport-ship)
     (can-train-with-escrow transport-ship)
     (unit-type-count-total transport-ship < 1)
 =>
@@ -23295,6 +23614,7 @@
     (map-type islands)
     (building-type-count-total dock >= 1)
     (players-unit-type-count any-enemy galley-line >= 2)
+    (up-train-site-ready c: fire-galley)
     (can-train-with-escrow fire-galley)
     (unit-type-count-total fire-galley < 2)
 =>
@@ -23380,6 +23700,7 @@
     (map-type islands)
     (building-type-count-total dock >= 1)
     (players-unit-type-count any-enemy galley-line >= 2)
+    (up-train-site-ready c: galley)
     (can-train-with-escrow galley)
     (unit-type-count-total galley < 3)
 =>
@@ -23460,6 +23781,7 @@
     (not (unit-type-count fire-ship >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: fire-ship)
     (can-train-with-escrow fire-ship)
     (unit-type-count-total fire-ship < 2)
 =>
@@ -23540,6 +23862,7 @@
     (not (unit-type-count galleon >= 3))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: galleon)
     (can-train-with-escrow galleon)
     (unit-type-count-total galleon < 3)
 =>
@@ -23620,6 +23943,7 @@
     (not (unit-type-count dromon >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: dromon)
     (can-train-with-escrow dromon)
     (unit-type-count-total dromon < 1)
 =>
@@ -23699,6 +24023,7 @@
     (not (unit-type-count 2626 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= feudal-age)
+    (up-train-site-ready c: 2626)
     (can-train-with-escrow 2626)
     (unit-type-count-total 2626 < 2)
 =>
@@ -23778,6 +24103,7 @@
     (not (unit-type-count 2627 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: 2627)
     (can-train-with-escrow 2627)
     (unit-type-count-total 2627 < 2)
 =>
@@ -23857,6 +24183,7 @@
     (not (unit-type-count 2628 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: 2628)
     (can-train-with-escrow 2628)
     (unit-type-count-total 2628 < 2)
 =>
@@ -23936,6 +24263,7 @@
     (not (unit-type-count 527 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    (up-train-site-ready c: 527)
     (can-train-with-escrow 527)
     (unit-type-count-total 527 < 1)
 =>
@@ -24015,6 +24343,7 @@
     (not (unit-type-count 528 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    (up-train-site-ready c: 528)
     (can-train-with-escrow 528)
     (unit-type-count-total 528 < 1)
 =>
@@ -24094,6 +24423,7 @@
     (not (unit-type-count 17 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= feudal-age)
+    (up-train-site-ready c: 17)
     (can-train-with-escrow 17)
     (unit-type-count-total 17 < 2)
 =>
