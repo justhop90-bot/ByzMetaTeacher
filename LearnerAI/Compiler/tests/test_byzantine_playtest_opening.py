@@ -175,7 +175,7 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             "(set-goal byzantine-siege-approach byzantine-siege-approach-recover)",
         )
         self.assertIn(
-            "(and\n            (goal counter-package-infantry_pressure_castle 1)",
+            "(goal counter-package-infantry_pressure_castle 1)",
             block,
         )
         self.assertIn(
@@ -183,14 +183,10 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             block,
         )
         self.assertIn(
-            "(and\n            (not (goal counter-package-infantry_pressure_castle 1))",
+            "(not (goal counter-package-infantry_pressure_castle 1))",
             block,
         )
-        self.assertIn("(unit-type-count-total knight-line < 2)", block)
-        self.assertIn(
-            "(not\n            (or",
-            block,
-        )
+        self.assertIn("(unit-type-count-total knight-line >= 2)", block)
         self.assertIn(
             "(unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)",
             block,
@@ -220,20 +216,20 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             "(not (goal counter-package-infantry_pressure_castle 1))",
             block,
         )
-        self.assertIn("(unit-type-count-total knight-line < 2)", block)
+        self.assertIn("(unit-type-count-total knight-line >= 2)", block)
         self.assertIn(
             "(unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)",
             block,
         )
         self.assertIn(
-            "(or\n        (not (goal byzantine-siege-approach byzantine-siege-approach-fortified))",
+            "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
+            block,
+        )
+        self.assertIn(
+            "(unit-type-count-total mangonel-line < bt-castle-mangonel-floor)",
             block,
         )
         self.assertNotIn("(unit-type-count-total monk < bt-castle-monk-floor)", block)
-        self.assertNotIn(
-            "(unit-type-count-total mangonel-line < bt-castle-mangonel-floor)\n                )\n            )\n        )\n    )",
-            block,
-        )
 
     def test_castle_rearm_release_mirrors_backbone_and_fortified_siege_contract(self):
         block = self._find_rule(
@@ -245,7 +241,7 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             "(set-goal byzantine-army-reinforcement 0)",
         )
         self.assertIn(
-            "(and\n        (goal counter-package-infantry_pressure_castle 1)",
+            "(goal counter-package-infantry_pressure_castle 1)",
             block,
         )
         self.assertIn(
