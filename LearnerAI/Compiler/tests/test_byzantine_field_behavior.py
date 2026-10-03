@@ -181,10 +181,10 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
 
     def test_resource_camp_search_state_goal_fields_are_declared(self):
         for expected in (
-            "(defconst byzantine-resource-camp-search-state-local-total 747)",
-            "(defconst byzantine-resource-camp-search-state-local-list 748)",
-            "(defconst byzantine-resource-camp-search-state-remote-total 749)",
-            "(defconst byzantine-resource-camp-search-state-remote-list 750)",
+            "(defconst byzantine-resource-camp-search-state-local-total 791)",
+            "(defconst byzantine-resource-camp-search-state-local-list 792)",
+            "(defconst byzantine-resource-camp-search-state-remote-total 793)",
+            "(defconst byzantine-resource-camp-search-state-remote-list 794)",
         ):
             self.assertIn(expected, self.per)
 
