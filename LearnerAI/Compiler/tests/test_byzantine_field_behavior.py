@@ -19,29 +19,28 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             end = self.per.index(end_marker, start)
         return self.per[start:end]
 
-    def test_near_resource_fronts_build_camps_without_castle_age_gate(self):
-        wood = self._section_from(
-            "; Byzantine near-resource lumber-camp recovery",
-            "; Byzantine near-resource mining-camp recovery",
-        )
-        gold = self._section_from(
-            "; Byzantine near-resource mining-camp recovery",
-            "; The same bounded front rule applies to stone",
+    def test_near_resource_fronts_reopen_existing_camp_demands_without_castle_age_gate(self):
+        camp = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; Per-pass transient action arbitration",
         )
 
-        self.assertIn("(resource-found wood)", wood)
-        self.assertIn("(dropsite-min-distance wood > 6)", wood)
-        self.assertIn("(dropsite-min-distance wood <= 18)", wood)
-        self.assertIn("(can-build lumber-camp)", wood)
-        self.assertIn("(build lumber-camp)", wood)
-        self.assertNotIn("(current-age >= castle-age)", wood)
+        self.assertIn("(resource-found wood)", camp)
+        self.assertIn("(dropsite-min-distance wood > 6)", camp)
+        self.assertIn("(dropsite-min-distance wood <= 18)", camp)
+        self.assertIn("(can-build lumber-camp)", camp)
+        self.assertIn("(set-goal demand-economy-lumber-camp-floor-1 1)", camp)
+        self.assertNotIn("(current-age >= castle-age)\n    (resource-found wood)", camp)
 
-        self.assertIn("(resource-found gold)", gold)
-        self.assertIn("(dropsite-min-distance gold > 6)", gold)
-        self.assertIn("(dropsite-min-distance gold <= 18)", gold)
-        self.assertIn("(can-build mining-camp)", gold)
-        self.assertIn("(build mining-camp)", gold)
-        self.assertNotIn("(current-age >= castle-age)", gold)
+        self.assertIn("(resource-found gold)", camp)
+        self.assertIn("(dropsite-min-distance gold > 6)", camp)
+        self.assertIn("(dropsite-min-distance gold <= 18)", camp)
+        self.assertIn("(can-build mining-camp)", camp)
+        self.assertIn("(set-goal demand-economy-gold-camp-floor-1 1)", camp)
+        self.assertNotIn("(current-age >= castle-age)\n    (resource-found gold)", camp)
+
+        self.assertNotIn("(build lumber-camp)", camp)
+        self.assertNotIn("(build mining-camp)", camp)
 
     def test_resource_walking_distance_is_bounded_and_never_widens_to_36(self):
         init = self._section_from(
@@ -91,6 +90,135 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "(not (goal byzantine-fortification-threat 1))",
             recovery,
         )
+
+    def test_resource_camp_selector_chooses_nearest_real_resource_and_persists_point(self):
+        self.assertIn("(up-clean-search search-remote object-data-distance search-order-asc)", self.per)
+        self.assertIn("(up-set-target-object search-remote c: 0)", self.per)
+        self.assertIn("(up-get-point position-object byzantine-resource-camp-point)", self.per)
+        self.assertIn("(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)", self.per)
+        self.assertIn("(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)", self.per)
+        self.assertIn("(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)", self.per)
+
+    def test_resource_camp_executes_at_persisted_point_through_existing_builder_lifecycle(self):
+        for building, demand in (
+            ("lumber-camp", "demand-economy-lumber-camp-floor-1"),
+            ("mining-camp", "demand-economy-gold-camp-floor-1"),
+        ):
+            self.assertIn("(up-set-target-point byzantine-resource-camp-point)", self.per)
+            self.assertIn(f"(up-assign-builders c: {building} c: 1)", self.per)
+            self.assertIn(f"(up-build place-point 0 c: {building})", self.per)
+            self.assertIn(f"(goal {demand} 1)", self.per)
+
+        camp_actions = self.per[
+            self.per.index("; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION"):
+            self.per.index("; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL")
+        ]
+        self.assertNotIn("(build lumber-camp)", self.per)
+        self.assertNotIn("(build mining-camp)", self.per)
+
+    def test_blocked_camp_placement_enters_pending_instead_of_reissuing(self):
+        lumber = self._section_from(
+            "; Pending diagnostics: economy-lumber-camp-floor-1",
+            "; Pending diagnostics: economy-lumber-camp-floor-2",
+        )
+        gold_start = self.per.index("; economy-gold-camp-floor-1")
+        gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
+
+        for lifecycle, building_id, pending_goal in (
+            (lumber, "562", "75"),
+            (gold, "584", "622"),
+        ):
+            self.assertIn(
+                f"(up-pending-objects c: {building_id} >= 1)",
+                lifecycle,
+            )
+            self.assertIn(
+                f"(up-pending-objects c: {building_id} == 0)\n    (up-pending-placement c: {building_id})",
+                lifecycle,
+            )
+            self.assertIn(
+                f"(set-goal demand-economy-{'lumber-camp-floor-1' if building_id == '562' else 'gold-camp-floor-1'} {pending_goal})",
+                lifecycle,
+            )
+            self.assertIn(
+                f"(up-pending-objects c: {building_id} == 0)\n    (not (up-pending-placement c: {building_id}))",
+                lifecycle,
+            )
+
+    def test_blocked_nearest_candidate_is_removed_before_alternate_candidate_reselection(self):
+        reselect = self._section_from(
+            "; A nearest resource already covered by an existing dropsite is not viable.",
+            "; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL",
+        )
+        for resource in ("wood", "gold", "stone"):
+            self.assertIn(
+                f"(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-{resource})",
+                reselect,
+            )
+            self.assertIn(
+                "(up-remove-objects search-remote object-data-index c:== 0)",
+                reselect,
+            )
+            self.assertIn(
+                "(up-clean-search search-remote object-data-distance search-order-asc)",
+                reselect,
+            )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)",
+            reselect,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)",
+            reselect,
+        )
+        self.assertIn(
+            "(up-set-target-object search-remote c: 0)",
+            reselect,
+        )
+        self.assertIn(
+            "(up-get-point position-object byzantine-resource-camp-point)",
+            reselect,
+        )
+
+    def test_camp_loss_reopens_completed_floor_demand_for_lumber_and_gold(self):
+        lumber = self._section_from(
+            "; Pending diagnostics: economy-lumber-camp-floor-1",
+            "; Pending diagnostics: economy-lumber-camp-floor-2",
+        )
+        gold_start = self.per.index("; economy-gold-camp-floor-1")
+        gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
+
+        for lifecycle, demand, building in (
+            (lumber, "demand-economy-lumber-camp-floor-1", "lumber-camp"),
+            (gold, "demand-economy-gold-camp-floor-1", "mining-camp"),
+        ):
+            self.assertIn(f"(set-goal {demand} 0)", lifecycle)
+            self.assertIn(f"(goal {demand} 0)", lifecycle)
+            self.assertIn(f"(not (building-type-count {building} >= 1))", lifecycle)
+            self.assertIn(f"(set-goal {demand} 1)", lifecycle)
+
+    def test_resource_depletion_releases_camp_demand_without_immediate_reactivation(self):
+        lumber = self._section_from(
+            "; Pending diagnostics: economy-lumber-camp-floor-1",
+            "; Pending diagnostics: economy-lumber-camp-floor-2",
+        )
+        gold_start = self.per.index("; economy-gold-camp-floor-1")
+        gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
+
+        for lifecycle, resource, demand in (
+            (lumber, "wood", "demand-economy-lumber-camp-floor-1"),
+            (gold, "gold", "demand-economy-gold-camp-floor-1"),
+        ):
+            self.assertIn(f"(set-goal {demand} 0)", lifecycle)
+            self.assertIn(f"(resource-found {resource})", lifecycle)
+            self.assertIn(f"(goal {demand} 0)", lifecycle)
+            self.assertIn(f"(not (building-type-count", lifecycle)
+            self.assertIn(f"(resource-found {resource})", lifecycle)
+            self.assertNotIn(
+                f"(goal {demand} 0)\n    (not (resource-found {resource}))",
+                lifecycle,
+            )
+            self.assertIn(f"(set-goal {demand} 1)", lifecycle)
 
     def test_fortified_castle_transitions_into_witnessed_siege_muster(self):
         self.assertIn(
