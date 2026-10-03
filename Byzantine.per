@@ -43,6 +43,55 @@
 (defconst theocracy 438)
 (defconst two-man-saw 221)
 (defconst wheelbarrow 213)
+
+; Native parser bindings for symbolic unit/building/status/SN identifiers.
+; These are engine IDs used by command arguments; they do not change runtime policy.
+(defconst monk 125)
+(defconst town-center 109)
+(defconst castle 82)
+(defconst keep 235)
+(defconst bombard-tower 236)
+(defconst guard-tower 234)
+(defconst watch-tower 79)
+(defconst outpost 598)
+(defconst scout-cavalry-line 448)
+(defconst lumber-camp 562)
+(defconst mining-camp 584)
+(defconst stable 101)
+(defconst archery-range 87)
+(defconst barracks 12)
+(defconst siege-workshop 49)
+(defconst status-resource 3)
+(defconst list-active 0)
+(defconst status-ready 2)
+(defconst villager-class 904)
+(defconst object-data-id 0)
+(defconst object-data-dropsite 14)
+(defconst ri-man-at-arms 222)
+(defconst sn-intelligent-gathering 142)
+(defconst sn-retask-gather-amount 148)
+(defconst sn-livestock-to-town-center 263)
+(defconst sn-wild-animal-exploration 300)
+(defconst sn-maximum-hunt-drop-distance 235)
+(defconst sn-maximum-food-drop-distance 234)
+(defconst sn-preferred-mill-placement 253)
+(defconst sn-boar-lure-destination 295)
+(defconst sn-maximum-wood-drop-distance 233)
+(defconst sn-object-repair-level 246)
+(defconst sn-enable-boar-hunting 244)
+(defconst sn-minimum-boar-lure-group-size 252)
+(defconst sn-minimum-boar-hunt-group-size 204)
+(defconst sn-minimum-number-hunters 245)
+(defconst sn-cap-civilian-explorers 3)
+(defconst sn-percent-civilian-explorers 0)
+(defconst sn-focus-player-number 251)
+(defconst sn-stone-gatherer-percentage 119)
+(defconst sn-defer-dropsite-update 273)
+(defconst sn-allow-adjacent-dropsites 272)
+(defconst sn-dropsite-separation-distance 248)
+(defconst sn-lumber-camp-max-distance 260)
+(defconst sn-mining-camp-max-distance 261)
+(defconst sn-mill-max-distance 87)
 (defconst demand-feudal-transition 80)
 (defconst issued-feudal-transition 83)
 (defconst pending-feudal-transition 81)
@@ -213,17 +262,90 @@
 (defconst complete-economy-lumber-camp-floor-2 77)
 (defconst construction-retry-barrier-economy-lumber-camp-floor-2 202)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
-(defconst demand-economy-mining-camp-floor-1 77)
-(defconst issued-economy-mining-camp-floor-1 80)
-(defconst pending-economy-mining-camp-floor-1 78)
-(defconst complete-economy-mining-camp-floor-1 79)
-(defconst construction-retry-barrier-economy-mining-camp-floor-1 204)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
-(defconst demand-economy-mining-camp-floor-2 78)
-(defconst issued-economy-mining-camp-floor-2 81)
-(defconst pending-economy-mining-camp-floor-2 79)
-(defconst complete-economy-mining-camp-floor-2 80)
-(defconst construction-retry-barrier-economy-mining-camp-floor-2 205)
+(defconst demand-economy-wood-camp-floor-3 600)
+(defconst issued-economy-wood-camp-floor-3 601)
+(defconst pending-economy-wood-camp-floor-3 602)
+(defconst complete-economy-wood-camp-floor-3 603)
+(defconst construction-retry-barrier-economy-wood-camp-floor-3 604)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-wood-camp-floor-4 605)
+(defconst issued-economy-wood-camp-floor-4 606)
+(defconst pending-economy-wood-camp-floor-4 607)
+(defconst complete-economy-wood-camp-floor-4 608)
+(defconst construction-retry-barrier-economy-wood-camp-floor-4 609)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-wood-camp-floor-5 610)
+(defconst issued-economy-wood-camp-floor-5 611)
+(defconst pending-economy-wood-camp-floor-5 612)
+(defconst complete-economy-wood-camp-floor-5 613)
+(defconst construction-retry-barrier-economy-wood-camp-floor-5 614)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-wood-camp-floor-6 615)
+(defconst issued-economy-wood-camp-floor-6 616)
+(defconst pending-economy-wood-camp-floor-6 617)
+(defconst complete-economy-wood-camp-floor-6 618)
+(defconst construction-retry-barrier-economy-wood-camp-floor-6 619)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-gold-camp-floor-1 620)
+(defconst issued-economy-gold-camp-floor-1 621)
+(defconst pending-economy-gold-camp-floor-1 622)
+(defconst complete-economy-gold-camp-floor-1 623)
+(defconst construction-retry-barrier-economy-gold-camp-floor-1 624)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-gold-camp-floor-2 625)
+(defconst issued-economy-gold-camp-floor-2 626)
+(defconst pending-economy-gold-camp-floor-2 627)
+(defconst complete-economy-gold-camp-floor-2 628)
+(defconst construction-retry-barrier-economy-gold-camp-floor-2 629)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-gold-camp-floor-3 630)
+(defconst issued-economy-gold-camp-floor-3 631)
+(defconst pending-economy-gold-camp-floor-3 632)
+(defconst complete-economy-gold-camp-floor-3 633)
+(defconst construction-retry-barrier-economy-gold-camp-floor-3 634)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-gold-camp-floor-4 635)
+(defconst issued-economy-gold-camp-floor-4 636)
+(defconst pending-economy-gold-camp-floor-4 637)
+(defconst complete-economy-gold-camp-floor-4 638)
+(defconst construction-retry-barrier-economy-gold-camp-floor-4 639)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-gold-camp-floor-5 640)
+(defconst issued-economy-gold-camp-floor-5 641)
+(defconst pending-economy-gold-camp-floor-5 642)
+(defconst complete-economy-gold-camp-floor-5 643)
+(defconst construction-retry-barrier-economy-gold-camp-floor-5 644)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-stone-camp-floor-1 645)
+(defconst issued-economy-stone-camp-floor-1 646)
+(defconst pending-economy-stone-camp-floor-1 647)
+(defconst complete-economy-stone-camp-floor-1 648)
+(defconst construction-retry-barrier-economy-stone-camp-floor-1 649)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-stone-camp-floor-2 650)
+(defconst issued-economy-stone-camp-floor-2 651)
+(defconst pending-economy-stone-camp-floor-2 652)
+(defconst complete-economy-stone-camp-floor-2 653)
+(defconst construction-retry-barrier-economy-stone-camp-floor-2 654)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-stone-camp-floor-3 655)
+(defconst issued-economy-stone-camp-floor-3 656)
+(defconst pending-economy-stone-camp-floor-3 657)
+(defconst complete-economy-stone-camp-floor-3 658)
+(defconst construction-retry-barrier-economy-stone-camp-floor-3 659)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-stone-camp-floor-4 660)
+(defconst issued-economy-stone-camp-floor-4 661)
+(defconst pending-economy-stone-camp-floor-4 662)
+(defconst complete-economy-stone-camp-floor-4 663)
+(defconst construction-retry-barrier-economy-stone-camp-floor-4 664)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-stone-camp-floor-5 665)
+(defconst issued-economy-stone-camp-floor-5 666)
+(defconst pending-economy-stone-camp-floor-5 667)
+(defconst complete-economy-stone-camp-floor-5 668)
+(defconst construction-retry-barrier-economy-stone-camp-floor-5 669)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
 (defconst demand-economy-food-mill-boom 68)
 (defconst issued-economy-food-mill-boom 71)
@@ -278,6 +400,8 @@
 (defconst pending-adaptive-watch-tower 45)
 (defconst complete-adaptive-watch-tower 46)
 (defconst construction-retry-barrier-adaptive-watch-tower 171)
+; Native defensive line demand. Geometry is supplied by persisted Goal pairs;
+; completion remains the existing world-state wall witness.
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
 (defconst demand-adaptive-stone-wall 43)
 (defconst issued-adaptive-stone-wall 46)
@@ -605,6 +729,64 @@
 (defconst action-claim-build-pass-singleton 167)
 (defconst action-claim-train-arbitration 222)
 
+; BYZANTINE META DEFENSE / ECONOMY EXTENSIONS
+; These are native .per state channels. They deliberately reuse the existing
+; demand/claim/lifecycle machinery rather than creating a second scheduler.
+; -----------------------------------------------------------------------------
+; Wall geometry: 0 idle, 1 acquiring points, 2 selected, 3 armed.
+(defconst byzantine-wall-geometry-state 468)
+(defconst byzantine-wall-tc-point 469)
+(defconst byzantine-wall-castle-point 471)
+(defconst byzantine-wall-keep-point 473)
+(defconst byzantine-wall-bombard-point 475)
+(defconst byzantine-wall-guard-point 477)
+(defconst byzantine-wall-watch-point 479)
+(defconst byzantine-wall-outpost-point 481)
+(defconst byzantine-wall-anchor-pair 483)
+(defconst byzantine-wall-pair-none 0)
+(defconst byzantine-wall-pair-town-center-castle 1)
+(defconst byzantine-wall-pair-town-center-keep 2)
+(defconst byzantine-wall-pair-town-center-bombard-tower 3)
+(defconst byzantine-wall-pair-town-center-guard-tower 4)
+(defconst byzantine-wall-pair-town-center-watch-tower 5)
+(defconst byzantine-wall-pair-town-center-outpost 6)
+(defconst byzantine-wall-pair-castle-keep 7)
+(defconst byzantine-wall-pair-castle-bombard-tower 8)
+(defconst byzantine-wall-pair-castle-guard-tower 9)
+(defconst byzantine-wall-pair-castle-watch-tower 10)
+(defconst byzantine-wall-pair-castle-outpost 11)
+(defconst byzantine-wall-pair-keep-bombard-tower 12)
+(defconst byzantine-wall-pair-keep-guard-tower 13)
+(defconst byzantine-wall-pair-keep-watch-tower 14)
+(defconst byzantine-wall-pair-keep-outpost 15)
+(defconst byzantine-wall-pair-bombard-tower-guard-tower 16)
+(defconst byzantine-wall-pair-bombard-tower-watch-tower 17)
+(defconst byzantine-wall-pair-bombard-tower-outpost 18)
+(defconst byzantine-wall-pair-guard-tower-watch-tower 19)
+(defconst byzantine-wall-pair-guard-tower-outpost 20)
+(defconst byzantine-wall-pair-watch-tower-outpost 21)
+(defconst byzantine-wall-geometry-timer 11)
+(defconst bt-byzantine-wall-geometry-seconds 45)
+(defconst byzantine-wall-geometry-idle 0)
+(defconst byzantine-wall-geometry-acquire 1)
+(defconst byzantine-wall-geometry-selected 2)
+(defconst byzantine-wall-geometry-armed 3)
+
+; Relic control: target-task state, not fake completion truth.
+(defconst byzantine-relic-control-state 485)
+(defconst byzantine-relic-control-timer 12)
+(defconst byzantine-relic-control-idle 0)
+(defconst byzantine-relic-control-acquire 1)
+(defconst byzantine-relic-control-deny 2)
+(defconst bt-byzantine-relic-control-seconds 45)
+
+; Emergency food recovery state. Timer is cadence, not truth.
+(defconst byzantine-food-recovery-state 486)
+(defconst byzantine-food-recovery-timer 13)
+(defconst byzantine-food-recovery-idle 0)
+(defconst byzantine-food-recovery-active 1)
+(defconst bt-byzantine-food-recovery-seconds 30)
+
 ; Native DUC execution plan
 ; Native DUC rule: byzantine-castle-target-knight
 (defrule
@@ -630,30 +812,2179 @@
     (up-get-object-data object-data-id 165)
 )
 
-; Native DUC rule: byzantine-relic-acquisition-intent
+; Native DUC rule: byzantine-relic-control-init
 (defrule
-    (current-age >= castle-age)
-    (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 1)
-    (unit-type-count-total monk >= 1)
+    (goal byzantine-relic-control-state -1)
 =>
-    (up-full-reset-search)
-    (up-find-remote c: 125 c: 1)
-    (up-set-target-object search-remote c: 0)
-    (up-target-objects 0 action-move -1 -1)
+    (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
+    (disable-timer byzantine-relic-control-timer)
 )
 
-; Native DUC rule: byzantine-relic-denial-contest
+; Acquisition: two monks are a deliberately small escort package. The search
+; target is reset every pass so stale relic positions do not become permanent truth.
 (defrule
     (current-age >= castle-age)
+    (goal byzantine-relic-control-state byzantine-relic-control-idle)
     (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 1)
-    (players-unit-type-count any-enemy monk-set >= 2)
+    (unit-type-count-total monk >= 2)
+    (or
+        (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
+        (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
+    )
 =>
     (up-full-reset-search)
     (up-find-remote c: 125 c: 1)
     (up-set-target-object search-remote c: 0)
+    (up-find-local c: monk c: 2)
     (up-target-objects 0 action-move -1 -1)
+    (set-goal byzantine-relic-control-state byzantine-relic-control-acquire)
+    (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
+)
+
+; Denial: contest relics only when enemy monk pressure justifies spending monk
+; movement on denial rather than routine wandering.
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-relic-control-state byzantine-relic-control-idle)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk >= 1)
+    (players-unit-type-count any-enemy monk >= 2)
+    (or
+        (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
+        (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-remote c: 125 c: 1)
+    (up-set-target-object search-remote c: 0)
+    (up-find-local c: monk c: 1)
+    (up-target-objects 0 action-move -1 -1)
+    (set-goal byzantine-relic-control-state byzantine-relic-control-deny)
+    (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
+)
+
+; Target-task expiry is a cadence reset. It is not a claim that the relic was
+; acquired or denied; the next pass must observe the world again.
+(defrule
+    (or
+        (goal byzantine-relic-control-state byzantine-relic-control-acquire)
+        (goal byzantine-relic-control-state byzantine-relic-control-deny)
+    )
+    (timer-triggered byzantine-relic-control-timer)
+=>
+    (disable-timer byzantine-relic-control-timer)
+    (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
+)
+
+
+; -----------------------------------------------------------------------------
+; DEFENSIVE GEOMETRY OBSERVATION / PAIR ARBITRATION
+; Existing demand-adaptive-stone-wall remains the strategic owner.
+; Geometry persists the selected anchor pair and reuses it after wall loss while
+; both anchors survive. A destroyed anchor invalidates only that pair.
+; Static score order: anchor value + pair synergy + compactness - stone cost.
+; -----------------------------------------------------------------------------
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (goal demand-adaptive-stone-wall 1)
+    (not (building-type-count 72 >= 1))
+    (not (building-type-count 117 >= 1))
+    (or
+        (up-timer-status byzantine-wall-geometry-timer c:== timer-disabled)
+        (up-timer-status byzantine-wall-geometry-timer c:== timer-triggered)
+    )
+    (current-age >= feudal-age)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+=>
+    (disable-timer byzantine-wall-geometry-timer)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (goal demand-adaptive-stone-wall 1)
+    (not (building-type-count 72 >= 1))
+    (not (building-type-count 117 >= 1))
+    (or
+        (up-timer-status byzantine-wall-geometry-timer c:== timer-disabled)
+        (up-timer-status byzantine-wall-geometry-timer c:== timer-triggered)
+    )
+    (current-age >= feudal-age)
+    (goal byzantine-wall-anchor-pair 0)
+=>
+    (disable-timer byzantine-wall-geometry-timer)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count town-center >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-tc-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count castle >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: castle c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-castle-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count keep >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: keep c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-keep-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count bombard-tower >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: bombard-tower c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-bombard-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count guard-tower >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: guard-tower c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-guard-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count watch-tower >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: watch-tower c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-watch-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (building-type-count outpost >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: outpost c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-wall-outpost-point)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point > 8)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point > 8)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point > 8)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point > 8)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point > 8)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point > 8)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point > 8)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point > 8)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point > 16)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point > 16)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point > 16)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point > 8)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point > 8)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point > 16)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point > 16)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point > 8)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point > 16)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point > 16)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point > 8)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point > 8)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point > 8)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point > 16)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point <= 8)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point > 24)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point > 8)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point > 8)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point > 24)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point > 24)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point > 8)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point > 16)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point > 8)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point > 16)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point > 24)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point > 24)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point > 8)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point > 16)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point > 24)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point > 24)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point > 8)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point > 16)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point > 16)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point > 16)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point > 24)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point > 8)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point <= 16)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point > 16)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point > 16)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point > 16)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point > 24)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point > 16)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point > 24)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point > 16)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point > 24)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point > 16)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point > 24)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point > 24)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point > 24)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point > 16)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point <= 24)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point > 24)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point > 24)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point > 32)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-castle-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point > 24)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point > 24)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point > 32)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-keep-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-keep-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point > 24)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point > 32)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-bombard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-bombard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point > 24)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-bombard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point > 24)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point <= 32)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-tc-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+; No pair survived the bounded geometry scan. Wait rather than hammering DUC.
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+=>
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count castle == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count keep == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count bombard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count keep == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count bombard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count bombard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count bombard-tower == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count bombard-tower == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count bombard-tower == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count guard-tower == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count guard-tower == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count watch-tower == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+=>
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (current-age >= castle-age)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 117)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-castle-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (current-age >= castle-age)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 117)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-keep-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (current-age >= castle-age)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 117)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-bombard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (current-age >= feudal-age)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 72)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-guard-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (current-age >= feudal-age)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 72)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-watch-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (current-age >= feudal-age)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 72)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-outpost-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-keep-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-bombard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-guard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-watch-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-outpost-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-bombard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-guard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-watch-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-outpost-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (current-age >= castle-age)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-bombard-point c: 117)
+=>
+    (up-build-line byzantine-wall-bombard-point byzantine-wall-guard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (current-age >= castle-age)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-bombard-point c: 117)
+=>
+    (up-build-line byzantine-wall-bombard-point byzantine-wall-watch-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (current-age >= castle-age)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-bombard-point c: 117)
+=>
+    (up-build-line byzantine-wall-bombard-point byzantine-wall-outpost-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (current-age >= feudal-age)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-guard-point c: 72)
+=>
+    (up-build-line byzantine-wall-guard-point byzantine-wall-watch-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (current-age >= feudal-age)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-guard-point c: 72)
+=>
+    (up-build-line byzantine-wall-guard-point byzantine-wall-outpost-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (current-age >= feudal-age)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-watch-point c: 72)
+=>
+    (up-build-line byzantine-wall-watch-point byzantine-wall-outpost-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
 )
 
 ; Native attack lifecycle plan
@@ -995,6 +3326,10 @@
 (defconst byzantine-scout-gold-point 392)
 (defconst byzantine-scout-intel-timer 10)
 (defconst bt-byzantine-scout-intel-seconds 30)
+
+; -----------------------------------------------------------------------------
+
+
 (defconst demand-economy-barracks-floor-1 271)
 (defconst issued-economy-barracks-floor-1 272)
 (defconst pending-economy-barracks-floor-1 273)
@@ -2045,6 +4380,11 @@
     (set-strategic-number sn-preferred-mill-placement 1)
     (set-strategic-number sn-boar-lure-destination 0)
     (set-strategic-number sn-maximum-wood-drop-distance 32)
+    ; Keep automatic repair on critical structures, siege, houses, towers, walls, and gates.
+    ; AIRef defines sn-object-repair-level as a bitmask: 1 critical castle/monastery,
+    ; 2 town center, 4 barracks, 2048 houses, 4096 towers, 8192 walls/gates,
+    ; and 16384 siege. 30727 selects that defensive shell plus siege.
+    (set-strategic-number sn-object-repair-level 30727)
     (disable-self)
 )
 
@@ -2281,7 +4621,6 @@
     (goal byzantine-scout-phase 21)
     (up-compare-goal 384 > 0)
 =>
-    (up-full-reset-search)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-scout-wood-point)
@@ -2324,7 +4663,6 @@
     (goal byzantine-scout-phase 22)
     (up-compare-goal 384 > 0)
 =>
-    (up-full-reset-search)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-scout-gold-point)
@@ -2519,24 +4857,7 @@
 ; Full loss recovery: clear the scouting phase so a rebuilt Scout gets the same
 ; information loop instead of inheriting a stale mission.
 (defrule
-    (or
-        (goal byzantine-scout-phase 1)
-        (goal byzantine-scout-phase 2)
-        (goal byzantine-scout-phase 3)
-        (goal byzantine-scout-phase 4)
-        (goal byzantine-scout-phase 5)
-        (goal byzantine-scout-phase 6)
-        (goal byzantine-scout-phase 7)
-        (goal byzantine-scout-phase 8)
-        (goal byzantine-scout-phase 9)
-        (goal byzantine-scout-phase 15)
-        (goal byzantine-scout-phase 16)
-        (goal byzantine-scout-phase 17)
-        (goal byzantine-scout-phase 18)
-        (goal byzantine-scout-phase 20)
-        (goal byzantine-scout-phase 21)
-        (goal byzantine-scout-phase 22)
-    )
+    (up-compare-goal byzantine-scout-phase > 0)
     (not (unit-type-count scout-cavalry-line >= 1))
 =>
     (set-goal byzantine-scout-phase 0)
@@ -3015,6 +5336,78 @@
     (set-strategic-number sn-percent-civilian-builders 5)
 )
 
+;----------------------------------------------------------------
+; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER
+; resource-front observation -> native placement radius -> construction witness
+; resource-found is observation evidence, not continuous world truth.
+(defrule
+    (or
+        (up-compare-sn sn-allow-adjacent-dropsites != 0)
+        (up-compare-sn sn-dropsite-separation-distance != 6)
+    )
+=>
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 6)
+)
+
+(defrule
+    (current-age < feudal-age)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance 16)
+    (set-strategic-number sn-mining-camp-max-distance 16)
+)
+
+(defrule
+    (and (current-age >= feudal-age) (current-age < castle-age))
+=>
+    (set-strategic-number sn-lumber-camp-max-distance 20)
+    (set-strategic-number sn-mining-camp-max-distance 20)
+)
+
+(defrule
+    (and (current-age >= castle-age) (current-age < imperial-age))
+=>
+    (set-strategic-number sn-lumber-camp-max-distance 28)
+    (set-strategic-number sn-mining-camp-max-distance 28)
+)
+
+(defrule
+    (current-age >= imperial-age)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance 36)
+    (set-strategic-number sn-mining-camp-max-distance 36)
+)
+
+(defrule
+    (or
+        (dropsite-min-distance wood <= -1)
+        (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance)
+    )
+    (strategic-number sn-lumber-camp-max-distance < 36)
+=>
+    (up-modify-sn sn-lumber-camp-max-distance c:+ 4)
+)
+
+(defrule
+    (or
+        (dropsite-min-distance gold <= -1)
+        (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)
+    )
+    (strategic-number sn-mining-camp-max-distance < 36)
+=>
+    (up-modify-sn sn-mining-camp-max-distance c:+ 4)
+)
+
+(defrule
+    (or
+        (dropsite-min-distance stone <= -1)
+        (dropsite-min-distance stone s:>= sn-mining-camp-max-distance)
+    )
+    (strategic-number sn-mining-camp-max-distance < 36)
+=>
+    (up-modify-sn sn-mining-camp-max-distance c:+ 4)
+)
+
 ; Per-pass transient action arbitration
 (defrule
     (true)
@@ -3125,17 +5518,7 @@
     (set-goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
 )
 
-(defrule
-    (true)
-=>
-    (set-goal construction-retry-barrier-economy-mining-camp-floor-1 0)
-)
 
-(defrule
-    (true)
-=>
-    (set-goal construction-retry-barrier-economy-mining-camp-floor-2 0)
-)
 
 (defrule
     (true)
@@ -3878,7 +6261,7 @@
     (dropsite-min-distance gold > 18)
 =>
     (up-retask-gatherers gold c: byzantine-economy-delta-step)
-    (set-goal demand-economy-mining-camp-floor-2 1)
+    (set-goal demand-economy-gold-camp-floor-2 1)
     (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
     (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
     (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
@@ -3905,7 +6288,7 @@
     (dropsite-min-distance gold == -1)
     (up-compare-goal byzantine-remote-resource-productivity-search-local-list c:== 0)
 =>
-    (set-goal demand-economy-mining-camp-floor-1 1)
+    (set-goal demand-economy-gold-camp-floor-1 1)
     (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
     (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
     (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
@@ -4747,11 +7130,38 @@
     (goal byzantine-surplus-spend-claim 0)
     (wood-amount > 5000)
     (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-    (goal demand-imperial-bombard-floor 0)
     (unit-type-count-total bombard-cannon < bt-imperial-late-bombard-target)
     (gold-amount > 2500)
 =>
     (set-goal demand-imperial-bombard-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
+)
+
+; Imperial farm boom is split by TC count so each native rule stays comfortably
+; under DE's 32-element rule budget while preserving the same arbitration guards.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (wood-amount > 5000)
+    (not (building-type-count-total town-center >= 2))
+    (building-type-count farm < bt-imperial-farm-target-1tc)
+=>
+    (set-goal demand-economy-farm-boom-imperial 1)
     (set-goal byzantine-surplus-spend-claim 1)
     (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
 )
@@ -4774,22 +7184,35 @@
     (goal demand-economy-house-floor-16 0)
     (goal byzantine-surplus-spend-claim 0)
     (wood-amount > 5000)
+    (building-type-count-total town-center >= 2)
+    (not (building-type-count-total town-center >= 3))
+    (building-type-count farm < bt-imperial-farm-target-2tc)
+=>
+    (set-goal demand-economy-farm-boom-imperial 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
     (goal demand-economy-farm-boom-imperial 0)
-    (or
-        (and
-            (not (building-type-count-total town-center >= 2))
-            (building-type-count farm < bt-imperial-farm-target-1tc)
-        )
-        (and
-            (building-type-count-total town-center >= 2)
-            (not (building-type-count-total town-center >= 3))
-            (building-type-count farm < bt-imperial-farm-target-2tc)
-        )
-        (and
-            (building-type-count-total town-center >= 3)
-            (building-type-count farm < bt-imperial-farm-target-3tc)
-        )
-    )
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (wood-amount > 5000)
+    (building-type-count-total town-center >= 3)
+    (building-type-count farm < bt-imperial-farm-target-3tc)
 =>
     (set-goal demand-economy-farm-boom-imperial 1)
     (set-goal byzantine-surplus-spend-claim 1)
@@ -5100,6 +7523,27 @@
 )
 
 ;----------------------------------------------------------------
+; PETARD / STATIC-DEFENSE BREAK PACKAGE
+;----------------------------------------------------------------
+; Byzantine has no reason to feed the main army into a persistent wall. A small
+; Castle-built petard packet is cheaper and cleaner when a large enemy stone-wall
+; presence has been observed. This is a demand-light execution overlay, not a
+; second siege scheduler.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (players-building-type-count any-enemy 117 >= 5)
+    (unit-type-count-total petard < 3)
+    (goal action-claim-train-arbitration 0)
+    (can-train petard)
+=>
+    (train petard)
+    (set-goal action-claim-train-arbitration 1)
+)
+
+;----------------------------------------------------------------
 ; EXISTING-DEMAND MARKET RESIDUAL BALANCE
 ;----------------------------------------------------------------
 ; Market remains the last resort. The explicit surplus claim prevents it from
@@ -5202,8 +7646,8 @@
     (goal demand-imperial-trebuchet-floor 0)
     (goal demand-imperial-bombard-floor 0)
     (building-type-count-total market >= 1)
-    (gold-amount > 4000)
-    (food-amount < 1200)
+    (gold-amount > 3500)
+    (food-amount < 1400)
     (can-buy-commodity food)
 =>
     (buy-commodity food)
@@ -5254,6 +7698,159 @@
     )
 =>
     (set-goal byzantine-market-state byzantine-market-idle)
+)
+
+
+
+; -----------------------------------------------------------------------------
+; LATE-GAME SPEND / RECOVERY OVERLAY
+; -----------------------------------------------------------------------------
+; Food crisis: do not wait for the broad market controller to notice starvation.
+(defrule
+    (current-age >= feudal-age)
+    (goal byzantine-food-recovery-state byzantine-food-recovery-idle)
+    (goal byzantine-army-reinforcement 0)
+    (or (food-amount < 450) (and (current-age >= imperial-age) (food-amount < 700)))
+    (or (wood-amount > 900) (gold-amount > 900))
+    (or
+        (up-timer-status byzantine-food-recovery-timer c:== timer-disabled)
+        (up-timer-status byzantine-food-recovery-timer c:== timer-triggered)
+    )
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-recovery-state byzantine-food-recovery-active)
+    (enable-timer byzantine-food-recovery-timer bt-byzantine-food-recovery-seconds)
+)
+
+(defrule
+    (goal byzantine-food-recovery-state byzantine-food-recovery-active)
+    (food-amount >= 900)
+=>
+    (set-goal byzantine-food-recovery-state byzantine-food-recovery-idle)
+    (disable-timer byzantine-food-recovery-timer)
+)
+
+(defrule
+    (goal byzantine-food-recovery-state byzantine-food-recovery-active)
+    (timer-triggered byzantine-food-recovery-timer)
+    (food-amount < 900)
+=>
+    (disable-timer byzantine-food-recovery-timer)
+    (enable-timer byzantine-food-recovery-timer bt-byzantine-food-recovery-seconds)
+    (up-retask-gatherers food c: 2)
+)
+
+; Production-capacity expansion: once the Byzantine economy has actually
+; reached Imperial scale, add production outlets before permitting the resource
+; bank to become the only "strategy" on the screen.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2200)
+    (building-type-count barracks < 4)
+    (up-pending-objects c: 12 == 0)
+    (can-build barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2200)
+    (gold-amount > 1500)
+    (building-type-count stable < 3)
+    (up-pending-objects c: 101 == 0)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+    )
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2200)
+    (building-type-count archery-range < 3)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (up-pending-objects c: 87 == 0)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-fortification-threat 1)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2400)
+    (building-type-count siege-workshop < 2)
+    (up-pending-objects c: 49 == 0)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Team trade is a resource sink only after direct production/research pressure
+; has been given first refusal. The six-cart ceiling is intentionally modest.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-train-arbitration 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (building-type-count market >= 1)
+    (players-building-type-count any-ally market >= 1)
+    (unit-type-count-total trade-cart < 6)
+    (food-amount > 900)
+    (wood-amount > 900)
+    (gold-amount > 1400)
+    (can-train trade-cart)
+=>
+    (train trade-cart)
+    (set-goal action-claim-train-arbitration 1)
+)
+
+; Emergency food purchase is the final fallback for genuine hunger, not a
+; standing market policy. It only fires with a large gold bank.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (building-type-count-total market >= 1)
+    (gold-amount > 3000)
+    (food-amount < 600)
+    (can-buy-commodity food)
+=>
+    (buy-commodity food)
+    (set-goal byzantine-market-state byzantine-market-buy-food)
 )
 
 ;----------------------------------------------------------------
@@ -5759,10 +8356,12 @@
     (goal byzantine-army-attack-ready 2)
     (or
         (goal byzantine-siege-approach byzantine-siege-approach-fortified)
-        (goal byzantine-siege-approach byzantine-siege-approach-staging)
         (or
-            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
-            (goal byzantine-siege-approach byzantine-siege-approach-breach)
+            (goal byzantine-siege-approach byzantine-siege-approach-staging)
+            (or
+                (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+                (goal byzantine-siege-approach byzantine-siege-approach-breach)
+            )
         )
     )
 =>
@@ -6177,6 +8776,91 @@
     (set-goal research-retry-barrier-research-heavy-demolition-ship 0)
 )
 
+; Per-pass Byzantine resource-camp construction retry barriers
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-4 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-5 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-6 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-1 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-1 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-2 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-4 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-5 0)
+)
+
 ; Demand initialization
 (defrule
     (true)
@@ -6205,8 +8889,20 @@
     (set-goal demand-economy-farm-boom-imperial 0)
     (set-goal demand-economy-lumber-camp-floor-1 1)
     (set-goal demand-economy-lumber-camp-floor-2 1)
-    (set-goal demand-economy-mining-camp-floor-1 1)
-    (set-goal demand-economy-mining-camp-floor-2 1)
+    (set-goal demand-economy-wood-camp-floor-3 1)
+    (set-goal demand-economy-wood-camp-floor-4 1)
+    (set-goal demand-economy-wood-camp-floor-5 1)
+    (set-goal demand-economy-wood-camp-floor-6 1)
+    (set-goal demand-economy-gold-camp-floor-1 1)
+    (set-goal demand-economy-gold-camp-floor-2 1)
+    (set-goal demand-economy-gold-camp-floor-3 1)
+    (set-goal demand-economy-gold-camp-floor-4 1)
+    (set-goal demand-economy-gold-camp-floor-5 1)
+    (set-goal demand-economy-stone-camp-floor-1 1)
+    (set-goal demand-economy-stone-camp-floor-2 1)
+    (set-goal demand-economy-stone-camp-floor-3 1)
+    (set-goal demand-economy-stone-camp-floor-4 1)
+    (set-goal demand-economy-stone-camp-floor-5 1)
     (set-goal demand-economy-food-mill-boom 1)
     (set-goal demand-economy-market-floor-1 1)
     (set-goal demand-castle-stable-capability 0)
@@ -6242,6 +8938,13 @@
     (set-goal demand-adaptive-outpost 1)
     (set-goal demand-adaptive-watch-tower 1)
     (set-goal demand-adaptive-stone-wall 1)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (set-goal byzantine-wall-anchor-pair 0)
+    (disable-timer byzantine-wall-geometry-timer)
+    (set-goal byzantine-food-recovery-state byzantine-food-recovery-idle)
+    (disable-timer byzantine-food-recovery-timer)
+    (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
+    (disable-timer byzantine-relic-control-timer)
     (set-goal demand-adaptive-guard-tower 1)
     (set-goal demand-imperial-keep-floor 1)
     (set-goal demand-imperial-bombard-tower-floor 1)
@@ -6249,6 +8952,12 @@
     (set-goal demand-research-double-bit-axe 1)
     (set-goal demand-research-horse-collar 1)
     (set-goal demand-research-hand-cart 1)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal demand-research-bow-saw 1)
     (set-goal demand-research-two-man-saw 1)
     (set-goal demand-research-bodkin-arrow 1)
@@ -9574,217 +12283,1119 @@
     (set-goal demand-economy-lumber-camp-floor-2 78)
 )
 
-; Pending diagnostics: economy-mining-camp-floor-1
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 77 and cannot reissue from pending goal 78
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 78 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 79 is reached
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
-; Issuance failure: economy-mining-camp-floor-1 | RETAIN-ACTIVE
-; An unsatisfied issuance guard leaves demand-economy-mining-camp-floor-1 in ACTIVE; it is not PENDING.
-; Release: economy-mining-camp-floor-1 | COMPLETE -> RELEASED
+;----------------------------------------------------------------
+; RESOURCE-SPECIFIC BYZANTINE CAMP LIFECYCLES
+;----------------------------------------------------------------
+; economy-wood-camp-floor-3
 (defrule
-    (goal demand-economy-mining-camp-floor-1 79)
-    (building-type-count mining-camp >= 1)
+    (goal demand-economy-wood-camp-floor-3 603)
+    (building-type-count lumber-camp >= 3)
 =>
-    (set-goal demand-economy-mining-camp-floor-1 0)
+    (set-goal demand-economy-wood-camp-floor-3 0)
 )
 
-; Recovery: economy-mining-camp-floor-1 | RELEASED -> ACTIVE on world-state loss
 (defrule
-    (goal demand-economy-mining-camp-floor-1 0)
-    (not (building-type-count mining-camp >= 1))
-    (or (resource-found gold) (resource-found stone))
+    (goal demand-economy-wood-camp-floor-3 0)
+    (resource-found wood)
+    (not (building-type-count lumber-camp >= 3))
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
 =>
-    (set-goal demand-economy-mining-camp-floor-1 1)
+    (set-goal demand-economy-wood-camp-floor-3 1)
 )
 
-; Construction observation: economy-mining-camp-floor-1
-; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
-; Completion witness: economy-mining-camp-floor-1 | PENDING/ISSUED -> COMPLETE
-; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-1 80)
-        (goal demand-economy-mining-camp-floor-1 78)
+        (goal demand-economy-wood-camp-floor-3 601)
+        (goal demand-economy-wood-camp-floor-3 602)
+    )
+    (building-type-count lumber-camp >= 3)
+=>
+    (set-goal demand-economy-wood-camp-floor-3 603)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-3 601)
+        (goal demand-economy-wood-camp-floor-3 602)
+    )
+    (not (building-type-count lumber-camp >= 3))
+    (up-pending-objects c: 562 >= 1)
+=>
+    (set-goal demand-economy-wood-camp-floor-3 602)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-3 601)
+        (goal demand-economy-wood-camp-floor-3 602)
+    )
+    (not (building-type-count lumber-camp >= 3))
+    (up-pending-objects c: 562 == 0)
+    (up-pending-placement c: 562)
+=>
+    (set-goal demand-economy-wood-camp-floor-3 602)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-3 601)
+        (goal demand-economy-wood-camp-floor-3 602)
+    )
+    (not (building-type-count lumber-camp >= 3))
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+=>
+    (set-goal demand-economy-wood-camp-floor-3 1)
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-3 1)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-3 1)
+    (not (building-type-count lumber-camp >= 3))
+    (goal construction-retry-barrier-economy-wood-camp-floor-3 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 3)
+=>
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-3 601)
+)
+
+; economy-wood-camp-floor-4
+(defrule
+    (goal demand-economy-wood-camp-floor-4 608)
+    (building-type-count lumber-camp >= 4)
+=>
+    (set-goal demand-economy-wood-camp-floor-4 0)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-4 0)
+    (resource-found wood)
+    (not (building-type-count lumber-camp >= 4))
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+=>
+    (set-goal demand-economy-wood-camp-floor-4 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-4 606)
+        (goal demand-economy-wood-camp-floor-4 607)
+    )
+    (building-type-count lumber-camp >= 4)
+=>
+    (set-goal demand-economy-wood-camp-floor-4 608)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-4 606)
+        (goal demand-economy-wood-camp-floor-4 607)
+    )
+    (not (building-type-count lumber-camp >= 4))
+    (up-pending-objects c: 562 >= 1)
+=>
+    (set-goal demand-economy-wood-camp-floor-4 607)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-4 606)
+        (goal demand-economy-wood-camp-floor-4 607)
+    )
+    (not (building-type-count lumber-camp >= 4))
+    (up-pending-objects c: 562 == 0)
+    (up-pending-placement c: 562)
+=>
+    (set-goal demand-economy-wood-camp-floor-4 607)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-4 606)
+        (goal demand-economy-wood-camp-floor-4 607)
+    )
+    (not (building-type-count lumber-camp >= 4))
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+=>
+    (set-goal demand-economy-wood-camp-floor-4 1)
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-4 1)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-4 1)
+    (not (building-type-count lumber-camp >= 4))
+    (goal construction-retry-barrier-economy-wood-camp-floor-4 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 4)
+=>
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-4 606)
+)
+
+; economy-wood-camp-floor-5
+(defrule
+    (goal demand-economy-wood-camp-floor-5 613)
+    (building-type-count lumber-camp >= 5)
+=>
+    (set-goal demand-economy-wood-camp-floor-5 0)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-5 0)
+    (resource-found wood)
+    (not (building-type-count lumber-camp >= 5))
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+=>
+    (set-goal demand-economy-wood-camp-floor-5 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-5 611)
+        (goal demand-economy-wood-camp-floor-5 612)
+    )
+    (building-type-count lumber-camp >= 5)
+=>
+    (set-goal demand-economy-wood-camp-floor-5 613)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-5 611)
+        (goal demand-economy-wood-camp-floor-5 612)
+    )
+    (not (building-type-count lumber-camp >= 5))
+    (up-pending-objects c: 562 >= 1)
+=>
+    (set-goal demand-economy-wood-camp-floor-5 612)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-5 611)
+        (goal demand-economy-wood-camp-floor-5 612)
+    )
+    (not (building-type-count lumber-camp >= 5))
+    (up-pending-objects c: 562 == 0)
+    (up-pending-placement c: 562)
+=>
+    (set-goal demand-economy-wood-camp-floor-5 612)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-5 611)
+        (goal demand-economy-wood-camp-floor-5 612)
+    )
+    (not (building-type-count lumber-camp >= 5))
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+=>
+    (set-goal demand-economy-wood-camp-floor-5 1)
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-5 1)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-5 1)
+    (not (building-type-count lumber-camp >= 5))
+    (goal construction-retry-barrier-economy-wood-camp-floor-5 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 5)
+=>
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-5 611)
+)
+
+; economy-wood-camp-floor-6
+(defrule
+    (goal demand-economy-wood-camp-floor-6 618)
+    (building-type-count lumber-camp >= 6)
+=>
+    (set-goal demand-economy-wood-camp-floor-6 0)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-6 0)
+    (resource-found wood)
+    (not (building-type-count lumber-camp >= 6))
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+=>
+    (set-goal demand-economy-wood-camp-floor-6 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-6 616)
+        (goal demand-economy-wood-camp-floor-6 617)
+    )
+    (building-type-count lumber-camp >= 6)
+=>
+    (set-goal demand-economy-wood-camp-floor-6 618)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-6 616)
+        (goal demand-economy-wood-camp-floor-6 617)
+    )
+    (not (building-type-count lumber-camp >= 6))
+    (up-pending-objects c: 562 >= 1)
+=>
+    (set-goal demand-economy-wood-camp-floor-6 617)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-6 616)
+        (goal demand-economy-wood-camp-floor-6 617)
+    )
+    (not (building-type-count lumber-camp >= 6))
+    (up-pending-objects c: 562 == 0)
+    (up-pending-placement c: 562)
+=>
+    (set-goal demand-economy-wood-camp-floor-6 617)
+)
+
+(defrule
+    (or
+        (goal demand-economy-wood-camp-floor-6 616)
+        (goal demand-economy-wood-camp-floor-6 617)
+    )
+    (not (building-type-count lumber-camp >= 6))
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+=>
+    (set-goal demand-economy-wood-camp-floor-6 1)
+    (set-goal construction-retry-barrier-economy-wood-camp-floor-6 1)
+)
+
+(defrule
+    (goal demand-economy-wood-camp-floor-6 1)
+    (not (building-type-count lumber-camp >= 6))
+    (goal construction-retry-barrier-economy-wood-camp-floor-6 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 6)
+=>
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-6 616)
+)
+
+; economy-gold-camp-floor-1
+(defrule
+    (goal demand-economy-gold-camp-floor-1 623)
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-1 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-1 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 1))
+=>
+    (set-goal demand-economy-gold-camp-floor-1 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-1 621)
+        (goal demand-economy-gold-camp-floor-1 622)
     )
     (building-type-count mining-camp >= 1)
 =>
-    (set-goal demand-economy-mining-camp-floor-1 79)
+    (set-goal demand-economy-gold-camp-floor-1 623)
 )
 
-; Pending admission: economy-mining-camp-floor-1 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-1 80)
-        (goal demand-economy-mining-camp-floor-1 78)
+        (goal demand-economy-gold-camp-floor-1 621)
+        (goal demand-economy-gold-camp-floor-1 622)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-mining-camp-floor-1 78)
+    (set-goal demand-economy-gold-camp-floor-1 622)
 )
 
-; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-1 80)
-        (goal demand-economy-mining-camp-floor-1 78)
+        (goal demand-economy-gold-camp-floor-1 621)
+        (goal demand-economy-gold-camp-floor-1 622)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-mining-camp-floor-1 78)
+    (set-goal demand-economy-gold-camp-floor-1 622)
 )
 
-; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-1 80)
-        (goal demand-economy-mining-camp-floor-1 78)
+        (goal demand-economy-gold-camp-floor-1 621)
+        (goal demand-economy-gold-camp-floor-1 622)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
 =>
-    (set-goal demand-economy-mining-camp-floor-1 1)
-    (set-goal construction-retry-barrier-economy-mining-camp-floor-1 1)
+    (set-goal demand-economy-gold-camp-floor-1 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-1 1)
 )
 
-; Action issuance: economy-mining-camp-floor-1 | ACTIVE -> ISSUED
 (defrule
-    (goal demand-economy-mining-camp-floor-1 1)
+    (goal demand-economy-gold-camp-floor-1 1)
     (not (building-type-count mining-camp >= 1))
-    (goal construction-retry-barrier-economy-mining-camp-floor-1 0)
+    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
-    (not (building-type-count mining-camp >= 1))
     (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
-    (unit-type-count-total villager >= 9)
-    (or (resource-found gold) (resource-found stone))
-    (or (dropsite-min-distance gold > 5) (dropsite-min-distance stone > 5))
+    (resource-found gold)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-mining-camp-floor-1 80)
+    (set-goal demand-economy-gold-camp-floor-1 621)
 )
 
-; Persistent stone drop-site: when a stone bank is active, guarantee a mining camp can be placed
-; on a discovered stone pile instead of assuming the generic mining-camp floor will choose it.
+; economy-gold-camp-floor-2
 (defrule
-    (strategic-number sn-stone-gatherer-percentage > 0)
-    (resource-found stone)
-    (dropsite-min-distance stone > 5)
-    (building-type-count-total mining-camp < 3)
-    (up-pending-objects c: 584 == 0)
-    (goal action-claim-build-pass-singleton 0)
-    (can-build mining-camp)
-=>
-    (set-strategic-number sn-allow-adjacent-dropsites 0)
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-; Pending diagnostics: economy-mining-camp-floor-2
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 78 and cannot reissue from pending goal 79
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 79 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 80 is reached
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
-; Issuance failure: economy-mining-camp-floor-2 | RETAIN-ACTIVE
-; An unsatisfied issuance guard leaves demand-economy-mining-camp-floor-2 in ACTIVE; it is not PENDING.
-; Release: economy-mining-camp-floor-2 | COMPLETE -> RELEASED
-(defrule
-    (goal demand-economy-mining-camp-floor-2 80)
+    (goal demand-economy-gold-camp-floor-2 628)
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-mining-camp-floor-2 0)
+    (set-goal demand-economy-gold-camp-floor-2 0)
 )
 
-; Recovery: economy-mining-camp-floor-2 | RELEASED -> ACTIVE on world-state loss
 (defrule
-    (goal demand-economy-mining-camp-floor-2 0)
+    (goal demand-economy-gold-camp-floor-2 0)
+    (resource-found gold)
     (not (building-type-count mining-camp >= 2))
-    (or (dropsite-min-distance gold > 12) (dropsite-min-distance stone > 12))
 =>
-    (set-goal demand-economy-mining-camp-floor-2 1)
+    (set-goal demand-economy-gold-camp-floor-2 1)
 )
 
-; Construction observation: economy-mining-camp-floor-2
-; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
-; Completion witness: economy-mining-camp-floor-2 | PENDING/ISSUED -> COMPLETE
-; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-2 81)
-        (goal demand-economy-mining-camp-floor-2 79)
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
     )
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-mining-camp-floor-2 80)
+    (set-goal demand-economy-gold-camp-floor-2 628)
 )
 
-; Pending admission: economy-mining-camp-floor-2 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-2 81)
-        (goal demand-economy-mining-camp-floor-2 79)
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-mining-camp-floor-2 79)
+    (set-goal demand-economy-gold-camp-floor-2 627)
 )
 
-; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-2 81)
-        (goal demand-economy-mining-camp-floor-2 79)
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-mining-camp-floor-2 79)
+    (set-goal demand-economy-gold-camp-floor-2 627)
 )
 
-; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-mining-camp-floor-2 81)
-        (goal demand-economy-mining-camp-floor-2 79)
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
 =>
-    (set-goal demand-economy-mining-camp-floor-2 1)
-    (set-goal construction-retry-barrier-economy-mining-camp-floor-2 1)
+    (set-goal demand-economy-gold-camp-floor-2 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-2 1)
 )
 
-; Action issuance: economy-mining-camp-floor-2 | ACTIVE -> ISSUED
 (defrule
-    (goal demand-economy-mining-camp-floor-2 1)
+    (goal demand-economy-gold-camp-floor-2 1)
     (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-mining-camp-floor-2 0)
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
-    (not (building-type-count mining-camp >= 2))
     (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
-    (or (resource-found gold) (resource-found stone))
-    (or (dropsite-min-distance gold > 12) (dropsite-min-distance stone > 12))
+    (resource-found gold)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-mining-camp-floor-2 81)
+    (set-goal demand-economy-gold-camp-floor-2 626)
+)
+
+; economy-gold-camp-floor-3
+(defrule
+    (goal demand-economy-gold-camp-floor-3 633)
+    (building-type-count mining-camp >= 3)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-3 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 3))
+    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
+=>
+    (set-goal demand-economy-gold-camp-floor-3 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (building-type-count mining-camp >= 3)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 633)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 632)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 632)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-3 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-3 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-3 1)
+    (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-3 631)
+)
+
+; economy-gold-camp-floor-4
+(defrule
+    (goal demand-economy-gold-camp-floor-4 638)
+    (building-type-count mining-camp >= 4)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-4 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 4))
+    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
+=>
+    (set-goal demand-economy-gold-camp-floor-4 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (building-type-count mining-camp >= 4)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 638)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 637)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 637)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-4 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-4 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-4 1)
+    (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-4 636)
+)
+
+; economy-gold-camp-floor-5
+(defrule
+    (goal demand-economy-gold-camp-floor-5 643)
+    (building-type-count mining-camp >= 5)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-5 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 5))
+    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
+=>
+    (set-goal demand-economy-gold-camp-floor-5 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (building-type-count mining-camp >= 5)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 643)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 642)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 642)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-5 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-5 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-5 1)
+    (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-5 641)
+)
+
+; economy-stone-camp-floor-1
+(defrule
+    (goal demand-economy-stone-camp-floor-1 648)
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 0)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-1 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (not (building-type-count mining-camp >= 1))
+=>
+    (set-goal demand-economy-stone-camp-floor-1 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 648)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 647)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 647)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-stone-camp-floor-1 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-1 1)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-1 1)
+    (not (building-type-count mining-camp >= 1))
+    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-1 646)
+)
+
+; economy-stone-camp-floor-2
+(defrule
+    (goal demand-economy-stone-camp-floor-2 653)
+    (building-type-count mining-camp >= 2)
+=>
+    (set-goal demand-economy-stone-camp-floor-2 0)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-2 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (not (building-type-count mining-camp >= 2))
+=>
+    (set-goal demand-economy-stone-camp-floor-2 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
+    )
+    (building-type-count mining-camp >= 2)
+=>
+    (set-goal demand-economy-stone-camp-floor-2 653)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-2 652)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-stone-camp-floor-2 652)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-stone-camp-floor-2 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-2 1)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-2 1)
+    (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-2 651)
+)
+
+; economy-stone-camp-floor-3
+(defrule
+    (goal demand-economy-stone-camp-floor-3 658)
+    (building-type-count mining-camp >= 3)
+=>
+    (set-goal demand-economy-stone-camp-floor-3 0)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-3 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (not (building-type-count mining-camp >= 3))
+    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
+=>
+    (set-goal demand-economy-stone-camp-floor-3 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
+    )
+    (building-type-count mining-camp >= 3)
+=>
+    (set-goal demand-economy-stone-camp-floor-3 658)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-3 657)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-stone-camp-floor-3 657)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-stone-camp-floor-3 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-3 1)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-3 1)
+    (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-3 656)
+)
+
+; economy-stone-camp-floor-4
+(defrule
+    (goal demand-economy-stone-camp-floor-4 663)
+    (building-type-count mining-camp >= 4)
+=>
+    (set-goal demand-economy-stone-camp-floor-4 0)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-4 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (not (building-type-count mining-camp >= 4))
+    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
+=>
+    (set-goal demand-economy-stone-camp-floor-4 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
+    )
+    (building-type-count mining-camp >= 4)
+=>
+    (set-goal demand-economy-stone-camp-floor-4 663)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-4 662)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-stone-camp-floor-4 662)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-stone-camp-floor-4 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-4 1)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-4 1)
+    (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-4 661)
+)
+
+; economy-stone-camp-floor-5
+(defrule
+    (goal demand-economy-stone-camp-floor-5 668)
+    (building-type-count mining-camp >= 5)
+=>
+    (set-goal demand-economy-stone-camp-floor-5 0)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-5 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (not (building-type-count mining-camp >= 5))
+    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
+=>
+    (set-goal demand-economy-stone-camp-floor-5 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
+    )
+    (building-type-count mining-camp >= 5)
+=>
+    (set-goal demand-economy-stone-camp-floor-5 668)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-5 667)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-stone-camp-floor-5 667)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-stone-camp-floor-5 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-5 1)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-5 1)
+    (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-5 666)
 )
 
 ; Pending diagnostics: economy-food-mill-boom
@@ -10832,7 +14443,10 @@
 ; Release: adaptive-stone-wall | COMPLETE -> RELEASED
 (defrule
     (goal demand-adaptive-stone-wall 45)
-    (building-type-count 117 > 0)
+    (or
+        (building-type-count 72 > 0)
+        (building-type-count 117 > 0)
+    )
 =>
     (set-goal demand-adaptive-stone-wall 0)
 )
@@ -10840,6 +14454,7 @@
 ; Recovery: adaptive-stone-wall | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-adaptive-stone-wall 0)
+    (not (building-type-count 72 >= 1))
     (not (building-type-count 117 >= 1))
     (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
     (not (current-age >= imperial-age))
@@ -10856,19 +14471,28 @@
         (goal demand-adaptive-stone-wall 46)
         (goal demand-adaptive-stone-wall 44)
     )
-    (building-type-count 117 >= 1)
+    (or
+        (building-type-count 72 >= 1)
+        (building-type-count 117 >= 1)
+    )
 =>
     (set-goal demand-adaptive-stone-wall 45)
 )
 
 ; Pending admission: adaptive-stone-wall | ISSUED/PENDING -> PENDING
+; Both wall materials are valid because the same demand emits Palisade in Feudal
+; and Stone in Castle+. Pending is queue protection, never completion truth.
 (defrule
     (or
         (goal demand-adaptive-stone-wall 46)
         (goal demand-adaptive-stone-wall 44)
     )
+    (not (building-type-count 72 >= 1))
     (not (building-type-count 117 >= 1))
-    (up-pending-objects c: 117 >= 1)
+    (or
+        (up-pending-objects c: 72 >= 1)
+        (up-pending-objects c: 117 >= 1)
+    )
 =>
     (set-goal demand-adaptive-stone-wall 44)
 )
@@ -10879,44 +14503,36 @@
         (goal demand-adaptive-stone-wall 46)
         (goal demand-adaptive-stone-wall 44)
     )
+    (not (building-type-count 72 >= 1))
     (not (building-type-count 117 >= 1))
-    (up-pending-objects c: 117 == 0)
-    (up-pending-placement c: 117)
+    (or
+        (up-pending-placement c: 72)
+        (up-pending-placement c: 117)
+    )
 =>
     (set-goal demand-adaptive-stone-wall 44)
 )
 
-; RETRY | ISSUED/PENDING -> ACTIVE
+; RETRY | ISSUED/PENDING -> ACTIVE only after both wall queues are clear.
 (defrule
     (or
         (goal demand-adaptive-stone-wall 46)
         (goal demand-adaptive-stone-wall 44)
     )
+    (not (building-type-count 72 >= 1))
     (not (building-type-count 117 >= 1))
+    (up-pending-objects c: 72 == 0)
     (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 72))
     (not (up-pending-placement c: 117))
 =>
     (set-goal demand-adaptive-stone-wall 1)
     (set-goal construction-retry-barrier-adaptive-stone-wall 1)
 )
 
-; Action issuance: adaptive-stone-wall | ACTIVE -> ISSUED
-(defrule
-    (goal demand-adaptive-stone-wall 1)
-    (not (building-type-count 117 >= 1))
-    (goal construction-retry-barrier-adaptive-stone-wall 0)
-    (up-pending-objects c: 117 == 0)
-    (not (up-pending-placement c: 117))
-    (not (building-type-count 117 > 0))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= feudal-age)
-    (or (map-type arena) (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5)))
-    (can-build 117)
-=>
-    (build 117)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-adaptive-stone-wall 46)
-)
+; Action issuance is intentionally owned by the geometry rules above.
+; The old generic (build 117) placement path is retired; wall construction now
+; enters through up-build-line after a bounded, persisted point plan.
 
 ; Pending diagnostics: adaptive-guard-tower
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 41 and cannot reissue from pending goal 42
@@ -16065,7 +19681,7 @@
     (goal demand-water-trade-cog-floor 0)
     (not (unit-type-count 17 >= 2))
     (goal strategic-primary-intent 1)
-    (and (map-type islands) (players-building-type-count this-any-ally market >= 1))
+    (and (map-type islands) (players-building-type-count any-ally market >= 1))
 =>
     (set-goal demand-water-trade-cog-floor 1)
 )

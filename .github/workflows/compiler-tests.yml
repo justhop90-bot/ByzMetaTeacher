@@ -9,10 +9,12 @@ on:
     paths:
       - "LearnerAI/Compiler/**"
       - ".github/workflows/compiler-tests.yml"
+      - "Byzantine.per"
   pull_request:
     paths:
       - "LearnerAI/Compiler/**"
       - ".github/workflows/compiler-tests.yml"
+      - "Byzantine.per"
   workflow_dispatch:
 
 concurrency:
@@ -85,6 +87,8 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
+      - name: Native zero-findings acceptance - checked-in Byzantine.per
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/native-reports/byzantine-checked-in.json
       - name: Verify generic compiler fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
