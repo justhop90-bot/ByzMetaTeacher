@@ -245,7 +245,6 @@ def _training_demand(
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
     invalidate_ref: str | None = None,
-    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
@@ -280,7 +279,6 @@ def _training_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
-                *additional_requirements,
                 f"(can-train-with-escrow {train_target})",
                 f"(unit-type-count-total {train_target} < {minimum})",
             ),
@@ -332,16 +330,6 @@ def community_strategy_observations(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
-    monk_support_expression = (
-        "(or (town-under-attack) "
-        "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
-        "(players-unit-type-count any-enemy monk >= 2)))"
-    )
-    monk_support_cleared_expression = (
-        "(not (or (town-under-attack) "
-        "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
-        "(players-unit-type-count any-enemy monk >= 2))))"
-    )
     observations = [
         _observation(
             "strategy-castle-age",
@@ -425,34 +413,6 @@ def community_strategy_observations(
             "strategy-monastery-capability",
             f"(building-type-count-total {int(monastery.id)} < 1)",
             monastery.provenance,
-        ),
-        _observation(
-            "strategy-monk-support",
-            monk_support_expression,
-            tuple(
-                dict.fromkeys(
-                    (
-                        *monastery.provenance,
-                        *effective.unit_line("mangonel-line").provenance,
-                        *effective.unit_line("monk-line").provenance,
-                        *_airef_provenance(effective, "commands/commands-details.html#town-under-attack"),
-                    )
-                )
-            ),
-        ),
-        _observation(
-            "strategy-monk-support-cleared",
-            monk_support_cleared_expression,
-            tuple(
-                dict.fromkeys(
-                    (
-                        *monastery.provenance,
-                        *effective.unit_line("mangonel-line").provenance,
-                        *effective.unit_line("monk-line").provenance,
-                        *_airef_provenance(effective, "commands/commands-details.html#town-under-attack"),
-                    )
-                )
-            ),
         ),
         _observation(
             "strategy-siege-workshop-capability",
