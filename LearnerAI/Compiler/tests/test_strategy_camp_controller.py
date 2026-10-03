@@ -31,6 +31,9 @@ class ByzantineCampControllerTests(unittest.TestCase):
             remote = profile.observation(f"camp-front-{resource}-remote")
             self.assertIn("resource-found", active.expression)
             self.assertIn("dropsite-min-distance", remote.expression)
+            if resource == "stone":
+                self.assertIn("(current-age >= castle-age)", active.expression)
+                self.assertIn("(stone-amount < 650)", active.expression)
 
             for floor in range(1, max_count + 1):
                 demand = profile.demand(f"economy-{resource}-camp-floor-{floor}")
