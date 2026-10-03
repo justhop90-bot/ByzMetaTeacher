@@ -10,6 +10,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     StrategicTargetKind,
     StrategicMilitaryComposition,
     build_byzantine_castle_strategy,
+    build_byzantine_strategy,
     build_land_castle_strategy,
     lower_strategy_profile,
     resolve_strategy_profile,
@@ -148,9 +149,10 @@ class StrategySemanticsTests(unittest.TestCase):
             lower_economy_controller,
         )
 
+        full_profile = build_byzantine_strategy(self.effective)
         compilation = lower_economy_controller(
             default_byzantine_economy_controller(),
-            self.profile,
+            full_profile,
         )
         rule = next(
             item

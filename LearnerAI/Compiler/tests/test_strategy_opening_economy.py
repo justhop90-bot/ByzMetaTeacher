@@ -49,6 +49,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             tuple(item.identity for item in profile.map_profile),
             ("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
         )
+        self.assertEqual(
+            {
+                item.identity: item.default_opening
+                for item in profile.map_profile
+                if item.identity in {"ARABIA", "STANDARD_LAND"}
+            },
+            {"ARABIA": "FAST_CASTLE", "STANDARD_LAND": "FAST_CASTLE"},
+        )
         self.assertEqual(profile.opening_selector.plan_id, "byzantine-opening-v1")
 
     def test_opening_selection_is_durable_and_precedence_ordered(self):
@@ -81,8 +89,17 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             rule for rule in control.rules
             if rule.identity == "opening-selector-counter-feudal"
         )
+        defensive_standard = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-defensive-standard"
+        )
         self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
+        self.assertIn("(not (map-type islands))", fast_castle.facts[0].source)
+        self.assertIn("(not (map-type arena))", fast_castle.facts[0].source)
+        self.assertIn("(not (map-type hybrid))", fast_castle.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
+        self.assertIn("(map-type hybrid)", defensive_standard.facts[0].source)
+        self.assertNotIn("(not (map-type arena))", defensive_standard.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
@@ -131,6 +148,29 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(defconst sn-wood-gatherer-percentage 120)", output)
         self.assertIn("(defconst sn-gold-gatherer-percentage 118)", output)
         self.assertIn("(defconst sn-percent-civilian-builders 1)", output)
+
+        fast_castle_policy = next(
+            item for item in profile.economy_controller.policies
+            if item.mode == EconomyMode.FAST_CASTLE
+        )
+        self.assertEqual(
+            (fast_castle_policy.allocation.food,
+             fast_castle_policy.allocation.wood,
+             fast_castle_policy.allocation.gold),
+            (50, 25, 25),
+        )
+
+        for demand in profile.demands:
+            if demand.identity in {
+                "research-wheelbarrow",
+                "research-double-bit-axe",
+                "research-horse-collar",
+                "research-gold-mining",
+            }:
+                self.assertIn(
+                    "(current-age >= castle-age)",
+                    demand.execution_demands[0].requirements,
+                )
 
 
 if __name__ == "__main__":

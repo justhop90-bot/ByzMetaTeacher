@@ -35,9 +35,9 @@ class MapProfile:
 
 def default_byzantine_map_profiles() -> tuple[MapProfile, ...]:
     return (
-        MapProfile(MapKind.ARABIA, "DEFENSIVE_STANDARD", "(map-type arabia)"),
+        MapProfile(MapKind.ARABIA, "FAST_CASTLE", "(map-type arabia)"),
         MapProfile(MapKind.ARENA, "FAST_CASTLE", "(map-type arena)"),
-        MapProfile(MapKind.STANDARD_LAND, "DEFENSIVE_STANDARD"),
+        MapProfile(MapKind.STANDARD_LAND, "FAST_CASTLE"),
         MapProfile(MapKind.HYBRID, "DEFENSIVE_STANDARD"),
         MapProfile(MapKind.ISLANDS, "WATER_ECONOMY", "(map-type islands)", True),
     )

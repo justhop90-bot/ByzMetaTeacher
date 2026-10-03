@@ -90,8 +90,20 @@ def lower_opening_selector(
         ),
         NativeControlRule(
             "opening-selector-fast-castle",
-            facts=(parse_expression(guard(f"(and {arena} (not {pressure}))"), SourceLocation(1)),),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})", SourceLocation(1)),),
+            facts=(
+                parse_expression(
+                    guard(
+                        f"(and (and (not {water}) (not {arena})) (and (not (map-type hybrid)) (not {pressure})))"
+                    ),
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "opening-selector-counter-feudal",
@@ -100,8 +112,18 @@ def lower_opening_selector(
         ),
         NativeControlRule(
             "opening-selector-defensive-standard",
-            facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) (not {pressure})))"), SourceLocation(1)),),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})", SourceLocation(1)),),
+            facts=(
+                parse_expression(
+                    guard(f"(and (map-type hybrid) (not {pressure}))"),
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
     )
     return NativeControlPlan(states=(state,), rules=rules)

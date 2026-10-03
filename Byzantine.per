@@ -364,6 +364,12 @@
 (defconst complete-economy-food-mill-boom 70)
 (defconst construction-retry-barrier-economy-food-mill-boom 195)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-economy-food-mill-feudal-berries 700)
+(defconst issued-economy-food-mill-feudal-berries 703)
+(defconst pending-economy-food-mill-feudal-berries 701)
+(defconst complete-economy-food-mill-feudal-berries 702)
+(defconst construction-retry-barrier-economy-food-mill-feudal-berries 704)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
 (defconst demand-economy-market-floor-1 76)
 (defconst issued-economy-market-floor-1 79)
 (defconst pending-economy-market-floor-1 77)
@@ -5235,7 +5241,7 @@
 (defrule
     (and (goal opening-plan -1) (and (not (map-type islands)) (and (not (map-type arena)) (not (players-unit-type-count any-enemy militia-line >= 5)))))
 =>
-    (set-goal opening-plan 1)
+    (set-goal opening-plan 3)
 )
 
 ; Native economy rule: byzantine-community-economy-initialize
@@ -5901,25 +5907,25 @@
 ; Native control rule: economy-controller-write-fast_castle-sn-food-gatherer-percentage
 (defrule
     (goal economy-posture 3)
-    (up-compare-sn sn-food-gatherer-percentage != 55)
+    (up-compare-sn sn-food-gatherer-percentage != 50)
 =>
-    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-food-gatherer-percentage 50)
 )
 
 ; Native control rule: economy-controller-write-fast_castle-sn-wood-gatherer-percentage
 (defrule
     (goal economy-posture 3)
-    (up-compare-sn sn-wood-gatherer-percentage != 15)
+    (up-compare-sn sn-wood-gatherer-percentage != 25)
 =>
-    (set-strategic-number sn-wood-gatherer-percentage 15)
+    (set-strategic-number sn-wood-gatherer-percentage 25)
 )
 
 ; Native control rule: economy-controller-write-fast_castle-sn-gold-gatherer-percentage
 (defrule
     (goal economy-posture 3)
-    (up-compare-sn sn-gold-gatherer-percentage != 30)
+    (up-compare-sn sn-gold-gatherer-percentage != 25)
 =>
-    (set-strategic-number sn-gold-gatherer-percentage 30)
+    (set-strategic-number sn-gold-gatherer-percentage 25)
 )
 
 ; Native control rule: economy-controller-write-fast_castle-sn-percent-civilian-builders
@@ -6142,21 +6148,7 @@
     (set-strategic-number sn-gold-gatherer-percentage 10)
 )
 
-; Byzantine stone-bank override: Castle commitment and TC expansion need an explicit stone share.
-; The gather percentages are deliberately kept at 100 total so the engine has a deterministic
-; civilian distribution instead of relying on an implicit stone default of zero.
-(defrule
-    (current-age == feudal-age)
-    (goal strategic-primary-intent 2)
-    (not (goal economy-posture 8))
-    (stone-amount < 650)
-    (up-compare-sn sn-stone-gatherer-percentage != 10)
-=>
-    (set-strategic-number sn-food-gatherer-percentage 45)
-    (set-strategic-number sn-wood-gatherer-percentage 35)
-    (set-strategic-number sn-gold-gatherer-percentage 10)
-    (set-strategic-number sn-stone-gatherer-percentage 10)
-)
+; Feudal Castle-transition economy keeps stone at zero. Stone is opened only from Castle Age.
 
 (defrule
     (current-age == castle-age)
@@ -9782,6 +9774,8 @@
     (set-goal demand-economy-stone-camp-floor-4 1)
     (set-goal demand-economy-stone-camp-floor-5 1)
     (set-goal demand-economy-food-mill-boom 1)
+    (set-goal demand-economy-food-mill-feudal-berries 1)
+    (set-goal construction-retry-barrier-economy-food-mill-feudal-berries 0)
     (set-goal demand-economy-market-floor-1 1)
     (set-goal demand-castle-stable-capability 0)
     (set-goal demand-castle-archery-capability 0)
@@ -10033,7 +10027,7 @@
     (not (building-type-count barracks > 0))
     (goal action-claim-build-pass-singleton 0)
     (unit-type-count-total villager >= 10)
-    (current-age >= dark-age)
+    (current-age >= feudal-age)
     (can-build barracks)
 =>
     (build barracks)
@@ -12406,12 +12400,12 @@
     (not (up-pending-placement c: 50))
     (not (building-type-count farm >= 4))
     (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
+    (current-age >= feudal-age)
     (building-type-count-total mill >= 1)
     (unit-type-count-total villager >= 18)
     (can-build-with-escrow farm)
     (idle-farm-count < 2)
-    (food-amount < 500)
+    (food-amount < 650)
     (building-type-count-total farm < 4)
 =>
     (build farm)
@@ -12506,12 +12500,12 @@
     (not (up-pending-placement c: 50))
     (not (building-type-count farm >= 8))
     (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
+    (current-age >= feudal-age)
     (building-type-count-total mill >= 1)
-    (unit-type-count-total villager >= 30)
+    (unit-type-count-total villager >= 24)
     (can-build-with-escrow farm)
     (idle-farm-count < 2)
-    (food-amount < 700)
+    (food-amount < 800)
     (building-type-count-total farm < 8)
 =>
     (build farm)
@@ -13926,7 +13920,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-1 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 1))
 =>
     (set-goal demand-economy-stone-camp-floor-1 1)
@@ -13985,7 +13979,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
@@ -14004,7 +13998,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-2 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 2))
 =>
     (set-goal demand-economy-stone-camp-floor-2 1)
@@ -14063,7 +14057,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
@@ -14082,7 +14076,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-3 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 3))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -14142,7 +14136,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
@@ -14162,7 +14156,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-4 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 4))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -14222,7 +14216,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
@@ -14242,7 +14236,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-5 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 5))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -14302,7 +14296,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
@@ -14565,6 +14559,95 @@
     (build mill)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-food-mill-boom 71)
+)
+
+;----------------------------------------------------------------
+; FEUDAL SECOND MILL: FORAGE / BERRY TRANSITION
+;----------------------------------------------------------------
+; The first mill keeps the existing placement preference. The second mill is
+; a deliberate Feudal forage/berry drop site. Native SN 253: 0=forage.
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 702)
+    (building-type-count mill >= 2)
+=>
+    (set-strategic-number sn-preferred-mill-placement 1)
+    (set-goal demand-economy-food-mill-feudal-berries 0)
+)
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 0)
+    (current-age >= feudal-age)
+    (building-type-count-total mill < 2)
+    (resource-found food)
+=>
+    (set-goal demand-economy-food-mill-feudal-berries 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-feudal-berries 703)
+        (goal demand-economy-food-mill-feudal-berries 701)
+    )
+    (building-type-count mill >= 2)
+=>
+    (set-goal demand-economy-food-mill-feudal-berries 702)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-feudal-berries 703)
+        (goal demand-economy-food-mill-feudal-berries 701)
+    )
+    (not (building-type-count mill >= 2))
+    (up-pending-objects c: 68 >= 1)
+=>
+    (set-goal demand-economy-food-mill-feudal-berries 701)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-feudal-berries 703)
+        (goal demand-economy-food-mill-feudal-berries 701)
+    )
+    (not (building-type-count mill >= 2))
+    (up-pending-objects c: 68 == 0)
+    (up-pending-placement c: 68)
+=>
+    (set-goal demand-economy-food-mill-feudal-berries 701)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-feudal-berries 703)
+        (goal demand-economy-food-mill-feudal-berries 701)
+    )
+    (not (building-type-count mill >= 2))
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+=>
+    (set-goal demand-economy-food-mill-feudal-berries 1)
+    (set-goal construction-retry-barrier-economy-food-mill-feudal-berries 1)
+)
+
+(defrule
+    (goal demand-economy-food-mill-feudal-berries 1)
+    (goal opening-plan 3)
+    (current-age == feudal-age)
+    (building-type-count-total mill >= 1)
+    (building-type-count-total mill < 2)
+    (resource-found food)
+    (dropsite-min-distance food > 8)
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+    (goal construction-retry-barrier-economy-food-mill-feudal-berries 0)
+    (goal action-claim-build-pass-singleton 0)
+    (can-build mill)
+=>
+    (set-strategic-number sn-preferred-mill-placement 0)
+    (build mill)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-food-mill-feudal-berries 703)
 )
 
 ; Pending diagnostics: economy-market-floor-1
@@ -17987,7 +18070,7 @@
     (goal research-retry-barrier-research-wheelbarrow 0)
     (not (up-research-status c: 213 >= 2))
     (not (research-completed 213))
-    (current-age >= feudal-age)
+    (current-age >= castle-age)
     (can-research-with-escrow wheelbarrow)
 =>
     (release-escrow food)
@@ -18054,7 +18137,7 @@
     (goal research-retry-barrier-research-double-bit-axe 0)
     (not (up-research-status c: 202 >= 2))
     (not (research-completed 202))
-    (current-age >= feudal-age)
+    (current-age >= castle-age)
     (can-research-with-escrow double-bit-axe)
 =>
     (release-escrow food)
@@ -18122,7 +18205,7 @@
     (goal research-retry-barrier-research-horse-collar 0)
     (not (up-research-status c: 14 >= 2))
     (not (research-completed 14))
-    (current-age >= feudal-age)
+    (current-age >= castle-age)
     (can-research-with-escrow horse-collar)
 =>
     (release-escrow food)
@@ -19010,7 +19093,7 @@
     (goal research-retry-barrier-research-gold-mining 0)
     (not (up-research-status c: 55 >= 2))
     (not (research-completed 55))
-    (current-age >= feudal-age)
+    (current-age >= castle-age)
     (can-research-with-escrow gold-mining)
 =>
     (release-escrow food)
