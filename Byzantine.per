@@ -756,6 +756,11 @@
 (defconst bt-byzantine-bombard-stone-surplus 900)
 (defconst bt-byzantine-bombard-gold-surplus 2500)
 (defconst bt-byzantine-bombard-gold-reserve 1000)
+(defconst bt-extreme-production-wood 7500)
+(defconst bt-extreme-production-gold 4000)
+(defconst bt-extreme-production-food 4500)
+(defconst bt-extreme-production-villagers 105)
+(defconst bt-extreme-production-headroom 30)
 
 ; BYZANTINE META DEFENSE / ECONOMY EXTENSIONS
 ; These are native .per state channels. They deliberately reuse the existing
@@ -15319,6 +15324,179 @@
     )
 =>
     (set-goal byzantine-production-siege-target 4)
+)
+
+; ---------------------------------------------------------------------------
+; FINAL EXTREME-SURPLUS PRODUCTION CAPACITY
+; ---------------------------------------------------------------------------
+; This is the last conversion tier for a mature Imperial bank. It exists because
+; static defense alone cannot burn an all-resource surplus: 125 stone/gold per
+; Bombard Tower is a tiny sink compared with 7.5k+ wood and 4k+ gold/4.5k+ food.
+;
+; The tier does NOT start a new scheduler. It only raises the existing shared
+; capacity goals so the already-native production/build pipeline can turn excess
+; wood into additional production lanes and then consume food/gold through the
+; existing army floors.
+;
+; Six Barracks.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-army-attack-ready 2)
+    (unit-type-count-total villager >= bt-extreme-production-villagers)
+    (population-headroom > bt-extreme-production-headroom)
+    (not (town-under-attack))
+    (wood-amount > bt-extreme-production-wood)
+    (gold-amount > bt-extreme-production-gold)
+    (food-amount > bt-extreme-production-food)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+            (or
+                (unit-type-count-total halberdier-line >= 16)
+                (unit-type-count-total varangian-guard-line >= 12)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-production-barracks-target 6)
+)
+
+; Five Archery Ranges.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-army-attack-ready 2)
+    (unit-type-count-total villager >= bt-extreme-production-villagers)
+    (population-headroom > bt-extreme-production-headroom)
+    (not (town-under-attack))
+    (wood-amount > bt-extreme-production-wood)
+    (gold-amount > bt-extreme-production-gold)
+    (food-amount > 3500)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+            (or
+                (unit-type-count-total arbalest >= 16)
+                (unit-type-count-total skirmisher-line >= 16)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-production-archery-target 5)
+)
+
+; Five Stables.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-army-attack-ready 2)
+    (unit-type-count-total villager >= bt-extreme-production-villagers)
+    (population-headroom > bt-extreme-production-headroom)
+    (not (town-under-attack))
+    (wood-amount > bt-extreme-production-wood)
+    (gold-amount > bt-extreme-production-gold)
+    (food-amount > bt-extreme-production-food)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+            (unit-type-count-total cataphract-line >= 16)
+        )
+    )
+=>
+    (set-goal byzantine-production-stable-target 5)
+)
+
+; Five Siege Workshops. This is intentionally the strictest branch: it needs an
+; already-fortified siege posture and an actual siege battery, not just cash.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+    (unit-type-count-total villager >= bt-extreme-production-villagers)
+    (population-headroom > bt-extreme-production-headroom)
+    (not (town-under-attack))
+    (wood-amount > bt-extreme-production-wood)
+    (gold-amount > bt-extreme-production-gold)
+    (food-amount > bt-extreme-production-food)
+    (or
+        (unit-type-count-total mangonel-line >= 8)
+        (or
+            (unit-type-count-total bombard-cannon >= 4)
+            (unit-type-count-total trebuchet >= 3)
+        )
+    )
+=>
+    (set-goal byzantine-production-siege-target 5)
+)
+
+; Capacity execution remains the existing one-action-per-pass arbiter.
+(defrule
+    (goal byzantine-production-barracks-target 6)
+    (building-type-count-total barracks < 6)
+    (up-pending-objects c: barracks < 6)
+    (not (up-pending-placement c: barracks))
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-archery-target 5)
+    (building-type-count-total archery-range < 5)
+    (up-pending-objects c: archery-range < 5)
+    (not (up-pending-placement c: archery-range))
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-stable-target 5)
+    (building-type-count-total stable < 5)
+    (up-pending-objects c: stable < 5)
+    (not (up-pending-placement c: stable))
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-siege-target 5)
+    (building-type-count-total siege-workshop < 5)
+    (up-pending-objects c: siege-workshop < 5)
+    (not (up-pending-placement c: siege-workshop))
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
 ; Castle expansion owns a small stone-gatherer floor while its target is active.
