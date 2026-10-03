@@ -11956,20 +11956,6 @@
 )
 
 (defrule
-    (goal byzantine-army-attack-ready 2)
-    (current-age == castle-age)
-    (goal byzantine-siege-approach byzantine-siege-approach-normal)
-    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
-    (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
-=>
-    (set-goal byzantine-army-attack-ready 0)
-    (set-goal byzantine-army-reinforcement 1)
-    (set-goal byzantine-army-reinforcement-target-validation 0)
-    (set-goal byzantine-army-reinforcement-admission 0)
-    (set-goal byzantine-target-player-lock 0)
-)
-
-(defrule
     (current-age >= imperial-age)
     (goal byzantine-army-attack-ready 2)
     (or
