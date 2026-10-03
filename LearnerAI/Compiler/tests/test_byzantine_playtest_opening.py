@@ -90,6 +90,70 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(goal strategy-posture 3)", block)
         self.assertIn("(goal strategy-posture 4)", block)
 
+
+
+    def test_native_combat_meta_controls_are_explicitly_enabled(self):
+        self.assertIn("(defconst sn-attack-intelligence 103)", self.per)
+        self.assertIn("(defconst sn-enable-offensive-priority 254)", self.per)
+        self.assertIn("(defconst sn-local-targeting-mode 286)", self.per)
+        self.assertIn("(defconst sn-zero-priority-distance 34)", self.per)
+        self.assertIn("(set-strategic-number sn-attack-intelligence 1)", self.per)
+        self.assertIn("(set-strategic-number sn-local-targeting-mode 1)", self.per)
+        self.assertIn("(set-strategic-number sn-enable-offensive-priority 1)", self.per)
+        self.assertIn("(set-strategic-number sn-zero-priority-distance 255)", self.per)
+
+    def test_castle_muster_holding_loss_witness_matches_mangonel_admission_group(self):
+        block = self._rule_block(
+            "; Holding remains a world-state witness, never a timer-only state."
+        )
+        self.assertIn(
+            "(up-group-size c: byzantine-siege-muster-mangonel-group >= bt-castle-mangonel-floor)",
+            block,
+        )
+        self.assertNotIn(
+            "(up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-castle-mangonel-floor)",
+            block,
+        )
+
+    def test_imperial_attack_ready_uses_any_sufficient_siege_anchor(self):
+        start = self.per.index(
+            "(defrule\n"
+            "    (current-age >= imperial-age)\n"
+            "    (goal byzantine-army-plan-phase 2)\n"
+            "    (goal byzantine-army-attack-ready 0)"
+        )
+        end = self.per.index("\n\n(defrule", start)
+        block = self.per[start:end]
+        self.assertIn("(attack-soldier-count >= 12)", block)
+        self.assertIn("(unit-type-count-total 359 >= bt-imperial-halberdier-floor)", block)
+        self.assertIn("(unit-type-count-total trebuchet >= 1)", block)
+        self.assertIn("(unit-type-count-total bombard-cannon >= 1)", block)
+        self.assertIn("(unit-type-count-total battering-ram-line >= 1)", block)
+        self.assertIn("(unit-type-count-total mangonel-line >= 2)", block)
+        self.assertNotIn(
+            "(unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)",
+            block,
+        )
+
+    def test_counter_package_selection_uses_focus_player_context(self):
+        start = self.per.index(
+            "; Native control rule: counter-package-selection-reset-000"
+        )
+        end = self.per.index(
+            ";---------------------------------------------------------------",
+            start,
+        )
+        block = self.per[start:end]
+        for fragment in (
+            "(players-unit-type-count target-player militia-line >= 5)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player knight >= 1)",
+            "(players-unit-type-count focus-player scout-cavalry-line >= 3)",
+            "(players-unit-type-count target-player archer-line >= 3)",
+            "(players-unit-type-count target-player mangonel-line >= 2)",
+        ):
+            self.assertIn(fragment, block)
+
     def test_fast_castle_economy_keeps_wood_and_gold_funded(self):
         block = self.per[
             self.per.index("; Native control rule: economy-controller-write-fast_castle-sn-food-gatherer-percentage"):
