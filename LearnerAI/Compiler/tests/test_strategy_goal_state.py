@@ -112,17 +112,43 @@ class StrategyGoalStateTests(unittest.TestCase):
             ("(set-goal strategy-posture 0)", "(disable-self)"),
         )
         self.assertIn("(goal strategy-posture 1)", control_plan.rules[1].facts[0].source)
-        self.assertIn("(goal strategy-posture 3)", control_plan.rules[1].facts[0].source)
-        self.assertIn("(set-goal strategy-posture 4)", control_plan.rules[1].actions[0].source)
-        self.assertIn("(goal strategy-posture 3)", control_plan.rules[2].facts[0].source)
+        self.assertIn("(current-age >= castle-age)", control_plan.rules[1].facts[0].source)
+        self.assertIn("(building-type-count-total castle >= 1)", control_plan.rules[1].facts[0].source)
+        self.assertEqual(
+            control_plan.rules[1].actions[0].source,
+            "(set-goal strategy-posture 4)",
+        )
+        self.assertIn(
+            "(or (goal strategy-posture 3) (goal strategy-posture 4))",
+            control_plan.rules[2].facts[0].source,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy knight >= 3)",
+            control_plan.rules[2].facts[0].source,
+        )
         self.assertEqual(
             control_plan.rules[2].actions[0].source,
-            "(set-goal strategy-posture 1)",
+            "(set-goal strategy-posture 2)",
+        )
+        self.assertIn("(goal strategy-posture 2)", control_plan.rules[3].facts[0].source)
+        self.assertIn(
+            "(players-unit-type-count any-enemy knight < 3)",
+            control_plan.rules[3].facts[0].source,
+        )
+        self.assertEqual(
+            control_plan.rules[3].actions[0].source,
+            "(set-goal strategy-posture 3)",
         )
         self.assertIn("(goal strategy-posture 0)", control_plan.rules[4].facts[0].source)
         self.assertIn("(current-age == dark-age)", control_plan.rules[4].facts[0].source)
         self.assertEqual(
             control_plan.rules[4].actions[0].source,
+            "(set-goal strategy-posture 3)",
+        )
+        self.assertIn("(goal strategy-posture 0)", control_plan.rules[5].facts[0].source)
+        self.assertIn("(current-age >= feudal-age)", control_plan.rules[5].facts[0].source)
+        self.assertEqual(
+            control_plan.rules[5].actions[0].source,
             "(set-goal strategy-posture 3)",
         )
 
