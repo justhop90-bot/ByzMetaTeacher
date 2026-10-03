@@ -90,6 +90,27 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
+        action_start = self.per.index(
+            "; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED"
+        )
+        action_block = self.per[action_start : self.per.index(
+            "; Pending diagnostics: imperial-bombard-tower-floor",
+            action_start,
+        )]
+        self.assertIn(
+            "(not (goal byzantine-production-castle-target 2))",
+            action_block,
+        )
+        self.assertIn(
+            "(not (goal byzantine-production-castle-target 3))",
+            action_block,
+        )
+        self.assertIn("(build-forward keep)", self.per)
+
+    def test_bombard_tower_has_a_wall_frontier_fallback(self):
+        self.assertIn("(build-forward bombard-tower)", self.per)
+
     def test_greek_fire_land_trigger_requires_actual_artillery(self):
         marker = "(set-goal demand-water-greek-fire 1)"
         start = self.per.index(marker) - 2200
