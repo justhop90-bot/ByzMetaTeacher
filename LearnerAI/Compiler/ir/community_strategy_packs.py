@@ -589,6 +589,11 @@ def community_strategy_demands(
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
+    monk_support_expression = next(
+        item.expression
+        for item in observations
+        if item.identity == "strategy-monk-support"
+    )
 
     demands: list[_StrategicDemandSpec] = []
 
