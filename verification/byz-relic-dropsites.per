@@ -1,0 +1,90 @@
+; Pinned parser fixture for the Byzantine relic/dropsite behavior repair.
+(defconst sn-maximum-wood-drop-distance 233)
+(defconst sn-maximum-gold-drop-distance 237)
+(defconst sn-maximum-stone-drop-distance 238)
+(defconst sn-lumber-camp-max-distance 260)
+(defconst sn-mining-camp-max-distance 261)
+(defconst monk 125)
+(defconst monastery 104)
+(defconst lumber-camp 562)
+(defconst mining-camp 584)
+(defconst byzantine-relic-monk-dispatched 487)
+(defconst goal-relic 485)
+(defconst goal-build 490)
+(defconst goal-barrier-wood 491)
+(defconst goal-barrier-mine 492)
+
+(defrule
+    (true)
+=>
+    (set-strategic-number sn-maximum-wood-drop-distance 16)
+    (set-strategic-number sn-maximum-gold-drop-distance 16)
+    (set-strategic-number sn-maximum-stone-drop-distance 16)
+    (set-strategic-number sn-lumber-camp-max-distance 12)
+    (set-strategic-number sn-mining-camp-max-distance 12)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal goal-relic 0)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk >= 1)
+    (up-timer-status 12 c:== timer-disabled)
+=>
+    (up-full-reset-search)
+    (up-find-remote c: 125 c: 1)
+    (up-set-target-object search-remote c: 0)
+    (up-find-local c: monk c: 1)
+    (up-target-objects 0 action-move -1 -1)
+    (set-goal byzantine-relic-monk-dispatched 1)
+    (set-goal goal-relic 1)
+)
+
+(defrule
+    (goal demand-research-sanctity 1)
+    (goal byzantine-relic-monk-dispatched 1)
+    (current-age >= castle-age)
+    (can-research-with-escrow sanctity)
+=>
+    (research sanctity)
+)
+
+(defrule
+    (goal goal-build 1)
+    (goal goal-barrier-wood 0)
+    (building-type-count-total lumber-camp < 6)
+    (resource-found wood)
+    (or
+        (building-type-count lumber-camp < 2)
+        (dropsite-min-distance wood == -1)
+        (dropsite-min-distance wood > 12)
+    )
+    (can-build lumber-camp)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance 12)
+    (build lumber-camp)
+    (set-goal goal-barrier-wood 1)
+)
+
+(defrule
+    (goal goal-build 1)
+    (goal goal-barrier-mine 0)
+    (building-type-count-total mining-camp < 5)
+    (or
+        (and
+            (strategic-number sn-gold-gatherer-percentage > 0)
+            (resource-found gold)
+            (or (dropsite-min-distance gold == -1) (dropsite-min-distance gold > 12))
+        )
+        (and
+            (strategic-number sn-stone-gatherer-percentage > 0)
+            (resource-found stone)
+            (or (dropsite-min-distance stone == -1) (dropsite-min-distance stone > 12))
+        )
+    )
+    (can-build mining-camp)
+=>
+    (set-strategic-number sn-mining-camp-max-distance 12)
+    (build mining-camp)
+    (set-goal goal-barrier-mine 1)
+)
