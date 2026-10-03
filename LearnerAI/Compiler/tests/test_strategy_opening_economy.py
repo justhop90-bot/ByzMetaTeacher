@@ -106,7 +106,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity == "opening-selector-defensive-standard-arabia"
         )
         self.assertIn("(map-type arabia)", arabia_standard.facts[0].source)
-        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", arabia_standard.facts[0].source)
+        self.assertIn("(players-unit-type-count any-enemy knight >= 3)", arabia_standard.facts[0].source)
+        self.assertIn("(players-unit-type-count any-enemy archer-line >= 4)", arabia_standard.facts[0].source)
+        self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", arabia_standard.facts[0].source)
         self.assertIn("(map-type hybrid)", defensive_standard.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
