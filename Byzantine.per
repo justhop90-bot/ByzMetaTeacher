@@ -11826,7 +11826,14 @@
     (not (up-research-status c: 101 >= 2))
     (not (current-age >= feudal-age))
     (current-age == dark-age)
-    (unit-type-count-total villager >= 20)
+    (or
+        (unit-type-count-total villager >= 20)
+        (and
+            (goal opening-plan 1)
+            (map-type arabia)
+            (unit-type-count-total villager >= 19)
+        )
+    )
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
 =>
