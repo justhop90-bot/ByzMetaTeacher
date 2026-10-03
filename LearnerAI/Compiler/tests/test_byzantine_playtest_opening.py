@@ -24,6 +24,101 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         end = self.per.index(end_marker, start)
         return self.per[start:end]
 
+    def _rules(self):
+        return ["(defrule" + rule for rule in self.per.split("(defrule")[1:]]
+
+    def _find_rule(self, *fragments):
+        for rule in self._rules():
+            if all(fragment in rule for fragment in fragments):
+                return rule
+        self.fail("No defrule matched fragments: " + repr(fragments))
+
+    def test_standard_arabia_selector_owns_quiet_land_and_generic_fallback_excludes_arabia(self):
+        standard = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
+        fallback = self._rule_block("; Native control rule: opening-selector-fast-castle-standard-land")
+        self.assertIn("(map-type arabia)", standard)
+        self.assertIn("(set-goal opening-plan 1)", standard)
+        self.assertIn("(not (map-type arabia))", fallback)
+
+    def test_standard_arabia_can_escalate_once_on_real_dark_age_pressure(self):
+        block = self._rule_block(
+            "; Native control rule: opening-escalate-standard-arabia-to-counter-feudal"
+        )
+        self.assertIn("(goal opening-plan 1)", block)
+        self.assertIn("(current-age == dark-age)", block)
+        self.assertIn("(players-unit-type-count any-enemy militia-line >= 3)", block)
+        self.assertIn("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", block)
+        self.assertIn("(players-unit-type-count any-enemy archer-line >= 3)", block)
+        self.assertIn("(players-building-type-count any-enemy barracks >= 1)", block)
+        self.assertIn("(players-military-population any-enemy >= 3)", block)
+        self.assertIn("(set-goal opening-plan 2)", block)
+
+    def test_standard_arabia_starts_with_first_wood_and_gold_camps_only(self):
+        block = self._section(
+            "; Demand initialization",
+            "; Persistent TC2-complete state starts false",
+        )
+        self.assertIn("(set-goal demand-economy-lumber-camp-floor-1 1)", block)
+        self.assertIn("(set-goal demand-economy-gold-camp-floor-1 1)", block)
+        for fragment in (
+            "(set-goal demand-economy-lumber-camp-floor-2 0)",
+            "(set-goal demand-economy-wood-camp-floor-3 0)",
+            "(set-goal demand-economy-gold-camp-floor-2 0)",
+            "(set-goal demand-economy-gold-camp-floor-3 0)",
+            "(set-goal demand-economy-stone-camp-floor-1 0)",
+            "(set-goal demand-economy-food-mill-boom 0)",
+            "(set-goal demand-economy-food-mill-feudal-berries 0)",
+        ):
+            self.assertIn(fragment, block)
+
+    def test_standard_arabia_dark_age_prefers_gold_over_second_wood_after_12_villagers(self):
+        wood = self._rule_block(
+            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 12)",
+            wood,
+        )
+        gold_start = self.per.index(
+            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
+        )
+        gold = self.per[gold_start:self.per.index(
+            "(defrule\n    (goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)",
+            gold_start,
+        )]
+        self.assertIn(
+            "(goal opening-plan 1)", gold
+        )
+        self.assertIn(
+            "(current-age == dark-age)", gold
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 12)", gold
+        )
+
+    def test_standard_arabia_feudal_sequence_uses_19_villagers_and_range_before_blacksmith(self):
+        age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
+        self.assertIn("(unit-type-count-total villager >= 20)", age)
+        self.assertIn("(goal opening-plan 1)", age)
+        self.assertIn("(map-type arabia)", age)
+        self.assertIn("(unit-type-count-total villager >= 19)", age)
+        self.assertNotIn("(unit-type-count-total villager >= 21)", age)
+
+        blacksmith = self._rule_block(
+            "; Action issuance: feudal-infrastructure | ACTIVE -> ISSUED"
+        )
+        self.assertIn("(goal opening-plan 1)", blacksmith)
+        self.assertIn("(map-type arabia)", blacksmith)
+        self.assertIn("(building-type-count archery-range >= 1)", blacksmith)
+
+    def test_standard_arabia_does_not_build_first_mill_in_dark_age(self):
+        mill = self._find_rule(
+            "(goal demand-economy-food-mill-boom 1)",
+            "(build mill)",
+        )
+        self.assertIn("(not (map-type arabia))", mill)
+        self.assertIn("(current-age >= feudal-age)", mill)
+
     def test_safe_arabia_opening_selects_defensive_standard(self):
         block = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
         self.assertIn("(map-type arabia)", block)
@@ -158,14 +253,12 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         )
 
     def test_imperial_attack_ready_uses_any_sufficient_siege_anchor(self):
-        start = self.per.index(
-            "(defrule\n"
-            "    (current-age >= imperial-age)\n"
-            "    (goal byzantine-army-plan-phase 2)\n"
-            "    (goal byzantine-army-attack-ready 0)"
+        block = self._find_rule(
+            "(current-age >= imperial-age)",
+            "(goal byzantine-army-plan-phase 2)",
+            "(goal byzantine-army-reinforcement 0)",
+            "(goal byzantine-army-attack-ready 0)",
         )
-        end = self.per.index("\n\n(defrule", start)
-        block = self.per[start:end]
         self.assertIn("(attack-soldier-count >= 12)", block)
         self.assertIn("(unit-type-count-total 359 >= bt-imperial-halberdier-floor)", block)
         self.assertIn("(unit-type-count-total trebuchet >= 1)", block)
@@ -195,6 +288,152 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             "(players-unit-type-count target-player mangonel-line >= 2)",
         ):
             self.assertIn(fragment, block)
+
+    def test_reinforcement_cannot_bypass_admission_or_reuse_dropped_target_lock(self):
+        all_rules = self._rules()
+        attack_ready_writers = [
+            rule for rule in all_rules
+            if "set-goal byzantine-army-attack-ready 1" in rule
+        ]
+        self.assertEqual(len(attack_ready_writers), 8)
+
+        normal_writers = [
+            rule for rule in attack_ready_writers
+            if "(goal byzantine-army-reinforcement 1)" not in rule
+        ]
+        rearm_writers = [
+            rule for rule in attack_ready_writers
+            if "(goal byzantine-army-reinforcement 1)" in rule
+        ]
+
+        self.assertEqual(len(normal_writers), 4)
+        self.assertEqual(len(rearm_writers), 4)
+
+        for rule in normal_writers:
+            self.assertIn("(goal byzantine-army-reinforcement 0)", rule)
+
+        for rule in rearm_writers:
+            for fragment in (
+                "(goal byzantine-army-reinforcement-target-validation 1)",
+                "(goal byzantine-army-reinforcement-admission 1)",
+                "(goal byzantine-target-player-lock 1)",
+            ):
+                self.assertIn(fragment, rule)
+
+        target_drop_rules = [
+            rule for rule in all_rules
+            if "(set-goal byzantine-target-player-lock 0)" in rule
+            and "(goal byzantine-target-player-lock 1)" in rule
+        ]
+        self.assertGreaterEqual(len(target_drop_rules), 1)
+        for rule in target_drop_rules:
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-target-validation 0)",
+                rule,
+            )
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-admission 0)",
+                rule,
+            )
+
+        reinforcement_entry_rules = [
+            rule for rule in all_rules
+            if "(set-goal byzantine-army-reinforcement 1)" in rule
+            and "(set-goal byzantine-target-player-lock 0)" in rule
+        ]
+        self.assertGreaterEqual(len(reinforcement_entry_rules), 4)
+        for rule in reinforcement_entry_rules:
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-target-validation 0)",
+                rule,
+            )
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-admission 0)",
+                rule,
+            )
+
+    def test_reinforcement_rearm_requires_fresh_target_validation_and_opponent_admission(self):
+        self.assertIn(
+            "(defconst byzantine-army-reinforcement-target-validation 303)",
+            self.per,
+        )
+        self.assertIn(
+            "(defconst byzantine-army-reinforcement-admission 305)",
+            self.per,
+        )
+
+        rearm_rules = [
+            rule for rule in self._rules()
+            if "(goal byzantine-army-reinforcement 1)" in rule
+            and "set-goal byzantine-army-attack-ready 1" in rule
+        ]
+        self.assertEqual(len(rearm_rules), 4)
+
+        for rule in rearm_rules:
+            for fragment in (
+                "(goal byzantine-army-reinforcement-target-validation 1)",
+                "(goal byzantine-army-reinforcement-admission 1)",
+                "(goal byzantine-target-player-lock 1)",
+            ):
+                self.assertIn(fragment, rule)
+
+    def test_counter_arbitration_yields_focus_writers_after_target_lock(self):
+        section = self._section(
+            "; TARGET PLAYER + FOCUS PROFILE PLANE",
+            "; NATIVE NATURAL-FOOD DEER CONTROLLER",
+        )
+        for fragment in (
+            "(goal byzantine-target-player-lock 0)",
+            "(goal byzantine-focus-stables >= 2)",
+            "(goal byzantine-focus-ranges >= 2)",
+            "(goal byzantine-focus-siege-workshops >= 1)",
+            "(goal byzantine-target-player-lock 1)",
+            "(set-goal counter-package-mounted_pressure_castle 0)",
+            "(set-goal counter-package-ranged_pressure_feudal 0)",
+            "(set-goal counter-package-infantry_pressure_castle 0)",
+            "(set-goal counter-package-siege_pressure_castle 0)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player mangonel-line >= 2)",
+            "(players-military-population target-player >= 6)",
+        ):
+            self.assertIn(fragment, section)
+
+        for rule in section.split("(defrule")[1:]:
+            if "(set-goal counter-package-" not in rule:
+                continue
+            action = rule.split("=>", 1)[-1]
+            if "counter-package-" in action:
+                self.assertIn(
+                    "(goal byzantine-target-player-lock ",
+                    rule,
+                    "counter-package writers must declare lock ownership",
+                )
+
+    def test_imperial_composition_preserves_global_defense_and_locks_offense_to_target(self):
+        section = self._section(
+            "; IMPERIAL MILITARY COMPOSITION ARBITRATION",
+            "; Pending diagnostics: imperial-conversion",
+        )
+        for fragment in (
+            "(goal byzantine-target-player-lock 0)",
+            "(players-unit-type-count any-enemy camel-rider-line >= 3)",
+            "(players-unit-type-count any-enemy archer-line >= 4)",
+            "(players-unit-type-count any-enemy cavalry-archer-line >= 4)",
+            "(goal byzantine-target-player-lock 1)",
+            "(players-unit-type-count target-player camel-rider-line >= 3)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player archer-line >= 4)",
+            "(players-unit-type-count target-player cavalry-archer-line >= 4)",
+        ):
+            self.assertIn(fragment, section)
+
+        for rule in section.split("(defrule")[1:]:
+            if "any-enemy" in rule and "set-goal byzantine-imperial-composition-posture" in rule:
+                self.assertIn(
+                    "(goal byzantine-target-player-lock 0)",
+                    rule,
+                    "global enemy composition may only write the defensive posture before offensive target lock",
+                )
 
     def test_fast_castle_economy_keeps_wood_and_gold_funded(self):
         block = self.per[
