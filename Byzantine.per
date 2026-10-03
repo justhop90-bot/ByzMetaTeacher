@@ -826,6 +826,48 @@
 (defconst byzantine-wall-native-gate-armed 2)
 (defconst byzantine-wall-native-perimeter 1)
 
+; Professional Byzantine University / defensive map-control state machine.
+; State: 0 idle, 1 Castle, 2 hardened perimeter, 3 tower network, 4 Imperial gunline.
+(defconst byzantine-university-state 515)
+(defconst byzantine-university-state-idle 0)
+(defconst byzantine-university-state-castle 1)
+(defconst byzantine-university-state-hardened-perimeter 2)
+(defconst byzantine-university-state-tower-network 3)
+(defconst byzantine-university-state-imperial-gunline 4)
+(defconst byzantine-university-research-claim 516)
+
+; Defensive University research lifecycles.
+(defconst demand-byzantine-university-fortified-wall 520)
+(defconst issued-byzantine-university-fortified-wall 521)
+(defconst pending-byzantine-university-fortified-wall 522)
+(defconst complete-byzantine-university-fortified-wall 523)
+(defconst research-retry-barrier-byzantine-university-fortified-wall 524)
+(defconst demand-byzantine-university-guard-tower 525)
+(defconst issued-byzantine-university-guard-tower 526)
+(defconst pending-byzantine-university-guard-tower 527)
+(defconst complete-byzantine-university-guard-tower 528)
+(defconst research-retry-barrier-byzantine-university-guard-tower 529)
+(defconst demand-byzantine-university-ballistics 530)
+(defconst issued-byzantine-university-ballistics 531)
+(defconst pending-byzantine-university-ballistics 532)
+(defconst complete-byzantine-university-ballistics 533)
+(defconst research-retry-barrier-byzantine-university-ballistics 534)
+(defconst demand-byzantine-university-murder-holes 535)
+(defconst issued-byzantine-university-murder-holes 536)
+(defconst pending-byzantine-university-murder-holes 537)
+(defconst complete-byzantine-university-murder-holes 538)
+(defconst research-retry-barrier-byzantine-university-murder-holes 539)
+(defconst demand-byzantine-university-treadmill-crane 540)
+(defconst issued-byzantine-university-treadmill-crane 541)
+(defconst pending-byzantine-university-treadmill-crane 542)
+(defconst complete-byzantine-university-treadmill-crane 543)
+(defconst research-retry-barrier-byzantine-university-treadmill-crane 544)
+(defconst demand-byzantine-university-arrowslits 545)
+(defconst issued-byzantine-university-arrowslits 546)
+(defconst pending-byzantine-university-arrowslits 547)
+(defconst complete-byzantine-university-arrowslits 548)
+(defconst research-retry-barrier-byzantine-university-arrowslits 549)
+
 ; Native DUC execution plan
 ; Native DUC rule: byzantine-castle-target-knight
 (defrule
@@ -5642,6 +5684,12 @@
     (set-goal construction-retry-barrier-imperial-bombard-tower-floor 0)
 )
 
+(defrule
+    (true)
+=>
+    (set-goal byzantine-university-research-claim 0)
+)
+
 ; Per-pass production retry barriers
 (defrule
     (true)
@@ -6446,34 +6494,7 @@
 ; Siege remains independently re-armed below; this flag only blocks extra
 ; non-siege unit production while an upgrade is actionable or in flight.
 
-; Priority: Siege Engineers. Byzantines have Siege Engineers, but not Blast Furnace.
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (building-type-count-total university >= 1)
-    (or
-        (wood-amount > 2500)
-        (gold-amount > 2500)
-    )
-    (not (research-completed 377))
-    (up-research-status c: 377 >= 2)
-=>
-    (set-goal byzantine-late-upgrade-priority 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (building-type-count-total university >= 1)
-    (or
-        (wood-amount > 2500)
-        (gold-amount > 2500)
-    )
-    (not (research-completed 377))
-    (can-research-with-escrow ri-siege-engineers)
-=>
-    (set-goal byzantine-late-upgrade-priority 1)
-)
+; Byzantines do not have Siege Engineers. Keep the late-bank overlay closed over this unavailable University technology.
 
 ; Priority: existing Imperial unique upgrades. Their normal demand lifecycles
 ; own execution; this overlay only prevents extra production from outranking them.
@@ -6514,27 +6535,6 @@
     (not (research-completed 61))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
-)
-
-; Action: spend the excess bank on Siege Engineers before extra non-siege production.
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-late-upgrade-priority 1)
-    (goal byzantine-late-research-claim 0)
-    (building-type-count-total university >= 1)
-    (or
-        (wood-amount > 2500)
-        (gold-amount > 2500)
-    )
-    (not (research-completed 377))
-    (can-research-with-escrow ri-siege-engineers)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-    (set-goal byzantine-late-upgrade-priority 1)
-    (research ri-siege-engineers)
-    (set-goal byzantine-late-research-claim 1)
 )
 
 ; Priority arming for blacksmith work. These are policy probes only; the existing
@@ -8984,7 +8984,9 @@
 (defrule
     (true)
 =>
-    (set-goal demand-imperial-university-capability 1)
+    (set-goal demand-imperial-university-capability 0)
+    (set-goal byzantine-university-state byzantine-university-state-idle)
+    (set-goal byzantine-university-research-claim 0)
     (set-goal demand-adaptive-outpost 1)
     (set-goal demand-adaptive-watch-tower 1)
     (set-goal demand-adaptive-stone-wall 0)
@@ -14298,6 +14300,211 @@
     (set-goal demand-imperial-university-capability 97)
 )
 
+;----------------------------------------------------------------
+; PROFESSIONAL BYZANTINE UNIVERSITY / DEFENSIVE MAP CONTROL
+;----------------------------------------------------------------
+; The University state is posture, not a research queue. Research demands stay
+; persistent and use native research completion/pending witnesses. The posture
+; only advances when the defensive world state actually exists.
+;
+; Aggressive-defense principle:
+;   Castle -> harden the protected perimeter
+;   hard perimeter -> establish a multi-anchor tower network
+;   tower network + expansion intent -> project a second tower forward
+;   Imperial + real artillery -> activate the gunline layer.
+;
+; The second tower is deliberately issued through build-forward when the
+; two-TC expansion intent owns the map. Native placement then grows the wall /
+; anchor network around the new forward defensive position instead of treating
+; defense as a permanent shell around the starting TC.
+
+; University recovery. Losing the building invalidates the research capability,
+; but completed technologies remain world truth and are not reset.
+(defrule
+    (current-age >= castle-age)
+    (not (building-type-count university >= 1))
+    (not (goal byzantine-university-state byzantine-university-state-idle))
+=>
+    (set-goal byzantine-university-state byzantine-university-state-castle)
+    (set-goal demand-imperial-university-capability 1)
+)
+
+; CASTLE: Castle Age establishes the University capability.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-idle)
+    (current-age >= castle-age)
+=>
+    (set-goal byzantine-university-state byzantine-university-state-castle)
+    (set-goal demand-imperial-university-capability 1)
+)
+
+; CASTLE -> HARDENED_PERIMETER: durable defensive infrastructure must exist.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-castle)
+    (building-type-count university >= 1)
+    (or
+        (building-type-count 117 >= 1)
+        (building-type-count guard-tower >= 1)
+        (building-type-count keep >= 1)
+    )
+=>
+    (set-goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+)
+
+; HARDENED_PERIMETER -> TOWER_NETWORK: two mutually useful anchors or a
+; defensive tower plus a Castle/Keep establish an actual network.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+    (building-type-count university >= 1)
+    (or
+        (and
+            (building-type-count castle >= 1)
+            (building-type-count guard-tower >= 1))
+        (building-type-count guard-tower >= 2)
+        (building-type-count keep >= 1)
+        (building-type-count bombard-tower >= 1)
+    )
+=>
+    (set-goal byzantine-university-state byzantine-university-state-tower-network)
+)
+
+; TOWER_NETWORK -> IMPERIAL_GUNLINE: the artillery layer is not declared from
+; age alone. Chemistry plus an actual heavy gun witness is required.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (current-age >= imperial-age)
+    (research-completed chemistry)
+    (or
+        (building-type-count bombard-tower >= 1)
+        (unit-type-count bombard-cannon >= 1)
+    )
+=>
+    (set-goal byzantine-university-state byzantine-university-state-imperial-gunline)
+)
+
+; Aggressive defensive expansion: once the tower network exists and the
+; strategic arbiter owns the two-TC expansion intent, the guard-tower lifecycle
+; remains open until a second Guard Tower exists. Its higher-priority action
+; below uses build-forward so the defense projects toward the map instead of
+; collapsing back around the home TC.
+(defrule
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (goal strategic-primary-intent 3)
+    (not (town-under-attack))
+    (building-type-count guard-tower < 2)
+    (goal demand-adaptive-guard-tower 0)
+=>
+    (set-goal demand-adaptive-guard-tower 1)
+)
+
+; Defensive research demand arming is state-driven and world-state-driven.
+(defrule
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (goal demand-byzantine-university-fortified-wall 0)
+    (not (research-completed 194))
+    (building-type-count 117 >= 1)
+=>
+    (set-goal demand-byzantine-university-fortified-wall 1)
+)
+
+(defrule
+    (or
+        (goal byzantine-university-state byzantine-university-state-castle)
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (goal demand-byzantine-university-guard-tower 0)
+    (not (research-completed 140))
+    (goal demand-adaptive-guard-tower 1)
+=>
+    (set-goal demand-byzantine-university-guard-tower 1)
+)
+
+(defrule
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    )
+    (goal demand-byzantine-university-ballistics 0)
+    (not (research-completed 93))
+    (or
+        (building-type-count guard-tower >= 1)
+        (building-type-count castle >= 1)
+        (building-type-count keep >= 1)
+        (building-type-count bombard-tower >= 1)
+    )
+=>
+    (set-goal demand-byzantine-university-ballistics 1)
+)
+
+(defrule
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (goal demand-byzantine-university-murder-holes 0)
+    (not (research-completed 322))
+    (or
+        (town-under-attack)
+        (goal under-attack yes)
+    )
+    (or
+        (players-unit-type-count any-enemy knight >= 2)
+        (players-unit-type-count any-enemy militia-line >= 4)
+    )
+=>
+    (set-goal demand-byzantine-university-murder-holes 1)
+)
+
+(defrule
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (goal demand-byzantine-university-treadmill-crane 0)
+    (not (research-completed 54))
+    (or
+        (up-pending-objects c: 117 >= 1)
+        (up-pending-objects c: 72 >= 1)
+        (up-pending-objects c: 234 >= 1)
+        (up-pending-objects c: 235 >= 1)
+    )
+=>
+    (set-goal demand-byzantine-university-treadmill-crane 1)
+)
+
+(defrule
+    (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    (goal demand-byzantine-university-arrowslits 0)
+    (not (research-completed 608))
+    (or
+        (building-type-count guard-tower >= 2)
+        (building-type-count keep >= 1)
+        (building-type-count bombard-tower >= 1)
+    )
+=>
+    (set-goal demand-byzantine-university-arrowslits 1)
+)
+
+; Shared Byzantine Greek Fire channel. The existing water lifecycle owns
+; execution so naval and land-defensive demands can never issue the same tech twice.
+(defrule
+    (goal demand-water-greek-fire 0)
+    (not (research-completed 464))
+    (or
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    )
+    (building-type-count castle >= 1)
+=>
+    (set-goal demand-water-greek-fire 1)
+)
+
+
 ; Pending diagnostics: adaptive-outpost
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 42 and cannot reissue from pending goal 43
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 43 is active
@@ -14943,7 +15150,22 @@
 ; Release: adaptive-guard-tower | COMPLETE -> RELEASED
 (defrule
     (goal demand-adaptive-guard-tower 43)
-    (building-type-count 234 > 0)
+    (or
+        (and
+            (or
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            )
+            (building-type-count 234 >= 2)
+        )
+        (and
+            (or
+                (goal byzantine-university-state byzantine-university-state-castle)
+                (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+            )
+            (building-type-count 234 >= 1)
+        )
+    )
 =>
     (set-goal demand-adaptive-guard-tower 0)
 )
@@ -14967,7 +15189,22 @@
         (goal demand-adaptive-guard-tower 44)
         (goal demand-adaptive-guard-tower 42)
     )
-    (building-type-count 234 >= 1)
+    (or
+        (and
+            (or
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            )
+            (building-type-count 234 >= 2)
+        )
+        (and
+            (or
+                (goal byzantine-university-state byzantine-university-state-castle)
+                (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+            )
+            (building-type-count 234 >= 1)
+        )
+    )
 =>
     (set-goal demand-adaptive-guard-tower 43)
 )
@@ -15014,7 +15251,29 @@
 ; Action issuance: adaptive-guard-tower | ACTIVE -> ISSUED
 (defrule
     (goal demand-adaptive-guard-tower 1)
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (or
+        (goal strategic-primary-intent 3)
+        (players-unit-type-count any-enemy knight >= 3)
+        (players-unit-type-count any-enemy militia-line >= 5)
+    )
+    (not (building-type-count 234 >= 2))
+    (goal construction-retry-barrier-adaptive-guard-tower 0)
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (can-build watch-tower)
+=>
+    (build-forward watch-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+)
+
+(defrule
+    (goal demand-adaptive-guard-tower 1)
     (not (building-type-count 234 >= 1))
+    (not (goal byzantine-university-state byzantine-university-state-tower-network))
     (goal construction-retry-barrier-adaptive-guard-tower 0)
     (up-pending-objects c: 234 == 0)
     (not (up-pending-placement c: 234))
@@ -15022,6 +15281,22 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
     (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5))
+    (can-build 234)
+=>
+    (build 234)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+)
+
+(defrule
+    (goal demand-adaptive-guard-tower 1)
+    (goal byzantine-university-state byzantine-university-state-tower-network)
+    (not (building-type-count 234 >= 2))
+    (goal construction-retry-barrier-adaptive-guard-tower 0)
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
     (can-build 234)
 =>
     (build 234)
@@ -15763,6 +16038,385 @@
     (research conscription)
     (set-goal demand-research-conscription 105)
 )
+
+
+;----------------------------------------------------------------
+; PROFESSIONAL BYZANTINE UNIVERSITY RESEARCH LIFECYCLES
+;----------------------------------------------------------------
+; Native tech IDs are pinned to the current Byzantine factual inventory:
+;   Fortified Wall 194, Guard Tower 140, Ballistics 93, Murder Holes 322,
+;   Treadmill Crane 54, Arrowslits 608.
+; Research is serialized by byzantine-university-research-claim. Native
+; research status remains the only pending truth; completion remains
+; research-completed.
+
+; Fortified Wall: harden an actual stone perimeter.
+(defrule
+    (goal demand-byzantine-university-fortified-wall 523)
+    (research-completed 194)
+=>
+    (set-goal demand-byzantine-university-fortified-wall 0)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-fortified-wall 521)
+        (goal demand-byzantine-university-fortified-wall 522)
+    )
+    (research-completed 194)
+=>
+    (set-goal demand-byzantine-university-fortified-wall 523)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-fortified-wall 521)
+        (goal demand-byzantine-university-fortified-wall 522)
+    )
+    (not (research-completed 194))
+    (up-research-status c: 194 >= 2)
+=>
+    (set-goal demand-byzantine-university-fortified-wall 522)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-fortified-wall 521)
+        (goal demand-byzantine-university-fortified-wall 522)
+    )
+    (not (research-completed 194))
+    (not (up-research-status c: 194 >= 2))
+=>
+    (set-goal demand-byzantine-university-fortified-wall 520)
+    (set-goal research-retry-barrier-byzantine-university-fortified-wall 524)
+)
+(defrule
+    (goal demand-byzantine-university-fortified-wall 520)
+    (not (research-completed 194))
+    (goal research-retry-barrier-byzantine-university-fortified-wall 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 194 >= 2))
+    (building-type-count university >= 1)
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (building-type-count 117 >= 1)
+    (can-research-with-escrow ri-fortified-wall)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-fortified-wall)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-fortified-wall 521)
+)
+
+; Guard Tower: unlock the actual Castle-age tower network.
+(defrule
+    (goal demand-byzantine-university-guard-tower 528)
+    (research-completed 140)
+=>
+    (set-goal demand-byzantine-university-guard-tower 0)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-guard-tower 526)
+        (goal demand-byzantine-university-guard-tower 527)
+    )
+    (research-completed 140)
+=>
+    (set-goal demand-byzantine-university-guard-tower 528)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-guard-tower 526)
+        (goal demand-byzantine-university-guard-tower 527)
+    )
+    (not (research-completed 140))
+    (up-research-status c: 140 >= 2)
+=>
+    (set-goal demand-byzantine-university-guard-tower 527)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-guard-tower 526)
+        (goal demand-byzantine-university-guard-tower 527)
+    )
+    (not (research-completed 140))
+    (not (up-research-status c: 140 >= 2))
+=>
+    (set-goal demand-byzantine-university-guard-tower 525)
+    (set-goal research-retry-barrier-byzantine-university-guard-tower 529)
+)
+(defrule
+    (goal demand-byzantine-university-guard-tower 525)
+    (not (research-completed 140))
+    (goal research-retry-barrier-byzantine-university-guard-tower 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 140 >= 2))
+    (building-type-count university >= 1)
+    (or
+        (goal byzantine-university-state byzantine-university-state-castle)
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (goal demand-adaptive-guard-tower 1)
+    (can-research-with-escrow ri-guard-tower)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-guard-tower)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-guard-tower 526)
+)
+
+; Ballistics: make the defensive firing network punish moving targets.
+(defrule
+    (goal demand-byzantine-university-ballistics 533)
+    (research-completed 93)
+=>
+    (set-goal demand-byzantine-university-ballistics 0)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-ballistics 531)
+        (goal demand-byzantine-university-ballistics 532)
+    )
+    (research-completed 93)
+=>
+    (set-goal demand-byzantine-university-ballistics 533)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-ballistics 531)
+        (goal demand-byzantine-university-ballistics 532)
+    )
+    (not (research-completed 93))
+    (up-research-status c: 93 >= 2)
+=>
+    (set-goal demand-byzantine-university-ballistics 532)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-ballistics 531)
+        (goal demand-byzantine-university-ballistics 532)
+    )
+    (not (research-completed 93))
+    (not (up-research-status c: 93 >= 2))
+=>
+    (set-goal demand-byzantine-university-ballistics 530)
+    (set-goal research-retry-barrier-byzantine-university-ballistics 534)
+)
+(defrule
+    (goal demand-byzantine-university-ballistics 530)
+    (not (research-completed 93))
+    (goal research-retry-barrier-byzantine-university-ballistics 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 93 >= 2))
+    (building-type-count university >= 1)
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    )
+    (or
+        (building-type-count guard-tower >= 1)
+        (building-type-count castle >= 1)
+        (building-type-count keep >= 1)
+        (building-type-count bombard-tower >= 1)
+    )
+    (can-research-with-escrow ri-ballistics)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-ballistics)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-ballistics 531)
+)
+
+; Murder Holes: spend it when attackers are actually reaching the defense.
+(defrule
+    (goal demand-byzantine-university-murder-holes 538)
+    (research-completed 322)
+=>
+    (set-goal demand-byzantine-university-murder-holes 0)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-murder-holes 536)
+        (goal demand-byzantine-university-murder-holes 537)
+    )
+    (research-completed 322)
+=>
+    (set-goal demand-byzantine-university-murder-holes 538)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-murder-holes 536)
+        (goal demand-byzantine-university-murder-holes 537)
+    )
+    (not (research-completed 322))
+    (up-research-status c: 322 >= 2)
+=>
+    (set-goal demand-byzantine-university-murder-holes 537)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-murder-holes 536)
+        (goal demand-byzantine-university-murder-holes 537)
+    )
+    (not (research-completed 322))
+    (not (up-research-status c: 322 >= 2))
+=>
+    (set-goal demand-byzantine-university-murder-holes 535)
+    (set-goal research-retry-barrier-byzantine-university-murder-holes 539)
+)
+(defrule
+    (goal demand-byzantine-university-murder-holes 535)
+    (not (research-completed 322))
+    (goal research-retry-barrier-byzantine-university-murder-holes 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 322 >= 2))
+    (building-type-count university >= 1)
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (or
+        (town-under-attack)
+        (goal under-attack yes)
+    )
+    (or
+        (players-unit-type-count any-enemy knight >= 2)
+        (players-unit-type-count any-enemy militia-line >= 4)
+    )
+    (can-research-with-escrow ri-murder-holes)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-murder-holes)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-murder-holes 536)
+)
+
+; Treadmill Crane: research it when the defensive construction queue is real.
+(defrule
+    (goal demand-byzantine-university-treadmill-crane 543)
+    (research-completed 54)
+=>
+    (set-goal demand-byzantine-university-treadmill-crane 0)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-treadmill-crane 541)
+        (goal demand-byzantine-university-treadmill-crane 542)
+    )
+    (research-completed 54)
+=>
+    (set-goal demand-byzantine-university-treadmill-crane 543)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-treadmill-crane 541)
+        (goal demand-byzantine-university-treadmill-crane 542)
+    )
+    (not (research-completed 54))
+    (up-research-status c: 54 >= 2)
+=>
+    (set-goal demand-byzantine-university-treadmill-crane 542)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-treadmill-crane 541)
+        (goal demand-byzantine-university-treadmill-crane 542)
+    )
+    (not (research-completed 54))
+    (not (up-research-status c: 54 >= 2))
+=>
+    (set-goal demand-byzantine-university-treadmill-crane 540)
+    (set-goal research-retry-barrier-byzantine-university-treadmill-crane 544)
+)
+(defrule
+    (goal demand-byzantine-university-treadmill-crane 540)
+    (not (research-completed 54))
+    (goal research-retry-barrier-byzantine-university-treadmill-crane 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 54 >= 2))
+    (building-type-count university >= 1)
+    (or
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+    )
+    (or
+        (up-pending-objects c: 117 >= 1)
+        (up-pending-objects c: 72 >= 1)
+        (up-pending-objects c: 234 >= 1)
+        (up-pending-objects c: 235 >= 1)
+    )
+    (can-research-with-escrow ri-treadmill-crane)
+=>
+    (release-escrow gold)
+    (research ri-treadmill-crane)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-treadmill-crane 541)
+)
+
+; Arrowslits: an Imperial tower network gets the final static attack layer.
+(defrule
+    (goal demand-byzantine-university-arrowslits 548)
+    (research-completed 608)
+=>
+    (set-goal demand-byzantine-university-arrowslits 0)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-arrowslits 546)
+        (goal demand-byzantine-university-arrowslits 547)
+    )
+    (research-completed 608)
+=>
+    (set-goal demand-byzantine-university-arrowslits 548)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-arrowslits 546)
+        (goal demand-byzantine-university-arrowslits 547)
+    )
+    (not (research-completed 608))
+    (up-research-status c: 608 >= 2)
+=>
+    (set-goal demand-byzantine-university-arrowslits 547)
+)
+(defrule
+    (or
+        (goal demand-byzantine-university-arrowslits 546)
+        (goal demand-byzantine-university-arrowslits 547)
+    )
+    (not (research-completed 608))
+    (not (up-research-status c: 608 >= 2))
+=>
+    (set-goal demand-byzantine-university-arrowslits 545)
+    (set-goal research-retry-barrier-byzantine-university-arrowslits 549)
+)
+(defrule
+    (goal demand-byzantine-university-arrowslits 545)
+    (not (research-completed 608))
+    (goal research-retry-barrier-byzantine-university-arrowslits 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 608 >= 2))
+    (building-type-count university >= 1)
+    (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    (or
+        (building-type-count guard-tower >= 2)
+        (building-type-count keep >= 1)
+        (building-type-count bombard-tower >= 1)
+    )
+    (can-research-with-escrow ri-arrowslits)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-arrowslits)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-arrowslits 546)
+)
+
 
 ; Pending diagnostics: research-chemistry
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 101 and cannot reissue from pending goal 102
@@ -18845,9 +19499,19 @@
 (defrule
     (goal demand-water-greek-fire 0)
     (not (research-completed 464))
-    (goal strategic-primary-intent 1)
-    (map-type islands)
-    (not (research-completed 464))
+    (or
+        (and
+            (goal strategic-primary-intent 1)
+            (map-type islands)
+        )
+        (and
+            (or
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            )
+            (building-type-count castle >= 1)
+        )
+    )
 =>
     (set-goal demand-water-greek-fire 1)
 )
@@ -18896,7 +19560,16 @@
     (not (up-research-status c: 464 >= 2))
     (not (research-completed 464))
     (current-age >= castle-age)
-    (map-type islands)
+    (or
+        (map-type islands)
+        (and
+            (or
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            )
+            (building-type-count castle >= 1)
+        )
+    )
     (can-research-with-escrow 464)
 =>
     (release-escrow food)
