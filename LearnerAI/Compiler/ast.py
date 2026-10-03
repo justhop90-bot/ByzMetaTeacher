@@ -20,6 +20,7 @@ class DemandNode:
     witness: str
     release: str
     location: SourceLocation
+    action_witness_gates: tuple[str, ...] = ()
     invalidate: str | None = None
     requirement_locations: tuple[SourceLocation, ...] = ()
     action_location: SourceLocation | None = None
