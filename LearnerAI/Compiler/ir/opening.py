@@ -127,8 +127,8 @@ def lower_opening_selector(
             facts=(
                 parse_expression(
                     guard(
-                        f"(and (and (not {water}) (and (not {arena}) "
-                        f"(and (not {arabia}) (and (not (map-type hybrid)) (not {pressure})))))"
+                        f"(and (not {water}) (and (not {arena}) "
+                        f"(and (not (map-type hybrid)) (and (not {arabia}) (not {pressure}))))"
                     ),
                     SourceLocation(1),
                 ),
