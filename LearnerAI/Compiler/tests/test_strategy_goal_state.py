@@ -128,9 +128,9 @@ class StrategyGoalStateTests(unittest.TestCase):
         )
         self.assertEqual(
             control_plan.rules[2].actions[0].source,
-            "(set-goal strategy-posture 2)",
+            "(set-goal strategy-posture 1)",
         )
-        self.assertIn("(goal strategy-posture 2)", control_plan.rules[3].facts[0].source)
+        self.assertIn("(goal strategy-posture 1)", control_plan.rules[3].facts[0].source)
         self.assertIn(
             "(players-unit-type-count any-enemy knight < 3)",
             control_plan.rules[3].facts[0].source,
