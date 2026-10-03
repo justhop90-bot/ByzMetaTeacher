@@ -871,13 +871,6 @@
 (defconst byzantine-frontier-search-local-list 682)
 (defconst byzantine-frontier-search-remote-list 683)
 (defconst bt-byzantine-army-reposition-seconds 90)
-(defconst bt-imperial-extreme-cataphract-target 30)
-(defconst bt-imperial-extreme-varangian-target 24)
-(defconst bt-imperial-extreme-arbalester-target 24)
-(defconst bt-imperial-extreme-halberdier-target 30)
-(defconst bt-imperial-extreme-ram-target 8)
-(defconst bt-imperial-extreme-trebuchet-target 8)
-(defconst bt-imperial-extreme-bombard-target 8)
 (defconst byzantine-university-research-claim 516)
 
 ; Defensive University research lifecycles.
@@ -15916,6 +15909,7 @@
 (defrule
     (goal demand-adaptive-guard-tower 1)
     (goal byzantine-university-state byzantine-university-state-tower-network)
+    (goal byzantine-frontier-state byzantine-frontier-state-idle)
     (or
         (goal strategic-primary-intent 3)
         (or
@@ -15940,6 +15934,7 @@
     (goal demand-adaptive-guard-tower 1)
     (not (building-type-count 234 >= 1))
     (not (goal byzantine-university-state byzantine-university-state-tower-network))
+    (goal byzantine-frontier-state byzantine-frontier-state-idle)
     (goal construction-retry-barrier-adaptive-guard-tower 0)
     (up-pending-objects c: 234 == 0)
     (not (up-pending-placement c: 234))
@@ -15957,6 +15952,7 @@
 (defrule
     (goal demand-adaptive-guard-tower 1)
     (goal byzantine-university-state byzantine-university-state-tower-network)
+    (goal byzantine-frontier-state byzantine-frontier-state-idle)
     (not (building-type-count 234 >= 2))
     (goal construction-retry-barrier-adaptive-guard-tower 0)
     (up-pending-objects c: 234 == 0)
