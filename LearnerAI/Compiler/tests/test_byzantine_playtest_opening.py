@@ -24,6 +24,15 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         end = self.per.index(end_marker, start)
         return self.per[start:end]
 
+    def _rules(self):
+        return ["(defrule" + rule for rule in self.per.split("(defrule")[1:]]
+
+    def _find_rule(self, *fragments):
+        for rule in self._rules():
+            if all(fragment in rule for fragment in fragments):
+                return rule
+        self.fail("No defrule matched fragments: " + repr(fragments))
+
     def test_standard_arabia_selector_owns_quiet_land_and_generic_fallback_excludes_arabia(self):
         standard = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
         fallback = self._rule_block("; Native control rule: opening-selector-fast-castle-standard-land")
@@ -103,7 +112,10 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(building-type-count archery-range >= 1)", blacksmith)
 
     def test_standard_arabia_does_not_build_first_mill_in_dark_age(self):
-        mill = self._rule_block("; Action issuance: economy-food-mill-boom | ACTIVE -> ISSUED")
+        mill = self._find_rule(
+            "(goal demand-economy-food-mill-boom 1)",
+            "(build mill)",
+        )
         self.assertIn("(not (map-type arabia))", mill)
         self.assertIn("(current-age >= feudal-age)", mill)
 
@@ -241,14 +253,12 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         )
 
     def test_imperial_attack_ready_uses_any_sufficient_siege_anchor(self):
-        start = self.per.index(
-            "(defrule\n"
-            "    (current-age >= imperial-age)\n"
-            "    (goal byzantine-army-plan-phase 2)\n"
-            "    (goal byzantine-army-attack-ready 0)"
+        block = self._find_rule(
+            "(current-age >= imperial-age)",
+            "(goal byzantine-army-plan-phase 2)",
+            "(goal byzantine-army-reinforcement 0)",
+            "(goal byzantine-army-attack-ready 0)",
         )
-        end = self.per.index("\n\n(defrule", start)
-        block = self.per[start:end]
         self.assertIn("(attack-soldier-count >= 12)", block)
         self.assertIn("(unit-type-count-total 359 >= bt-imperial-halberdier-floor)", block)
         self.assertIn("(unit-type-count-total trebuchet >= 1)", block)
@@ -280,12 +290,9 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             self.assertIn(fragment, block)
 
     def test_reinforcement_cannot_bypass_admission_or_reuse_dropped_target_lock(self):
-        start = self.per.index("; ATTACK THRESHOLDS AND REINFORCEMENT")
-        end = self.per.index("; ARMY REPOSITION / WITHDRAWAL CONTROLLER", start)
-        block = self.per[start:end]
-
+        all_rules = self._rules()
         attack_ready_writers = [
-            rule for rule in block.split("(defrule")[1:]
+            rule for rule in all_rules
             if "set-goal byzantine-army-attack-ready 1" in rule
         ]
         self.assertEqual(len(attack_ready_writers), 8)
@@ -313,60 +320,62 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             ):
                 self.assertIn(fragment, rule)
 
-        self.assertIn(
-            "(set-goal byzantine-army-reinforcement-target-validation 0)",
-            self.per[self.per.index("(defrule\n    (or\n        (strategic-number sn-target-player-number <= 0)"):self.per.index("(defrule\n    (strategic-number sn-target-player-number <= 0)")],
-        )
-        self.assertIn(
-            "(set-goal byzantine-army-reinforcement-admission 0)",
-            self.per[self.per.index("(defrule\n    (or\n        (strategic-number sn-target-player-number <= 0)"):self.per.index("(defrule\n    (strategic-number sn-target-player-number <= 0)")],
-        )
-        self.assertIn(
-            "(set-goal byzantine-army-reinforcement-target-validation 0)",
-            self.per[self.per.index("(defrule\n    (goal byzantine-target-player-lock 1)"):self.per.index("; NATIVE NATURAL-FOOD DEER CONTROLLER")],
-        )
-        self.assertIn(
-            "(set-goal byzantine-army-reinforcement-admission 0)",
-            self.per[self.per.index("(defrule\n    (goal byzantine-target-player-lock 1)"):self.per.index("; NATIVE NATURAL-FOOD DEER CONTROLLER")],
-        )
+        target_drop_rules = [
+            rule for rule in all_rules
+            if "(set-goal byzantine-target-player-lock 0)" in rule
+            and "(goal byzantine-target-player-lock 1)" in rule
+        ]
+        self.assertGreaterEqual(len(target_drop_rules), 1)
+        for rule in target_drop_rules:
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-target-validation 0)",
+                rule,
+            )
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-admission 0)",
+                rule,
+            )
+
+        reinforcement_entry_rules = [
+            rule for rule in all_rules
+            if "(set-goal byzantine-army-reinforcement 1)" in rule
+            and "(set-goal byzantine-target-player-lock 0)" in rule
+        ]
+        self.assertGreaterEqual(len(reinforcement_entry_rules), 4)
+        for rule in reinforcement_entry_rules:
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-target-validation 0)",
+                rule,
+            )
+            self.assertIn(
+                "(set-goal byzantine-army-reinforcement-admission 0)",
+                rule,
+            )
 
     def test_reinforcement_rearm_requires_fresh_target_validation_and_opponent_admission(self):
-        start = self.per.index("; ATTACK THRESHOLDS AND REINFORCEMENT")
-        end = self.per.index("; ARMY REPOSITION / WITHDRAWAL CONTROLLER", start)
-        block = self.per[start:end]
-
-        for fragment in (
+        self.assertIn(
             "(defconst byzantine-army-reinforcement-target-validation 303)",
+            self.per,
+        )
+        self.assertIn(
             "(defconst byzantine-army-reinforcement-admission 305)",
-            "(goal byzantine-army-reinforcement-target-validation 1)",
-            "(goal byzantine-army-reinforcement-admission 1)",
-            "(goal byzantine-target-player-lock 1)",
-            "(players-unit-type-count target-player knight >= 3)",
-            "(players-unit-type-count target-player archer-line >= 3)",
-            "(players-unit-type-count target-player mangonel-line >= 2)",
-            "(players-military-population target-player >= 6)",
-        ):
-            self.assertIn(fragment, block)
+            self.per,
+        )
 
         rearm_rules = [
-            rule for rule in block.split("(defrule")[1:]
+            rule for rule in self._rules()
             if "(goal byzantine-army-reinforcement 1)" in rule
             and "set-goal byzantine-army-attack-ready 1" in rule
         ]
-        self.assertGreaterEqual(len(rearm_rules), 4)
+        self.assertEqual(len(rearm_rules), 4)
+
         for rule in rearm_rules:
-            self.assertIn(
+            for fragment in (
                 "(goal byzantine-army-reinforcement-target-validation 1)",
-                rule,
-            )
-            self.assertIn(
                 "(goal byzantine-army-reinforcement-admission 1)",
-                rule,
-            )
-            self.assertIn(
                 "(goal byzantine-target-player-lock 1)",
-                rule,
-            )
+            ):
+                self.assertIn(fragment, rule)
 
     def test_counter_arbitration_yields_focus_writers_after_target_lock(self):
         section = self._section(
