@@ -739,6 +739,7 @@
 ; Targets are total building counts. The first building of each class remains
 ; owned by the existing capability lifecycles; this plane only expands capacity.
 (defconst sn-enable-new-building-system 242)
+(defconst sn-number-build-attempts-before-skip 114)
 (defconst byzantine-production-barracks-target 690)
 (defconst byzantine-production-archery-target 691)
 (defconst byzantine-production-stable-target 692)
@@ -926,6 +927,9 @@
     (true)
 =>
     (set-strategic-number sn-enable-new-building-system 1)
+    ; Community construction robustness: allow a bounded number of failed
+    ; placement/build attempts before the engine skips a blocked plan.
+    (set-strategic-number sn-number-build-attempts-before-skip 5)
     (disable-self)
 )
 
@@ -14932,8 +14936,11 @@
 ; The first building is still owned by the established capability lifecycles.
 ; This controller only builds when total capacity is at least 2.
 
-; Recompute total capacity targets every pass. Later rules raise the targets
-; from these conservative defaults.
+; Recompute desired capacity every pass. The target goals are policy outputs,
+; while completed-building and pending-foundation facts remain engine witnesses.
+; The execution guards below intentionally use the established community pair:
+; building-type-count-total + up-pending-objects. This is a duplicate-admission
+; guard, not an inferred arithmetic sum of the two facts.
 (defrule
     (true)
 =>
@@ -14942,6 +14949,60 @@
     (set-goal byzantine-production-stable-target 0)
     (set-goal byzantine-production-siege-target 0)
     (set-goal byzantine-production-castle-target 0)
+)
+
+; CASTLE-AGE CAPACITY EXPANSION
+; Byzantine Castle Age is already a real production phase. Do not wait for
+; Imperial Age merely to open the second production lane when the army package
+; is already demanding it.
+;
+; Second Barracks: sustained anti-cavalry pressure or an explicit mounted
+; counter demand. The first Barracks remains owned by the existing lifecycle.
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (unit-type-count-total villager >= 45)
+    (population-headroom > 8)
+    (not (town-under-attack))
+    (or
+        (goal demand-counter-mounted-spears 1)
+        (players-unit-type-count any-enemy knight >= 3)
+    )
+=>
+    (set-goal byzantine-production-barracks-target 2)
+)
+
+; Second Archery Range: sustained ranged pressure or the existing ranged-counter
+; demand is enough to justify a second production lane in Castle Age.
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (unit-type-count-total villager >= 45)
+    (population-headroom > 8)
+    (not (town-under-attack))
+    (or
+        (goal demand-counter-ranged-skirmishers 1)
+        (players-unit-type-count any-enemy archer-line >= 3)
+        (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+=>
+    (set-goal byzantine-production-archery-target 2)
+)
+
+; Second Stable: the Byzantine Cataphract package is a sustained Castle-age
+; production demand, not an Imperial-only feature.
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (unit-type-count-total villager >= 48)
+    (population-headroom > 8)
+    (not (town-under-attack))
+    (or
+        (goal demand-castle-cataphract-floor 1)
+        (unit-type-count-total cataphract-line >= 4)
+    )
+=>
+    (set-goal byzantine-production-stable-target 2)
 )
 
 ; Mature Imperial infantry backbone: second Barracks.
@@ -15108,15 +15169,36 @@
     (or
         (goal byzantine-university-state byzantine-university-state-tower-network)
         (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        (goal byzantine-army-attack-ready 2)
     )
 =>
     (set-goal byzantine-production-castle-target 3)
 )
 
+; Castle capacity must own a small stone-gatherer floor while the target is
+; active. This deliberately comes after the upstream TC3 stone release rule:
+; the production target is the later strategic owner when another Castle is
+; actually demanded.
+(defrule
+    (goal byzantine-production-castle-target 2)
+    (up-compare-sn sn-stone-gatherer-percentage < 10)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 10)
+)
+
+(defrule
+    (goal byzantine-production-castle-target 3)
+    (up-compare-sn sn-stone-gatherer-percentage < 15)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 15)
+)
+
 ; ---------------------------------------------------------------------------
-; Capacity execution. One action per pass remains the native script arbiter,
-; but pending foundations are explicitly counted so the next capacity request
-; can be issued without waiting for the previous building to finish.
+; Capacity execution. One successful build action per pass remains the native
+; script arbiter. The production target survives across passes, while the
+; paired completed-count and pending-foundation guards allow concurrent
+; foundations across successive passes.
+
 
 ; Barracks: 2 / 3 / 4.
 (defrule
