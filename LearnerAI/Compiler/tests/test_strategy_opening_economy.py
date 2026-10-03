@@ -78,7 +78,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "opening-selector-water-economy",
                 "opening-selector-fast-castle",
                 "opening-selector-defensive-standard-arabia",
-                "opening-selector-defensive-standard",
                 "opening-selector-fast-castle-standard-land",
                 "opening-selector-counter-feudal",
             ),
@@ -91,10 +90,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         counter_feudal = next(
             rule for rule in control.rules
             if rule.identity == "opening-selector-counter-feudal"
-        )
-        defensive_standard = next(
-            rule for rule in control.rules
-            if rule.identity == "opening-selector-defensive-standard"
         )
         self.assertIn("(map-type arena)", fast_castle.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy knight >= 3)", fast_castle.facts[0].source)
@@ -109,12 +104,12 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(players-unit-type-count any-enemy knight >= 3)", arabia_standard.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy archer-line >= 4)", arabia_standard.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", arabia_standard.facts[0].source)
-        self.assertNotIn("(map-type hybrid)", defensive_standard.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
         self.assertIn("opening-selector-defensive-standard-arabia", output)
         self.assertNotIn("(map-type hybrid)", output)
+        self.assertNotIn("opening-selector-defensive-standard", output)
         self.assertIn("(set-goal opening-plan 5)", output)
         self.assertIn("(set-goal opening-plan 4)", output)
         self.assertIn("(set-goal opening-plan 3)", output)
