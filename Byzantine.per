@@ -5793,6 +5793,30 @@
 (defrule
     (current-age >= castle-age)
     (goal byzantine-target-player-lock 1)
+    (players-building-type-count target-player stable >= 2)
+=>
+    (set-goal counter-package-mounted_pressure_castle 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-target-player-lock 1)
+    (players-building-type-count target-player archery-range >= 2)
+=>
+    (set-goal counter-package-ranged_pressure_feudal 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-target-player-lock 1)
+    (players-building-type-count target-player siege-workshop >= 1)
+=>
+    (set-goal counter-package-siege_pressure_castle 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-target-player-lock 1)
     (players-military-population target-player >= 6)
     (players-unit-type-count target-player militia-line >= 5)
 =>
