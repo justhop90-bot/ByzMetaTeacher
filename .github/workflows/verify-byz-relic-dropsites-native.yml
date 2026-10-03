@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - verify/byz-relic-dropsites-native
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
