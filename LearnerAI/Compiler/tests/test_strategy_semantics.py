@@ -148,9 +148,10 @@ class StrategySemanticsTests(unittest.TestCase):
             lower_economy_controller,
         )
 
+        full_profile = build_byzantine_strategy(self.effective)
         compilation = lower_economy_controller(
             default_byzantine_economy_controller(),
-            self.profile,
+            full_profile,
         )
         rule = next(
             item
