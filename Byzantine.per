@@ -4349,6 +4349,7 @@
 (defconst byzantine-siege-muster-positioning 1)
 (defconst byzantine-siege-muster-holding 2)
 (defconst byzantine-siege-muster-confirmed 3)
+(defconst byzantine-siege-muster-mangonel-group 15)
 (defconst byzantine-siege-muster-army-group 16)
 (defconst byzantine-siege-muster-trebuchet-group 17)
 (defconst byzantine-siege-muster-bombard-group 18)
@@ -9309,6 +9310,25 @@
     (up-create-group 0 40 c: byzantine-siege-muster-bombard-group)
 )
 
+; Refresh the physical muster witness: Mangonel group.
+(defrule
+    (or
+        (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
+        (or
+            (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
+            (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
+        )
+    )
+    (goal byzantine-siege-approach-claim 1)
+    (goal byzantine-offensive-castle-valid 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-siege-muster-point)
+    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
+    (up-find-local c: mangonel-line c: 40)
+    (up-create-group 0 40 c: byzantine-siege-muster-mangonel-group)
+)
+
 ; Refresh the physical muster witness: Ram group.
 (defrule
     (or
@@ -9336,7 +9356,7 @@
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-offensive-castle-valid 1)
     (up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-castle-army)
-    (up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-castle-mangonel-floor)
+    (up-group-size c: byzantine-siege-muster-mangonel-group >= bt-castle-mangonel-floor)
 =>
     (set-goal byzantine-siege-muster-witness 1)
     (set-goal byzantine-siege-muster-state byzantine-siege-muster-holding)
