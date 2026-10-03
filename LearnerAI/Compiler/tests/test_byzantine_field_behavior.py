@@ -19,29 +19,28 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             end = self.per.index(end_marker, start)
         return self.per[start:end]
 
-    def test_near_resource_fronts_build_camps_without_castle_age_gate(self):
-        wood = self._section_from(
-            "; Byzantine near-resource lumber-camp recovery",
-            "; Byzantine near-resource mining-camp recovery",
-        )
-        gold = self._section_from(
-            "; Byzantine near-resource mining-camp recovery",
-            "; The same bounded front rule applies to stone",
+    def test_near_resource_fronts_reopen_existing_camp_demands_without_castle_age_gate(self):
+        camp = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; Per-pass transient action arbitration",
         )
 
-        self.assertIn("(resource-found wood)", wood)
-        self.assertIn("(dropsite-min-distance wood > 6)", wood)
-        self.assertIn("(dropsite-min-distance wood <= 18)", wood)
-        self.assertIn("(can-build lumber-camp)", wood)
-        self.assertIn("(build lumber-camp)", wood)
-        self.assertNotIn("(current-age >= castle-age)", wood)
+        self.assertIn("(resource-found wood)", camp)
+        self.assertIn("(dropsite-min-distance wood > 6)", camp)
+        self.assertIn("(dropsite-min-distance wood <= 18)", camp)
+        self.assertIn("(can-build lumber-camp)", camp)
+        self.assertIn("(set-goal demand-economy-lumber-camp-floor-1 1)", camp)
+        self.assertNotIn("(current-age >= castle-age)\n    (resource-found wood)", camp)
 
-        self.assertIn("(resource-found gold)", gold)
-        self.assertIn("(dropsite-min-distance gold > 6)", gold)
-        self.assertIn("(dropsite-min-distance gold <= 18)", gold)
-        self.assertIn("(can-build mining-camp)", gold)
-        self.assertIn("(build mining-camp)", gold)
-        self.assertNotIn("(current-age >= castle-age)", gold)
+        self.assertIn("(resource-found gold)", camp)
+        self.assertIn("(dropsite-min-distance gold > 6)", camp)
+        self.assertIn("(dropsite-min-distance gold <= 18)", camp)
+        self.assertIn("(can-build mining-camp)", camp)
+        self.assertIn("(set-goal demand-economy-gold-camp-floor-1 1)", camp)
+        self.assertNotIn("(current-age >= castle-age)\n    (resource-found gold)", camp)
+
+        self.assertNotIn("(build lumber-camp)", camp)
+        self.assertNotIn("(build mining-camp)", camp)
 
     def test_resource_walking_distance_is_bounded_and_never_widens_to_36(self):
         init = self._section_from(
