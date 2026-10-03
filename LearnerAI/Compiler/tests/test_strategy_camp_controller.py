@@ -20,7 +20,7 @@ class ByzantineCampControllerTests(unittest.TestCase):
         for resource, max_count in (("wood", 6), ("gold", 5), ("stone", 5)):
             active = profile.observation(f"camp-front-{resource}-active")
             remote = profile.observation(f"camp-front-{resource}-remote")
-            self.assertIn("up-gaia-type-count-total", active.expression)
+            self.assertIn("resource-found", active.expression)
             self.assertIn("dropsite-min-distance", remote.expression)
 
             for floor in range(1, max_count + 1):
