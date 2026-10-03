@@ -77,10 +77,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "opening-selector-water-control",
                 "opening-selector-water-economy",
                 "opening-selector-fast-castle",
-                "opening-selector-fast-castle-standard-land",
-                "opening-selector-counter-feudal",
                 "opening-selector-defensive-standard-arabia",
                 "opening-selector-defensive-standard",
+                "opening-selector-fast-castle-standard-land",
+                "opening-selector-counter-feudal",
             ),
         )
 
