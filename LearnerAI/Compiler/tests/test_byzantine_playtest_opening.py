@@ -56,6 +56,21 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             self.per,
         )
 
+    def test_arena_fast_imperial_economy_mode_uses_posture_9(self):
+        block = self._rule_block("; Native control rule: economy-controller-select-fast-imperial")
+        self.assertIn("(map-type arena)", block)
+        self.assertIn("(set-goal economy-posture 9)", block)
+        writer = self._rule_block(
+            "; Native control rule: economy-controller-write-fast_imperial-sn-gold-gatherer-percentage"
+        )
+        self.assertIn("(goal economy-posture 9)", writer)
+        self.assertIn("(set-strategic-number sn-gold-gatherer-percentage 38)", writer)
+
+    def test_castle_attack_groups_are_enabled_for_boom(self):
+        block = self._rule_block("; Native control rule: sn-mode-attack-groups-castle-008")
+        self.assertIn("(goal strategy-posture 3)", block)
+        self.assertIn("(goal strategy-posture 4)", block)
+
     def test_fast_castle_economy_keeps_wood_and_gold_funded(self):
         block = self.per[
             self.per.index("; Native control rule: economy-controller-write-fast_castle-sn-food-gatherer-percentage"):
