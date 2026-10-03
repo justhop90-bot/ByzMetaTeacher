@@ -34,7 +34,7 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
 
     def test_arabia_pressure_contract_detects_real_early_pressure(self):
         profile = build_byzantine_strategy(self.effective)
-        pressure = profile.observation("strategy-enemy-pressure")
+        pressure = profile.observation("strategy-arabia-early-pressure")
         expression = pressure.expression
         self.assertIn("militia-line >= 3", expression)
         self.assertIn("scout-cavalry-line >= 3", expression)
