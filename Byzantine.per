@@ -5735,6 +5735,7 @@
 ; for actual unit-count observations.
 (defrule
     (current-age == feudal-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-focus-ranges >= 2)
 =>
     (set-goal counter-package-ranged_pressure_feudal 1)
@@ -5742,6 +5743,7 @@
 
 (defrule
     (current-age >= castle-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-focus-stables >= 2)
 =>
     (set-goal counter-package-mounted_pressure_castle 1)
@@ -5749,6 +5751,7 @@
 
 (defrule
     (current-age >= castle-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-focus-siege-workshops >= 1)
 =>
     (set-goal counter-package-siege_pressure_castle 1)
@@ -5756,10 +5759,52 @@
 
 (defrule
     (current-age >= castle-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-focus-military-pop >= 6)
     (players-unit-type-count target-player militia-line >= 5)
 =>
     (set-goal counter-package-infantry_pressure_castle 1)
+)
+
+; Once the offensive target is locked, counter-package selection is owned by
+; target-player evidence. Focus-player remains observation context only.
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-target-player-lock 1)
+    (or
+        (players-unit-type-count target-player knight >= 3)
+        (or
+            (players-unit-type-count target-player camel-rider-line >= 3)
+            (players-unit-type-count target-player scout-cavalry-line >= 6)
+        )
+    )
+=>
+    (set-goal counter-package-mounted_pressure_castle 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-target-player-lock 1)
+    (players-unit-type-count target-player mangonel-line >= 2)
+=>
+    (set-goal counter-package-siege_pressure_castle 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-target-player-lock 1)
+    (players-military-population target-player >= 6)
+    (players-unit-type-count target-player militia-line >= 5)
+=>
+    (set-goal counter-package-infantry_pressure_castle 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-target-player-lock 1)
+    (players-unit-type-count target-player archer-line >= 3)
+=>
+    (set-goal counter-package-ranged_pressure_feudal 1)
 )
 
 ; NATIVE NATURAL-FOOD DEER CONTROLLER
@@ -6333,6 +6378,7 @@
 ; the first combat unit is visible. Actual unit counts remain stronger proof.
 (defrule
     (current-age == feudal-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-scout-sighted-stable 1)
 =>
     (set-goal counter-package-mounted_pressure_feudal 1)
@@ -6340,6 +6386,7 @@
 
 (defrule
     (current-age == feudal-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-scout-sighted-range 1)
 =>
     (set-goal counter-package-ranged_pressure_feudal 1)
@@ -6347,6 +6394,7 @@
 
 (defrule
     (current-age >= castle-age)
+    (goal byzantine-target-player-lock 0)
     (goal byzantine-scout-sighted-siege 1)
 =>
     (set-goal counter-package-siege_pressure_castle 1)
@@ -12706,6 +12754,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 0)
     (or
         (goal counter-package-mounted_pressure_castle 1)
         (or
@@ -12719,6 +12768,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 0)
     (players-unit-type-count any-enemy archer-line >= 4)
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
 =>
@@ -12727,6 +12777,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 0)
     (players-unit-type-count any-enemy cavalry-archer-line >= 4)
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
 =>
@@ -12735,6 +12786,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 0)
     (goal counter-package-infantry_pressure_castle 1)
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged))
@@ -12744,6 +12796,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 0)
     (goal counter-package-siege_pressure_castle 1)
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged))
@@ -12754,6 +12807,76 @@
 
 (defrule
     (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 0)
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged))
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry))
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege))
+=>
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+)
+
+; Offensive composition arbitration is target-relative once target-player is
+; locked. Global any-enemy pressure remains available to the defensive plane.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 1)
+    (or
+        (goal counter-package-mounted_pressure_castle 1)
+        (or
+            (players-unit-type-count target-player camel-rider-line >= 3)
+            (or
+                (players-unit-type-count target-player scout-cavalry-line >= 6)
+                (players-unit-type-count target-player knight >= 3)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 1)
+    (players-unit-type-count target-player archer-line >= 4)
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
+=>
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 1)
+    (players-unit-type-count target-player cavalry-archer-line >= 4)
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
+=>
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 1)
+    (goal counter-package-infantry_pressure_castle 1)
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged))
+=>
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 1)
+    (goal counter-package-siege_pressure_castle 1)
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged))
+    (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry))
+=>
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-target-player-lock 1)
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted))
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged))
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry))
