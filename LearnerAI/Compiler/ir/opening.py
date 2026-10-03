@@ -99,79 +99,86 @@ def lower_opening_selector(
             facts=(parse_expression(guard(f"(and {water} (not {naval}))"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})", SourceLocation(1)),),
         ),
+    ]
+    if arena_default == OpeningFamily.FAST_CASTLE.value:
+        rules.append(
+            NativeControlRule(
+                "opening-selector-fast-castle",
+                facts=(
+                    parse_expression(
+                        guard(f"(and {arena} (not {pressure}))"),
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+    if arabia_default == OpeningFamily.DEFENSIVE_STANDARD.value:
+        rules.append(
+            NativeControlRule(
+                "opening-selector-defensive-standard-arabia",
+                facts=(
+                    parse_expression(
+                        guard(f"(and {arabia} (not {pressure}))"),
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+    if hybrid_default == OpeningFamily.DEFENSIVE_STANDARD.value:
+        rules.append(
+            NativeControlRule(
+                "opening-selector-defensive-standard",
+                facts=(
+                    parse_expression(
+                        guard(f"(and (map-type hybrid) (not {pressure}))"),
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+    if standard_land_default == OpeningFamily.FAST_CASTLE.value:
+        rules.append(
+            NativeControlRule(
+                "opening-selector-fast-castle-standard-land",
+                facts=(
+                    parse_expression(
+                        guard(f"(and (not {water}) (and (not {arena}) (not {pressure})))"),
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+    rules.append(
         NativeControlRule(
             "opening-selector-counter-feudal",
             facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) {pressure}))"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})", SourceLocation(1)),),
         ),
-    ]
-    if arena_default == OpeningFamily.FAST_CASTLE.value:
-        rules.insert(2, NativeControlRule(
-            "opening-selector-fast-castle",
-            facts=(
-                parse_expression(
-                    guard(f"(and {arena} (not {pressure}))"),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
-                    SourceLocation(1),
-                ),
-            ),
-        ))
-    if standard_land_default == OpeningFamily.FAST_CASTLE.value:
-        rules.insert(3, NativeControlRule(
-            "opening-selector-fast-castle-standard-land",
-            facts=(
-                parse_expression(
-                    guard(
-                        f"(and (not {water}) (and (not {arena}) "
-                        f"(and (not (map-type hybrid)) (and (not {arabia}) (not {pressure})))))"
-                    ),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
-                    SourceLocation(1),
-                ),
-            ),
-        ))
-    if arabia_default == OpeningFamily.DEFENSIVE_STANDARD.value:
-        rules.insert(5, NativeControlRule(
-            "opening-selector-defensive-standard-arabia",
-            facts=(
-                parse_expression(
-                    guard(f"(and {arabia} (not {pressure}))"),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
-                    SourceLocation(1),
-                ),
-            ),
-        ))
-    if hybrid_default == OpeningFamily.DEFENSIVE_STANDARD.value:
-        rules.append(NativeControlRule(
-            "opening-selector-defensive-standard",
-            facts=(
-                parse_expression(
-                    guard(f"(and (map-type hybrid) (not {pressure}))"),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
-                    SourceLocation(1),
-                ),
-            ),
-        ))
+    )
     return NativeControlPlan(states=(state,), rules=tuple(rules))
 
 
