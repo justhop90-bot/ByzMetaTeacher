@@ -947,6 +947,12 @@
 (defconst bt-byzantine-monk-defense-heal-seconds 30)
 (defconst bt-byzantine-monk-defense-convert-seconds 20)
 
+; Lost relic/healing Monk recovery is a short cadence guard. It prevents the
+; same loss from repeatedly re-opening the normal two-Monk demand while the
+; replacement is still training. Timer is cadence only, not Monk truth.
+(defconst byzantine-monk-recovery-timer 18)
+(defconst bt-byzantine-monk-recovery-seconds 15)
+
 ; Conditional defensive Monk floor raises the normal two-Monk core to four
 ; while sustained defensive/siege pressure is live.
 (defconst demand-castle-monk-defense-floor 1002)
@@ -22561,15 +22567,28 @@
 
 ; Recovery: castle-monk-floor | LOST MONK -> ACTIVE
 ; A lost relic/healing Monk reopens only the normal two-Monk Castle demand.
-; The four-Monk defensive package is a separate demand and cannot be revived
-; by this recovery rule.
+; The recovery edge is cadence-limited so one loss event cannot repeatedly
+; reopen the demand while its replacement is still training.
 (defrule
     (goal demand-castle-monk-floor 0)
     (current-age >= castle-age)
     (building-type-count-total monastery >= 1)
     (not (unit-type-count-total monk >= bt-castle-monk-floor))
+    (or
+        (up-timer-status byzantine-monk-recovery-timer c:== timer-disabled)
+        (up-timer-status byzantine-monk-recovery-timer c:== timer-triggered)
+    )
 =>
     (set-goal demand-castle-monk-floor 1)
+    (disable-timer byzantine-monk-recovery-timer)
+    (enable-timer byzantine-monk-recovery-timer bt-byzantine-monk-recovery-seconds)
+)
+
+; Recovery cooldown expiry: re-arm only after the short cadence window.
+(defrule
+    (up-timer-status byzantine-monk-recovery-timer c:== timer-triggered)
+=>
+    (disable-timer byzantine-monk-recovery-timer)
 )
 
 ; Completion witness: castle-monk-floor | PENDING/ISSUED -> COMPLETE
