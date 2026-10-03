@@ -134,6 +134,17 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(defconst sn-gold-gatherer-percentage 118)", output)
         self.assertIn("(defconst sn-percent-civilian-builders 1)", output)
 
+        fast_castle_policy = next(
+            item for item in profile.economy_controller.policies
+            if item.mode == EconomyMode.FAST_CASTLE
+        )
+        self.assertEqual(
+            (fast_castle_policy.allocation.food,
+             fast_castle_policy.allocation.wood,
+             fast_castle_policy.allocation.gold),
+            (50, 25, 25),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
