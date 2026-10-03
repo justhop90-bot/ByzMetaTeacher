@@ -96,8 +96,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             rule for rule in control.rules
             if rule.identity == "opening-selector-defensive-standard"
         )
-        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
         self.assertIn("(map-type arena)", fast_castle.facts[0].source)
+        self.assertIn("(players-unit-type-count any-enemy knight >= 3)", fast_castle.facts[0].source)
+        self.assertIn("(players-unit-type-count any-enemy archer-line >= 4)", fast_castle.facts[0].source)
+        self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
         arabia_standard = next(
             rule for rule in control.rules
@@ -208,7 +210,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 }
                 self.assertEqual(
                     floors,
-                    {"food": expected_floors[demand.identity]["food"], "gold": 250},
+                    {"FOOD": expected_floors[demand.identity]["food"], "GOLD": 250},
                 )
 
         from LearnerAI.Compiler.clients.basilisk import EconomyMode
