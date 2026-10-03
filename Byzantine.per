@@ -5684,11 +5684,28 @@
 )
 
 (defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 0)
+    (goal byzantine-army-reinforcement-admission 0)
+    (goal byzantine-target-player-lock 0)
+    (strategic-number sn-target-player-number >= 1)
+    (strategic-number sn-target-player-number <= 8)
+    (player-in-game target-player)
+    (not (stance-toward target-player ally))
+=>
+    (set-goal byzantine-army-reinforcement-target-validation 1)
+)
+
+(defrule
     (goal byzantine-target-player-lock 0)
     (or
         (goal byzantine-army-attack-ready 1)
-        (goal byzantine-army-attack-ready 2)
+        (or
+            (goal byzantine-army-attack-ready 2)
+            (goal byzantine-army-reinforcement 1)
+        )
     )
+    (goal byzantine-army-reinforcement-target-validation 1)
     (strategic-number sn-target-player-number >= 1)
     (strategic-number sn-target-player-number <= 8)
     (player-in-game target-player)
@@ -9987,6 +10004,9 @@
     (up-reset-attack-now)
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
     (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
 )
 
@@ -10720,6 +10740,9 @@
     (set-goal byzantine-army-stale-state byzantine-army-stale-triggered)
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
     (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
 )
 
@@ -10788,6 +10811,9 @@
 => 
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+    (set-goal byzantine-army-reinforcement-admission 0)
+    (set-goal byzantine-target-player-lock 0)
 )
 
 (defrule
