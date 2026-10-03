@@ -168,6 +168,112 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(unit-type-count-total knight-line >= 2)", block)
         self.assertNotIn("(unit-type-count-total monk >= bt-castle-monk-floor)", block)
 
+    def test_castle_recovery_loss_uses_selected_backbone_and_fortified_siege_only(self):
+        block = self._find_rule(
+            "(current-age == castle-age)",
+            "(goal byzantine-army-attack-ready 2)",
+            "(set-goal byzantine-siege-approach byzantine-siege-approach-recover)",
+        )
+        self.assertIn(
+            "(and\n            (goal counter-package-infantry_pressure_castle 1)",
+            block,
+        )
+        self.assertIn(
+            "(unit-type-count-total cataphract-line < bt-castle-cataphract-floor)",
+            block,
+        )
+        self.assertIn(
+            "(and\n            (not (goal counter-package-infantry_pressure_castle 1))",
+            block,
+        )
+        self.assertIn("(unit-type-count-total knight-line < 2)", block)
+        self.assertIn(
+            "(not\n            (or",
+            block,
+        )
+        self.assertIn(
+            "(unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)",
+            block,
+        )
+        self.assertIn(
+            "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
+            block,
+        )
+        self.assertIn(
+            "(unit-type-count-total mangonel-line < bt-castle-mangonel-floor)",
+            block,
+        )
+        self.assertNotIn("(unit-type-count-total monk < bt-castle-monk-floor)", block)
+
+    def test_castle_normal_attack_loss_does_not_use_monk_as_attack_backbone(self):
+        block = self._find_rule(
+            "(current-age == castle-age)",
+            "(goal byzantine-army-attack-ready 2)",
+            "(set-goal byzantine-army-attack-ready 0)",
+            "(set-goal byzantine-army-reinforcement 1)",
+        )
+        self.assertIn(
+            "(goal counter-package-infantry_pressure_castle 1)",
+            block,
+        )
+        self.assertIn(
+            "(not (goal counter-package-infantry_pressure_castle 1))",
+            block,
+        )
+        self.assertIn("(unit-type-count-total knight-line < 2)", block)
+        self.assertIn(
+            "(unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)",
+            block,
+        )
+        self.assertIn(
+            "(or\n        (not (goal byzantine-siege-approach byzantine-siege-approach-fortified))",
+            block,
+        )
+        self.assertNotIn("(unit-type-count-total monk < bt-castle-monk-floor)", block)
+        self.assertNotIn(
+            "(unit-type-count-total mangonel-line < bt-castle-mangonel-floor)\n                )\n            )\n        )\n    )",
+            block,
+        )
+
+    def test_castle_rearm_release_mirrors_backbone_and_fortified_siege_contract(self):
+        block = self._find_rule(
+            "(goal byzantine-army-reinforcement 1)",
+            "(goal byzantine-army-reinforcement-target-validation 1)",
+            "(goal byzantine-army-reinforcement-admission 1)",
+            "(goal byzantine-target-player-lock 1)",
+            "(current-age == castle-age)",
+            "(set-goal byzantine-army-reinforcement 0)",
+        )
+        self.assertIn(
+            "(and\n        (goal counter-package-infantry_pressure_castle 1)",
+            block,
+        )
+        self.assertIn(
+            "(unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)",
+            block,
+        )
+        self.assertIn(
+            "(not (goal counter-package-infantry_pressure_castle 1))",
+            block,
+        )
+        self.assertIn("(unit-type-count-total knight-line >= 2)", block)
+        self.assertIn(
+            "(unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)",
+            block,
+        )
+        self.assertIn(
+            "(not (goal byzantine-siege-approach byzantine-siege-approach-fortified))",
+            block,
+        )
+        self.assertIn(
+            "(unit-type-count-total mangonel-line >= bt-castle-mangonel-floor)",
+            block,
+        )
+        self.assertNotIn(
+            "(unit-type-count-total monk >= bt-castle-monk-floor)",
+            block,
+        )
+
     def test_castle_monastery_and_monk_keep_two_monk_relic_healing_baseline(self):
         monastery = self._rule_block("; Action issuance: castle-monastery-capability | ACTIVE -> ISSUED")
         monks = self._rule_block("; Action issuance: castle-monk-floor | ACTIVE -> ISSUED")
