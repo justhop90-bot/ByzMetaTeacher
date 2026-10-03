@@ -85,6 +85,7 @@ _SN_TARGETS = (
     ("sn-food-gatherer-percentage", 117),
     ("sn-wood-gatherer-percentage", 120),
     ("sn-gold-gatherer-percentage", 118),
+    ("sn-stone-gatherer-percentage", 119),
     ("sn-percent-civilian-builders", 1),
 )
 
