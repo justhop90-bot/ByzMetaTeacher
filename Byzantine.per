@@ -7419,32 +7419,14 @@
     (goal action-claim-build-pass-singleton 0)
     (not (town-under-attack))
     (or
-        (goal demand-economy-lumber-camp-floor-1 1)
-        (or
-            (goal demand-economy-lumber-camp-floor-2 1)
-            (or
-                (goal demand-economy-wood-camp-floor-3 1)
-                (or
-                    (goal demand-economy-wood-camp-floor-4 1)
-                    (or
-                        (goal demand-economy-wood-camp-floor-5 1)
-                        (goal demand-economy-wood-camp-floor-6 1)
-                    )
-                )
+        (not
+            (and
+                (goal opening-plan 1)
+                (map-type arabia)
+                (current-age == dark-age)
+                (unit-type-count-total villager >= 12)
             )
         )
-    )
-=>
-    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
-    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
-    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
-)
-
-(defrule
-    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (not
         (or
             (goal demand-economy-lumber-camp-floor-1 1)
             (or
@@ -7460,6 +7442,42 @@
                     )
                 )
             )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (or
+        (not
+            (or
+                (goal demand-economy-lumber-camp-floor-1 1)
+                (or
+                    (goal demand-economy-lumber-camp-floor-2 1)
+                    (or
+                        (goal demand-economy-wood-camp-floor-3 1)
+                        (or
+                            (goal demand-economy-wood-camp-floor-4 1)
+                            (or
+                                (goal demand-economy-wood-camp-floor-5 1)
+                                (goal demand-economy-wood-camp-floor-6 1)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (and
+            (goal opening-plan 1)
+            (map-type arabia)
+            (current-age == dark-age)
+            (unit-type-count-total villager >= 12)
         )
     )
     (or
@@ -11808,7 +11826,7 @@
     (not (up-research-status c: 101 >= 2))
     (not (current-age >= feudal-age))
     (current-age == dark-age)
-    (unit-type-count-total villager >= 21)
+    (unit-type-count-total villager >= 20)
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
 =>
@@ -12097,6 +12115,11 @@
     (not (building-type-count blacksmith > 0))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= feudal-age)
+    (or
+        (not (goal opening-plan 1))
+        (not (map-type arabia))
+        (building-type-count archery-range >= 1)
+    )
     (can-build blacksmith)
 =>
     (build blacksmith)
@@ -15455,6 +15478,10 @@
     (goal demand-economy-gold-camp-floor-2 0)
     (resource-found gold)
     (not (building-type-count mining-camp >= 2))
+    (or
+        (current-age >= castle-age)
+        (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)
+    )
 =>
     (set-goal demand-economy-gold-camp-floor-2 1)
 )
@@ -16431,7 +16458,10 @@
     (up-pending-objects c: 68 == 0)
     (not (up-pending-placement c: 68))
     (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
+    (or
+        (not (map-type arabia))
+        (current-age >= feudal-age)
+    )
     (resource-found food)
     (can-build mill)
     (dropsite-min-distance food > 5)
