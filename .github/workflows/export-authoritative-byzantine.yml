@@ -1,9 +1,8 @@
 name: Export authoritative Byzantine.per
 
 on:
-  push:
-    branches:
-      - temp/export-authoritative-byzantine-fixed
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   export:
