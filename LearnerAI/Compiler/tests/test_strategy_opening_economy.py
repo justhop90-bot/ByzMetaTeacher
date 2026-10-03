@@ -49,6 +49,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             tuple(item.identity for item in profile.map_profile),
             ("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
         )
+        self.assertEqual(
+            {
+                item.identity: item.opening_family
+                for item in profile.map_profile
+                if item.identity in {"ARABIA", "STANDARD_LAND"}
+            },
+            {"ARABIA": "FAST_CASTLE", "STANDARD_LAND": "FAST_CASTLE"},
+        )
         self.assertEqual(profile.opening_selector.plan_id, "byzantine-opening-v1")
 
     def test_opening_selection_is_durable_and_precedence_ordered(self):
