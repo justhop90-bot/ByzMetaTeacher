@@ -762,6 +762,20 @@
 (defconst bt-extreme-production-villagers 105)
 (defconst bt-extreme-production-headroom 30)
 
+; Native static-defense candidate scorer.
+(defconst byzantine-static-defense-score-state 714)
+(defconst byzantine-static-defense-score-idle 0)
+(defconst byzantine-static-defense-score-evaluating 1)
+(defconst byzantine-static-defense-score-resource-selected 2)
+(defconst byzantine-static-defense-score-fortified-selected 3)
+(defconst byzantine-static-defense-score-timer 15)
+(defconst byzantine-static-defense-resource-score 716)
+(defconst byzantine-static-defense-fortified-score 717)
+(defconst byzantine-static-defense-placement-kind 718)
+(defconst byzantine-static-defense-placement-none 0)
+(defconst byzantine-static-defense-placement-resource 1)
+(defconst byzantine-static-defense-placement-fortified 2)
+
 ; BYZANTINE META DEFENSE / ECONOMY EXTENSIONS
 ; These are native .per state channels. They deliberately reuse the existing
 ; demand/claim/lifecycle machinery rather than creating a second scheduler.
@@ -819,6 +833,341 @@
 (defconst byzantine-food-recovery-idle 0)
 (defconst byzantine-food-recovery-active 1)
 (defconst bt-byzantine-food-recovery-seconds 30)
+
+; -----------------------------------------------------------------------------
+; NATIVE STATIC-DEFENSE CHOKE / RESOURCE SCORER
+; -----------------------------------------------------------------------------
+; Candidate 1: exact persisted resource-front point.
+; Candidate 2: existing fortified-front anchor geometry / forward placement.
+; The weights are compiler policy. Native evidence is supplied by:
+;   up-point-distance + existing wall-resource state + anchor-pair geometry.
+; Equal scores prefer the resource point because it is an exact economic target.
+
+(defrule
+    (goal byzantine-static-defense-score-state -1)
+=>
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+    (set-goal byzantine-static-defense-resource-score 0)
+    (set-goal byzantine-static-defense-fortified-score 0)
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-none)
+    (disable-timer byzantine-static-defense-score-timer)
+    (disable-self)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
+    (timer-triggered byzantine-static-defense-score-timer)
+=>
+    (disable-timer byzantine-static-defense-score-timer)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
+    (timer-triggered byzantine-static-defense-score-timer)
+=>
+    (disable-timer byzantine-static-defense-score-timer)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+)
+
+; Start an evaluation whenever a resource-front candidate exists.
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+    (current-age >= castle-age)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (or
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+        )
+    )
+    (or
+        (up-timer-status byzantine-static-defense-score-timer c:== timer-disabled)
+        (up-timer-status byzantine-static-defense-score-timer c:== timer-triggered)
+    )
+=>
+    (disable-timer byzantine-static-defense-score-timer)
+    (set-goal byzantine-static-defense-resource-score 0)
+    (set-goal byzantine-static-defense-fortified-score 0)
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-none)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+)
+
+; A fortified candidate can also be scored from already selected wall geometry.
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+    (current-age >= castle-age)
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+    (or
+        (up-timer-status byzantine-static-defense-score-timer c:== timer-disabled)
+        (up-timer-status byzantine-static-defense-score-timer c:== timer-triggered)
+    )
+=>
+    (disable-timer byzantine-static-defense-score-timer)
+    (set-goal byzantine-static-defense-resource-score 0)
+    (set-goal byzantine-static-defense-fortified-score 0)
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-none)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+)
+
+; Resource-front score.
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (or
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+        )
+    )
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 600)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-target byzantine-wall-resource-target-gold)
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 250)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-target byzantine-wall-resource-target-stone)
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 170)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-target byzantine-wall-resource-target-wood)
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 100)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 120)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 80)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 40)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (or
+        (up-point-distance byzantine-wall-resource-point byzantine-wall-tc-point <= 12)
+        (or
+            (up-point-distance byzantine-wall-resource-point byzantine-wall-castle-point <= 12)
+            (or
+                (up-point-distance byzantine-wall-resource-point byzantine-wall-keep-point <= 12)
+                (or
+                    (up-point-distance byzantine-wall-resource-point byzantine-wall-bombard-point <= 12)
+                    (or
+                        (up-point-distance byzantine-wall-resource-point byzantine-wall-guard-point <= 12)
+                        (or
+                            (up-point-distance byzantine-wall-resource-point byzantine-wall-watch-point <= 12)
+                            (up-point-distance byzantine-wall-resource-point byzantine-wall-outpost-point <= 12)
+                        )
+                    )
+                )
+            )
+        )
+    )
+=>
+    (up-modify-goal byzantine-static-defense-resource-score c:+ 100)
+)
+
+; Fortified-front score.
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 500)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 580)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+        (or
+            (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+            (or
+                (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+                (or
+                    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+                    (or
+                        (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+                        (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 280)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+        (or
+            (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+            (or
+                (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+                (or
+                    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+                    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+                )
+            )
+        )
+    )
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 240)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+        (or
+            (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+            (or
+                (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+                (or
+                    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+                    (or
+                        (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+                        (or
+                            (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+                            (or
+                                (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+                                (or
+                                    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+                                    (or
+                                        (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+                                        (goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 170)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-fortification-threat 1)
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 180)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    )
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 120)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-army-attack-ready 2)
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 80)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (goal byzantine-wall-anchor-pair > 0)
+    (or
+        (up-point-distance byzantine-wall-resource-point byzantine-wall-tc-point <= 16)
+        (or
+            (up-point-distance byzantine-wall-resource-point byzantine-wall-castle-point <= 16)
+            (or
+                (up-point-distance byzantine-wall-resource-point byzantine-wall-keep-point <= 16)
+                (or
+                    (up-point-distance byzantine-wall-resource-point byzantine-wall-bombard-point <= 16)
+                    (or
+                        (up-point-distance byzantine-wall-resource-point byzantine-wall-guard-point <= 16)
+                        (or
+                            (up-point-distance byzantine-wall-resource-point byzantine-wall-watch-point <= 16)
+                            (up-point-distance byzantine-wall-resource-point byzantine-wall-outpost-point <= 16)
+                        )
+                    )
+                )
+            )
+        )
+    )
+=>
+    (up-modify-goal byzantine-static-defense-fortified-score c:+ 120)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (or
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+        )
+    )
+    (or
+        (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected))
+        (up-compare-goal byzantine-wall-anchor-pair == 0)
+        (up-compare-goal byzantine-static-defense-resource-score g:>= byzantine-static-defense-fortified-score)
+    )
+=>
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
+    (enable-timer byzantine-static-defense-score-timer 45)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+    (up-compare-goal byzantine-static-defense-fortified-score g:> byzantine-static-defense-resource-score)
+=>
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-fortified)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
+    (enable-timer byzantine-static-defense-score-timer 45)
+)
 
 ; PROFESSIONAL BYZANTINE WALL CONTROL
 ; Material: 0 none, 1 palisade, 2 stone.
@@ -16893,6 +17242,7 @@
 (defrule
     (goal demand-imperial-keep-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
@@ -16914,6 +17264,7 @@
 (defrule
     (goal demand-imperial-keep-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
@@ -16935,6 +17286,7 @@
 (defrule
     (goal demand-imperial-keep-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
@@ -16959,6 +17311,7 @@
 (defrule
     (goal demand-imperial-keep-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
     (or
         (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
         (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
@@ -16982,25 +17335,8 @@
 )
 
 ; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED
-(defrule
-    (goal demand-imperial-keep-floor 1)
-    (not (building-type-count 235 >= 1))
-    (goal construction-retry-barrier-imperial-keep-floor 0)
-    (up-pending-objects c: 235 == 0)
-    (not (up-pending-placement c: 235))
-    (not (building-type-count 235 > 0))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= imperial-age)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
-    (stone-amount >= bt-byzantine-static-stone-reserve)
-    (or (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5)) (players-building-type-count any-enemy 82 >= 1))
-    (can-build 235)
-=>
-    (build 235)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-imperial-keep-floor 92)
-)
+; Unscored plain Keep issuance is intentionally retired.
+; The scored resource-point and fortified-front executors above own construction.
 
 ; Pending diagnostics: imperial-bombard-tower-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 83 and cannot reissue from pending goal 84
@@ -17137,6 +17473,7 @@
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
@@ -17159,6 +17496,7 @@
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
@@ -17181,6 +17519,7 @@
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
@@ -17215,6 +17554,7 @@
         )
     )
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
     (or
         (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
         (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
@@ -17242,42 +17582,8 @@
 )
 
 ; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED
-(defrule
-    (goal demand-imperial-bombard-tower-floor 1)
-    (or
-        (and
-            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
-            (not (building-type-count 236 >= 1))
-        )
-        (and
-            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
-            (not (building-type-count 236 >= 2))
-        )
-    )
-    (goal construction-retry-barrier-imperial-bombard-tower-floor 0)
-    (up-pending-objects c: 236 == 0)
-    (not (up-pending-placement c: 236))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= imperial-age)
-    (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
-    (stone-amount >= bt-byzantine-static-stone-reserve)
-    (gold-amount >= bt-byzantine-bombard-gold-reserve)
-    (or
-        (or
-            (players-unit-type-count any-enemy knight >= 3)
-            (players-unit-type-count any-enemy militia-line >= 5)
-        )
-        (players-unit-type-count any-enemy mangonel-line >= 2)
-    )
-    (can-build 236)
-=>
-    (up-assign-builders c: bombard-tower c: 1)
-    (build 236)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-imperial-bombard-tower-floor 86)
-)
+; Unscored plain Bombard Tower issuance is intentionally retired.
+; The scored resource-point and fortified-front executors above own construction.
 
 ; Pending diagnostics: research-wheelbarrow
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 122 and cannot reissue from pending goal 123
