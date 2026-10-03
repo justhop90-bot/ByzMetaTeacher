@@ -1513,7 +1513,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             "byzantine-attack-phase-complete-cataphract",
             facts=(
                 parse_expression(f"(goal {state_name} 2)", SourceLocation(1)),
-                parse_expression(siege_clear, SourceLocation(1)),
+                parse_expression(infantry_clear, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(
@@ -1526,7 +1526,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             "byzantine-attack-phase-complete-knight",
             facts=(
                 parse_expression(f"(goal {state_name} 4)", SourceLocation(1)),
-                parse_expression(infantry_clear, SourceLocation(1)),
+                parse_expression(siege_clear, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(
