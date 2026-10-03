@@ -1,3 +1,4 @@
+from dataclasses import replace
 import unittest
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
@@ -108,11 +109,27 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
+        self.assertIn("opening-selector-defensive-standard-arabia", output)
         self.assertIn("(set-goal opening-plan 5)", output)
         self.assertIn("(set-goal opening-plan 4)", output)
         self.assertIn("(set-goal opening-plan 3)", output)
         self.assertIn("(set-goal opening-plan 2)", output)
         self.assertIn("(set-goal opening-plan 1)", output)
+
+    def test_map_profile_default_opening_controls_selector_emission(self):
+        profile = build_byzantine_strategy(self.effective)
+        custom_profiles = tuple(
+            replace(item, default_opening="FAST_CASTLE")
+            if item.identity.value == "ARABIA"
+            else item
+            for item in profile.map_profile
+        )
+        custom_profile = replace(profile, map_profile=custom_profiles)
+        compilation = lower_strategy_profile(custom_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        rule_ids = {rule.identity for rule in control.rules if rule.identity.startswith("opening-selector-")}
+        self.assertNotIn("opening-selector-defensive-standard-arabia", rule_ids)
 
     def test_economy_controller_uses_only_documented_civilian_allocation_sns(self):
         profile = build_byzantine_strategy(self.effective)
