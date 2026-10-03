@@ -28,6 +28,9 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertIn("(building-type-count-total lumber-camp >= 1)", requirements)
         self.assertIn("(building-type-count-total mining-camp >= 1)", requirements)
 
+        feudal = profile.demand("feudal-transition")
+        self.assertIn("(research-completed 22)", feudal.execution_demands[0].requirements)
+
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("research-loom", output)
         self.assertIn("(research loom)", output)
