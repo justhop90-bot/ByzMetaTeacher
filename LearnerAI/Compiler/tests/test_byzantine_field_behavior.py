@@ -179,6 +179,15 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             controller,
         )
 
+    def test_resource_camp_search_state_goal_fields_are_declared(self):
+        for expected in (
+            "(defconst byzantine-resource-camp-search-state-local-total 747)",
+            "(defconst byzantine-resource-camp-search-state-local-list 748)",
+            "(defconst byzantine-resource-camp-search-state-remote-total 749)",
+            "(defconst byzantine-resource-camp-search-state-remote-list 750)",
+        ):
+            self.assertIn(expected, self.per)
+
     def test_remote_resource_recovery_never_retasks_into_far_or_fortified_resource(self):
         recovery = self._section_from(
             "; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL",
