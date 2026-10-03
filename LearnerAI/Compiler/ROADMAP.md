@@ -1,5 +1,30 @@
 # MUSE Community Gap Roadmap — 2026-10-02
 
+## 2026-10-03 mainline status
+
+`main` is now carrying PR #331's Byzantine native-engine seam closure. The strategic layer is no longer leaving the native combat controls, target identity, provider readiness, and natural-food interfaces at their former partial state.
+
+Closed in the Byzantine artifact:
+- native 14-SN target evaluation;
+- native offensive/defensive class priority policy;
+- target-player identity separated from focus-player observation context;
+- target validation/locking into attack issuance;
+- focus-player fact observations;
+- provider-readiness admission;
+- deer controller and forage/deer food-source selection.
+
+Still OPEN by evidence policy:
+- native escrow mutation beyond the promoted compiler-safe path;
+- same-pass escrow acquisition/release runtime visibility;
+- attack-now acknowledgement/completion semantics;
+- DUC runtime liveness details;
+- timer cadence and several other engine-runtime contracts.
+
+Project integration note: PR #327 still contains the larger resource-camp placement lifecycle repair, but its branch is stale against current main and requires a rebase/port plus fresh full verification before integration.
+
+The exact current repository state is recorded in `docs/reports/2026-10-03-mainline-status.md`.
+
+
 Status: authoritative roadmap for remaining compiler work. Production/train arbitration is closed; DUC semantic substrate is largely closed; the remaining work is downstream strategy synthesis and runtime-bounded control semantics.
 
 ## Research conclusion
