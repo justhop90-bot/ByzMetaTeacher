@@ -194,11 +194,11 @@ class ExecutionDemandTemplate:
     action: str
     witness: str
     release: str
-    action_witness_gates: tuple[str, ...] = ()
     invalidate: str | None = None
     local_id: str = "primary"
     capability_intent: CapabilityIntent | None = None
     escrow_release_resources: tuple[Resource, ...] = ()
+    action_witness_gates: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
