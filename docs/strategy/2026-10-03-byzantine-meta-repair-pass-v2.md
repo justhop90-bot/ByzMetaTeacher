@@ -68,4 +68,6 @@ No new scheduler, DUC system, production system, economy system, or generic comb
 
 The branch is intended to pass the focused Byzantine tests, checked-in native zero-findings, full compiler regression, cross-platform native-support determinism, and deterministic artifact checks.
 
-Runtime match strength remains a separate playtest question. This repair removes concrete control-plane contradictions and native-default gaps, but it does not substitute compiler acceptance for evidence from actual games.
+Runtime match strength remains a separate playtest question.
+
+Native seam closure continuation: target evaluation/priority, target-player identity, focus-player facts, provider readiness, deer control, and food-source selection are now wired into the authoritative artifact. Unverified resource-specific defense SNs remain intentionally excluded. This repair removes concrete control-plane contradictions and native-default gaps, but it does not substitute compiler acceptance for evidence from actual games.
