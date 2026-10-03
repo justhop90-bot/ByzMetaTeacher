@@ -89,10 +89,16 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             rule for rule in control.rules
             if rule.identity == "opening-selector-counter-feudal"
         )
+        defensive_standard = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-defensive-standard"
+        )
         self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
         self.assertIn("(not (map-type islands))", fast_castle.facts[0].source)
         self.assertIn("(not (map-type arena))", fast_castle.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
+        self.assertIn("(map-type hybrid)", defensive_standard.facts[0].source)
+        self.assertNotIn("(not (map-type arena))", defensive_standard.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
