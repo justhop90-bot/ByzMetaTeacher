@@ -4555,21 +4555,21 @@
 ; Local resource-camp placement ring. The persisted resource point remains the
 ; economic objective; these eight offsets are legal-tile candidates around it.
 (defconst byzantine-resource-camp-candidate-point 768)
-(defconst byzantine-resource-camp-ring-ne-x 770)
+(defconst byzantine-resource-camp-ring-ne 770)
 (defconst byzantine-resource-camp-ring-ne-y 771)
-(defconst byzantine-resource-camp-ring-e-x 772)
+(defconst byzantine-resource-camp-ring-e 772)
 (defconst byzantine-resource-camp-ring-e-y 773)
-(defconst byzantine-resource-camp-ring-se-x 774)
+(defconst byzantine-resource-camp-ring-se 774)
 (defconst byzantine-resource-camp-ring-se-y 775)
-(defconst byzantine-resource-camp-ring-s-x 776)
+(defconst byzantine-resource-camp-ring-s 776)
 (defconst byzantine-resource-camp-ring-s-y 777)
-(defconst byzantine-resource-camp-ring-sw-x 778)
+(defconst byzantine-resource-camp-ring-sw 778)
 (defconst byzantine-resource-camp-ring-sw-y 779)
-(defconst byzantine-resource-camp-ring-w-x 780)
+(defconst byzantine-resource-camp-ring-w 780)
 (defconst byzantine-resource-camp-ring-w-y 781)
-(defconst byzantine-resource-camp-ring-nw-x 782)
+(defconst byzantine-resource-camp-ring-nw 782)
 (defconst byzantine-resource-camp-ring-nw-y 783)
-(defconst byzantine-resource-camp-ring-n-x 784)
+(defconst byzantine-resource-camp-ring-n 784)
 (defconst byzantine-resource-camp-ring-n-y 785)
 (defconst byzantine-resource-camp-placement-state 788)
 (defconst byzantine-resource-camp-placement-state-idle 0)
@@ -4615,21 +4615,21 @@
 (defrule
     (true)
 =>
-    (set-goal byzantine-resource-camp-ring-ne-x 3)
+    (set-goal byzantine-resource-camp-ring-ne 3)
     (set-goal byzantine-resource-camp-ring-ne-y 3)
-    (set-goal byzantine-resource-camp-ring-e-x 3)
+    (set-goal byzantine-resource-camp-ring-e 3)
     (set-goal byzantine-resource-camp-ring-e-y 0)
-    (set-goal byzantine-resource-camp-ring-se-x 3)
+    (set-goal byzantine-resource-camp-ring-se 3)
     (set-goal byzantine-resource-camp-ring-se-y -3)
-    (set-goal byzantine-resource-camp-ring-s-x 0)
+    (set-goal byzantine-resource-camp-ring-s 0)
     (set-goal byzantine-resource-camp-ring-s-y -3)
-    (set-goal byzantine-resource-camp-ring-sw-x -3)
+    (set-goal byzantine-resource-camp-ring-sw -3)
     (set-goal byzantine-resource-camp-ring-sw-y -3)
-    (set-goal byzantine-resource-camp-ring-w-x -3)
+    (set-goal byzantine-resource-camp-ring-w -3)
     (set-goal byzantine-resource-camp-ring-w-y 0)
-    (set-goal byzantine-resource-camp-ring-nw-x -3)
+    (set-goal byzantine-resource-camp-ring-nw -3)
     (set-goal byzantine-resource-camp-ring-nw-y 3)
-    (set-goal byzantine-resource-camp-ring-n-x 0)
+    (set-goal byzantine-resource-camp-ring-n 0)
     (set-goal byzantine-resource-camp-ring-n-y 3)
     (disable-self)
 )
@@ -7733,7 +7733,7 @@
     (goal byzantine-resource-camp-ring-index 0)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -7817,7 +7817,7 @@
     (goal byzantine-resource-camp-ring-index 1)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-e-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-e c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -7901,7 +7901,7 @@
     (goal byzantine-resource-camp-ring-index 2)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-se-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-se c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -7985,7 +7985,7 @@
     (goal byzantine-resource-camp-ring-index 3)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-s-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-s c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -8069,7 +8069,7 @@
     (goal byzantine-resource-camp-ring-index 4)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-sw-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-sw c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -8153,7 +8153,7 @@
     (goal byzantine-resource-camp-ring-index 5)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-w-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-w c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -8237,7 +8237,7 @@
     (goal byzantine-resource-camp-ring-index 6)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-nw-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-nw c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
@@ -8321,7 +8321,7 @@
     (goal byzantine-resource-camp-ring-index 7)
 =>
     (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
-    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-n-x c: 1)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-n c: 1)
     (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
 )
 
