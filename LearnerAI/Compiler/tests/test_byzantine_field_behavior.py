@@ -92,6 +92,31 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             recovery,
         )
 
+    def test_resource_camp_selector_chooses_nearest_real_resource_and_persists_point(self):
+        self.assertIn("(up-clean-search search-remote object-data-distance search-order-asc)", self.per)
+        self.assertIn("(up-set-target-object search-remote c: 0)", self.per)
+        self.assertIn("(up-get-point position-object byzantine-resource-camp-point)", self.per)
+        self.assertIn("(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)", self.per)
+        self.assertIn("(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)", self.per)
+        self.assertIn("(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)", self.per)
+
+    def test_resource_camp_executes_at_persisted_point_through_existing_builder_lifecycle(self):
+        for building, demand in (
+            ("lumber-camp", "demand-economy-lumber-camp-floor-1"),
+            ("mining-camp", "demand-economy-gold-camp-floor-1"),
+        ):
+            self.assertIn("(up-set-target-point byzantine-resource-camp-point)", self.per)
+            self.assertIn(f"(up-assign-builders c: {building} c: 1)", self.per)
+            self.assertIn(f"(up-build place-point 0 c: {building})", self.per)
+            self.assertIn(f"(goal {demand} 1)", self.per)
+
+        camp_actions = self.per[
+            self.per.index("; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION"):
+            self.per.index("; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL")
+        ]
+        self.assertNotIn("(build lumber-camp)", camp_actions)
+        self.assertNotIn("(build mining-camp)", camp_actions)
+
     def test_fortified_castle_transitions_into_targeted_siege_push(self):
         self.assertIn(
             "(up-get-point position-object byzantine-offensive-castle-point)",
