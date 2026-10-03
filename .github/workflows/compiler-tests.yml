@@ -82,6 +82,19 @@ jobs:
         run: echo -n > compiler-tests.log
       - name: Install pinned native parser
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Audit repaired Byzantine.per with parser 0.1.82
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/joerollman/aoe2-ai-parser.git /tmp/aoe2-ai-parser-0.1.82
+          PYTHONPATH=/tmp/aoe2-ai-parser-0.1.82/lab/src python -m aoe2_ai_lab lint Byzantine.per --json > parser-audit.json 2> parser-audit.stderr || true
+          cat parser-audit.stderr || true
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('parser-audit.json').read_text())
+          print('finding_count=', d.get('finding_count'))
+          for f in d.get('findings',[]): print(f.get('code'), f.get('line'), f.get('message'))
+          PY
       - name: Focused Byzantine camp controller regression
         run: python -m unittest LearnerAI.Compiler.tests.test_strategy_camp_controller -v
       - name: Focused Byzantine defensive geometry regression
