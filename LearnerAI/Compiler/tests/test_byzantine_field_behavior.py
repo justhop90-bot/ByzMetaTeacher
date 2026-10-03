@@ -92,7 +92,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             recovery,
         )
 
-    def test_fortified_castle_transitions_into_targeted_siege_push(self):
+    def test_fortified_castle_transitions_into_witnessed_siege_muster(self):
         self.assertIn(
             "(up-get-point position-object byzantine-offensive-castle-point)",
             self.per,
@@ -102,15 +102,31 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             self.per,
         )
         self.assertIn(
-            "(up-target-objects 0 action-attack-move -1 stance-aggressive)",
+            "(defconst byzantine-siege-muster-state 15000)",
             self.per,
         )
         self.assertIn(
-            "(set-strategic-number sn-percent-attack-soldiers 100)",
+            "(up-lerp-tiles byzantine-siege-muster-point self-x c: bt-byzantine-muster-objective-distance)",
             self.per,
         )
         self.assertIn(
-            "(up-filter-include cmdid-military -1 -1 -1)",
+            "(up-create-group 0 40 c: byzantine-siege-muster-army-group)",
+            self.per,
+        )
+        self.assertIn(
+            "(up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-imperial-army)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-number-attack-groups 1)",
+            self.per,
+        )
+        self.assertIn(
+            "(up-target-point 0 action-attack-move -1 stance-aggressive)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-siege-approach byzantine-siege-approach-escorted)",
             self.per,
         )
         self.assertIn(
