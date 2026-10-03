@@ -188,45 +188,39 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         gold_start = self.per.index("; economy-gold-camp-floor-1")
         gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
 
-        self.assertIn(
-            "(goal demand-economy-lumber-camp-floor-1 0)\n    (not (building-type-count lumber-camp >= 1))",
-            lumber,
-        )
-        self.assertIn(
-            "(goal demand-economy-lumber-camp-floor-1 1)",
-            lumber,
-        )
-        self.assertIn(
-            "(goal demand-economy-gold-camp-floor-1 0)\n    (not (building-type-count mining-camp >= 1))",
-            gold,
-        )
-        self.assertIn(
-            "(goal demand-economy-gold-camp-floor-1 1)",
-            gold,
-        )
+        for lifecycle, demand, building in (
+            (lumber, "demand-economy-lumber-camp-floor-1", "lumber-camp"),
+            (gold, "demand-economy-gold-camp-floor-1", "mining-camp"),
+        ):
+            self.assertIn(f"(set-goal {demand} 0)", lifecycle)
+            self.assertIn(f"(goal {demand} 0)", lifecycle)
+            self.assertIn(f"(not (building-type-count {building} >= 1))", lifecycle)
+            self.assertIn(f"(set-goal {demand} 1)", lifecycle)
 
     def test_resource_depletion_releases_camp_demand_without_immediate_reactivation(self):
         lumber = self._section_from(
-            "; economy-lumber-camp-floor-1",
-            "; economy-lumber-camp-floor-2",
+            "; Pending diagnostics: economy-lumber-camp-floor-1",
+            "; Pending diagnostics: economy-lumber-camp-floor-2",
         )
         gold_start = self.per.index("; economy-gold-camp-floor-1")
         gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
 
-        for lifecycle, resource in ((lumber, "wood"), (gold, "gold")):
-            self.assertIn(
-                f"(goal demand-economy-{'lumber-camp-floor-1' if resource == 'wood' else 'gold-camp-floor-1'} 0)",
-                lifecycle,
-            )
+        for lifecycle, resource, demand in (
+            (lumber, "wood", "demand-economy-lumber-camp-floor-1"),
+            (gold, "gold", "demand-economy-gold-camp-floor-1"),
+        ):
+            self.assertIn(f"(set-goal {demand} 0)", lifecycle)
             self.assertIn(f"(resource-found {resource})", lifecycle)
-            self.assertNotIn(
-                f"(goal demand-economy-{'lumber-camp-floor-1' if resource == 'wood' else 'gold-camp-floor-1'} 0)\n    (not (resource-found {resource}))",
-                lifecycle,
-            )
             self.assertIn(
-                f"(goal demand-economy-{'lumber-camp-floor-1' if resource == 'wood' else 'gold-camp-floor-1'} 1)",
+                f"(goal {demand} 0)\n    (resource-found {resource})\n    (not (building-type-count",
                 lifecycle,
             )
+            self.assertNotIn(
+                f"(goal {demand} 0)\n    (not (resource-found {resource}))",
+                lifecycle,
+            )
+            self.assertIn(f"(set-goal {demand} 1)", lifecycle)
+
 
     def test_fortified_castle_transitions_into_targeted_siege_push(self):
         self.assertIn(
