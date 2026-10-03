@@ -1,3 +1,287 @@
+"""Community-derived Byzantine strategy synthesis packs.
+
+This module contains strategy policy only. It reuses the existing _StrategyProfile,
+_StrategicDemandSpec, _StrategicNumberMode, and native lifecycle machinery. It does
+not introduce a scheduler or a second .per language.
+"""
+from __future__ import annotations
+
+from dataclasses import replace
+
+from .civ_profile import EffectiveCivData
+from .game_data import Age, BuildingId, Resource, ResourceCost, UnitLineId
+from .strategy import (
+    CapabilityIntent as _CapabilityIntent,
+    CapabilityIntentKind as _CapabilityIntentKind,
+    ExecutionDemandTemplate as _ExecutionDemandTemplate,
+    OpportunityCostPolicy as _OpportunityCostPolicy,
+    ProtectedResourceFloor as _ProtectedResourceFloor,
+    StrategicDemandSpec as _StrategicDemandSpec,
+    StrategicEvidence as _StrategicEvidence,
+    StrategicEvidenceKind as _StrategicEvidenceKind,
+    StrategicPriority as _StrategicPriority,
+    StrategicTarget as _StrategicTarget,
+    StrategicTargetKind as _StrategicTargetKind,
+    StrategicNumberMode as _StrategicNumberMode,
+    StrategyPosture as _StrategyPosture,
+    StrategyProfile as _StrategyProfile,
+    StrategicObservationSpec as _StrategicObservationSpec,
+    CapabilityRecoveryContract as _CapabilityRecoveryContract,
+    StrategicMilitaryComposition as _StrategicMilitaryComposition,
+)
+from .versioning import EvidenceKind, EvidenceRef
+from .map_profile import default_byzantine_map_profiles
+from .opening import default_byzantine_opening_selector
+from .economic_control import default_byzantine_economy_controller
+from .camp_control import CampResource, default_byzantine_camp_controller
+
+
+def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
+    return (
+        EvidenceRef(
+            kind=EvidenceKind.AIREF,
+            source="https://airef.github.io",
+            revision="master",
+            locator=locator,
+            patch=effective.patch,
+        ),
+    )
+
+
+def _slug(value: str) -> str:
+    return value.lower().replace(" ", "-").replace("/", "-")
+
+
+def _building(effective: EffectiveCivData, name: str):
+    wanted = _slug(name)
+    for item in effective.buildings:
+        if _slug(item.name) == wanted:
+            return item
+    raise ValueError(f"strategy synthesis requires verified building '{name}'")
+
+
+def _tech(effective: EffectiveCivData, name: str):
+    wanted = _slug(name)
+    for item in effective.technologies:
+        if _slug(item.name) == wanted:
+            return item
+    raise ValueError(f"strategy synthesis requires verified technology '{name}'")
+
+
+def _line(effective: EffectiveCivData, line: str):
+    return effective.unit_line(UnitLineId(line))
+
+
+def _provider_for_line(effective: EffectiveCivData, line: str) -> BuildingId:
+    unit_line = _line(effective, line)
+    if not unit_line.members:
+        raise ValueError(f"strategy synthesis line '{line}' has no members")
+    unit = effective.unit(int(unit_line.members[0]))
+    if not unit.providers:
+        raise ValueError(f"strategy synthesis line '{line}' has no verified provider")
+    return unit.providers[0].building
+
+
+def _observation(
+    identity: str,
+    expression: str,
+    provenance: tuple[EvidenceRef, ...],
+) -> _StrategicObservationSpec:
+    return _StrategicObservationSpec(
+        identity=identity,
+        expression=expression,
+        provenance=provenance,
+    )
+
+
+def _persistent(
+    label: str,
+    observation_ref: str,
+) -> _StrategicEvidence:
+    return _StrategicEvidence(
+        _StrategicEvidenceKind.PERSISTENT,
+        None,
+        label,
+        observation_ref=observation_ref,
+    )
+
+
+def _build_demand(
+    *,
+    identity: str,
+    owner: str,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
+    reason_ref: str,
+    reason_label: str,
+    building,
+    requirements: tuple[str, ...],
+    action_name: str | None = None,
+    target_witness: str | None = None,
+    release: str | None = None,
+    opportunity_cost: _OpportunityCostPolicy | None = None,
+    invalidate_ref: str | None = None,
+) -> _StrategicDemandSpec:
+    action_name = action_name or _slug(building.name)
+    target_witness = target_witness or f"(building-type-count {action_name} > 0)"
+    release = release or target_witness
+    return _StrategicDemandSpec(
+        identity=identity,
+        owner=owner,
+        posture=posture,
+        priority=priority,
+        reason=(_persistent(reason_label, reason_ref),),
+        admissibility=(
+            _persistent(f"{identity}:strategic-admission", reason_ref),
+        ),
+        invalidation=(
+            _persistent(f"{identity}:policy-invalidation", invalidate_ref),
+        ) if invalidate_ref else (),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.BUILD,
+            "building",
+            int(building.id),
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.EXACT,
+            "building",
+            int(building.id),
+        ),
+        opportunity_cost=opportunity_cost,
+        execution=_ExecutionDemandTemplate(
+            requirements=requirements,
+            action=f"(build {action_name})",
+            witness=target_witness,
+            release=release,
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+
+
+def _research_demand(
+    *,
+    effective: EffectiveCivData,
+    identity: str,
+    owner: str,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
+    age_guard: str,
+    age_observation_ref: str,
+    tech_name: str,
+    reason_label: str,
+    resources: tuple[Resource, ...],
+    minimum_floors: tuple[tuple[Resource, int], ...] = (),
+) -> _StrategicDemandSpec:
+    tech = _tech(effective, tech_name)
+    token = _slug(tech.name)
+    complete_ref = f"{identity}-complete"
+    pending_ref = f"{identity}-pending"
+    floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
+    floor_requirements = tuple(
+        f"({floor.resource.value.lower()}-amount >= {floor.minimum})"
+        for floor in floors
+    )
+    policy = None
+    if floors:
+        policy = _OpportunityCostPolicy(
+            owner=owner,
+            protected_floors=floors,
+            emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
+        )
+    demand = _StrategicDemandSpec(
+        identity=identity,
+        owner=owner,
+        posture=posture,
+        priority=priority,
+        reason=(
+            _persistent(reason_label, pending_ref),
+            _persistent(f"{identity}:age-window", age_observation_ref),
+        ),
+        admissibility=(
+            _persistent(f"{identity}:age-admissibility", age_observation_ref),
+        ),
+        invalidation=(
+            _persistent(f"{identity}:completed", complete_ref),
+        ),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.RESEARCH,
+            "technology",
+            int(tech.id),
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.EXACT,
+            "technology",
+            int(tech.id),
+        ),
+        opportunity_cost=policy,
+        execution=_ExecutionDemandTemplate(
+            requirements=(
+                age_guard,
+                *floor_requirements,
+                f"(can-research-with-escrow {token})",
+            ),
+            action=f"(research {token})",
+            witness=f"(research-completed {int(tech.id)})",
+            release=f"(research-completed {int(tech.id)})",
+            escrow_release_resources=resources,
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+    return demand
+
+
+def _training_demand(
+    *,
+    effective: EffectiveCivData,
+    identity: str,
+    owner: str,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
+    reason_ref: str,
+    reason_label: str,
+    line: str,
+    minimum: int,
+    age_guard: str,
+    action_symbol: str | None = None,
+    witness_symbol: str | None = None,
+    invalidate_ref: str | None = None,
+) -> _StrategicDemandSpec:
+    provider = _provider_for_line(effective, line)
+    action_symbol = action_symbol or line
+    witness_symbol = witness_symbol or action_symbol
+    train_target = action_symbol
+    return _StrategicDemandSpec(
+        identity=identity,
+        owner=owner,
+        production_arbitration_group="production",
+        posture=posture,
+        priority=priority,
+        reason=(_persistent(reason_label, reason_ref),),
+        admissibility=(
+            _persistent(f"{identity}:age-admission", reason_ref),
+        ),
+        invalidation=(
+            _persistent(f"{identity}:policy-invalidation", invalidate_ref),
+        ) if invalidate_ref else (),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.TRAIN,
+            "unit-line",
+            line,
+            provider,
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.CURRENT_QUEUED,
+            "unit-line",
+            line,
+            minimum=minimum,
+        ),
+        opportunity_cost=None,
+        execution=_ExecutionDemandTemplate(
+            requirements=(
+                age_guard,
+                f"(can-train-with-escrow {train_target})",
+                f"(unit-type-count-total {train_target} < {minimum})",
+            ),
             action=f"(train {action_symbol})",
             witness=f"(unit-type-count {witness_symbol} >= {minimum})",
             release=f"(unit-type-count {witness_symbol} >= {minimum})",
@@ -36,8 +320,6 @@ def _feudal_research_bank_floors(
             _CASTLE_BANK_HARD_GOLD + cost.gold,
         )
     else:
-        # Variable costs are not a justified hard bank rule. Preserve the
-        # established research floor and leave the variable portion OPEN.
         policy[Resource.FOOD] = max(
             policy.get(Resource.FOOD, 0),
             _CASTLE_BANK_HARD_FOOD,
@@ -371,12 +653,11 @@ def community_strategy_demands(
             priority=_StrategicPriority.CORE,
             age_guard=(
                 "(and (map-type arabia) "
-                "(and (or (goal opening-plan 1) (goal opening-plan 2)) "
                 "(and (current-age == dark-age) "
                 "(and (unit-type-count-total villager >= 13) "
                 "(and (building-type-count-total lumber-camp >= 1) "
                 "(and (building-type-count-total mining-camp >= 1) "
-                "(food-amount >= 50)))))))"
+                "(food-amount >= 50))))))"
             ),
             age_observation_ref="strategy-arabia-loom-admission",
             tech_name="loom",
@@ -395,3 +676,793 @@ def community_strategy_demands(
         active_ref = f"camp-front-{label}-active"
         remote_ref = f"camp-front-{label}-remote"
         active_expression = next(
+            item.expression for item in observations if item.identity == active_ref
+        )
+        remote_expression = next(
+            item.expression for item in observations if item.identity == remote_ref
+        )
+        for floor in range(1, max_count + 1):
+            count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
+            requirements = [
+                active_expression,
+                count_guard,
+                f"(can-build {_slug(building.name)})",
+            ]
+            if floor >= 3:
+                requirements = [
+                    active_expression,
+                    remote_expression,
+                    count_guard,
+                    f"(can-build {_slug(building.name)})",
+                ]
+            building_token = _slug(building.name)
+            action = f"(build {building_token})"
+            witness = f"(building-type-count {_slug(building.name)} >= {floor})"
+            demands.append(
+                _StrategicDemandSpec(
+                    identity=f"economy-{label}-camp-floor-{floor}",
+                    owner="economy-camps",
+                    posture=_StrategyPosture.BOOM,
+                    priority=(
+                        _StrategicPriority.SUPPORT
+                        if floor <= 2
+                        else _StrategicPriority.OPTIONAL
+                    ),
+                    reason=(
+                        _persistent(
+                            f"Active {label} resource front requires a functional "
+                            f"{label} dropsite floor {floor}",
+                            active_ref,
+                        ),
+                    ),
+                    admissibility=(
+                        _persistent(
+                            f"The {label} camp floor remains strategically admissible "
+                            "while the resource front is active",
+                            active_ref,
+                        ),
+                    ),
+                    invalidation=(),
+                    capability_intent=_CapabilityIntent(
+                        _CapabilityIntentKind.BUILD,
+                        "building",
+                        int(building.id),
+                    ),
+                    target=_StrategicTarget(
+                        _StrategicTargetKind.EXACT,
+                        "building",
+                        int(building.id),
+                    ),
+                    opportunity_cost=None,
+                    execution=_ExecutionDemandTemplate(
+                        requirements=tuple(requirements),
+                        action=action,
+                        witness=witness,
+                        release=witness,
+                    ),
+                    provenance=_airef_provenance(
+                        effective,
+                        "commands/commands-details.html#build",
+                    ),
+                )
+            )
+
+
+    imperial = effective.age_advance(Age.IMPERIAL)
+    imperial_cost = effective.cost_of_age_advance(Age.IMPERIAL)
+    demands.append(
+        _StrategicDemandSpec(
+            identity="imperial-conversion",
+            owner="age-transition",
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=_StrategicPriority.CORE,
+            reason=(
+                _persistent("Imperial remains the next durable strategic conversion", "strategy-castle-age"),
+            ),
+            admissibility=(
+                _persistent("Imperial remains admissible in Castle Age", "strategy-castle-age"),
+            ),
+            invalidation=(
+                _persistent("Imperial conversion complete", "strategy-imperial-age"),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.AGE_ADVANCE,
+                "age-advance",
+                "imperial-age",
+                imperial.provider_building,
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.EXACT,
+                "age-advance",
+                "imperial-age",
+            ),
+            opportunity_cost=_OpportunityCostPolicy(
+                owner="age-transition",
+                protected_floors=(
+                    _ProtectedResourceFloor(Resource.FOOD, imperial_cost.food),
+                    _ProtectedResourceFloor(Resource.GOLD, imperial_cost.gold),
+                ),
+                emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
+            ),
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-research-with-escrow imperial-age)",
+                ),
+                action="(research imperial-age)",
+                witness="(current-age >= imperial-age)",
+                release="(current-age >= imperial-age)",
+                escrow_release_resources=(Resource.FOOD, Resource.GOLD),
+            ),
+        )
+    )
+
+    # Castle economic expansion. Native can-build remains the authoritative
+    # affordability/provider admission; the strategic policy decides when the
+    # expansion is wanted.
+    tc_policy = _OpportunityCostPolicy(
+        owner="castle-economy",
+        protected_floors=(
+            _ProtectedResourceFloor(Resource.WOOD, effective.cost_of(f"building:{int(town_center.id)}").wood),
+        ),
+        emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="castle-second-town-center",
+            owner="castle-economy",
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=_StrategicPriority.CORE,
+            reason=(
+                _persistent(
+                    "Castle Age creates an economic expansion opportunity",
+                    "strategy-castle-age",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Second Town Center opportunity remains strategically admissible",
+                    "strategy-town-center-capability",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Second Town Center objective is already satisfied",
+                    "strategy-town-center-complete",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.BUILD,
+                "building",
+                int(town_center.id),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.EXACT,
+                "building",
+                int(town_center.id),
+            ),
+            opportunity_cost=tc_policy,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(building-type-count-total town-center < 2)",
+                    "(can-build town-center)",
+                ),
+                action="(build town-center)",
+                witness="(building-type-count town-center >= 2)",
+                release="(building-type-count town-center >= 2)",
+            ),
+        )
+    )
+
+    demands.extend(
+        (
+            _build_demand(
+                identity="castle-stable-capability",
+                owner="production",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-castle-age",
+                reason_label="Castle cavalry production requires a stable provider",
+                building=stable,
+                requirements=(" (can-build stable)".strip(),),
+            ),
+            _build_demand(
+                identity="castle-archery-capability",
+                owner="production",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-enemy-ranged",
+                reason_label="Sustained ranged pressure creates a real ranged-production capability demand",
+                building=archery_range,
+                requirements=(" (can-build archery-range)".strip(),),
+                invalidate_ref="strategy-imperial-age",
+            ),
+            _build_demand(
+                identity="castle-siege-capability",
+                owner="production",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-siege",
+                reason_label="Enemy siege creates an explicit siege-capability demand",
+                building=siege_workshop,
+                requirements=(" (can-build siege-workshop)".strip(),),
+            ),
+            _build_demand(
+                identity="castle-monastery-capability",
+                owner="support",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-castle-age",
+                reason_label="Castle Age enables the Byzantine relic and Monk capability",
+                building=monastery,
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-build monastery)",
+                ),
+            ),
+            _build_demand(
+                identity="imperial-university-capability",
+                owner="research",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-castle-age",
+                reason_label="Imperial conversion requires a verified university provider",
+                building=university,
+                requirements=("(current-age >= castle-age)", "(can-build university)"),
+            ),
+            _build_demand(
+                identity="adaptive-outpost",
+                owner="defense",
+                posture=_StrategyPosture.FLUSH,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-pressure",
+                reason_label="Sustained enemy pressure justifies one defensive observation point",
+                building=outpost,
+                requirements=(" (can-build outpost)".strip(),),
+            ),
+        )
+    )
+
+    for identity, owner, age, tech_name, priority, resources in _RESEARCH_PACK:
+        demand = _research_demand(
+            effective=effective,
+            identity=identity,
+            owner=owner,
+            posture=(
+                _StrategyPosture.CASTLE_POWER
+                if age in {"castle-age", "imperial-age"}
+                else _StrategyPosture.BOOM
+            ),
+            priority=priority,
+            age_guard=f"(current-age >= {age})",
+            age_observation_ref={
+                "feudal-age": "current-feudal-age",
+                "castle-age": "strategy-castle-age",
+                "imperial-age": "strategy-imperial-age",
+            }[age],
+            tech_name=tech_name,
+            reason_label=f"Community research package: {tech_name}",
+            resources=resources,
+            minimum_floors=_feudal_research_bank_floors(
+                effective,
+                tech_name,
+            ),
+        )
+        demands.append(demand)
+
+    # Standing military floors.
+    demands.extend(
+        (
+            _training_demand(
+                effective=effective,
+                identity="castle-knight-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-castle-age",
+                reason_label="Maintain a Castle mobility floor for pressure/reaction",
+                line="knight-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-cataphract-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-enemy-infantry-pressure",
+                reason_label="Maintain the Byzantine premium Castle power floor against sustained infantry pressure",
+                line="cataphract-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                invalidate_ref="strategy-enemy-infantry-pressure-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-varangian-guard-floor",
+                owner="castle-varangian",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-infantry-pressure",
+                reason_label="Maintain a conditional Byzantine Varangian Guard floor against sustained infantry pressure",
+                line="varangian-guard-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="varangian-guard",
+                witness_symbol="varangian-guard",
+                invalidate_ref="strategy-enemy-infantry-pressure-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-siege-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-siege",
+                reason_label="Maintain a mobile anti-siege response when enemy siege is observed",
+                line="knight-line",
+                minimum=3,
+                age_guard="(current-age >= castle-age)",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-mangonel-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-ranged",
+                reason_label="Sustained ranged pressure justifies a Castle siege-support floor",
+                line="mangonel-line",
+                minimum=1,
+                age_guard="(current-age >= castle-age)",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-bombard-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-castle",
+                reason_label="Enemy fortification creates an Imperial Bombard Cannon conversion demand",
+                line="bombard-cannon-line",
+                minimum=1,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="bombard-cannon",
+                witness_symbol="bombard-cannon",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-monk-floor",
+                owner="support",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-castle-age",
+                reason_label="Maintain a two-Monk Castle core for relic control and Byzantine battlefield healing",
+                line="monk-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="monk",
+                witness_symbol="monk",
+            ),
+        )
+    )
+
+    # Water continuity starts only after a real dock is observed. This is
+    # deliberately narrower than automatic water discovery: the latter still
+    # requires a proven environmental predicate and remains OPEN.
+    fishing_provider = _provider_for_line(effective, "fishing-ship-line")
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-fishing-continuity",
+            owner="water-economy",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.SUPPORT,
+            reason=(
+                _persistent(
+                    "Existing dock establishes an active water-economic opportunity",
+                    "strategy-dock-exists",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Existing dock is a verified strategic water provider",
+                    "strategy-dock-exists",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "fishing-ship-line",
+                fishing_provider,
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "fishing-ship-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(building-type-count-total dock >= 1)",
+                    "(can-train-with-escrow fishing-ship)",
+                    "(unit-type-count-total fishing-ship < 2)",
+                ),
+                action="(train fishing-ship)",
+                witness="(unit-type-count fishing-ship >= 2)",
+                release="(unit-type-count fishing-ship >= 2)",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-transport-capability",
+            owner="water-transport",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason=(
+                _persistent(
+                    "Islands map requires protected transport capability",
+                    "strategy-water-islands",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Transport is admissible on a disconnected water map",
+                    "strategy-water-islands",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "transport-ship-line",
+                _provider_for_line(effective, "transport-ship-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "transport-ship-line",
+                minimum=1,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(map-type islands)",
+                    "(building-type-count-total dock >= 1)",
+                    "(can-train-with-escrow transport-ship)",
+                    "(unit-type-count-total transport-ship < 1)",
+                ),
+                action="(train transport-ship)",
+                witness="(unit-type-count transport-ship >= 1)",
+                release="(unit-type-count transport-ship >= 1)",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-naval-defense",
+            owner="water-naval",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason=(
+                _persistent(
+                    "Enemy naval pressure requires a bounded defensive ship floor",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Island water makes defensive naval production strategically admissible",
+                    "strategy-water-islands",
+                ),
+                _persistent(
+                    "Enemy naval pressure justifies the defensive floor",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Enemy naval pressure has cleared",
+                    "strategy-enemy-naval-pressure-cleared",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "fire-galley-line",
+                _provider_for_line(effective, "fire-galley-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "fire-galley-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(map-type islands)",
+                    "(building-type-count-total dock >= 1)",
+                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    "(can-train-with-escrow fire-galley)",
+                    "(unit-type-count-total fire-galley < 2)",
+                ),
+                action="(train fire-galley)",
+                witness="(unit-type-count fire-galley >= 2)",
+                release="(or (unit-type-count fire-galley >= 2) "
+                "(and (players-unit-type-count any-enemy galley-line < 2) "
+                "(players-unit-type-count any-enemy fire-galley-line < 2)))",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-naval-control",
+            owner="water-naval",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=_StrategicPriority.SUPPORT,
+            reason=(
+                _persistent(
+                    "Sustained enemy naval pressure requires water control capacity",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
+            admissibility=(
+                _persistent("Water control is admissible on Islands", "strategy-water-islands"),
+                _persistent("Enemy naval pressure is active", "strategy-enemy-naval-pressure"),
+            ),
+            invalidation=(
+                _persistent(
+                    "Enemy naval pressure has cleared",
+                    "strategy-enemy-naval-pressure-cleared",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "galley-line",
+                _provider_for_line(effective, "galley-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "galley-line",
+                minimum=3,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(map-type islands)",
+                    "(building-type-count-total dock >= 1)",
+                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    "(can-train-with-escrow galley)",
+                    "(unit-type-count-total galley < 3)",
+                ),
+                action="(train galley)",
+                witness="(unit-type-count galley >= 3)",
+                release="(or (unit-type-count galley >= 3) "
+                "(and (players-unit-type-count any-enemy galley-line < 2) "
+                "(players-unit-type-count any-enemy fire-galley-line < 2)))",
+            ),
+        )
+    )
+
+    return tuple(demands)
+
+
+def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
+    return (
+        _StrategicNumberMode(
+            "explore-groups-dark",
+            42,
+            1,
+            minimum_age=Age.DARK,
+            maximum_age=Age.DARK,
+            priority=10,
+        ),
+        _StrategicNumberMode(
+            "explore-groups-feudal",
+            42,
+            2,
+            minimum_age=Age.FEUDAL,
+            maximum_age=Age.FEUDAL,
+            priority=10,
+        ),
+        _StrategicNumberMode(
+            "explore-groups-castle",
+            42,
+            2,
+            minimum_age=Age.CASTLE,
+            maximum_age=Age.CASTLE,
+            priority=10,
+        ),
+        _StrategicNumberMode(
+            "explore-groups-imperial",
+            42,
+            3,
+            minimum_age=Age.IMPERIAL,
+            maximum_age=Age.IMPERIAL,
+            priority=10,
+        ),
+        _StrategicNumberMode(
+            "total-explorers-dark",
+            18,
+            2,
+            minimum_age=Age.DARK,
+            maximum_age=Age.DARK,
+            priority=5,
+        ),
+        _StrategicNumberMode(
+            "total-explorers-feudal",
+            18,
+            3,
+            minimum_age=Age.FEUDAL,
+            maximum_age=Age.FEUDAL,
+            priority=5,
+        ),
+        _StrategicNumberMode(
+            "total-explorers-castle",
+            18,
+            4,
+            minimum_age=Age.CASTLE,
+            maximum_age=Age.CASTLE,
+            priority=5,
+        ),
+        _StrategicNumberMode(
+            "total-explorers-imperial",
+            18,
+            4,
+            minimum_age=Age.IMPERIAL,
+            maximum_age=Age.IMPERIAL,
+            priority=5,
+        ),
+        _StrategicNumberMode(
+            "attack-groups-feudal",
+            36,
+            1,
+            minimum_age=Age.FEUDAL,
+            maximum_age=Age.FEUDAL,
+            postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH, _StrategyPosture.BOOM),
+            priority=5,
+        ),
+        _StrategicNumberMode(
+            "attack-groups-castle",
+            36,
+            2,
+            minimum_age=Age.CASTLE,
+            maximum_age=Age.IMPERIAL,
+            postures=(_StrategyPosture.CASTLE_POWER, _StrategyPosture.BOOM),
+            priority=5,
+        ),
+    )
+
+
+def community_water_execution_plan():
+    from .water import WaterExecutionPlan
+
+    return WaterExecutionPlan(
+        plan_id="byzantine-water-v1",
+        water_posture_state="water-posture",
+        transport_phase_state="transport-phase",
+        transport_required_observation="strategy-water-islands",
+        transport_capable_observation="strategy-own-transport-capable",
+        dock_observation="strategy-dock-exists",
+        naval_pressure_observation="strategy-enemy-naval-pressure",
+        naval_pressure_cleared_observation="strategy-enemy-naval-pressure-cleared",
+        warboat_floor_observation="strategy-own-warboat-floor",
+    )
+
+
+def build_byzantine_stock_strategy(
+    effective: EffectiveCivData,
+    *,
+    include_water_continuity: bool = True,
+) -> _StrategyProfile:
+    """Build the broader stock-style Byzantine strategy from the existing base.
+
+    The existing Castle profile remains the compatibility baseline. This builder
+    composes the new community-derived strategic packs on top of that profile.
+    """
+    from .strategy import (
+        _default_byzantine_attack_plan,
+        _default_byzantine_duc_plan,
+        build_byzantine_castle_strategy,
+    )
+
+    base = build_byzantine_castle_strategy(effective)
+    stock_profile_id = "byzantine-stock-v1"
+    observations = list(base.observations)
+    observed = {item.identity for item in observations}
+    for observation in community_strategy_observations(effective):
+        if observation.identity not in observed:
+            observations.append(observation)
+
+    demands = []
+    for base_demand in base.demands:
+        if (
+            base_demand.execution is not None
+            and base_demand.execution.action.startswith("(train ")
+        ):
+            base_demand = replace(
+                base_demand,
+                production_arbitration_group="production",
+            )
+        demands.append(base_demand)
+    existing_demands = {item.identity for item in demands}
+    for demand in community_strategy_demands(effective):
+        if demand.identity == "water-fishing-continuity" and not include_water_continuity:
+            continue
+        if demand.identity in existing_demands:
+            raise ValueError(f"duplicate community strategy demand '{demand.identity}'")
+        demands.append(demand)
+
+    compositions = list(base.military_compositions)
+    composition_ids = {item.identity for item in compositions}
+    for composition in (
+        _StrategicMilitaryComposition(
+            identity="castle-standard-package",
+            production_demands=("castle-knight-floor",),
+            attack_objective="castle-commitment",
+        ),
+        _StrategicMilitaryComposition(
+            identity="castle-defense-package",
+            production_demands=(
+                "counter-mounted-spears",
+                "counter-ranged-skirmishers",
+            ),
+            attack_objective="byzantine-castle-pressure",
+        ),
+        _StrategicMilitaryComposition(
+            identity="castle-infantry-package",
+            production_demands=(
+                "castle-cataphract-floor",
+                "castle-varangian-guard-floor",
+            ),
+            attack_objective="byzantine-castle-pressure",
+        ),
+    ):
+        if composition.identity not in composition_ids:
+            compositions.append(composition)
+
+    return replace(
+        base,
+        profile_id=stock_profile_id,
+        demands=tuple(demands),
+        observations=tuple(observations),
+        military_compositions=tuple(compositions),
+        strategic_number_modes=tuple(
+            (*base.strategic_number_modes, *community_strategy_sn_modes())
+        ),
+        attack_plan=_default_byzantine_attack_plan(stock_profile_id),
+        duc_plan=_default_byzantine_duc_plan(stock_profile_id),
+        water_execution_plan=community_water_execution_plan(),
+        map_profile=default_byzantine_map_profiles(),
+        opening_selector=default_byzantine_opening_selector(),
+        economy_controller=default_byzantine_economy_controller(),
+        camp_controller=default_byzantine_camp_controller(),
+        envelope=replace(
+            base.envelope,
+            maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
+        ),
+    )
+
+
+__all__ = [
+    "build_byzantine_stock_strategy",
+    "community_strategy_demands",
+    "community_strategy_observations",
+    "community_strategy_sn_modes",
+    "community_water_execution_plan",
+]
