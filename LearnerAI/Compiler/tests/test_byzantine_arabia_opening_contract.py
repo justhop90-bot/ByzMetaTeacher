@@ -29,12 +29,21 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertIn("(building-type-count-total mining-camp >= 1)", requirements)
 
         feudal = profile.demand("feudal-transition")
-        self.assertIn("(research-completed 22)", feudal.execution_demands[0].requirements)
+        self.assertNotIn(
+            "(research-completed 22)",
+            feudal.execution_demands[0].requirements,
+        )
+        self.assertEqual(
+            feudal.execution_demands[0].action_witness_gates,
+            ("(research-completed 22)",),
+        )
 
         output = compile_strategy_profile(profile, self.effective)
-        self.assertIn("research-loom", output)
+        issuance_start = output.index("; Action issuance: feudal-transition")
+        issuance_end = output.index("=>", issuance_start)
+        issuance_block = output[issuance_start:issuance_end]
+        self.assertIn("(research-completed 22)", issuance_block)
         self.assertIn("(research loom)", output)
-        self.assertIn("(research-completed 22)", output)
 
     def test_arabia_pressure_contract_detects_real_early_pressure(self):
         profile = build_byzantine_strategy(self.effective)
