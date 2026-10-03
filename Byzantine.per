@@ -7571,18 +7571,6 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
     (not (town-under-attack))
-    (not
-        (and
-            (and
-                (goal opening-plan 1)
-                (map-type arabia)
-            )
-            (and
-                (current-age == dark-age)
-                (unit-type-count-total villager >= 12)
-            )
-        )
-    )
     (or
         (goal demand-economy-lumber-camp-floor-1 1)
         (or
@@ -7645,32 +7633,6 @@
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
 )
 
-(defrule
-    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (goal opening-plan 1)
-    (map-type arabia)
-    (current-age == dark-age)
-    (unit-type-count-total villager >= 12)
-    (or
-        (goal demand-economy-gold-camp-floor-1 1)
-        (or
-            (goal demand-economy-gold-camp-floor-2 1)
-            (or
-                (goal demand-economy-gold-camp-floor-3 1)
-                (or
-                    (goal demand-economy-gold-camp-floor-4 1)
-                    (goal demand-economy-gold-camp-floor-5 1)
-                )
-            )
-        )
-    )
-=>
-    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
-    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
-    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
-)
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
@@ -7792,6 +7754,36 @@
 =>
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+)
+
+; Standard opening placement prefers the persisted resource point. The candidate ring remains a fallback
+; for blocked/awkward resource geometry instead of becoming a mandatory detour.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 0)
+    (or
+        (and
+            (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+            (can-build lumber-camp)
+            (up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)
+        )
+        (or
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                (can-build mining-camp)
+                (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+            )
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                (can-build mining-camp)
+                (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
 )
 
 ; Ring candidate search must finish before the existing builder lifecycle may issue the point build.
