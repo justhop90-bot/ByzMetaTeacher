@@ -10973,6 +10973,9 @@
 
 (defrule
     (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-army-reinforcement-admission 1)
+    (goal byzantine-target-player-lock 1)
     (current-age == castle-age)
     (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
     (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
@@ -10985,6 +10988,9 @@
 
 (defrule
     (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-army-reinforcement-admission 1)
+    (goal byzantine-target-player-lock 1)
     (current-age >= imperial-age)
     (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
     (or
