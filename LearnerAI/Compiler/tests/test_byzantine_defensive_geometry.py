@@ -111,6 +111,60 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
     def test_bombard_tower_has_a_wall_frontier_fallback(self):
         self.assertIn("(build-forward bombard-tower)", self.per)
 
+    def test_native_choke_scorer_ranks_resource_and_fortified_candidates(self):
+        self.assertIn(
+            "(defconst byzantine-static-defense-score-state 714)",
+            self.per,
+        )
+        self.assertIn(
+            "(defconst byzantine-static-defense-resource-score 716)",
+            self.per,
+        )
+        self.assertIn(
+            "(defconst byzantine-static-defense-fortified-score 717)",
+            self.per,
+        )
+        self.assertIn(
+            "(defconst byzantine-static-defense-placement-kind 718)",
+            self.per,
+        )
+        self.assertIn(
+            "(defconst byzantine-static-defense-score-timer 15)",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-static-defense-resource-score g:>=",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)",
+            self.per,
+        )
+        self.assertIn(
+            "(goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-fortified)",
+            self.per,
+        )
+
+    def test_keep_and_bombard_build_only_through_scored_geometry(self):
+        keep = self.per[
+            self.per.index("; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED")
+            : self.per.index("; Pending diagnostics: imperial-bombard-tower-floor")
+        ]
+        bombard = self.per[
+            self.per.index("; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED")
+            : self.per.index("; Pending diagnostics: research-wheelbarrow")
+        ]
+        self.assertIn(
+            "(goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)",
+            keep + bombard,
+        )
+        self.assertIn(
+            "(goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)",
+            keep + bombard,
+        )
+        self.assertNotIn("(build 235)", keep)
+        self.assertNotIn("(build 236)", bombard)
+
     def test_greek_fire_land_trigger_requires_actual_artillery(self):
         marker = "(set-goal demand-water-greek-fire 1)"
         start = self.per.index(marker) - 2200
