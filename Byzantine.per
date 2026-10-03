@@ -17670,7 +17670,7 @@
 ; geometry state. This is a choke/frontier action, not a free-floating tower.
 (defrule
     (goal demand-imperial-keep-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
     (or
         (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
@@ -17902,7 +17902,7 @@
 ; Frontier fallback: scorer-selected fortified front owns the placement.
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
