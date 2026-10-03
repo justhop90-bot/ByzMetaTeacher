@@ -62,7 +62,7 @@ class ByzantineNativeSeamTest(unittest.TestCase):
     def test_deer_controller_tracks_id_distance_and_lure_target(self):
         for fragment in (
             "(defconst byzantine-natural-food-deer-state",
-            "(defconst byzantine-natural-food-current-deer",
+            "(defconst byzantine-natural-food-deer-id",
             "(defconst byzantine-natural-food-deer-distance",
             "(up-find-resource c: deer-class c: 40)",
             "(up-get-object-data object-data-id byzantine-natural-food-current-deer)",
