@@ -556,7 +556,7 @@ def community_strategy_demands(
             service_witness = (
                 f"(and (building-type-count {_slug(building.name)} >= {floor}) "
                 f"(and (dropsite-min-distance {label} >= 0) "
-                f"(dropsite-min-distance {label} s:<= {distance_sn}))"
+                f"(dropsite-min-distance {label} s:<= {distance_sn})))"
             )
             requirements = [
                 active_expression,
