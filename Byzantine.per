@@ -818,8 +818,6 @@
 (defconst byzantine-wall-resource-point 496)
 (defconst byzantine-wall-resource-line-a 498)
 (defconst byzantine-wall-resource-line-b 500)
-(defconst byzantine-wall-resource-timer 14)
-(defconst bt-byzantine-wall-resource-seconds 30)
 
 ; Native stone perimeter fallback. Local DUC geometry remains preferred.
 (defconst byzantine-wall-native-state 502)
@@ -14696,7 +14694,7 @@
         (goal demand-adaptive-resource-palisade 490)
         (goal demand-adaptive-resource-palisade 491)
     )
-    (up-point-contains byzantine-wall-resource-point c: palisade-wall)
+    (up-point-contains byzantine-wall-resource-point c: wall-class)
 =>
     (set-goal demand-adaptive-resource-palisade 492)
     (set-goal byzantine-wall-resource-state byzantine-wall-resource-secured)
@@ -14708,7 +14706,7 @@
         (goal demand-adaptive-resource-palisade 490)
         (goal demand-adaptive-resource-palisade 491)
     )
-    (not (up-point-contains byzantine-wall-resource-point c: palisade-wall))
+    (not (up-point-contains byzantine-wall-resource-point c: wall-class))
     (or
         (up-pending-objects c: 72 >= 1)
         (up-pending-placement c: 72)
@@ -14724,7 +14722,7 @@
         (goal demand-adaptive-resource-palisade 490)
         (goal demand-adaptive-resource-palisade 491)
     )
-    (not (up-point-contains byzantine-wall-resource-point c: palisade-wall))
+    (not (up-point-contains byzantine-wall-resource-point c: wall-class))
     (up-pending-objects c: 72 == 0)
     (not (up-pending-placement c: 72))
 =>
@@ -14736,7 +14734,7 @@
 ; Release only from world-state completion.
 (defrule
     (goal demand-adaptive-resource-palisade 492)
-    (up-point-contains byzantine-wall-resource-point c: palisade-wall)
+    (up-point-contains byzantine-wall-resource-point c: wall-class)
 =>
     (set-goal demand-adaptive-resource-palisade 0)
 )
@@ -14746,7 +14744,7 @@
 (defrule
     (goal demand-adaptive-resource-palisade 0)
     (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
-    (not (up-point-contains byzantine-wall-resource-point c: palisade-wall))
+    (not (up-point-contains byzantine-wall-resource-point c: wall-class))
     (or
         (goal under-attack yes)
         (players-unit-type-count any-enemy knight >= 2)
@@ -14851,6 +14849,11 @@
     (not (building-type-count 117 >= 1))
     (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
     (not (current-age >= imperial-age))
+    (or
+        (current-age < castle-age)
+        (stone-amount >= 650)
+        (goal under-attack yes)
+    )
 =>
     (set-goal demand-adaptive-stone-wall 1)
 )
