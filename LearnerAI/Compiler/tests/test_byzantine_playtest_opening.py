@@ -196,6 +196,57 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         ):
             self.assertIn(fragment, block)
 
+    def test_reinforcement_cannot_bypass_admission_or_reuse_dropped_target_lock(self):
+        start = self.per.index("; ATTACK THRESHOLDS AND REINFORCEMENT")
+        end = self.per.index("; ARMY REPOSITION / WITHDRAWAL CONTROLLER", start)
+        block = self.per[start:end]
+
+        attack_ready_writers = [
+            rule for rule in block.split("(defrule")[1:]
+            if "set-goal byzantine-army-attack-ready 1" in rule
+        ]
+        self.assertEqual(len(attack_ready_writers), 8)
+
+        normal_writers = [
+            rule for rule in attack_ready_writers
+            if "(goal byzantine-army-reinforcement 1)" not in rule
+        ]
+        rearm_writers = [
+            rule for rule in attack_ready_writers
+            if "(goal byzantine-army-reinforcement 1)" in rule
+        ]
+
+        self.assertEqual(len(normal_writers), 4)
+        self.assertEqual(len(rearm_writers), 4)
+
+        for rule in normal_writers:
+            self.assertIn("(goal byzantine-army-reinforcement 0)", rule)
+
+        for rule in rearm_writers:
+            for fragment in (
+                "(goal byzantine-army-reinforcement-target-validation 1)",
+                "(goal byzantine-army-reinforcement-admission 1)",
+                "(goal byzantine-target-player-lock 1)",
+            ):
+                self.assertIn(fragment, rule)
+
+        self.assertIn(
+            "(set-goal byzantine-army-reinforcement-target-validation 0)",
+            self.per[self.per.index("(defrule\n    (or\n        (strategic-number sn-target-player-number <= 0)"):self.per.index("(defrule\n    (strategic-number sn-target-player-number <= 0)")],
+        )
+        self.assertIn(
+            "(set-goal byzantine-army-reinforcement-admission 0)",
+            self.per[self.per.index("(defrule\n    (or\n        (strategic-number sn-target-player-number <= 0)"):self.per.index("(defrule\n    (strategic-number sn-target-player-number <= 0)")],
+        )
+        self.assertIn(
+            "(set-goal byzantine-army-reinforcement-target-validation 0)",
+            self.per[self.per.index("(defrule\n    (goal byzantine-target-player-lock 1)"):self.per.index("; NATIVE NATURAL-FOOD DEER CONTROLLER")],
+        )
+        self.assertIn(
+            "(set-goal byzantine-army-reinforcement-admission 0)",
+            self.per[self.per.index("(defrule\n    (goal byzantine-target-player-lock 1)"):self.per.index("; NATIVE NATURAL-FOOD DEER CONTROLLER")],
+        )
+
     def test_reinforcement_rearm_requires_fresh_target_validation_and_opponent_admission(self):
         start = self.per.index("; ATTACK THRESHOLDS AND REINFORCEMENT")
         end = self.per.index("; ARMY REPOSITION / WITHDRAWAL CONTROLLER", start)
