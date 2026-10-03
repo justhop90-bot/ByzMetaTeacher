@@ -11693,13 +11693,22 @@
         (and
             (current-age == castle-age)
             (or
-                (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
-                (or
-                    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
-                    (or
-                        (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
-                        (unit-type-count-total monk < bt-castle-monk-floor)
+                (and
+                    (goal counter-package-infantry_pressure_castle 1)
+                    (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+                )
+                (and
+                    (not (goal counter-package-infantry_pressure_castle 1))
+                    (not
+                        (or
+                            (unit-type-count-total knight-line >= 2)
+                            (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+                        )
                     )
+                )
+                (and
+                    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+                    (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
                 )
             )
         )
@@ -11841,13 +11850,22 @@
     (current-age == castle-age)
     (goal byzantine-army-attack-ready 2)
     (or
-        (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
-        (or
-            (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
-            (or
-                (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
-                (unit-type-count-total monk < bt-castle-monk-floor)
+        (and
+            (goal counter-package-infantry_pressure_castle 1)
+            (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+        )
+        (and
+            (not (goal counter-package-infantry_pressure_castle 1))
+            (not
+                (or
+                    (unit-type-count-total knight-line >= 2)
+                    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+                )
             )
+        )
+        (and
+            (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+            (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
         )
     )
 => 
@@ -11900,10 +11918,23 @@
     (goal byzantine-army-reinforcement-admission 1)
     (goal byzantine-target-player-lock 1)
     (current-age == castle-age)
-    (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
-    (unit-type-count-total mangonel-line >= bt-castle-mangonel-floor)
-    (unit-type-count-total monk >= bt-castle-monk-floor)
+    (or
+        (and
+            (goal counter-package-infantry_pressure_castle 1)
+            (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
+        )
+        (and
+            (not (goal counter-package-infantry_pressure_castle 1))
+            (or
+                (unit-type-count-total knight-line >= 2)
+                (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+            )
+        )
+    )
+    (or
+        (not (goal byzantine-siege-approach byzantine-siege-approach-fortified))
+        (unit-type-count-total mangonel-line >= bt-castle-mangonel-floor)
+    )
 =>
     (set-goal byzantine-army-reinforcement 0)
     (set-goal byzantine-army-attack-ready 1)
