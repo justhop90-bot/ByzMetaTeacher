@@ -24,6 +24,86 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         end = self.per.index(end_marker, start)
         return self.per[start:end]
 
+    def test_standard_arabia_selector_owns_quiet_land_and_generic_fallback_excludes_arabia(self):
+        standard = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
+        fallback = self._rule_block("; Native control rule: opening-selector-fast-castle-standard-land")
+        self.assertIn("(map-type arabia)", standard)
+        self.assertIn("(set-goal opening-plan 1)", standard)
+        self.assertIn("(not (map-type arabia))", fallback)
+
+    def test_standard_arabia_can_escalate_once_on_real_dark_age_pressure(self):
+        block = self._rule_block(
+            "; Native control rule: opening-escalate-standard-arabia-to-counter-feudal"
+        )
+        self.assertIn("(goal opening-plan 1)", block)
+        self.assertIn("(current-age == dark-age)", block)
+        self.assertIn("(players-unit-type-count any-enemy militia-line >= 3)", block)
+        self.assertIn("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", block)
+        self.assertIn("(players-unit-type-count any-enemy archer-line >= 3)", block)
+        self.assertIn("(players-building-type-count any-enemy barracks >= 1)", block)
+        self.assertIn("(players-military-population any-enemy >= 3)", block)
+        self.assertIn("(set-goal opening-plan 2)", block)
+
+    def test_standard_arabia_starts_with_first_wood_and_gold_camps_only(self):
+        block = self._section(
+            "; Demand initialization",
+            "; Persistent TC2-complete state starts false",
+        )
+        self.assertIn("(set-goal demand-economy-lumber-camp-floor-1 1)", block)
+        self.assertIn("(set-goal demand-economy-gold-camp-floor-1 1)", block)
+        for fragment in (
+            "(set-goal demand-economy-lumber-camp-floor-2 0)",
+            "(set-goal demand-economy-wood-camp-floor-3 0)",
+            "(set-goal demand-economy-gold-camp-floor-2 0)",
+            "(set-goal demand-economy-gold-camp-floor-3 0)",
+            "(set-goal demand-economy-stone-camp-floor-1 0)",
+            "(set-goal demand-economy-food-mill-boom 0)",
+            "(set-goal demand-economy-food-mill-feudal-berries 0)",
+        ):
+            self.assertIn(fragment, block)
+
+    def test_standard_arabia_dark_age_prefers_gold_over_second_wood_after_12_villagers(self):
+        wood = self._rule_block(
+            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 12)",
+            wood,
+        )
+        gold_start = self.per.index(
+            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
+        )
+        gold = self.per[gold_start:self.per.index(
+            "(defrule\n    (goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)",
+            gold_start,
+        )]
+        self.assertIn(
+            "(goal opening-plan 1)", gold
+        )
+        self.assertIn(
+            "(current-age == dark-age)", gold
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 12)", gold
+        )
+
+    def test_standard_arabia_feudal_sequence_uses_20_villagers_and_range_before_blacksmith(self):
+        age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
+        self.assertIn("(unit-type-count-total villager >= 20)", age)
+        self.assertNotIn("(unit-type-count-total villager >= 21)", age)
+
+        blacksmith = self._rule_block(
+            "; Action issuance: feudal-infrastructure | ACTIVE -> ISSUED"
+        )
+        self.assertIn("(goal opening-plan 1)", blacksmith)
+        self.assertIn("(map-type arabia)", blacksmith)
+        self.assertIn("(building-type-count archery-range >= 1)", blacksmith)
+
+    def test_standard_arabia_does_not_build_first_mill_in_dark_age(self):
+        mill = self._rule_block("; Action issuance: economy-food-mill-boom | ACTIVE -> ISSUED")
+        self.assertIn("(not (map-type arabia))", mill)
+        self.assertIn("(current-age >= feudal-age)", mill)
+
     def test_safe_arabia_opening_selects_defensive_standard(self):
         block = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
         self.assertIn("(map-type arabia)", block)
