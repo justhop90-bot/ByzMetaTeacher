@@ -160,7 +160,7 @@ def lower_opening_selector(
                 "opening-selector-fast-castle-standard-land",
                 facts=(
                     parse_expression(
-                        guard(f"(and (not {water}) (and (not {arena}) (not {pressure})))"),
+                        guard(f"(and (not {arena}) (not {pressure}))"),
                         SourceLocation(1),
                     ),
                 ),
@@ -175,7 +175,7 @@ def lower_opening_selector(
     rules.append(
         NativeControlRule(
             "opening-selector-counter-feudal",
-            facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) {pressure}))"), SourceLocation(1)),),
+            facts=(parse_expression(guard(f"(and (not {arena}) {pressure})"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})", SourceLocation(1)),),
         ),
     )
