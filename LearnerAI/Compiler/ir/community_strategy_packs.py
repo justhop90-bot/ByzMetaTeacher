@@ -572,7 +572,7 @@ def community_strategy_demands(
                 ]
             building_token = _slug(building.name)
             action = f"(build {building_token})"
-            witness = service_witness
+            witness = f"(building-type-count {_slug(building.name)} >= {floor})"
             demands.append(
                 _StrategicDemandSpec(
                     identity=f"economy-{label}-camp-floor-{floor}",
