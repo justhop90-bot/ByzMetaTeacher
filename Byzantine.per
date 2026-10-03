@@ -69,6 +69,7 @@
 (defconst status-resource 3)
 (defconst list-active 0)
 (defconst status-ready 2)
+(defconst action-default "action-default")
 (defconst villager-class 904)
 (defconst object-data-id 0)
 (defconst object-data-dropsite 14)
@@ -1237,6 +1238,43 @@
     (enable-timer byzantine-static-defense-score-timer 45)
 )
 
+
+; Evidence-loss invalidation: a scored resource placement is no longer valid
+; once its persisted resource-front witness leaves the selected/armed/secured
+; lifecycle. The 45-second timer remains the normal cadence expiry; this rule
+; handles hard witness loss immediately.
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
+    (and
+        (not (goal byzantine-wall-resource-state byzantine-wall-resource-selected))
+        (and
+            (not (goal byzantine-wall-resource-state byzantine-wall-resource-armed))
+            (not (goal byzantine-wall-resource-state byzantine-wall-resource-secured))
+        )
+    )
+=>
+    (disable-timer byzantine-static-defense-score-timer)
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-none)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+)
+
+; Evidence-loss invalidation: a fortified placement expires immediately when
+; its anchor geometry disappears, rather than trusting the 45-second cadence.
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
+    (or
+        (and
+            (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected))
+            (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed))
+        )
+        (up-compare-goal byzantine-wall-anchor-pair <= 0)
+    )
+=>
+    (disable-timer byzantine-static-defense-score-timer)
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-none)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
+)
+
 ; PROFESSIONAL BYZANTINE WALL CONTROL
 ; Material: 0 none, 1 palisade, 2 stone.
 (defconst byzantine-wall-material 487)
@@ -1623,10 +1661,10 @@
     (up-full-reset-search)
     (up-set-target-point byzantine-frontier-anchor-point)
     (up-filter-distance c: -1 c: 12)
-    (up-find-remote c: bombard-cannon c: 2)
-    (up-find-remote c: mangonel-line c: 2)
-    (up-find-remote c: cavalier-line c: 2)
-    (up-find-remote c: knight-line c: 2)
+    (up-find-remote c: 36 c: 2)
+    (up-find-remote c: 280 c: 2)
+    (up-find-remote c: 283 c: 2)
+    (up-find-remote c: 38 c: 2)
     (up-find-local c: all-units-class c: 4)
     (up-filter-include cmdid-monk -1 -1 -1)
     (up-target-objects 0 action-default -1 stance-aggressive)
@@ -9864,6 +9902,11 @@
     (set-goal demand-imperial-elite-skirmisher-upgrade 0)
     (set-goal demand-imperial-hussar-floor 0)
     (set-goal demand-imperial-onager-floor 0)
+)
+
+(defrule
+    (true)
+=>
     (set-goal demand-imperial-siege-ram-floor 1)
     (set-goal demand-imperial-trebuchet-floor 1)
     (set-goal demand-imperial-arbalester-floor 1)
@@ -17628,7 +17671,7 @@
 ; geometry state. This is a choke/frontier action, not a free-floating tower.
 (defrule
     (goal demand-imperial-keep-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
     (or
         (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
@@ -17860,7 +17903,7 @@
 ; Frontier fallback: scorer-selected fortified front owns the placement.
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
@@ -20613,7 +20656,7 @@
     (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
     (not (up-pending-objects c: 2703 >= 1))
 =>
-    (set-goal demand-castle-varangian-guard-floor 1)
+    (set-goal demand-castle-varangian-guard-floor 0)
     (set-goal production-retry-barrier-castle-varangian-guard-floor 1)
 )
 
@@ -21057,7 +21100,7 @@
     (not (unit-type-count cavalier >= bt-imperial-cavalier-target))
     (not (up-pending-objects c: 283 >= 1))
 =>
-    (set-goal demand-imperial-cavalier-floor 1)
+    (set-goal demand-imperial-cavalier-floor 0)
     (set-goal production-retry-barrier-imperial-cavalier-floor 1)
 )
 
@@ -21496,7 +21539,7 @@
     (not (unit-type-count arbalest >= bt-imperial-arbalester-floor))
     (not (up-pending-objects c: 492 >= 1))
 =>
-    (set-goal demand-imperial-arbalester-floor 1)
+    (set-goal demand-imperial-arbalester-floor 0)
     (set-goal production-retry-barrier-imperial-arbalester-floor 1)
 )
 
