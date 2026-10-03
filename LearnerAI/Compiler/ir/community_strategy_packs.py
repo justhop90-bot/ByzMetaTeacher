@@ -347,6 +347,11 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
+            "strategy-arabia-map",
+            "(map-type arabia)",
+            _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
             "strategy-opening-pressure",
             "(players-unit-type-count any-enemy militia-line >= 5)",
             effective.unit_line("militia-line").provenance,
