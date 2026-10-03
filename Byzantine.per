@@ -5518,7 +5518,7 @@
 ; Native control rule: economy-controller-write-base-sn-food-gatherer-percentage
 (defrule
     (goal economy-posture 1)
-    (up-compare-sn sn-food-gatherer-percentage != 50)
+    (up-compare-sn sn-food-gatherer-percentage != 55)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
 )
@@ -5534,7 +5534,7 @@
 ; Native control rule: economy-controller-write-base-sn-gold-gatherer-percentage
 (defrule
     (goal economy-posture 1)
-    (up-compare-sn sn-gold-gatherer-percentage != 20)
+    (up-compare-sn sn-gold-gatherer-percentage != 15)
 =>
     (set-strategic-number sn-gold-gatherer-percentage 15)
 )
