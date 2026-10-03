@@ -62,7 +62,7 @@ class EconomyControllerPlan:
     controller_id: str
     state_name: str = "economy-posture"
     opening_state: str = "opening-plan"
-    pressure_observation: str = "strategy-enemy-pressure"
+    pressure_observation: str = "strategy-arabia-early-pressure"
     castle_bank_state_name: str = "byzantine-castle-bank-state"
     castle_bank_hard_food: int = 800
     castle_bank_hard_gold: int = 200
