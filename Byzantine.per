@@ -11030,6 +11030,9 @@
 
 (defrule
     (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-army-reinforcement-admission 1)
+    (goal byzantine-target-player-lock 1)
     (current-age >= imperial-age)
     (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
     (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
@@ -11063,6 +11066,9 @@
 
 (defrule
     (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-army-reinforcement-admission 1)
+    (goal byzantine-target-player-lock 1)
     (current-age >= imperial-age)
     (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
     (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
