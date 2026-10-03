@@ -13,8 +13,16 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
 
     def _rule_block(self, marker):
         start = self.per.index(marker)
-        end = self.per.find("(defrule", start + len(marker))
-        return self.per[start:] if end < 0 else self.per[start:end]
+        rule_start = self.per.find("(defrule", start + len(marker))
+        if rule_start < 0:
+            return self.per[start:]
+        next_rule = self.per.find("(defrule", rule_start + len("(defrule"))
+        return self.per[start:] if next_rule < 0 else self.per[start:next_rule]
+
+    def _section(self, marker, end_marker):
+        start = self.per.index(marker)
+        end = self.per.index(end_marker, start)
+        return self.per[start:end]
 
     def test_safe_land_opening_selects_fast_castle(self):
         block = self._rule_block("; Native control rule: opening-selector-defensive-standard")
@@ -38,7 +46,7 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             self.per,
         )
         self.assertIn(
-            "(and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))",
+            "(and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))",
             self.per,
         )
 
@@ -52,7 +60,10 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-gold-gatherer-percentage 25)", block)
 
     def test_second_mill_is_a_feudal_forage_transition(self):
-        block = self._rule_block("; FEUDAL SECOND MILL: FORAGE / BERRY TRANSITION")
+        block = self._section(
+            "; FEUDAL SECOND MILL: FORAGE / BERRY TRANSITION",
+            "; Pending diagnostics: economy-market-floor-1",
+        )
         self.assertIn("(current-age == feudal-age)", block)
         self.assertIn("(set-strategic-number sn-preferred-mill-placement 0)", block)
         self.assertIn("(build mill)", block)
