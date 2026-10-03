@@ -4430,6 +4430,7 @@
 (defconst byzantine-resource-camp-state-acquire-origin 1)
 (defconst byzantine-resource-camp-state-search 2)
 (defconst byzantine-resource-camp-state-ready 3)
+(defconst byzantine-resource-camp-state-reselect 4)
 (defconst byzantine-resource-camp-origin-point 727)
 (defconst byzantine-resource-camp-search-state 729)
 (defconst byzantine-resource-camp-target-valid 730)
@@ -6553,6 +6554,7 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
     (or
         (goal demand-economy-lumber-camp-floor-1 1)
         (or
@@ -6578,6 +6580,7 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
     (not
         (or
             (goal demand-economy-lumber-camp-floor-1 1)
@@ -7394,6 +7397,64 @@
 
 ;----------------------------------------------------------------
 ;----------------------------------------------------------------
+; A nearest resource already covered by an existing dropsite is not viable.
+; Reject it from the live resource list and immediately reselect the next nearest
+; candidate without resetting the search. This preserves nearest-viable behavior
+; in the same native pass.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (dropsite-min-distance wood <= 6)
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (dropsite-min-distance gold <= 6)
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (dropsite-min-distance stone <= 6)
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list >= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-resource-camp-point)
+    (set-goal byzantine-resource-camp-target-valid 1)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+=>
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+)
+
 ; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL
 ;----------------------------------------------------------------
 ; Efficiency contract: camp count is not productivity. We probe the active
@@ -13580,6 +13641,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (current-age >= dark-age)
     (unit-type-count-total villager >= 7)
     (can-build lumber-camp)
@@ -13685,6 +13747,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (current-age >= dark-age)
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 2)
@@ -13775,6 +13838,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 3)
@@ -13862,6 +13926,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 4)
@@ -13949,6 +14014,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 5)
@@ -14036,6 +14102,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 6)
@@ -14122,6 +14189,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
@@ -14207,6 +14275,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
@@ -14293,6 +14362,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
@@ -14380,6 +14450,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
@@ -14467,6 +14538,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
@@ -14553,6 +14625,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
@@ -14639,6 +14712,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
@@ -14726,6 +14800,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
@@ -14814,6 +14889,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
@@ -14902,6 +14978,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
     (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
     (goal byzantine-resource-camp-target-valid 1)
+    (not (town-under-attack))
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
