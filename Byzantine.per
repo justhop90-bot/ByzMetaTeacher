@@ -897,7 +897,10 @@
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
     (current-age >= castle-age)
-    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    )
     (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
         (up-timer-status byzantine-static-defense-score-timer c:== timer-disabled)
@@ -1148,8 +1151,11 @@
         )
     )
     (or
-        (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected))
-        (up-compare-goal byzantine-wall-anchor-pair == 0)
+        (and
+            (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected))
+            (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed))
+            (up-compare-goal byzantine-wall-anchor-pair == 0)
+        )
         (up-compare-goal byzantine-static-defense-resource-score g:>= byzantine-static-defense-fortified-score)
     )
 =>
@@ -1160,7 +1166,10 @@
 
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
-    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    )
     (up-compare-goal byzantine-wall-anchor-pair > 0)
     (up-compare-goal byzantine-static-defense-fortified-score g:> byzantine-static-defense-resource-score)
 =>
