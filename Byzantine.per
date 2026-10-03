@@ -13920,7 +13920,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-1 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 1))
 =>
     (set-goal demand-economy-stone-camp-floor-1 1)
@@ -13979,7 +13979,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
@@ -13998,7 +13998,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-2 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 2))
 =>
     (set-goal demand-economy-stone-camp-floor-2 1)
@@ -14057,7 +14057,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
@@ -14076,7 +14076,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-3 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 3))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -14136,7 +14136,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
@@ -14156,7 +14156,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-4 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 4))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -14216,7 +14216,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
@@ -14236,7 +14236,7 @@
 
 (defrule
     (goal demand-economy-stone-camp-floor-5 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (not (building-type-count mining-camp >= 5))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -14296,7 +14296,7 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= castle-age) (stone-amount < 650) (resource-found stone))
+    (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
