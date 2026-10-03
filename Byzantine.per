@@ -4425,6 +4425,17 @@
 (defconst byzantine-resource-camp-kind 722)
 (defconst byzantine-resource-camp-kind-wood 1)
 (defconst byzantine-resource-camp-kind-gold 2)
+(defconst byzantine-resource-camp-kind-stone 3)
+(defconst byzantine-resource-camp-state-idle 0)
+(defconst byzantine-resource-camp-state-acquire-origin 1)
+(defconst byzantine-resource-camp-state-search 2)
+(defconst byzantine-resource-camp-state-ready 3)
+(defconst byzantine-resource-camp-origin-point 727)
+(defconst byzantine-resource-camp-search-state 729)
+(defconst byzantine-resource-camp-target-valid 730)
+(defconst byzantine-resource-camp-building-kind 731)
+(defconst byzantine-resource-camp-building-lumber 1)
+(defconst byzantine-resource-camp-building-mining 2)
 (defconst byzantine-offensive-castle-point 723)
 (defconst byzantine-offensive-castle-valid 725)
 (defconst byzantine-offensive-push-state 726)
@@ -4432,6 +4443,21 @@
 (defconst byzantine-offensive-push-staging 1)
 (defconst byzantine-offensive-push-assault 2)
 
+; Resource-centered camp placement state bootstrap.
+(defrule
+    (goal byzantine-resource-camp-state -1)
+=>
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (set-goal byzantine-resource-camp-kind 0)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-building-kind 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-building-kind -1)
+=>
+    (set-goal byzantine-resource-camp-building-kind 0)
+)
 ; Native control rule: strategy-posture-initialize-000
 (defrule
     (goal strategy-posture 0)
@@ -6244,10 +6270,9 @@
 
 ;----------------------------------------------------------------
 ; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER
-; Resource-front observation -> bounded native placement radius -> construction.
-; The controller deliberately refuses to widen camp/drop distances indefinitely:
-; near resources get a new dropsite, distant resources do not drag villagers
-; across the map to feed a singleton resource node.
+; Resource observation -> nearest real resource object -> persisted point ->
+; existing demand/builder lifecycle -> exact point-centered native placement.
+
 (defrule
     (or
         (up-compare-sn sn-allow-adjacent-dropsites != 0)
@@ -6286,54 +6311,443 @@
     (set-strategic-number sn-mining-camp-max-distance 20)
 )
 
-; Byzantine near-resource lumber-camp recovery
+; Fast new-resource activation reopens the next existing camp demand.
 (defrule
     (resource-found wood)
-    (dropsite-min-distance wood > 6)
-    (dropsite-min-distance wood <= 18)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 6)
-    (goal action-claim-build-pass-singleton 0)
     (not (town-under-attack))
     (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance wood == -1)
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+    )
+    (building-type-count-total lumber-camp == 0)
+    (can-build lumber-camp)
 =>
-    (set-strategic-number sn-maximum-wood-drop-distance 16)
-    (build lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-lumber-camp-floor-1 1)
 )
 
-; Byzantine near-resource mining-camp recovery
+(defrule
+    (resource-found wood)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance wood == -1)
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+    )
+    (building-type-count-total lumber-camp == 1)
+    (can-build lumber-camp)
+=>
+    (set-goal demand-economy-lumber-camp-floor-2 1)
+)
+
+(defrule
+    (resource-found wood)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance wood == -1)
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+    )
+    (building-type-count-total lumber-camp == 2)
+    (can-build lumber-camp)
+=>
+    (set-goal demand-economy-wood-camp-floor-3 1)
+)
+
+(defrule
+    (resource-found wood)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance wood == -1)
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+    )
+    (building-type-count-total lumber-camp == 3)
+    (can-build lumber-camp)
+=>
+    (set-goal demand-economy-wood-camp-floor-4 1)
+)
+
+(defrule
+    (resource-found wood)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance wood == -1)
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+    )
+    (building-type-count-total lumber-camp == 4)
+    (can-build lumber-camp)
+=>
+    (set-goal demand-economy-wood-camp-floor-5 1)
+)
+
+(defrule
+    (resource-found wood)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance wood == -1)
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+    )
+    (building-type-count-total lumber-camp == 5)
+    (can-build lumber-camp)
+=>
+    (set-goal demand-economy-wood-camp-floor-6 1)
+)
+
 (defrule
     (resource-found gold)
-    (dropsite-min-distance gold > 6)
-    (dropsite-min-distance gold <= 18)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-    (goal action-claim-build-pass-singleton 0)
     (not (town-under-attack))
     (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance gold == -1)
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+    )
+    (building-type-count-total mining-camp == 0)
+    (can-build mining-camp)
 =>
-    (set-strategic-number sn-maximum-gold-drop-distance 16)
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-1 1)
 )
 
-; The same bounded front rule applies to stone, but Castle/Imperial stone is
-; strategic and therefore does not bypass the existing castle-stone policy.
 (defrule
-    (current-age >= castle-age)
-    (resource-found stone)
-    (dropsite-min-distance stone > 6)
-    (dropsite-min-distance stone <= 18)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
     (not (town-under-attack))
     (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance gold == -1)
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+    )
+    (building-type-count-total mining-camp == 1)
+    (can-build mining-camp)
 =>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-2 1)
 )
+
+(defrule
+    (resource-found gold)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance gold == -1)
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+    )
+    (building-type-count-total mining-camp == 2)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 1)
+)
+
+(defrule
+    (resource-found gold)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance gold == -1)
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+    )
+    (building-type-count-total mining-camp == 3)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 1)
+)
+
+(defrule
+    (resource-found gold)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance gold == -1)
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+    )
+    (building-type-count-total mining-camp == 4)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (stone-amount < 650)
+    (resource-found stone)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance stone == -1)
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+    )
+    (building-type-count-total mining-camp == 0)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (stone-amount < 650)
+    (resource-found stone)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance stone == -1)
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+    )
+    (building-type-count-total mining-camp == 1)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-stone-camp-floor-2 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (stone-amount < 650)
+    (resource-found stone)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance stone == -1)
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+    )
+    (building-type-count-total mining-camp == 2)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-stone-camp-floor-3 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (stone-amount < 650)
+    (resource-found stone)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance stone == -1)
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+    )
+    (building-type-count-total mining-camp == 3)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-stone-camp-floor-4 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (stone-amount < 650)
+    (resource-found stone)
+    (not (town-under-attack))
+    (not (goal byzantine-fortification-threat 1))
+    (or
+        (dropsite-min-distance stone == -1)
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+    )
+    (building-type-count-total mining-camp == 4)
+    (can-build mining-camp)
+=>
+    (set-goal demand-economy-stone-camp-floor-5 1)
+)
+
+
+
+; Prepare a nearest-real-resource placement plan. Existing action-claim singleton
+; remains the only construction arbitration channel.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (or
+        (goal demand-economy-lumber-camp-floor-1 1)
+        (or
+            (goal demand-economy-lumber-camp-floor-2 1)
+            (or
+                (goal demand-economy-wood-camp-floor-3 1)
+                (or
+                    (goal demand-economy-wood-camp-floor-4 1)
+                    (or
+                        (goal demand-economy-wood-camp-floor-5 1)
+                        (goal demand-economy-wood-camp-floor-6 1)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (not
+        (or
+            (goal demand-economy-lumber-camp-floor-1 1)
+            (or
+                (goal demand-economy-lumber-camp-floor-2 1)
+                (or
+                    (goal demand-economy-wood-camp-floor-3 1)
+                    (or
+                        (goal demand-economy-wood-camp-floor-4 1)
+                        (or
+                            (goal demand-economy-wood-camp-floor-5 1)
+                            (goal demand-economy-wood-camp-floor-6 1)
+                        )
+                    )
+                )
+            )
+        )
+    )
+    (or
+        (goal demand-economy-gold-camp-floor-1 1)
+        (or
+            (goal demand-economy-gold-camp-floor-2 1)
+            (or
+                (goal demand-economy-gold-camp-floor-3 1)
+                (or
+                    (goal demand-economy-gold-camp-floor-4 1)
+                    (goal demand-economy-gold-camp-floor-5 1)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (not
+        (or
+            (goal demand-economy-lumber-camp-floor-1 1)
+            (or
+                (goal demand-economy-lumber-camp-floor-2 1)
+                (or
+                    (goal demand-economy-wood-camp-floor-3 1)
+                    (or
+                        (goal demand-economy-wood-camp-floor-4 1)
+                        (or
+                            (goal demand-economy-wood-camp-floor-5 1)
+                            (goal demand-economy-wood-camp-floor-6 1)
+                        )
+                    )
+                )
+            )
+        )
+    )
+    (not
+        (or
+            (goal demand-economy-gold-camp-floor-1 1)
+            (or
+                (goal demand-economy-gold-camp-floor-2 1)
+                (or
+                    (goal demand-economy-gold-camp-floor-3 1)
+                    (or
+                        (goal demand-economy-gold-camp-floor-4 1)
+                        (goal demand-economy-gold-camp-floor-5 1)
+                    )
+                )
+            )
+        )
+    )
+    (or
+        (goal demand-economy-stone-camp-floor-1 1)
+        (or
+            (goal demand-economy-stone-camp-floor-2 1)
+            (or
+                (goal demand-economy-stone-camp-floor-3 1)
+                (or
+                    (goal demand-economy-stone-camp-floor-4 1)
+                    (goal demand-economy-stone-camp-floor-5 1)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+=>
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-resource-camp-origin-point)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-resource-camp-origin-point)
+    (up-filter-include -1 -1 -1 on-mainland)
+    (up-filter-distance c: -1 s: sn-maximum-wood-drop-distance)
+    (up-filter-status c: status-ready c: list-active)
+    (up-find-resource c: tree-class c: 40)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: tree-class c: 40)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-resource-camp-origin-point)
+    (up-filter-include -1 -1 -1 on-mainland)
+    (up-filter-distance c: -1 s: sn-maximum-gold-drop-distance)
+    (up-filter-status c: status-ready c: list-active)
+    (up-find-resource c: gold-mine-class c: 40)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold-mine-class c: 40)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-resource-camp-origin-point)
+    (up-filter-include -1 -1 -1 on-mainland)
+    (up-filter-distance c: -1 s: sn-mining-camp-max-distance)
+    (up-filter-status c: status-ready c: list-active)
+    (up-find-resource c: stone-mine-class c: 40)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: stone-mine-class c: 40)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list >= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-resource-camp-point)
+    (set-goal byzantine-resource-camp-target-valid 1)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+=>
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+)
+
+; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION
+; Exact point-centered execution is attached to the existing demand rules below.
 
 ; Per-pass transient action arbitration
 (defrule
@@ -13163,14 +13577,20 @@
     (not (up-pending-placement c: 562))
     (not (building-type-count lumber-camp >= 1))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-target-valid 1)
     (current-age >= dark-age)
     (unit-type-count-total villager >= 7)
-    (resource-found wood)
-    (dropsite-min-distance wood > 5)
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 1)
 =>
-    (build lumber-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-build place-point 0 c: lumber-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-lumber-camp-floor-1 77)
 )
@@ -13262,13 +13682,19 @@
     (not (up-pending-placement c: 562))
     (not (building-type-count lumber-camp >= 2))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-target-valid 1)
     (current-age >= dark-age)
-    (resource-found wood)
-    (dropsite-min-distance wood > 12)
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 2)
 =>
-    (build lumber-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-build place-point 0 c: lumber-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-lumber-camp-floor-2 78)
 )
@@ -13346,12 +13772,19 @@
     (up-pending-objects c: 562 == 0)
     (not (up-pending-placement c: 562))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 3)
 =>
-    (build lumber-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-build place-point 0 c: lumber-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-wood-camp-floor-3 601)
 )
@@ -13426,12 +13859,19 @@
     (up-pending-objects c: 562 == 0)
     (not (up-pending-placement c: 562))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 4)
 =>
-    (build lumber-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-build place-point 0 c: lumber-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-wood-camp-floor-4 606)
 )
@@ -13506,12 +13946,19 @@
     (up-pending-objects c: 562 == 0)
     (not (up-pending-placement c: 562))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 5)
 =>
-    (build lumber-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-build place-point 0 c: lumber-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-wood-camp-floor-5 611)
 )
@@ -13586,12 +14033,19 @@
     (up-pending-objects c: 562 == 0)
     (not (up-pending-placement c: 562))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 6)
 =>
-    (build lumber-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-build place-point 0 c: lumber-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-wood-camp-floor-6 616)
 )
@@ -13665,11 +14119,18 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (goal byzantine-resource-camp-target-valid 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-1 621)
 )
@@ -13743,11 +14204,18 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (goal byzantine-resource-camp-target-valid 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-2 626)
 )
@@ -13822,12 +14290,19 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-3 631)
 )
@@ -13902,12 +14377,19 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-4 636)
 )
@@ -13982,12 +14464,19 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (goal byzantine-resource-camp-target-valid 1)
     (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-5 641)
 )
@@ -14061,11 +14550,19 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (goal byzantine-resource-camp-target-valid 1)
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-1 646)
 )
@@ -14139,11 +14636,19 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (goal byzantine-resource-camp-target-valid 1)
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-2 651)
 )
@@ -14218,12 +14723,20 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (goal byzantine-resource-camp-target-valid 1)
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-3 656)
 )
@@ -14298,12 +14811,20 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (goal byzantine-resource-camp-target-valid 1)
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-4 661)
 )
@@ -14378,12 +14899,20 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (goal byzantine-resource-camp-target-valid 1)
     (and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
-    (build mining-camp)
+    (up-set-target-point byzantine-resource-camp-point)
+    (set-strategic-number sn-placement-zone-size 4)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-5 666)
 )
