@@ -476,6 +476,9 @@ def community_strategy_observations(
         ),
     ]
 
+    # resource-found is the supported native resource-front fact. Its latch/live
+    # behavior remains OPEN, so this layer treats it as an observation signal only;
+    # actual camp service is witnessed independently through dropsite distance.
     for resource, gatherer_sn, distance_sn, label in (
         (CampResource.WOOD, "sn-wood-gatherer-percentage", "sn-lumber-camp-max-distance", "wood"),
         (CampResource.GOLD, "sn-gold-gatherer-percentage", "sn-mining-camp-max-distance", "gold"),
@@ -550,6 +553,10 @@ def community_strategy_demands(
         )
         for floor in range(1, max_count + 1):
             count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
+            service_witness = (
+                f"(and (building-type-count {_slug(building.name)} >= {floor}) "
+                f"(dropsite-min-distance {label} s:<= {distance_sn}))"
+            )
             requirements = [
                 active_expression,
                 count_guard,
@@ -560,11 +567,11 @@ def community_strategy_demands(
                     active_expression,
                     remote_expression,
                     count_guard,
-                    f"(can-build {building.name})",
+                    f"(can-build {_slug(building.name)})",
                 ]
             building_token = _slug(building.name)
             action = f"(build {building_token})"
-            witness = f"(building-type-count {building_token} >= {floor})"
+            witness = service_witness
             demands.append(
                 _StrategicDemandSpec(
                     identity=f"economy-{label}-camp-floor-{floor}",
