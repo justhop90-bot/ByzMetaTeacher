@@ -58,6 +58,17 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(build mill)", block)
         self.assertIn("(up-pending-placement c: 68)", block)
 
+    def test_fast_castle_defers_eco_research_until_castle(self):
+        for marker in (
+            "; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED",
+            "; Action issuance: research-double-bit-axe | ACTIVE -> ISSUED",
+            "; Action issuance: research-horse-collar | ACTIVE -> ISSUED",
+            "; Action issuance: research-gold-mining | ACTIVE -> ISSUED",
+        ):
+            block = self._rule_block(marker)
+            self.assertIn("(current-age >= castle-age)", block)
+            self.assertNotIn("(current-age >= feudal-age)", block)
+
 
 if __name__ == "__main__":
     unittest.main()
