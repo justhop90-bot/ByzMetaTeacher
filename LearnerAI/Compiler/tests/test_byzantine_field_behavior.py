@@ -118,8 +118,8 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
 
     def test_blocked_camp_placement_enters_pending_instead_of_reissuing(self):
         lumber = self._section_from(
-            "; economy-lumber-camp-floor-1",
-            "; economy-lumber-camp-floor-2",
+            "; Pending diagnostics: economy-lumber-camp-floor-1",
+            "; Pending diagnostics: economy-lumber-camp-floor-2",
         )
         gold_start = self.per.index("; economy-gold-camp-floor-1")
         gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
