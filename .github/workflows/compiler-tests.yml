@@ -89,6 +89,27 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
+      - name: Audit checked-in Byzantine.per with parser 0.1.82 source
+        shell: bash
+        run: |
+          set +e
+          git clone --depth 1 https://github.com/joerollman/aoe2-ai-parser.git /tmp/aoe2-ai-parser-0.1.82
+          PYTHONPATH=/tmp/aoe2-ai-parser-0.1.82/lab/src python -m aoe2_ai_lab lint Byzantine.per --json > /tmp/native-reports/byzantine-parser-0.1.82.json
+          parser_rc=$?
+          echo "parser_exit=${parser_rc}"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('/tmp/native-reports/byzantine-parser-0.1.82.json')
+          d = json.loads(p.read_text())
+          print(f"parser_0.1.82 finding_count={d.get('finding_count')} failed={d.get('failed')}")
+          by_code = {}
+          for f in d.get('findings', []):
+              by_code.setdefault(f['code'], []).append(f['line'])
+          for code, lines in sorted(by_code.items()):
+              print(code, lines[:20], '...' if len(lines) > 20 else '')
+          PY
+          exit 0
       - name: Native zero-findings acceptance - checked-in Byzantine.per
         run: python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/native-reports/byzantine-checked-in.json
       - name: Verify generic compiler fixture reproducibility
