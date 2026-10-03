@@ -86,6 +86,7 @@ jobs:
         shell: bash
         run: |
           set +e
+          mkdir -p /tmp/native-reports
           git clone --depth 1 https://github.com/joerollman/aoe2-ai-parser.git /tmp/aoe2-ai-parser-0.1.82
           PYTHONPATH=/tmp/aoe2-ai-parser-0.1.82/lab/src python -m aoe2_ai_lab lint Byzantine.per --json > /tmp/native-reports/byzantine-parser-0.1.82.json
           parser_rc=$?
