@@ -20,6 +20,8 @@
 (defconst 906 906)
 (defconst arbalest 237)
 (defconst atonement 319)
+(defconst redemption 316)
+(defconst illumination 233)
 (defconst block-printing 230)
 (defconst bodkin-arrow 200)
 (defconst bow-saw 203)
@@ -564,6 +566,16 @@
 (defconst pending-research-theocracy 121)
 (defconst complete-research-theocracy 122)
 (defconst research-retry-barrier-research-theocracy 248)
+(defconst demand-research-redemption 1007)
+(defconst issued-research-redemption 1010)
+(defconst pending-research-redemption 1008)
+(defconst complete-research-redemption 1009)
+(defconst research-retry-barrier-research-redemption 1011)
+(defconst demand-research-illumination 1012)
+(defconst issued-research-illumination 1015)
+(defconst pending-research-illumination 1013)
+(defconst complete-research-illumination 1014)
+(defconst research-retry-barrier-research-illumination 1016)
 (defconst demand-castle-cataphract-floor 47)
 (defconst issued-castle-cataphract-floor 50)
 (defconst pending-castle-cataphract-floor 48)
@@ -833,6 +845,24 @@
 (defconst byzantine-food-recovery-idle 0)
 (defconst byzantine-food-recovery-active 1)
 (defconst bt-byzantine-food-recovery-seconds 30)
+
+; Monk defensive controller. It turns the Byzantine healing bonus into a
+; persistent defensive capability without creating a second army scheduler.
+(defconst byzantine-monk-defense-state 1001)
+(defconst byzantine-monk-defense-idle 0)
+(defconst byzantine-monk-defense-active 1)
+(defconst byzantine-monk-defense-heal-timer 16)
+(defconst byzantine-monk-defense-convert-timer 17)
+(defconst bt-byzantine-monk-defense-heal-seconds 30)
+(defconst bt-byzantine-monk-defense-convert-seconds 20)
+
+; Conditional defensive Monk floor: 4 total only while a real defensive/siege
+; pressure condition exists. Baseline Monk floor remains 2 from Castle onward.
+(defconst demand-castle-monk-defense-floor 1002)
+(defconst issued-castle-monk-defense-floor 1005)
+(defconst pending-castle-monk-defense-floor 1003)
+(defconst complete-castle-monk-defense-floor 1004)
+(defconst production-retry-barrier-castle-monk-defense-floor 1006)
 
 ; -----------------------------------------------------------------------------
 ; NATIVE STATIC-DEFENSE CHOKE / RESOURCE SCORER
@@ -1378,6 +1408,9 @@
 =>
     (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
     (disable-timer byzantine-relic-control-timer)
+    (set-goal byzantine-monk-defense-state byzantine-monk-defense-idle)
+    (disable-timer byzantine-monk-defense-heal-timer)
+    (disable-timer byzantine-monk-defense-convert-timer)
 )
 
 ; Acquisition: two monks are a deliberately small escort package. The search
@@ -1437,8 +1470,243 @@
 )
 
 
+
+; -----------------------------------------------------------------------------
+; BYZANTINE MONK DEFENSE / CONVERSION CONTROL
+; Community doctrine: keep a small Castle-age Monk core, grow it under real
+; defensive/siege pressure, keep it on the defensive anchor, and use Redemption
+; against high-value siege/cavalry rather than wandering Monks around the map.
+; -----------------------------------------------------------------------------
+
+; Defensive Monk state activation.
+(defrule
+    (goal byzantine-monk-defense-state byzantine-monk-defense-idle)
+    (current-age >= castle-age)
+    (building-type-count-total monastery >= 1)
+    (or
+        (town-under-attack)
+        (or
+            (goal byzantine-frontier-state byzantine-frontier-state-anchored)
+            (or
+                (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+                (or
+                    (goal byzantine-frontier-state byzantine-frontier-state-protected)
+                    (players-unit-type-count any-enemy mangonel-line >= 2)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (disable-timer byzantine-monk-defense-heal-timer)
+    (disable-timer byzantine-monk-defense-convert-timer)
+    (enable-timer byzantine-monk-defense-heal-timer bt-byzantine-monk-defense-heal-seconds)
+    (enable-timer byzantine-monk-defense-convert-timer bt-byzantine-monk-defense-convert-seconds)
+)
+
+; Drop the defensive Monk package when the pressure witness disappears.
+(defrule
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (not
+        (or
+            (town-under-attack)
+            (or
+                (goal byzantine-frontier-state byzantine-frontier-state-anchored)
+                (or
+                    (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+                    (or
+                        (goal byzantine-frontier-state byzantine-frontier-state-protected)
+                        (players-unit-type-count any-enemy mangonel-line >= 2)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-monk-defense-state byzantine-monk-defense-idle)
+    (disable-timer byzantine-monk-defense-heal-timer)
+    (disable-timer byzantine-monk-defense-convert-timer)
+)
+
+; Conditional four-Monk floor. The existing Castle Monk lifecycle owns the
+; actual train command and this package reuses the same train arbitration mutex.
+(defrule
+    (goal demand-castle-monk-defense-floor 0)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk < bt-byzantine-defense-monk-floor)
+=>
+    (set-goal demand-castle-monk-defense-floor 1)
+)
+
+; Invalidate unfinished defensive Monk production when the defense witness ends.
+(defrule
+    (or
+        (goal demand-castle-monk-defense-floor 1)
+        (or
+            (goal demand-castle-monk-defense-floor 55)
+            (goal demand-castle-monk-defense-floor 53)
+        )
+    )
+    (goal byzantine-monk-defense-state byzantine-monk-defense-idle)
+=>
+    (set-goal demand-castle-monk-defense-floor 0)
+)
+
+; Monk healing posture: move the local Monk group to the live frontier anchor.
+; Monks heal automatically once stationary; the Byzantine team bonus doubles
+; their healing speed. This rule is cadence-limited so it does not spam pathing.
+(defrule
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (up-compare-goal byzantine-frontier-anchor-point > 0)
+    (unit-type-count-total monk >= 2)
+    (or
+        (up-timer-status byzantine-monk-defense-heal-timer c:== timer-disabled)
+        (up-timer-status byzantine-monk-defense-heal-timer c:== timer-triggered)
+    )
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-frontier-anchor-point)
+    (up-filter-distance c: -1 c: 16)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: all-units-class c: 12)
+    (up-target-point 0 action-move -1 stance-defensive)
+    (disable-timer byzantine-monk-defense-heal-timer)
+    (enable-timer byzantine-monk-defense-heal-timer bt-byzantine-monk-defense-heal-seconds)
+)
+
+; Fallback healing posture: if the frontier has no anchor yet, stage Monks at
+; the actual Town Center rather than inventing a synthetic target point.
+(defrule
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (up-compare-goal byzantine-frontier-anchor-point == 0)
+    (unit-type-count-total monk >= 2)
+    (or
+        (up-timer-status byzantine-monk-defense-heal-timer c:== timer-disabled)
+        (up-timer-status byzantine-monk-defense-heal-timer c:== timer-triggered)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-army-reposition-point)
+    (up-set-target-point byzantine-army-reposition-point)
+    (up-filter-distance c: -1 c: 12)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: all-units-class c: 12)
+    (up-target-point 0 action-move -1 stance-defensive)
+    (disable-timer byzantine-monk-defense-heal-timer)
+    (enable-timer byzantine-monk-defense-heal-timer bt-byzantine-monk-defense-heal-seconds)
+)
+
+; Direct conversion is deliberately narrow. Only visible high-value enemy units
+; are placed in the remote target list, while only nearby Monks are selected.
+; action-default is native right-click behavior; with Redemption researched it
+; permits the Monk to convert the selected siege/cavalry target.
+(defrule
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (research-completed redemption)
+    (unit-type-count-total monk >= 2)
+    (up-compare-goal byzantine-frontier-anchor-point > 0)
+    (or
+        (players-unit-type-count any-enemy mangonel-line >= 1)
+        (or
+            (players-unit-type-count any-enemy bombard-cannon >= 1)
+            (players-unit-type-count any-enemy cavalier-line >= 1)
+        )
+    )
+    (or
+        (up-timer-status byzantine-monk-defense-convert-timer c:== timer-disabled)
+        (up-timer-status byzantine-monk-defense-convert-timer c:== timer-triggered)
+    )
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-frontier-anchor-point)
+    (up-filter-distance c: -1 c: 12)
+    (up-find-remote c: bombard-cannon c: 2)
+    (up-find-remote c: mangonel-line c: 2)
+    (up-find-remote c: cavalier-line c: 2)
+    (up-find-remote c: knight-line c: 2)
+    (up-find-local c: all-units-class c: 4)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-target-objects 0 action-default -1 stance-aggressive)
+    (disable-timer byzantine-monk-defense-convert-timer)
+    (enable-timer byzantine-monk-defense-convert-timer bt-byzantine-monk-defense-convert-seconds)
+)
+
+; Monk-specific research arbitration is demand-driven rather than a blanket
+; Imperial/Castle checklist.
+(defrule
+    (goal demand-research-redemption 0)
+    (current-age >= castle-age)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk >= 2)
+    (not (research-completed redemption))
+    (or
+        (players-unit-type-count any-enemy mangonel-line >= 2)
+        (or
+            (players-unit-type-count any-enemy bombard-cannon >= 1)
+            (town-under-attack)
+        )
+    )
+=>
+    (set-goal demand-research-redemption 1)
+)
+
+(defrule
+    (goal demand-research-atonement 0)
+    (current-age >= castle-age)
+    (unit-type-count-total monk >= 2)
+    (players-unit-type-count any-enemy monk >= 2)
+    (not (research-completed atonement))
+=>
+    (set-goal demand-research-atonement 1)
+)
+
+(defrule
+    (goal demand-research-theocracy 0)
+    (current-age >= imperial-age)
+    (unit-type-count-total monk >= 4)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (research-completed redemption)
+    (not (research-completed theocracy))
+=>
+    (set-goal demand-research-theocracy 1)
+)
+
+(defrule
+    (goal demand-research-block-printing 0)
+    (current-age >= imperial-age)
+    (unit-type-count-total monk >= 4)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (research-completed redemption)
+    (or
+        (players-unit-type-count any-enemy mangonel-line >= 1)
+        (or
+            (players-unit-type-count any-enemy bombard-cannon >= 1)
+            (town-under-attack)
+        )
+    )
+    (not (research-completed block-printing))
+=>
+    (set-goal demand-research-block-printing 1)
+)
+
+(defrule
+    (goal demand-research-illumination 0)
+    (current-age >= imperial-age)
+    (unit-type-count-total monk >= 4)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (research-completed redemption)
+    (research-completed theocracy)
+    (not (research-completed illumination))
+=>
+    (set-goal demand-research-illumination 1)
+)
+
 ; -----------------------------------------------------------------------------
 ; DEFENSIVE GEOMETRY OBSERVATION / PAIR ARBITRATION
+
 ; Existing demand-adaptive-stone-wall remains the strategic owner.
 ; Geometry persists the selected anchor pair and reuses it after wall loss while
 ; both anchors survive. A destroyed anchor invalidates only that pair.
@@ -4057,7 +4325,8 @@
 (defconst bt-castle-varangian-floor 3)
 (defconst bt-castle-skirmisher-floor 4)
 (defconst bt-castle-mangonel-floor 2)
-(defconst bt-castle-monk-floor 1)
+(defconst bt-castle-monk-floor 2)
+(defconst bt-byzantine-defense-monk-floor 4)
 (defconst bt-imperial-cavalier-target 2)
 (defconst bt-imperial-hussar-target 4)
 (defconst bt-imperial-onager-target 2)
@@ -9578,9 +9847,12 @@
 (defrule
     (true)
 =>
-    (set-goal demand-research-atonement 1)
-    (set-goal demand-research-block-printing 1)
-    (set-goal demand-research-theocracy 1)
+    (set-goal demand-research-atonement 0)
+    (set-goal demand-research-block-printing 0)
+    (set-goal demand-research-theocracy 0)
+    (set-goal demand-research-redemption 0)
+    (set-goal demand-research-illumination 0)
+    (set-goal demand-castle-monk-defense-floor 0)
     (set-goal demand-castle-cataphract-floor 1)
     (set-goal demand-castle-varangian-guard-floor 1)
     (set-goal demand-castle-mangonel-floor 1)
@@ -20037,6 +20309,145 @@
     (set-goal demand-research-theocracy 123)
 )
 
+
+; Pending diagnostics: research-redemption
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1 and cannot reissue from pending goal 1008
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1008 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1009 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-redemption | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-redemption in ACTIVE; it is not PENDING.
+; Release: research-redemption | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-redemption 1009)
+    (research-completed redemption)
+=>
+    (set-goal demand-research-redemption 0)
+)
+
+; Completion witness: research-redemption | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-redemption 1010)
+        (goal demand-research-redemption 1008)
+    )
+    (research-completed redemption)
+=>
+    (set-goal demand-research-redemption 1009)
+)
+
+; Pending admission: research-redemption | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-redemption 1010)
+        (goal demand-research-redemption 1008)
+    )
+    (not (research-completed redemption))
+    (up-research-status c: redemption >= 2)
+=>
+    (set-goal demand-research-redemption 1008)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-redemption 1010)
+        (goal demand-research-redemption 1008)
+    )
+    (not (research-completed redemption))
+    (not (up-research-status c: redemption >= 2))
+=>
+    (set-goal demand-research-redemption 1)
+    (set-goal research-retry-barrier-research-redemption 1)
+)
+
+; Action issuance: research-redemption | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-redemption 1)
+    (not (research-completed redemption))
+    (goal research-retry-barrier-research-redemption 0)
+    (not (up-research-status c: redemption >= 2))
+    (current-age >= castle-age)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk >= 2)
+    (can-research-with-escrow redemption)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research redemption)
+    (set-goal demand-research-redemption 1010)
+)
+
+; Pending diagnostics: research-illumination
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1 and cannot reissue from pending goal 1013
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1013 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1014 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-illumination | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-illumination in ACTIVE; it is not PENDING.
+; Release: research-illumination | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-illumination 1014)
+    (research-completed illumination)
+=>
+    (set-goal demand-research-illumination 0)
+)
+
+; Completion witness: research-illumination | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-illumination 1015)
+        (goal demand-research-illumination 1013)
+    )
+    (research-completed illumination)
+=>
+    (set-goal demand-research-illumination 1014)
+)
+
+; Pending admission: research-illumination | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-illumination 1015)
+        (goal demand-research-illumination 1013)
+    )
+    (not (research-completed illumination))
+    (up-research-status c: illumination >= 2)
+=>
+    (set-goal demand-research-illumination 1013)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-illumination 1015)
+        (goal demand-research-illumination 1013)
+    )
+    (not (research-completed illumination))
+    (not (up-research-status c: illumination >= 2))
+=>
+    (set-goal demand-research-illumination 1)
+    (set-goal research-retry-barrier-research-illumination 1)
+)
+
+; Action issuance: research-illumination | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-illumination 1)
+    (not (research-completed illumination))
+    (goal research-retry-barrier-research-illumination 0)
+    (not (up-research-status c: illumination >= 2))
+    (current-age >= imperial-age)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk >= 4)
+    (can-research-with-escrow illumination)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research illumination)
+    (set-goal demand-research-illumination 1015)
+)
+
 ; Pending diagnostics: castle-cataphract-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 47 and cannot reissue from pending goal 48
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 48 is active
@@ -20506,6 +20917,86 @@
     (train monk)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-castle-monk-floor 55)
+)
+
+
+; Pending diagnostics: castle-monk-defense-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1 and cannot reissue from pending goal 1003
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1003 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1004 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-monk-defense-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-monk-defense-floor in ACTIVE; it is not PENDING.
+; Release: castle-monk-defense-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-monk-defense-floor 1004)
+    (unit-type-count monk >= bt-byzantine-defense-monk-floor)
+=>
+    (set-goal demand-castle-monk-defense-floor 0)
+)
+
+; Recovery: castle-monk-defense-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-castle-monk-defense-floor 0)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (not (unit-type-count monk >= bt-byzantine-defense-monk-floor))
+    (building-type-count-total monastery >= 1)
+=>
+    (set-goal demand-castle-monk-defense-floor 1)
+)
+
+; Completion witness: castle-monk-defense-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-monk-defense-floor 1005)
+        (goal demand-castle-monk-defense-floor 1003)
+    )
+    (unit-type-count monk >= bt-byzantine-defense-monk-floor)
+=>
+    (set-goal demand-castle-monk-defense-floor 1004)
+)
+
+; Pending admission: castle-monk-defense-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-monk-defense-floor 1005)
+        (goal demand-castle-monk-defense-floor 1003)
+    )
+    (not (unit-type-count monk >= bt-byzantine-defense-monk-floor))
+    (up-pending-objects c: 125 >= 1)
+=>
+    (set-goal demand-castle-monk-defense-floor 1003)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-monk-defense-floor 1005)
+        (goal demand-castle-monk-defense-floor 1003)
+    )
+    (not (unit-type-count monk >= bt-byzantine-defense-monk-floor))
+    (not (up-pending-objects c: 125 >= 1))
+=>
+    (set-goal demand-castle-monk-defense-floor 1)
+    (set-goal production-retry-barrier-castle-monk-defense-floor 1)
+)
+
+; Action issuance: castle-monk-defense-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-monk-defense-floor 1)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (goal production-retry-barrier-castle-monk-defense-floor 0)
+    (not (up-pending-objects c: 125 >= 1))
+    (not (unit-type-count monk >= bt-byzantine-defense-monk-floor))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= castle-age)
+    (can-train-with-escrow monk)
+    (unit-type-count-total monk < bt-byzantine-defense-monk-floor)
+=>
+    (train monk)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-monk-defense-floor 1005)
 )
 
 ; Pending diagnostics: imperial-cavalier-floor
