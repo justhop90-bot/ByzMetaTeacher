@@ -109,7 +109,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(goal opening-plan -1)", output)
         self.assertIn("opening-selector-defensive-standard-arabia", output)
         self.assertNotIn("(map-type hybrid)", output)
-        self.assertNotIn("opening-selector-defensive-standard", output)
         self.assertIn("(set-goal opening-plan 5)", output)
         self.assertIn("(set-goal opening-plan 4)", output)
         self.assertIn("(set-goal opening-plan 3)", output)
