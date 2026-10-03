@@ -78,6 +78,7 @@ def default_byzantine_economy_controller() -> EconomyControllerPlan:
             EconomyModePolicy(EconomyMode.WATER_CONTROL, EconomyAllocation(38, 42, 20, 8)),
             EconomyModePolicy(EconomyMode.CASTLE_CONVERSION, EconomyAllocation(45, 25, 30, 7)),
             EconomyModePolicy(EconomyMode.IMPERIAL_CONVERSION, EconomyAllocation(40, 25, 35, 7)),
+            EconomyModePolicy(EconomyMode.FAST_IMPERIAL, EconomyAllocation(42, 20, 38, 7)),
         ),
     )
 
