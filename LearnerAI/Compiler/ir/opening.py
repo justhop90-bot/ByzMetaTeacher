@@ -73,7 +73,6 @@ def lower_opening_selector(
     arena_default = map_defaults.get("ARENA", "FAST_CASTLE")
     arabia_default = map_defaults.get("ARABIA", "DEFENSIVE_STANDARD")
     standard_land_default = map_defaults.get("STANDARD_LAND", "FAST_CASTLE")
-    hybrid_default = map_defaults.get("HYBRID", "DEFENSIVE_STANDARD")
 
     state = NativeControlState(
         plan.state_name,
@@ -125,24 +124,6 @@ def lower_opening_selector(
                 facts=(
                     parse_expression(
                         guard(f"(and {arabia} (not {pressure}))"),
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
-                        SourceLocation(1),
-                    ),
-                ),
-            )
-        )
-    if hybrid_default == OpeningFamily.DEFENSIVE_STANDARD.value:
-        rules.append(
-            NativeControlRule(
-                "opening-selector-defensive-standard",
-                facts=(
-                    parse_expression(
-                        guard(f"(and (map-type hybrid) (not {pressure}))"),
                         SourceLocation(1),
                     ),
                 ),
