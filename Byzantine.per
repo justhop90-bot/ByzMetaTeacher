@@ -14593,6 +14593,7 @@
 ; Castle-reserve floor is satisfied. The wall demand is still threat-driven.
 (defrule
     (goal demand-adaptive-stone-wall 0)
+    (not (building-type-count 117 >= 1))
     (current-age >= castle-age)
     (or
         (players-unit-type-count any-enemy knight >= 3)
