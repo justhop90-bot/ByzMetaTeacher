@@ -114,8 +114,8 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             self.per.index("; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION"):
             self.per.index("; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL")
         ]
-        self.assertNotIn("(build lumber-camp)", camp_actions)
-        self.assertNotIn("(build mining-camp)", camp_actions)
+        self.assertNotIn("(build lumber-camp)", self.per)
+        self.assertNotIn("(build mining-camp)", self.per)
 
     def test_fortified_castle_transitions_into_targeted_siege_push(self):
         self.assertIn(
