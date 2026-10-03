@@ -75,6 +75,12 @@
 (defconst villager-class 904)
 (defconst object-data-id 0)
 (defconst object-data-dropsite 14)
+(defconst object-data-distance 44)
+(defconst object-data-index -1)
+(defconst search-order-asc 1)
+(defconst tree-class 915)
+(defconst gold-mine-class 932)
+(defconst stone-mine-class 908)
 (defconst ri-man-at-arms 222)
 (defconst sn-intelligent-gathering 142)
 (defconst sn-retask-gather-amount 148)
@@ -6621,39 +6627,7 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
-    (not
-        (or
-            (goal demand-economy-lumber-camp-floor-1 1)
-            (or
-                (goal demand-economy-lumber-camp-floor-2 1)
-                (or
-                    (goal demand-economy-wood-camp-floor-3 1)
-                    (or
-                        (goal demand-economy-wood-camp-floor-4 1)
-                        (or
-                            (goal demand-economy-wood-camp-floor-5 1)
-                            (goal demand-economy-wood-camp-floor-6 1)
-                        )
-                    )
-                )
-            )
-        )
-    )
-    (not
-        (or
-            (goal demand-economy-gold-camp-floor-1 1)
-            (or
-                (goal demand-economy-gold-camp-floor-2 1)
-                (or
-                    (goal demand-economy-gold-camp-floor-3 1)
-                    (or
-                        (goal demand-economy-gold-camp-floor-4 1)
-                        (goal demand-economy-gold-camp-floor-5 1)
-                    )
-                )
-            )
-        )
-    )
+    (not (town-under-attack))
     (or
         (goal demand-economy-stone-camp-floor-1 1)
         (or
