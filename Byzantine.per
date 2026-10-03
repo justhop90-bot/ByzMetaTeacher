@@ -1167,7 +1167,7 @@
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
-    (goal byzantine-wall-anchor-pair > 0)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
         (up-point-distance byzantine-wall-resource-point byzantine-wall-tc-point <= 16)
         (or
@@ -15165,7 +15165,7 @@
 (defrule
     (goal byzantine-frontier-state byzantine-frontier-state-idle)
     (current-age >= castle-age)
-    (goal byzantine-frontier-generation < 2)
+    (up-compare-goal byzantine-frontier-generation < 2)
     (not (town-under-attack))
     (not (goal under-attack yes))
     (or
@@ -15476,7 +15476,7 @@
 
 (defrule
     (goal byzantine-frontier-state byzantine-frontier-state-protected)
-    (goal byzantine-frontier-generation < 2)
+    (up-compare-goal byzantine-frontier-generation < 2)
     (not (town-under-attack))
     (or
         (goal strategic-primary-intent 3)
@@ -16855,7 +16855,7 @@
 (defrule
     (goal demand-adaptive-stone-wall 0)
     (goal demand-adaptive-resource-palisade 0)
-    (goal byzantine-wall-material != byzantine-wall-material-none)
+    (up-compare-goal byzantine-wall-material != byzantine-wall-material-none)
 =>
     (set-goal byzantine-wall-material byzantine-wall-material-none)
     (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)

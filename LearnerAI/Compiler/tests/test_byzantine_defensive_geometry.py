@@ -137,6 +137,20 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_goal_comparisons_use_up_compare_goal(self):
+        # `goal` is exact equality only. Comparator forms belong to
+        # `up-compare-goal`; letting `(goal G > 0)` through produces a native
+        # parser failure that can misleadingly surface on the operator line.
+        invalid = re.findall(
+            r"\\(goal\\s+[^\\s()]+\\s+(?:==|!=|<=|>=|<|>)\\s+[^()]+\\)",
+            self.per,
+        )
+        self.assertEqual(
+            invalid,
+            [],
+            f"goal comparator facts must use up-compare-goal: {invalid}",
+        )
+
     def test_keep_and_bombard_build_only_through_scored_geometry(self):
         self.assertIn(
             "(goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)",
