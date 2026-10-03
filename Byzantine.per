@@ -4325,8 +4325,8 @@
 (defconst bt-castle-varangian-floor 3)
 (defconst bt-castle-skirmisher-floor 4)
 (defconst bt-castle-mangonel-floor 2)
-(defconst bt-castle-monk-floor 2)
-(defconst bt-byzantine-defense-monk-floor 4)
+(defconst bt-castle-monk-floor 4)
+(defconst bt-byzantine-defense-monk-floor 6)
 (defconst bt-imperial-cavalier-target 2)
 (defconst bt-imperial-hussar-target 4)
 (defconst bt-imperial-onager-target 2)
@@ -20571,11 +20571,12 @@
 )
 
 ; Recovery: castle-varangian-guard-floor | RELEASED -> ACTIVE on world-state loss
+; Recovery is symmetric with Castle issuance: only re-arm the
+; Varangian demand while the mounted-pressure witness is still live.
 (defrule
     (goal demand-castle-varangian-guard-floor 0)
     (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
-    (players-unit-type-count any-enemy militia-line >= 5)
-    (not (players-unit-type-count any-enemy militia-line < 5))
+    (players-unit-type-count any-enemy knight >= 3)
 =>
     (set-goal demand-castle-varangian-guard-floor 1)
 )
