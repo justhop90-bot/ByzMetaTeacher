@@ -101,7 +101,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
 
     def test_resource_camp_searches_an_eight_point_legal_candidate_ring_before_execution(self):
         ring = self._section_from(
-            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
+            "; A nearest resource already covered by an existing dropsite is not viable.",
             "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
         )
         for pair, x, y in (
