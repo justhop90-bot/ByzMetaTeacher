@@ -24,8 +24,14 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         end = self.per.index(end_marker, start)
         return self.per[start:end]
 
-    def test_safe_land_opening_selects_fast_castle(self):
-        block = self._rule_block("; Native control rule: opening-selector-defensive-standard")
+    def test_safe_arabia_opening_selects_defensive_standard(self):
+        block = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
+        self.assertIn("(map-type arabia)", block)
+        self.assertIn("(set-goal opening-plan 1)", block)
+
+    def test_arena_opening_selects_fast_castle(self):
+        block = self._rule_block("; Native control rule: opening-selector-fast-castle")
+        self.assertIn("(map-type arena)", block)
         self.assertIn("(set-goal opening-plan 3)", block)
 
     def test_dark_age_does_not_spend_on_barracks_or_farms(self):
@@ -69,16 +75,19 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(build mill)", block)
         self.assertIn("(up-pending-placement c: 68)", block)
 
-    def test_fast_castle_defers_eco_research_until_castle(self):
-        for marker in (
-            "; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED",
-            "; Action issuance: research-double-bit-axe | ACTIVE -> ISSUED",
-            "; Action issuance: research-horse-collar | ACTIVE -> ISSUED",
-            "; Action issuance: research-gold-mining | ACTIVE -> ISSUED",
-        ):
-            block = self._rule_block(marker)
-            self.assertIn("(current-age >= castle-age)", block)
-            self.assertNotIn("(current-age >= feudal-age)", block)
+    def test_feudal_eco_research_uses_feudal_guard_and_castle_bank_floor(self):
+        expected = {
+            "double-bit-axe": ("900", "250"),
+            "horse-collar": ("900", "250"),
+            "wheelbarrow": ("1000", "250"),
+            "gold-mining": ("900", "250"),
+        }
+        for tech, (food_floor, gold_floor) in expected.items():
+            block = self._rule_block(f"; Action issuance: research-{tech} | ACTIVE -> ISSUED")
+            self.assertIn("(current-age >= feudal-age)", block)
+            self.assertNotIn("(current-age >= castle-age)", block)
+            self.assertIn(f"(food-amount >= {food_floor})", block)
+            self.assertIn(f"(gold-amount >= {gold_floor})", block)
 
 
 if __name__ == "__main__":
