@@ -8825,9 +8825,13 @@
             )
             (or
                 (unit-type-count-total trebuchet >= 1)
-                (unit-type-count-total bombard-cannon >= 1)
-                (unit-type-count-total battering-ram-line >= 1)
-                (unit-type-count-total mangonel-line >= 2)
+                (or
+                    (unit-type-count-total bombard-cannon >= 1)
+                    (or
+                        (unit-type-count-total battering-ram-line >= 1)
+                        (unit-type-count-total mangonel-line >= 2)
+                    )
+                )
             )
         )
     )
