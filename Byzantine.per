@@ -125,6 +125,8 @@
 (defconst byzantine-natural-food-deer-distance 736)
 (defconst byzantine-natural-food-deer-home-point 738)
 (defconst byzantine-natural-food-deer-point 740)
+(defconst byzantine-natural-food-selector-forage 742)
+(defconst byzantine-natural-food-selector-deer 743)
 (defconst sn-stone-gatherer-percentage 119)
 (defconst sn-defer-dropsite-update 273)
 (defconst sn-allow-adjacent-dropsites 272)
@@ -5703,11 +5705,11 @@
     (up-full-reset-search)
     (up-filter-distance c: -1 c: 16)
     (up-find-resource c: forage-bush-class c: 16)
-    (set-goal demand-economy-food-mill-feudal-berries 704)
+    (set-goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-forage)
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries 704)
+    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-forage)
     (up-set-target-object search-remote c: 0)
 =>
     (set-strategic-number sn-preferred-mill-placement 0)
@@ -5715,17 +5717,17 @@
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries 704)
+    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-forage)
     (not (up-set-target-object search-remote c: 0))
 =>
     (up-full-reset-search)
     (up-filter-distance c: -1 c: 16)
     (up-find-resource c: deer-class c: 16)
-    (set-goal demand-economy-food-mill-feudal-berries 705)
+    (set-goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-deer)
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries 705)
+    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-deer)
     (up-set-target-object search-remote c: 0)
 =>
     (set-strategic-number sn-preferred-mill-placement 1)
@@ -5733,7 +5735,7 @@
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries 705)
+    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-deer)
     (not (up-set-target-object search-remote c: 0))
 =>
     (set-goal demand-economy-food-mill-feudal-berries 1)
