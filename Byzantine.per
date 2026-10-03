@@ -54,6 +54,8 @@
 (defconst guard-tower 234)
 (defconst watch-tower 79)
 (defconst outpost 598)
+(defconst all-units-class -1)
+(defconst sn-placement-zone-size 268)
 (defconst scout-cavalry-line 448)
 (defconst lumber-camp 562)
 (defconst mining-camp 584)
@@ -9192,18 +9194,7 @@
     (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)
     (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
     (set-goal byzantine-wall-anchor-pair 0)
-    (set-goal byzantine-frontier-state byzantine-frontier-state-idle)
-    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
-    (set-goal byzantine-frontier-target-point 0)
-    (set-goal byzantine-frontier-home-point 0)
-    (set-goal byzantine-frontier-anchor-point 0)
-    (set-goal byzantine-frontier-generation 0)
-    (set-goal byzantine-frontier-anchor-type 0)
-    (set-goal byzantine-frontier-wall-witness-point 0)
-    (set-goal byzantine-army-reposition-state byzantine-army-reposition-idle)
-    (set-goal byzantine-army-reposition-point 0)
     (disable-timer byzantine-wall-geometry-timer)
-    (disable-timer byzantine-army-reposition-timer)
     (set-goal byzantine-food-recovery-state byzantine-food-recovery-idle)
     (disable-timer byzantine-food-recovery-timer)
     (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
@@ -9215,6 +9206,23 @@
     (set-goal demand-research-double-bit-axe 1)
     (set-goal demand-research-horse-collar 1)
     (set-goal demand-research-hand-cart 1)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal byzantine-frontier-state byzantine-frontier-state-idle)
+    (set-goal byzantine-frontier-target-kind byzantine-frontier-target-none)
+    (set-goal byzantine-frontier-target-point 0)
+    (set-goal byzantine-frontier-home-point 0)
+    (set-goal byzantine-frontier-anchor-point 0)
+    (set-goal byzantine-frontier-generation 0)
+    (set-goal byzantine-frontier-anchor-type 0)
+    (set-goal byzantine-frontier-wall-witness-point 0)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+    (set-goal byzantine-army-reposition-point 0)
+    (disable-timer byzantine-army-reposition-timer)
     (disable-self)
 )
 
@@ -14812,8 +14820,10 @@
     (not
         (or
             (up-point-contains byzantine-frontier-anchor-point c: guard-tower)
-            (up-point-contains byzantine-frontier-anchor-point c: 234)
-            (up-point-contains byzantine-frontier-anchor-point c: watch-tower)
+            (or
+                (up-point-contains byzantine-frontier-anchor-point c: 234)
+                (up-point-contains byzantine-frontier-anchor-point c: watch-tower)
+            )
         )
     )
 =>
@@ -14886,13 +14896,15 @@
     (building-type-count university >= 1)
     (or
         (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
-        (and
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
-            (building-type-count 117 >= 2)
-        )
-        (and
-            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
-            (gate-count byzantine-wall-native-perimeter >= 1)
+        (or
+            (and
+                (up-compare-goal byzantine-wall-anchor-pair > 0)
+                (building-type-count 117 >= 2)
+            )
+            (and
+                (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+                (gate-count byzantine-wall-native-perimeter >= 1)
+            )
         )
     )
 =>
@@ -14961,9 +14973,13 @@
             (up-compare-goal byzantine-wall-anchor-pair > 0)
             (or
                 (and (building-type-count guard-tower >= 2) (building-type-count guard-tower >= 2))
-                (and (building-type-count guard-tower >= 1) (building-type-count keep >= 1))
-                (and (building-type-count guard-tower >= 1) (building-type-count bombard-tower >= 1))
-                (and (building-type-count keep >= 1) (building-type-count bombard-tower >= 1))
+                (or
+                    (and (building-type-count guard-tower >= 1) (building-type-count keep >= 1))
+                    (or
+                        (and (building-type-count guard-tower >= 1) (building-type-count bombard-tower >= 1))
+                        (and (building-type-count keep >= 1) (building-type-count bombard-tower >= 1))
+                    )
+                )
             )
         )
     )
@@ -16762,11 +16778,15 @@
     )
     (or
         (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
-        (goal byzantine-frontier-state byzantine-frontier-state-protected)
-        (building-type-count 117 >= 2)
-        (and
-            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
-            (gate-count byzantine-wall-native-perimeter >= 1)
+        (or
+            (goal byzantine-frontier-state byzantine-frontier-state-protected)
+            (or
+                (building-type-count 117 >= 2)
+                (and
+                    (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+                    (gate-count byzantine-wall-native-perimeter >= 1)
+                )
+            )
         )
     )
     (can-research-with-escrow ri-fortified-wall)
@@ -16884,29 +16904,21 @@
     (not (up-research-status c: 93 >= 2))
     (building-type-count university >= 1)
     (or
-        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
-        (or
-                (goal byzantine-university-state byzantine-university-state-tower-network)
-                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
-            )
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
     )
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
-        (and
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
-            (building-type-count guard-tower >= 1)
-        )
         (and
             (building-type-count guard-tower >= 2)
             (up-compare-goal byzantine-wall-anchor-pair > 0)
         )
         (and
             (building-type-count guard-tower >= 1)
-            (building-type-count keep >= 1)
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
-        )
-        (and
-            (building-type-count guard-tower >= 1)
-            (building-type-count bombard-tower >= 1)
+            (or
+                (building-type-count keep >= 1)
+                (building-type-count bombard-tower >= 1)
+            )
             (up-compare-goal byzantine-wall-anchor-pair > 0)
         )
     )
@@ -17034,13 +17046,15 @@
     )
     (or
         (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
-        (and
-            (up-pending-objects c: 117 >= 1)
-            (up-pending-objects c: 234 >= 1)
-        )
-        (and
-            (up-pending-objects c: 117 >= 1)
-            (up-pending-objects c: 235 >= 1)
+        (or
+            (and
+                (up-pending-objects c: 117 >= 1)
+                (up-pending-objects c: 234 >= 1)
+            )
+            (and
+                (up-pending-objects c: 117 >= 1)
+                (up-pending-objects c: 235 >= 1)
+            )
         )
     )
     (can-research-with-escrow ri-treadmill-crane)
@@ -17096,6 +17110,7 @@
     (not (up-research-status c: 608 >= 2))
     (building-type-count university >= 1)
     (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
         (and
             (building-type-count guard-tower >= 2)
@@ -17103,13 +17118,10 @@
         )
         (and
             (building-type-count guard-tower >= 1)
-            (building-type-count keep >= 1)
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
-        )
-        (and
-            (building-type-count guard-tower >= 1)
-            (building-type-count bombard-tower >= 1)
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
+            (or
+                (building-type-count keep >= 1)
+                (building-type-count bombard-tower >= 1)
+            )
         )
     )
     (can-research-with-escrow ri-arrowslits)
