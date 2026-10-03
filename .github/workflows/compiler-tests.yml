@@ -88,6 +88,8 @@ jobs:
         run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_defensive_geometry -v
       - name: Focused Byzantine playtest opening regression
         run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_playtest_opening -v
+      - name: Focused Byzantine field behavior regression
+        run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_field_behavior -v
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
