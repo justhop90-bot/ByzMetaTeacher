@@ -121,7 +121,6 @@ def _build_demand(
     release: str | None = None,
     opportunity_cost: _OpportunityCostPolicy | None = None,
     invalidate_ref: str | None = None,
-    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
@@ -246,6 +245,7 @@ def _training_demand(
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
     invalidate_ref: str | None = None,
+    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
