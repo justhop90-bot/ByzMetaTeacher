@@ -14922,17 +14922,21 @@
             (building-type-count guard-tower >= 2)
             (building-type-count guard-tower >= 2)
         )
-        (and
-            (building-type-count guard-tower >= 1)
-            (building-type-count keep >= 1)
-        )
-        (and
-            (building-type-count guard-tower >= 1)
-            (building-type-count bombard-tower >= 1)
-        )
-        (and
-            (building-type-count keep >= 1)
-            (building-type-count bombard-tower >= 1)
+        (or
+            (and
+                (building-type-count guard-tower >= 1)
+                (building-type-count keep >= 1)
+            )
+            (or
+                (and
+                    (building-type-count guard-tower >= 1)
+                    (building-type-count bombard-tower >= 1)
+                )
+                (and
+                    (building-type-count keep >= 1)
+                    (building-type-count bombard-tower >= 1)
+                )
+            )
         )
     )
 =>
@@ -14959,13 +14963,15 @@
     (building-type-count university >= 1)
     (or
         (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
-        (and
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
-            (building-type-count 117 >= 2)
-        )
-        (and
-            (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
-            (gate-count byzantine-wall-native-perimeter >= 1)
+        (or
+            (and
+                (up-compare-goal byzantine-wall-anchor-pair > 0)
+                (building-type-count 117 >= 2)
+            )
+            (and
+                (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+                (gate-count byzantine-wall-native-perimeter >= 1)
+            )
         )
     )
     (not
@@ -15026,9 +15032,13 @@
     (goal demand-research-chemistry 0)
     (or
         (goal byzantine-university-state byzantine-university-state-imperial-gunline)
-        (goal demand-imperial-bombard-floor 1)
-        (unit-type-count bombard-cannon >= 1)
-        (building-type-count bombard-tower >= 1)
+        (or
+            (goal demand-imperial-bombard-floor 1)
+            (or
+                (unit-type-count bombard-cannon >= 1)
+                (building-type-count bombard-tower >= 1)
+            )
+        )
     )
 =>
     (set-goal demand-research-chemistry 1)
@@ -16909,17 +16919,13 @@
     )
     (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
-        (and
-            (building-type-count guard-tower >= 2)
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
-        )
+        (building-type-count guard-tower >= 2)
         (and
             (building-type-count guard-tower >= 1)
             (or
                 (building-type-count keep >= 1)
                 (building-type-count bombard-tower >= 1)
             )
-            (up-compare-goal byzantine-wall-anchor-pair > 0)
         )
     )
     (can-research-with-escrow ri-ballistics)
