@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ..ast import SourceLocation
+from ..runtime_binding import StrategicNumberRequest
 from .model import SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from .strategic_number import StrategicNumberOrigin
@@ -118,7 +119,7 @@ def lower_byzantine_camp_controller(
     states = [
         NativeControlState(
             plan.adjacent_dropsites_sn,
-            __import__("LearnerAI.Compiler.runtime_binding", fromlist=["StrategicNumberRequest"]).StrategicNumberRequest(
+            StrategicNumberRequest(
                 StorageRequestId(
                     SemanticId(plan.controller_id, plan.adjacent_dropsites_sn),
                     "camp-placement-strategic-number",
