@@ -1141,6 +1141,7 @@
     (up-modify-goal byzantine-static-defense-fortified-score c:+ 120)
 )
 
+; Resource-front wins when no viable fortified anchor exists.
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (or
@@ -1150,20 +1151,48 @@
             (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
         )
     )
-    (or
-        (and
-            (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected))
-            (not (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed))
-            (up-compare-goal byzantine-wall-anchor-pair == 0)
-        )
-        (up-compare-goal byzantine-static-defense-resource-score g:>= byzantine-static-defense-fortified-score)
-    )
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
 =>
     (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)
     (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (enable-timer byzantine-static-defense-score-timer 45)
 )
 
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (or
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+        )
+    )
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (up-compare-goal byzantine-static-defense-resource-score g:>= byzantine-static-defense-fortified-score)
+=>
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
+    (enable-timer byzantine-static-defense-score-timer 45)
+)
+
+(defrule
+    (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
+    (or
+        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (or
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+        )
+    )
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (up-compare-goal byzantine-static-defense-resource-score g:>= byzantine-static-defense-fortified-score)
+=>
+    (set-goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-resource)
+    (set-goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
+    (enable-timer byzantine-static-defense-score-timer 45)
+)
+
+; Fortified front wins only on a strict score advantage.
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (or
@@ -17548,36 +17577,14 @@
     (set-goal demand-imperial-bombard-tower-floor 86)
 )
 
-; Frontier fallback: when no concrete resource point is available,
-; a fortified wall geometry can still provide a safe forward/choke placement.
+; Frontier fallback: scorer-selected fortified front owns the placement.
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (or
-        (and
-            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-one)
-            (not (building-type-count 236 >= 1))
-        )
-        (and
-            (goal byzantine-bombard-tower-target byzantine-bombard-tower-target-two)
-            (not (building-type-count 236 >= 2))
-        )
-    )
     (goal byzantine-wall-resource-state byzantine-wall-resource-state-idle)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)
-    (or
-        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
-        (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
-    )
-    (or
-        (goal byzantine-fortification-threat 1)
-        (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-    )
     (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (gold-amount >= bt-byzantine-bombard-gold-reserve)
     (up-pending-objects c: 236 == 0)
