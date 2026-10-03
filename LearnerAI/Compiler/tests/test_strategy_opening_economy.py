@@ -51,7 +51,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertEqual(
             {
-                item.identity: item.opening_family
+                item.identity: item.default_opening
                 for item in profile.map_profile
                 if item.identity in {"ARABIA", "STANDARD_LAND"}
             },
