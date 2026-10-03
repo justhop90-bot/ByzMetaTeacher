@@ -9564,6 +9564,13 @@
     (set-goal byzantine-siege-approach byzantine-siege-approach-recover)
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-siege-breach-witness 0)
+)
+
+; Recovery cleanup: clear temporary muster/group control in its own
+; native rule so package-loss recovery stays below DE's 32-element rule limit.
+(defrule
+    (goal byzantine-siege-approach byzantine-siege-approach-recover)
+=>
     (set-goal byzantine-siege-muster-state byzantine-siege-muster-idle)
     (set-goal byzantine-siege-muster-witness 0)
     (disable-timer byzantine-siege-muster-timer)
