@@ -787,6 +787,47 @@
 (defconst byzantine-food-recovery-active 1)
 (defconst bt-byzantine-food-recovery-seconds 30)
 
+; PROFESSIONAL BYZANTINE WALL CONTROL
+; Material: 0 none, 1 palisade, 2 stone.
+(defconst byzantine-wall-material 487)
+(defconst byzantine-wall-material-none 0)
+(defconst byzantine-wall-material-palisade 1)
+(defconst byzantine-wall-material-stone 2)
+
+; Gate policy: 0 local DUC / no gate, 1 native perimeter gate required.
+(defconst byzantine-wall-gate-policy 488)
+(defconst byzantine-wall-gate-none 0)
+(defconst byzantine-wall-gate-required 1)
+
+; Resource-front palisade lifecycle.
+(defconst demand-adaptive-resource-palisade 489)
+(defconst issued-adaptive-resource-palisade 490)
+(defconst pending-adaptive-resource-palisade 491)
+(defconst complete-adaptive-resource-palisade 492)
+(defconst construction-retry-barrier-adaptive-resource-palisade 493)
+(defconst byzantine-wall-resource-state 494)
+(defconst byzantine-wall-resource-idle 0)
+(defconst byzantine-wall-resource-acquire 1)
+(defconst byzantine-wall-resource-selected 2)
+(defconst byzantine-wall-resource-armed 3)
+(defconst byzantine-wall-resource-secured 4)
+(defconst byzantine-wall-resource-target 495)
+(defconst byzantine-wall-resource-target-gold 1)
+(defconst byzantine-wall-resource-target-stone 2)
+(defconst byzantine-wall-resource-target-wood 3)
+(defconst byzantine-wall-resource-point 496)
+(defconst byzantine-wall-resource-line-a 498)
+(defconst byzantine-wall-resource-line-b 500)
+(defconst byzantine-wall-resource-timer 14)
+(defconst bt-byzantine-wall-resource-seconds 30)
+
+; Native stone perimeter fallback. Local DUC geometry remains preferred.
+(defconst byzantine-wall-native-state 502)
+(defconst byzantine-wall-native-idle 0)
+(defconst byzantine-wall-native-wall-armed 1)
+(defconst byzantine-wall-native-gate-armed 2)
+(defconst byzantine-wall-native-perimeter 1)
+
 ; Native DUC execution plan
 ; Native DUC rule: byzantine-castle-target-knight
 (defrule
@@ -4385,6 +4426,11 @@
     ; 2 town center, 4 barracks, 2048 houses, 4096 towers, 8192 walls/gates,
     ; and 16384 siege. 30727 selects that defensive shell plus siege.
     (set-strategic-number sn-object-repair-level 30727)
+    ; Naga-style wall controls: target nearby walls/gates, raise the civilian builder cap,
+    ; and select palisade gates by default. Stone perimeter rules switch gate type to 0.
+    (set-strategic-number sn-wall-targeting-mode 1)
+    (set-strategic-number sn-cap-civilian-builders 200)
+    (set-strategic-number sn-gate-type-for-wall 1)
     (disable-self)
 )
 
@@ -8943,7 +8989,14 @@
     (set-goal demand-imperial-university-capability 1)
     (set-goal demand-adaptive-outpost 1)
     (set-goal demand-adaptive-watch-tower 1)
-    (set-goal demand-adaptive-stone-wall 1)
+    (set-goal demand-adaptive-stone-wall 0)
+    (set-goal demand-adaptive-resource-palisade 0)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-idle)
+    (set-goal byzantine-wall-resource-target 0)
+    (set-goal construction-retry-barrier-adaptive-resource-palisade 0)
+    (set-goal byzantine-wall-native-state byzantine-wall-native-idle)
+    (set-goal byzantine-wall-material byzantine-wall-material-none)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)
     (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
     (set-goal byzantine-wall-anchor-pair 0)
     (disable-timer byzantine-wall-geometry-timer)
@@ -14437,6 +14490,340 @@
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-adaptive-watch-tower 47)
 )
+
+
+; =============================================================================
+; PROFESSIONAL BYZANTINE WALL CONTROL
+; Naga/community-derived execution pattern, adapted to Byzantine priorities.
+;
+; Policy:
+;   DARK/FEUDAL: short palisade resource funnel, only when pressure + exposure
+;                justify wood. Prefer gold, then stone, then wood.
+;   CASTLE+:     stone wall only after the Castle stone floor survives.
+;   NATIVE:      native perimeter is a late fallback when local DUC geometry
+;                has no viable anchor pair. Native perimeter gets a gate.
+;
+; Resource walls use one persisted local point. Pending is queue protection;
+; completion uses a world-position wall witness. Wall/gate repair is already
+; covered by sn-object-repair-level 30727 above.
+; =============================================================================
+
+; Wall admission: reset material policy when there is no live wall demand.
+(defrule
+    (goal demand-adaptive-stone-wall 0)
+    (goal demand-adaptive-resource-palisade 0)
+    (goal byzantine-wall-material != byzantine-wall-material-none)
+=>
+    (set-goal byzantine-wall-material byzantine-wall-material-none)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)
+)
+
+; DARK emergency: under immediate attack, spend a small wood reserve on a
+; short local palisade around an exposed resource. This is the step-one
+; Byzantine defensive signature, not an unconditional Dark wall.
+(defrule
+    (goal demand-adaptive-resource-palisade 0)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
+    (current-age == dark-age)
+    (or
+        (goal under-attack yes)
+        (players-unit-type-count any-enemy militia-line >= 3)
+        (players-unit-type-count any-enemy archer-line >= 3)
+    )
+    (or
+        (dropsite-min-distance gold >= 7)
+        (dropsite-min-distance stone >= 7)
+        (dropsite-min-distance wood >= 7)
+    )
+    (wood-amount >= 30)
+=>
+    (set-goal demand-adaptive-resource-palisade 1)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
+    (set-goal byzantine-wall-resource-target 0)
+    (set-goal byzantine-wall-material byzantine-wall-material-palisade)
+)
+
+; DARK standard: use the normal 60-80 wood defensive budget when the position
+; is threatened but not yet in emergency mode.
+(defrule
+    (goal demand-adaptive-resource-palisade 0)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
+    (current-age == dark-age)
+    (or
+        (players-unit-type-count any-enemy militia-line >= 2)
+        (players-unit-type-count any-enemy archer-line >= 2)
+    )
+    (or
+        (dropsite-min-distance gold >= 7)
+        (dropsite-min-distance stone >= 7)
+        (dropsite-min-distance wood >= 7)
+    )
+    (wood-amount >= 60)
+=>
+    (set-goal demand-adaptive-resource-palisade 1)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
+    (set-goal byzantine-wall-resource-target 0)
+    (set-goal byzantine-wall-material byzantine-wall-material-palisade)
+)
+
+; FEUDAL: preserve the Castle trajectory while using cheap palisades as the
+; first defensive layer. Existing tower/anchor geometry remains available.
+(defrule
+    (goal demand-adaptive-resource-palisade 0)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
+    (current-age == feudal-age)
+    (or
+        (players-unit-type-count any-enemy knight >= 2)
+        (players-unit-type-count any-enemy archer-line >= 4)
+        (players-unit-type-count any-enemy militia-line >= 5)
+        (goal under-attack yes)
+    )
+    (or
+        (dropsite-min-distance gold >= 7)
+        (dropsite-min-distance stone >= 7)
+        (dropsite-min-distance wood >= 7)
+    )
+    (wood-amount >= 60)
+=>
+    (set-goal demand-adaptive-resource-palisade 1)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
+    (set-goal byzantine-wall-resource-target 0)
+    (set-goal byzantine-wall-material byzantine-wall-material-palisade)
+)
+
+; CASTLE+: stone becomes available for defensive capital only after the
+; Castle-reserve floor is satisfied. The wall demand is still threat-driven.
+(defrule
+    (goal demand-adaptive-stone-wall 0)
+    (current-age >= castle-age)
+    (or
+        (players-unit-type-count any-enemy knight >= 3)
+        (players-unit-type-count any-enemy archer-line >= 4)
+        (players-unit-type-count any-enemy militia-line >= 5)
+        (players-unit-type-count any-enemy mangonel-line >= 2)
+        (players-building-type-count any-enemy 82 >= 1)
+        (goal under-attack yes)
+    )
+    (stone-amount >= 650)
+=>
+    (set-goal demand-adaptive-stone-wall 1)
+    (set-goal byzantine-wall-material byzantine-wall-material-stone)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-required)
+)
+
+; -------------------------------------------------------------------------
+; Resource-front target acquisition.
+; Gold is first priority; stone is next once Feudal is reached; wood is the
+; fallback. This follows Naga's proven up-find-resource + point-line pattern.
+; -------------------------------------------------------------------------
+(defrule
+    (goal demand-adaptive-resource-palisade 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
+    (goal byzantine-wall-resource-target 0)
+    (resource-found gold)
+    (dropsite-min-distance gold >= 7)
+=>
+    (up-full-reset-search)
+    (up-find-resource c: gold c: 8)
+    (set-goal byzantine-wall-resource-target byzantine-wall-resource-target-gold)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-selected)
+)
+
+(defrule
+    (goal demand-adaptive-resource-palisade 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
+    (goal byzantine-wall-resource-target 0)
+    (current-age >= feudal-age)
+    (not (dropsite-min-distance gold >= 7))
+    (resource-found stone)
+    (dropsite-min-distance stone >= 7)
+=>
+    (up-full-reset-search)
+    (up-find-resource c: stone c: 8)
+    (set-goal byzantine-wall-resource-target byzantine-wall-resource-target-stone)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-selected)
+)
+
+(defrule
+    (goal demand-adaptive-resource-palisade 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
+    (goal byzantine-wall-resource-target 0)
+    (not (dropsite-min-distance gold >= 7))
+    (not (dropsite-min-distance stone >= 7))
+    (resource-found wood)
+    (dropsite-min-distance wood >= 7)
+=>
+    (up-full-reset-search)
+    (up-find-resource c: wood c: 8)
+    (set-goal byzantine-wall-resource-target byzantine-wall-resource-target-wood)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-selected)
+)
+
+(defrule
+    (goal demand-adaptive-resource-palisade 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-get-point position-object byzantine-wall-resource-point)
+    (up-copy-point byzantine-wall-resource-line-a byzantine-wall-resource-point)
+    (up-copy-point byzantine-wall-resource-line-b byzantine-wall-resource-point)
+    (up-modify-goal byzantine-wall-resource-line-a c:- 2)
+    (up-modify-goal byzantine-wall-resource-line-b c:+ 2)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+)
+
+; Resource-front palisade action. One pass, one build claim, two wall-class
+; builders, exactly as the practical community pattern uses them.
+(defrule
+    (goal demand-adaptive-resource-palisade 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+    (goal action-claim-build-pass-singleton 0)
+    (goal construction-retry-barrier-adaptive-resource-palisade 0)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-resource-line-a c: 72)
+=>
+    (up-assign-builders c: wall-class c: 1)
+    (up-build-line byzantine-wall-resource-line-a byzantine-wall-resource-line-b c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-resource-palisade 490)
+)
+
+; Resource-wall completion witness. The wall must actually occupy the intended
+; resource point; generic wall existence is deliberately not sufficient.
+(defrule
+    (or
+        (goal demand-adaptive-resource-palisade 490)
+        (goal demand-adaptive-resource-palisade 491)
+    )
+    (up-point-contains byzantine-wall-resource-point c: palisade-wall)
+=>
+    (set-goal demand-adaptive-resource-palisade 492)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-secured)
+)
+
+; Pending object / placement protection.
+(defrule
+    (or
+        (goal demand-adaptive-resource-palisade 490)
+        (goal demand-adaptive-resource-palisade 491)
+    )
+    (not (up-point-contains byzantine-wall-resource-point c: palisade-wall))
+    (or
+        (up-pending-objects c: 72 >= 1)
+        (up-pending-placement c: 72)
+    )
+=>
+    (set-goal demand-adaptive-resource-palisade 491)
+)
+
+; Retry after pending clears. Failure is execution loss, not strategic
+; invalidation.
+(defrule
+    (or
+        (goal demand-adaptive-resource-palisade 490)
+        (goal demand-adaptive-resource-palisade 491)
+    )
+    (not (up-point-contains byzantine-wall-resource-point c: palisade-wall))
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+=>
+    (set-goal demand-adaptive-resource-palisade 1)
+    (set-goal construction-retry-barrier-adaptive-resource-palisade 1)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+)
+
+; Release only from world-state completion.
+(defrule
+    (goal demand-adaptive-resource-palisade 492)
+    (up-point-contains byzantine-wall-resource-point c: palisade-wall)
+=>
+    (set-goal demand-adaptive-resource-palisade 0)
+)
+
+; Reopen only after the actual local wall is gone and the original pressure
+; still exists. Repair remains automatic through sn-object-repair-level.
+(defrule
+    (goal demand-adaptive-resource-palisade 0)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
+    (not (up-point-contains byzantine-wall-resource-point c: palisade-wall))
+    (or
+        (goal under-attack yes)
+        (players-unit-type-count any-enemy knight >= 2)
+        (players-unit-type-count any-enemy archer-line >= 3)
+        (players-unit-type-count any-enemy militia-line >= 4)
+    )
+    (or
+        (dropsite-min-distance gold >= 7)
+        (dropsite-min-distance stone >= 7)
+        (dropsite-min-distance wood >= 7)
+    )
+=>
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-idle)
+    (set-goal demand-adaptive-resource-palisade 1)
+)
+
+; If no usable resource point survived acquisition, abandon this local funnel
+; cleanly and let the broader anchor/perimeter wall demand reassess.
+(defrule
+    (goal demand-adaptive-resource-palisade 1)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
+    (not (up-set-target-object search-remote c: 0))
+=>
+    (set-goal demand-adaptive-resource-palisade 0)
+    (set-goal byzantine-wall-resource-state byzantine-wall-resource-idle)
+)
+
+; -------------------------------------------------------------------------
+; Native perimeter fallback. This is deliberately lower priority than the
+; existing local DUC anchor geometry because DUC is better for Byzantine
+; resource/camp funnels. The native path is for a strategic enclosure.
+; -------------------------------------------------------------------------
+(defrule
+    (goal demand-adaptive-stone-wall 1)
+    (goal byzantine-wall-material byzantine-wall-material-stone)
+    (goal byzantine-wall-native-state byzantine-wall-native-idle)
+    (goal byzantine-wall-anchor-pair 0)
+    (current-age >= castle-age)
+    (stone-amount >= 650)
+    (goal action-claim-build-pass-singleton 0)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (can-afford-complete-wall byzantine-wall-native-perimeter)
+    (can-build-wall byzantine-wall-native-perimeter stone-wall-line)
+=>
+    (set-strategic-number sn-gate-type-for-wall 0)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-required)
+    (build-wall byzantine-wall-native-perimeter stone-wall-line)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal byzantine-wall-native-state byzantine-wall-native-wall-armed)
+    (set-goal demand-adaptive-stone-wall 46)
+)
+
+(defrule
+    (goal byzantine-wall-native-state byzantine-wall-native-wall-armed)
+    (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
+    (goal action-claim-build-pass-singleton 0)
+    (gate-count byzantine-wall-native-perimeter == 0)
+    (can-build-gate byzantine-wall-native-perimeter)
+=>
+    (set-strategic-number sn-gate-type-for-wall 0)
+    (build-gate byzantine-wall-native-perimeter)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal byzantine-wall-native-state byzantine-wall-native-gate-armed)
+)
+
+(defrule
+    (goal byzantine-wall-native-state byzantine-wall-native-gate-armed)
+    (gate-count byzantine-wall-native-perimeter >= 1)
+=>
+    (set-goal byzantine-wall-native-state byzantine-wall-native-idle)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)
+    (set-goal byzantine-wall-material byzantine-wall-material-none)
+)
+
+; Native perimeter completion is independent of action issuance. The existing
+; wall lifecycle still owns demand release through a world-state building witness.
 
 ; Pending diagnostics: adaptive-stone-wall
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 43 and cannot reissue from pending goal 44
