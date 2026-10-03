@@ -335,10 +335,16 @@ def lower_economy_controller(
                 parse_expression("(current-age == feudal-age)", SourceLocation(1)),
                 parse_expression("(map-type arabia)", SourceLocation(1)),
                 parse_expression(
-                    f"(and (food-amount >= {plan.castle_bank_hard_food}) "
-                    f"(and (gold-amount >= {plan.castle_bank_hard_gold}) "
+                    f"(food-amount >= {plan.castle_bank_hard_food})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(gold-amount >= {plan.castle_bank_hard_gold})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
                     f"(or (food-amount < {plan.castle_bank_buffer_food}) "
-                    f"(gold-amount < {plan.castle_bank_buffer_gold})))",
+                    f"(gold-amount < {plan.castle_bank_buffer_gold}))",
                     SourceLocation(1),
                 ),
             ),
