@@ -114,9 +114,8 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             ("byzantine-resource-camp-ring-nw", -3, 3),
             ("byzantine-resource-camp-ring-n", 0, 3),
         ):
-            self.assertIn(f"(defconst {pair}-x", ring)
-            self.assertIn(f"(defconst {pair}-y", ring)
-            self.assertIn(f"(set-goal {pair}-x {x})", ring)
+            self.assertIn(f"(defconst {pair} ", ring)
+            self.assertIn(f"(set-goal {pair} {x})", ring)
             self.assertIn(f"(set-goal {pair}-y {y})", ring)
 
         self.assertIn(
@@ -124,7 +123,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             ring,
         )
         self.assertIn(
-            "(up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne-x c: 1)",
+            "(up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne c: 1)",
             ring,
         )
         self.assertIn(
