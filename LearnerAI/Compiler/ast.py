@@ -20,7 +20,6 @@ class DemandNode:
     witness: str
     release: str
     location: SourceLocation
-    action_witness_gates: tuple[str, ...] = ()
     invalidate: str | None = None
     requirement_locations: tuple[SourceLocation, ...] = ()
     action_location: SourceLocation | None = None
@@ -29,6 +28,7 @@ class DemandNode:
     invalidate_location: SourceLocation | None = None
     strategic_number_states: tuple[tuple[str, int, SourceLocation], ...] = ()
     timer_states: tuple[tuple[str, SourceLocation], ...] = ()
+    action_witness_gates: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
