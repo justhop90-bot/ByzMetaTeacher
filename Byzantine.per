@@ -110,6 +110,7 @@
 (defconst sn-cap-civilian-explorers 3)
 (defconst sn-percent-civilian-explorers 0)
 (defconst sn-focus-player-number 251)
+(defconst byzantine-target-player-lock 744)
 (defconst sn-target-player-number 249)
 ; Enemy profile goals are compiler-policy observation state, not completion witnesses.
 (defconst byzantine-focus-military-pop 727)
@@ -129,6 +130,9 @@
 (defconst bt-byzantine-natural-food-deer-seconds 30)
 (defconst byzantine-natural-food-selector-forage 742)
 (defconst byzantine-natural-food-selector-deer 743)
+(defconst byzantine-food-source-selector 745)
+(defconst sn-maximum-hunt-drop-distance 235)
+(defconst sn-preferred-mill-placement 253)
 ; Native aliases used in typed c: operands below. IDs come from the
 ; checked-in Byzantine factual manifest / compiler unit-line registry.
 (defconst university 209)
@@ -5338,6 +5342,7 @@
     (set-strategic-number sn-enable-offensive-priority 1)
     (set-strategic-number sn-zero-priority-distance 255)
     (set-strategic-number sn-target-player-number 0)
+    (set-goal byzantine-target-player-lock 0)
     (set-goal byzantine-focus-military-pop 0)
     (set-goal byzantine-focus-civilian-pop 0)
     (set-goal byzantine-focus-stables 0)
@@ -5609,6 +5614,7 @@
     )
 =>
     (set-strategic-number sn-target-player-number 0)
+    (set-goal byzantine-target-player-lock 0)
 )
 
 (defrule
@@ -5630,6 +5636,42 @@
     (strategic-number sn-focus-player-number s:!= sn-target-player-number)
 =>
     (up-modify-sn sn-focus-player-number s:= sn-target-player-number)
+)
+
+(defrule
+    (goal byzantine-target-player-lock 0)
+    (or
+        (goal byzantine-army-attack-ready 1)
+        (goal byzantine-army-attack-ready 2)
+    )
+    (strategic-number sn-target-player-number >= 1)
+    (strategic-number sn-target-player-number <= 8)
+    (player-in-game target-player)
+    (not (stance-toward target-player ally))
+=>
+    (set-goal byzantine-target-player-lock 1)
+)
+
+(defrule
+    (goal byzantine-target-player-lock 1)
+    (or
+        (goal byzantine-army-attack-ready 1)
+        (goal byzantine-army-attack-ready 2)
+    )
+    (strategic-number sn-target-player-number >= 1)
+    (strategic-number sn-target-player-number <= 8)
+    (player-in-game target-player)
+    (not (stance-toward target-player ally))
+    (strategic-number sn-focus-player-number s:!= sn-target-player-number)
+=>
+    (up-modify-sn sn-focus-player-number s:= sn-target-player-number)
+)
+
+(defrule
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-attack-ready 0)
+=>
+    (set-goal byzantine-target-player-lock 0)
 )
 
 (defrule
@@ -5721,13 +5763,26 @@
     (up-compare-goal byzantine-natural-food-deer-distance <= 3400)
     (current-age <= feudal-age)
 =>
+    ; Retask the scout and nearby food villagers through the existing DUC path.
     (set-strategic-number sn-maximum-hunt-drop-distance 34)
-    (up-request-hunters c: 1)
+    (up-get-point position-object byzantine-natural-food-deer-point)
+
     (up-full-reset-search)
     (up-find-local c: scout-cavalry-line c: 1)
-    (up-find-remote c: deer-class c: 1)
+    (up-set-target-point byzantine-natural-food-deer-point)
     (up-target-objects 0 action-move -1 stance-defensive)
+
+    (up-full-reset-search)
+    (up-filter-distance c: -1 c: 20)
+    (up-filter-exclude -1 actionid-attack orderid-build -1)
+    (up-find-local c: villager-class g: villager-count)
+    (up-remove-objects search-local object-data-gather-type != food)
+    (up-remove-objects search-local object-data-tasks-count >= 1)
+    (up-set-target-point byzantine-natural-food-deer-point)
+    (up-target-objects 1 action-default -1 -1)
+
     (set-goal byzantine-natural-food-deer-state 3)
+    (enable-timer byzantine-natural-food-deer-timer bt-byzantine-natural-food-deer-seconds)
 )
 
 (defrule
@@ -5748,11 +5803,36 @@
 
 (defrule
     (goal byzantine-natural-food-deer-state 3)
+    (up-timer-status byzantine-natural-food-deer-timer c:== timer-triggered)
+    (up-set-target-by-id g: byzantine-natural-food-deer-id)
+    (current-age <= feudal-age)
+    (building-type-count-total mill < 2)
+=>
+    (up-get-point position-object byzantine-natural-food-deer-point)
+    (up-full-reset-search)
+    (up-filter-distance c: -1 c: 20)
+    (up-filter-exclude -1 actionid-attack orderid-build -1)
+    (up-find-local c: villager-class g: villager-count)
+    (up-remove-objects search-local object-data-gather-type != food)
+    (up-remove-objects search-local object-data-tasks-count >= 1)
+    (up-set-target-point byzantine-natural-food-deer-point)
+    (up-target-objects 1 action-default -1 -1)
+    (enable-timer byzantine-natural-food-deer-timer bt-byzantine-natural-food-deer-seconds)
+)
+
+(defrule
+    (goal byzantine-natural-food-deer-state 3)
     (or
         (not (up-set-target-by-id g: byzantine-natural-food-deer-id))
         (or
             (building-type-count-total mill >= 2)
-            (current-age >= castle-age)
+            (or
+                (current-age >= castle-age)
+                (or
+                    (up-object-data object-data-status != status-ready)
+                    (up-object-data object-data-hitpoints <= 0)
+                )
+            )
         )
     )
 =>
@@ -5764,49 +5844,63 @@
 )
 
 ; NATIVE FOOD RESOURCE SELECTOR
+; Side-state for mill placement. The demand goal retains construction ownership.
 (defrule
-    (goal demand-economy-food-mill-feudal-berries 0)
-    (current-age >= feudal-age)
+    (goal demand-economy-food-mill-feudal-berries 1)
+    (goal byzantine-food-source-selector 0)
+    (current-age == feudal-age)
     (building-type-count-total mill == 1)
     (resource-found food)
 =>
     (up-full-reset-search)
     (up-filter-distance c: -1 c: 16)
     (up-find-resource c: forage-bush-class c: 16)
-    (set-goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-forage)
+    (set-goal byzantine-food-source-selector 1)
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-forage)
+    (goal byzantine-food-source-selector 1)
     (up-set-target-object search-remote c: 0)
 =>
     (set-strategic-number sn-preferred-mill-placement 0)
-    (set-goal demand-economy-food-mill-feudal-berries 1)
+    (set-goal byzantine-food-source-selector 0)
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-forage)
+    (goal byzantine-food-source-selector 1)
     (not (up-set-target-object search-remote c: 0))
 =>
     (up-full-reset-search)
     (up-filter-distance c: -1 c: 16)
     (up-find-resource c: deer-class c: 16)
-    (set-goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-deer)
+    (set-goal byzantine-food-source-selector 2)
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-deer)
+    (goal byzantine-food-source-selector 2)
     (up-set-target-object search-remote c: 0)
 =>
     (set-strategic-number sn-preferred-mill-placement 1)
-    (set-goal demand-economy-food-mill-feudal-berries 1)
+    (set-goal byzantine-food-source-selector 0)
 )
 
 (defrule
-    (goal demand-economy-food-mill-feudal-berries byzantine-natural-food-selector-deer)
+    (goal byzantine-food-source-selector 2)
     (not (up-set-target-object search-remote c: 0))
 =>
-    (set-goal demand-economy-food-mill-feudal-berries 1)
+    (set-strategic-number sn-preferred-mill-placement 0)
+    (set-goal byzantine-food-source-selector 0)
+)
+
+(defrule
+    (goal byzantine-food-source-selector 0)
+    (or
+        (goal demand-economy-food-mill-feudal-berries 0)
+        (goal demand-economy-food-mill-feudal-berries 702)
+        (goal demand-economy-food-mill-feudal-berries 701)
+    )
+=>
+    (set-strategic-number sn-preferred-mill-placement 0)
 )
 
 ;---------------------------------------------------------------
@@ -15428,7 +15522,7 @@
     (goal demand-economy-food-mill-feudal-berries 702)
     (building-type-count mill >= 2)
 =>
-    (set-strategic-number sn-preferred-mill-placement 1)
+    (set-strategic-number sn-preferred-mill-placement 0)
     (set-goal demand-economy-food-mill-feudal-berries 0)
 )
 
@@ -15499,9 +15593,9 @@
     (not (up-pending-placement c: 68))
     (goal construction-retry-barrier-economy-food-mill-feudal-berries 0)
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-food-source-selector 0)
     (can-build mill)
 =>
-    (set-strategic-number sn-preferred-mill-placement 0)
     (build mill)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-food-mill-feudal-berries 703)
