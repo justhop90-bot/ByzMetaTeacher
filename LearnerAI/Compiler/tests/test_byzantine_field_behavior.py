@@ -117,20 +117,29 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertNotIn("(build mining-camp)", self.per)
 
     def test_blocked_camp_placement_enters_pending_instead_of_reissuing(self):
-        camp_lifecycle = self._section_from(
-            "; NATIVE-PASS-CONSTRAINT build maximum-successes=1\n(defconst demand-economy-lumber-camp-floor-1",
-            "; RESOURCE-SPECIFIC BYZANTINE CAMP LIFECYCLES",
+        lumber = self._section_from(
+            "; economy-lumber-camp-floor-1",
+            "; economy-lumber-camp-floor-2",
         )
         gold_start = self.per.index("; economy-gold-camp-floor-1")
-        gold_lifecycle = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
+        gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
 
-        for lifecycle, building_id in (
-            (camp_lifecycle, "562"),
-            (gold_lifecycle, "584"),
+        for lifecycle, building_id, pending_goal in (
+            (lumber, "562", "75"),
+            (gold, "584", "622"),
         ):
-            self.assertIn(f"(up-pending-objects c: {building_id} >= 1)", lifecycle)
-            self.assertIn(f"(up-pending-objects c: {building_id} == 0)", lifecycle)
-            self.assertIn(f"(up-pending-placement c: {building_id})", lifecycle)
+            self.assertIn(
+                f"(up-pending-objects c: {building_id} >= 1)",
+                lifecycle,
+            )
+            self.assertIn(
+                f"(up-pending-objects c: {building_id} == 0)\n    (up-pending-placement c: {building_id})",
+                lifecycle,
+            )
+            self.assertIn(
+                f"(set-goal demand-economy-{'lumber-camp-floor-1' if building_id == '562' else 'gold-camp-floor-1'} {pending_goal})",
+                lifecycle,
+            )
             self.assertIn(
                 f"(up-pending-objects c: {building_id} == 0)\n    (not (up-pending-placement c: {building_id}))",
                 lifecycle,
