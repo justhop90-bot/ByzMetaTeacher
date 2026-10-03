@@ -5894,6 +5894,122 @@
     (set-goal counter-package-ranged_pressure_feudal 1)
 )
 
+; Reinforcement admission is target-relative. Rebuilding the local package is
+; insufficient unless the locked opponent still explains that package.
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age == castle-age)
+    (or
+        (and
+            (goal counter-package-mounted_pressure_castle 1)
+            (or
+                (players-unit-type-count target-player knight >= 3)
+                (or
+                    (players-unit-type-count target-player camel-rider-line >= 3)
+                    (or
+                        (players-unit-type-count target-player scout-cavalry-line >= 6)
+                        (players-building-type-count target-player stable >= 2)
+                    )
+                )
+            )
+        )
+        (or
+            (and
+                (goal counter-package-ranged_pressure_feudal 1)
+                (or
+                    (players-unit-type-count target-player archer-line >= 3)
+                    (players-building-type-count target-player archery-range >= 2)
+                )
+            )
+            (or
+                (and
+                    (goal counter-package-infantry_pressure_castle 1)
+                    (players-military-population target-player >= 6)
+                    (players-unit-type-count target-player militia-line >= 5)
+                )
+                (or
+                    (and
+                        (goal counter-package-siege_pressure_castle 1)
+                        (or
+                            (players-unit-type-count target-player mangonel-line >= 2)
+                            (players-building-type-count target-player siege-workshop >= 1)
+                        )
+                    )
+                    (and
+                        (not (goal counter-package-mounted_pressure_castle 1))
+                        (not (goal counter-package-ranged_pressure_feudal 1))
+                        (not (goal counter-package-infantry_pressure_castle 1))
+                        (not (goal counter-package-siege_pressure_castle 1))
+                        (players-military-population target-player <= 5)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement 1)
+    (goal byzantine-army-reinforcement-target-validation 1)
+    (goal byzantine-target-player-lock 1)
+    (goal byzantine-army-reinforcement-admission 0)
+    (current-age >= imperial-age)
+    (or
+        (and
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+            (or
+                (players-unit-type-count target-player knight >= 3)
+                (or
+                    (players-unit-type-count target-player camel-rider-line >= 3)
+                    (or
+                        (players-unit-type-count target-player scout-cavalry-line >= 6)
+                        (players-building-type-count target-player stable >= 2)
+                    )
+                )
+            )
+        )
+        (or
+            (and
+                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+                (or
+                    (players-unit-type-count target-player archer-line >= 4)
+                    (or
+                        (players-unit-type-count target-player cavalry-archer-line >= 4)
+                        (players-building-type-count target-player archery-range >= 2)
+                    )
+                )
+            )
+            (or
+                (and
+                    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+                    (players-military-population target-player >= 6)
+                    (players-unit-type-count target-player militia-line >= 5)
+                )
+                (or
+                    (and
+                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+                        (or
+                            (players-unit-type-count target-player mangonel-line >= 2)
+                            (players-building-type-count target-player siege-workshop >= 1)
+                        )
+                    )
+                    (and
+                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+                        (players-military-population target-player <= 5)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-reinforcement-admission 1)
+)
+
 ; NATIVE NATURAL-FOOD DEER CONTROLLER
 (defrule
     (goal byzantine-natural-food-deer-state 0)
