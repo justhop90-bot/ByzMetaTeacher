@@ -14524,16 +14524,15 @@
     (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
     (current-age == dark-age)
     (or
+        (town-under-attack)
         (goal under-attack yes)
-        (players-unit-type-count any-enemy militia-line >= 3)
-        (players-unit-type-count any-enemy archer-line >= 3)
     )
     (or
         (dropsite-min-distance gold >= 7)
         (dropsite-min-distance stone >= 7)
         (dropsite-min-distance wood >= 7)
     )
-    (wood-amount >= 30)
+    (wood-amount >= 75)
 =>
     (set-goal demand-adaptive-resource-palisade 1)
     (set-goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
@@ -14548,15 +14547,15 @@
     (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
     (current-age == dark-age)
     (or
-        (players-unit-type-count any-enemy militia-line >= 2)
-        (players-unit-type-count any-enemy archer-line >= 2)
+        (town-under-attack)
+        (goal under-attack yes)
     )
     (or
         (dropsite-min-distance gold >= 7)
         (dropsite-min-distance stone >= 7)
         (dropsite-min-distance wood >= 7)
     )
-    (wood-amount >= 60)
+    (wood-amount >= 100)
 =>
     (set-goal demand-adaptive-resource-palisade 1)
     (set-goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
@@ -14680,6 +14679,10 @@
     (goal construction-retry-barrier-adaptive-resource-palisade 0)
     (up-pending-objects c: 72 == 0)
     (not (up-pending-placement c: 72))
+    (not (up-pending-objects c: house >= 1))
+    (not (up-pending-placement c: house))
+    (not (up-pending-objects c: barracks >= 1))
+    (not (up-pending-placement c: barracks))
     (up-can-build-line 0 byzantine-wall-resource-line-a c: 72)
 =>
     (up-assign-builders c: wall-class c: 1)
@@ -14747,10 +14750,8 @@
     (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (not (up-point-contains byzantine-wall-resource-point c: wall-class))
     (or
+        (town-under-attack)
         (goal under-attack yes)
-        (players-unit-type-count any-enemy knight >= 2)
-        (players-unit-type-count any-enemy archer-line >= 3)
-        (players-unit-type-count any-enemy militia-line >= 4)
     )
     (or
         (dropsite-min-distance gold >= 7)
