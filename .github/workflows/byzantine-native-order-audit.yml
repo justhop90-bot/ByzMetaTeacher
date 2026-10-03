@@ -1,0 +1,44 @@
+name: Byzantine native-order audit
+
+on:
+  push:
+    branches:
+      - fix/byzantine-forward-defconst-order
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned AoE2 AI parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Run pinned parser
+        run: python -m aoe2_ai_lab lint Byzantine.per
+      - name: Enforce no forward defconst references
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          lines = Path("Byzantine.per").read_text(encoding="utf-8").splitlines()
+          defs = {}
+          for line_no, line in enumerate(lines, 1):
+              m = re.match(r"^\\(defconst\\s+([^\\s()]+)\\s+([^)]*)\\)", line)
+              if m:
+                  defs[m.group(1)] = line_no
+
+          forward = []
+          for line_no, line in enumerate(lines, 1):
+              for name, def_line in defs.items():
+                  if line_no < def_line and re.search(r"(?<![\\w-])" + re.escape(name) + r"(?![\\w-])", line):
+                      forward.append((line_no, def_line, name))
+
+          if forward:
+              for row in forward:
+                  print(row)
+              raise SystemExit("forward defconst references remain")
+          print(f"forward defconst references: 0; defconst declarations: {len(defs)}")
+          PY
