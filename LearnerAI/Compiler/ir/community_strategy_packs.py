@@ -488,7 +488,7 @@ def community_strategy_observations(
             (
                 _observation(
                     f"camp-front-{label}-active",
-                    f"(and (resource-found {resource.value}) (strategic-number {gatherer_sn} > 0))",
+                    f"(and (resource-found {resource.value}) (up-compare-sn {gatherer_sn} > 0))",
                     _airef_provenance(effective, "commands/commands-details.html#resource-found"),
                 ),
                 _observation(
