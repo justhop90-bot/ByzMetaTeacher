@@ -448,3 +448,56 @@ def lower_economy_controller(
     )
 
     writer_rules = []
+    for mode in EconomyMode:
+        allocation = allocation_by_mode[mode]
+        for symbol, value in (
+            ("sn-food-gatherer-percentage", allocation.food),
+            ("sn-wood-gatherer-percentage", allocation.wood),
+            ("sn-gold-gatherer-percentage", allocation.gold),
+            ("sn-percent-civilian-builders", allocation.builders),
+        ):
+            writer_rules.append(
+                write_rule(
+                    f"economy-controller-write-{mode.name.lower()}-{symbol}",
+                    mode,
+                    symbol,
+                    value,
+                )
+            )
+
+    # Stone is deliberately outside the generic economy allocation tuple.
+    # The Byzantine Dark Age contract is nevertheless explicit: BASE owns a
+    # fail-safe zero-stone write instead of inheriting an engine/default split.
+    writer_rules.append(
+        NativeControlRule(
+            "economy-controller-write-base-sn-stone-gatherer-percentage",
+            facts=(
+                parse_expression("(goal economy-posture 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-compare-sn sn-stone-gatherer-percentage != 0)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    "(set-strategic-number sn-stone-gatherer-percentage 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        )
+    )
+
+    return NativeControlPlan(
+        states=tuple(states),
+        rules=selection_rules + tuple(writer_rules),
+    )
+
+
+__all__ = (
+    "EconomyAllocation",
+    "EconomyControllerPlan",
+    "EconomyMode",
+    "EconomyModePolicy",
+    "default_byzantine_economy_controller",
+    "lower_economy_controller",
+)
