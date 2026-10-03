@@ -1306,15 +1306,14 @@ def build_byzantine_stock_strategy(
             production_demands=(
                 "counter-mounted-spears",
                 "counter-ranged-skirmishers",
-                "counter-castle-cataphracts",
             ),
             attack_objective="byzantine-castle-pressure",
         ),
         _StrategicMilitaryComposition(
             identity="castle-infantry-package",
             production_demands=(
+                "castle-cataphract-floor",
                 "castle-varangian-guard-floor",
-                "counter-castle-cataphracts",
             ),
             attack_objective="byzantine-castle-pressure",
         ),
