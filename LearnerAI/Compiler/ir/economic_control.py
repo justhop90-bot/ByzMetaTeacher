@@ -18,7 +18,7 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
-    FAST_IMPERIAL = 8
+    FAST_IMPERIAL = 9
 
 
 @dataclass(frozen=True)
