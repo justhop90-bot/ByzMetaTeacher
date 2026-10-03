@@ -33,6 +33,7 @@ from .versioning import EvidenceKind, EvidenceRef
 from .map_profile import default_byzantine_map_profiles
 from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
+from .camp_control import CampResource, default_byzantine_camp_controller
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
@@ -315,6 +316,8 @@ def community_strategy_observations(
     barracks = _building(effective, "barracks")
     castle = _building(effective, "castle")
     university = _building(effective, "university")
+    lumber_camp = _building(effective, "lumber-camp")
+    mining_camp = _building(effective, "mining-camp")
     observations = [
         _observation(
             "strategy-castle-age",
@@ -473,6 +476,34 @@ def community_strategy_observations(
         ),
     ]
 
+    # resource-found is the supported native resource-front fact. Its latch/live
+    # behavior remains OPEN, so this layer treats it as an observation signal only;
+    # actual camp service is witnessed independently through dropsite distance.
+    for resource, gatherer_sn, distance_sn, label in (
+        (CampResource.WOOD, "sn-wood-gatherer-percentage", "sn-lumber-camp-max-distance", "wood"),
+        (CampResource.GOLD, "sn-gold-gatherer-percentage", "sn-mining-camp-max-distance", "gold"),
+        (CampResource.STONE, "sn-stone-gatherer-percentage", "sn-mining-camp-max-distance", "stone"),
+    ):
+        observations.extend(
+            (
+                _observation(
+                    f"camp-front-{label}-active",
+                    (
+                        f"(and (current-age >= feudal-age) (resource-found {resource.value}))"
+                        if resource is CampResource.STONE
+                        else f"(resource-found {resource.value})"
+                    ),
+                    _airef_provenance(effective, "commands/commands-details.html#resource-found"),
+                ),
+                _observation(
+                    f"camp-front-{label}-remote",
+                    f"(or (dropsite-min-distance {resource.value} <= -1) (dropsite-min-distance {resource.value} s:>= {distance_sn}))",
+                    _airef_provenance(effective, "commands/commands-details.html#dropsite-min-distance"),
+                ),
+            )
+        )
+
+
     for identity, _owner, _age, tech_name, _priority, _resources in _RESEARCH_PACK:
         tech = _tech(effective, tech_name)
         observations.append(
@@ -503,8 +534,93 @@ def community_strategy_demands(
     stable = _building(effective, "stable")
     archery_range = _building(effective, "archery-range")
     university = _building(effective, "university")
+    lumber_camp = _building(effective, "lumber-camp")
+    mining_camp = _building(effective, "mining-camp")
+    observations = community_strategy_observations(effective)
 
     demands: list[_StrategicDemandSpec] = []
+
+    camp_specs = (
+        (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
+        (CampResource.GOLD, mining_camp, 5, "sn-mining-camp-max-distance"),
+        (CampResource.STONE, mining_camp, 5, "sn-mining-camp-max-distance"),
+    )
+    for resource, building, max_count, distance_sn in camp_specs:
+        label = resource.value
+        active_ref = f"camp-front-{label}-active"
+        remote_ref = f"camp-front-{label}-remote"
+        active_expression = next(
+            item.expression for item in observations if item.identity == active_ref
+        )
+        remote_expression = next(
+            item.expression for item in observations if item.identity == remote_ref
+        )
+        for floor in range(1, max_count + 1):
+            count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
+            requirements = [
+                active_expression,
+                count_guard,
+                f"(can-build {_slug(building.name)})",
+            ]
+            if floor >= 3:
+                requirements = [
+                    active_expression,
+                    remote_expression,
+                    count_guard,
+                    f"(can-build {_slug(building.name)})",
+                ]
+            building_token = _slug(building.name)
+            action = f"(build {building_token})"
+            witness = f"(building-type-count {_slug(building.name)} >= {floor})"
+            demands.append(
+                _StrategicDemandSpec(
+                    identity=f"economy-{label}-camp-floor-{floor}",
+                    owner="economy-camps",
+                    posture=_StrategyPosture.BOOM,
+                    priority=(
+                        _StrategicPriority.SUPPORT
+                        if floor <= 2
+                        else _StrategicPriority.OPTIONAL
+                    ),
+                    reason=(
+                        _persistent(
+                            f"Active {label} resource front requires a functional "
+                            f"{label} dropsite floor {floor}",
+                            active_ref,
+                        ),
+                    ),
+                    admissibility=(
+                        _persistent(
+                            f"The {label} camp floor remains strategically admissible "
+                            "while the resource front is active",
+                            active_ref,
+                        ),
+                    ),
+                    invalidation=(),
+                    capability_intent=_CapabilityIntent(
+                        _CapabilityIntentKind.BUILD,
+                        "building",
+                        int(building.id),
+                    ),
+                    target=_StrategicTarget(
+                        _StrategicTargetKind.EXACT,
+                        "building",
+                        int(building.id),
+                    ),
+                    opportunity_cost=None,
+                    execution=_ExecutionDemandTemplate(
+                        requirements=tuple(requirements),
+                        action=action,
+                        witness=witness,
+                        release=witness,
+                    ),
+                    provenance=_airef_provenance(
+                        effective,
+                        "commands/commands-details.html#build",
+                    ),
+                )
+            )
+
 
     imperial = effective.age_advance(Age.IMPERIAL)
     imperial_cost = effective.cost_of_age_advance(Age.IMPERIAL)
@@ -1202,6 +1318,7 @@ def build_byzantine_stock_strategy(
         map_profile=default_byzantine_map_profiles(),
         opening_selector=default_byzantine_opening_selector(),
         economy_controller=default_byzantine_economy_controller(),
+        camp_controller=default_byzantine_camp_controller(),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),

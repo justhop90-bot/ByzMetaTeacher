@@ -143,7 +143,7 @@ def _parameter_context(
             case_sensitive=False,
         )
 
-    if command == "dropsite-min-distance" and name == "Resource":
+    if command in {"dropsite-min-distance", "resource-found"} and name == "Resource":
         return CanonicalizationContext.enum(
             parameter_name=name,
             domain="RESOURCE",

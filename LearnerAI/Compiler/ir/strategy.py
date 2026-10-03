@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from .map_profile import MapProfile
     from .opening import OpeningSelectorPlan
     from .economic_control import EconomyControllerPlan
+    from .camp_control import ByzantineCampControllerPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -390,6 +391,7 @@ class StrategyProfile:
     map_profile: tuple["MapProfile", ...] = ()
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
+    camp_controller: "ByzantineCampControllerPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -469,6 +471,7 @@ class StrategyCompilation:
     map_profile: tuple["MapProfile", ...] = ()
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
+    camp_controller: "ByzantineCampControllerPlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1066,6 +1069,7 @@ def lower_strategy_profile(
         map_profile=profile.map_profile,
         opening_selector=profile.opening_selector,
         economy_controller=profile.economy_controller,
+        camp_controller=profile.camp_controller,
     )
 
 
@@ -1593,6 +1597,11 @@ def _strategy_control_plan(profile: StrategyProfile):
         from .economic_control import lower_economy_controller
         economy_plan = lower_economy_controller(profile.economy_controller, profile)
 
+    camp_plan = None
+    if profile.camp_controller is not None:
+        from .camp_control import lower_byzantine_camp_controller
+        camp_plan = lower_byzantine_camp_controller(profile.camp_controller, profile)
+
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
         for state in (assertion_plan.states if assertion_plan is not None else ())
@@ -1619,6 +1628,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         water_plan,
         opening_plan,
         economy_plan,
+        camp_plan,
     )
 
 
