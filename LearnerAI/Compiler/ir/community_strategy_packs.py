@@ -485,8 +485,8 @@ def community_strategy_observations(
             (
                 _observation(
                     f"camp-front-{label}-active",
-                    f"(and (up-gaia-type-count-total c: {resource.value} >= 1) (strategic-number {gatherer_sn} > 0))",
-                    _airef_provenance(effective, "commands/commands-details.html#up-gaia-type-count-total"),
+                    f"(and (resource-found {resource.value}) (strategic-number {gatherer_sn} > 0))",
+                    _airef_provenance(effective, "commands/commands-details.html#resource-found"),
                 ),
                 _observation(
                     f"camp-front-{label}-remote",
@@ -553,7 +553,7 @@ def community_strategy_demands(
             requirements = [
                 active_expression,
                 count_guard,
-                f"(can-build {building.name})",
+                f"(can-build {_slug(building.name)})",
             ]
             if floor >= 3:
                 requirements = [
@@ -562,8 +562,9 @@ def community_strategy_demands(
                     count_guard,
                     f"(can-build {building.name})",
                 ]
-            action = f"(build {building.name})"
-            witness = f"(building-type-count {building.name} >= {floor})"
+            building_token = _slug(building.name)
+            action = f"(build {building_token})"
+            witness = f"(building-type-count {building_token} >= {floor})"
             demands.append(
                 _StrategicDemandSpec(
                     identity=f"economy-{label}-camp-floor-{floor}",
