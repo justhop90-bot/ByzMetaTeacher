@@ -65,8 +65,8 @@ class ByzantineNativeSeamTest(unittest.TestCase):
             "(defconst byzantine-natural-food-deer-id",
             "(defconst byzantine-natural-food-deer-distance",
             "(up-find-resource c: deer-class c: 40)",
-            "(up-get-object-data object-data-id byzantine-natural-food-current-deer)",
-            "(up-set-target-by-id g: byzantine-natural-food-current-deer)",
+            "(up-get-object-data object-data-id byzantine-natural-food-deer-id)",
+            "(up-set-target-by-id g: byzantine-natural-food-deer-id)",
             "(up-request-hunters c: 1)",
         ):
             self.assertIn(fragment, self.per)
