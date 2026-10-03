@@ -18,6 +18,7 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
+    FAST_IMPERIAL = 8
 
 
 @dataclass(frozen=True)
@@ -152,6 +153,7 @@ def lower_economy_controller(
     pressure = profile.observation(plan.pressure_observation).expression
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
     no_pressure = f"(not {pressure})"
+    arena = profile.observation("strategy-arena-map").expression
     opening = lambda value: f"(goal {plan.opening_state} {value})"
 
     def select_rule(identity: str, mode: EconomyMode, guard: str) -> NativeControlRule:
@@ -222,6 +224,11 @@ def lower_economy_controller(
             "economy-controller-select-base",
             EconomyMode.BASE,
             f"(and (current-age < castle-age) (and {no_pressure} {opening(1)}))",
+        ),
+        select_rule(
+            "economy-controller-select-fast-imperial",
+            EconomyMode.FAST_IMPERIAL,
+            f"(and (current-age >= castle-age) (and (current-age < imperial-age) (and {opening(3)} (and {arena} {no_pressure}))))",
         ),
         select_rule(
             "economy-controller-select-castle-conversion",
