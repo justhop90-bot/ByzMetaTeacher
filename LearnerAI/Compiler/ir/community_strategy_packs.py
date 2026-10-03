@@ -332,6 +332,16 @@ def community_strategy_observations(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
+    monk_support_expression = (
+        "(or (town-under-attack) "
+        "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
+        "(players-unit-type-count any-enemy monk >= 2)))"
+    )
+    monk_support_cleared_expression = (
+        "(not (or (town-under-attack) "
+        "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
+        "(players-unit-type-count any-enemy monk >= 2))))"
+    )
     observations = [
         _observation(
             "strategy-castle-age",
@@ -418,7 +428,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-monk-support",
-            "(or\n    (town-under-attack)\n    (or\n        (players-unit-type-count any-enemy mangonel-line >= 2)\n        (players-unit-type-count any-enemy monk >= 2)\n    )\n)",
+            monk_support_expression,
             tuple(
                 dict.fromkeys(
                     (
@@ -432,7 +442,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-monk-support-cleared",
-            "(not\n    (or\n        (town-under-attack)\n        (or\n            (players-unit-type-count any-enemy mangonel-line >= 2)\n            (players-unit-type-count any-enemy monk >= 2)\n        )\n    )\n)",
+            monk_support_cleared_expression,
             tuple(
                 dict.fromkeys(
                     (
@@ -814,13 +824,7 @@ def community_strategy_demands(
                 building=monastery,
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(or
-    (town-under-attack)
-    (or
-        (players-unit-type-count any-enemy mangonel-line >= 2)
-        (players-unit-type-count any-enemy monk >= 2)
-    )
-)",
+                    monk_support_expression,
                     "(can-build monastery)",
                 ),
                 invalidate_ref="strategy-monk-support-cleared",
@@ -967,13 +971,7 @@ def community_strategy_demands(
                 action_symbol="monk",
                 witness_symbol="monk",
                 invalidate_ref="strategy-monk-support-cleared",
-                additional_requirements=("(or
-    (town-under-attack)
-    (or
-        (players-unit-type-count any-enemy mangonel-line >= 2)
-        (players-unit-type-count any-enemy monk >= 2)
-    )
-)",),
+                additional_requirements=(monk_support_expression,),
             ),
         )
     )
