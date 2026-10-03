@@ -74,6 +74,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertNotIn("castle-cataphract-floor", standard.production_demands)
         self.assertIn("castle-cataphract-floor", infantry.production_demands)
         self.assertIn("castle-varangian-guard-floor", infantry.production_demands)
+        self.assertNotIn("counter-castle-cataphracts", infantry.production_demands)
 
     def test_water_continuity_can_be_disabled_without_removing_land_strategy(self):
         profile = build_byzantine_stock_strategy(
