@@ -378,16 +378,6 @@ def lower_economy_controller(
             ),
         ),
         select_rule(
-            "economy-controller-select-counter-feudal",
-            EconomyMode.COUNTER_FEUDAL,
-            (
-                "(current-age >= feudal-age)",
-                "(current-age < castle-age)",
-                no_pressure,
-                opening(2),
-            ),
-        ),
-        select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
             (
@@ -413,7 +403,7 @@ def lower_economy_controller(
             (
                 "(current-age < castle-age)",
                 no_pressure,
-                opening(1),
+                f"(or {opening(1)} {opening(2)})",
             ),
         ),
         NativeControlRule(
