@@ -194,6 +194,7 @@ class ExecutionDemandTemplate:
     action: str
     witness: str
     release: str
+    action_witness_gates: tuple[str, ...] = ()
     invalidate: str | None = None
     local_id: str = "primary"
     capability_intent: CapabilityIntent | None = None
@@ -887,6 +888,7 @@ def lower_strategy_profile(
                     requirements=execution.requirements,
                     action=execution.action,
                     witness=execution.witness,
+                    action_witness_gates=execution.action_witness_gates,
                     release=execution.release,
                     location=SourceLocation(1),
                     invalidate=execution.invalidate,
@@ -2716,10 +2718,7 @@ def build_byzantine_castle_strategy(
         if demand.identity == "feudal-transition":
             execution = replace(
                 execution,
-                requirements=(
-                    *execution.requirements,
-                    "(research-completed 22)",
-                ),
+                action_witness_gates=("(research-completed 22)",),
             )
         return replace(
             demand,
