@@ -1,6 +1,26 @@
 # Implementation map — exact files/modules/tests per gap (read-only pointers)
 Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compiler\
 
+## 2026-10-03 mainline snapshot
+Authoritative main commit: `f2f92810645da70c3dd080b711e05574609d71ee` (PR #331 merge).
+
+Current Byzantine native strategy seams in `Byzantine.per`:
+- 14-SN target-evaluation policy;
+- 20 offensive-priority and 9 defensive-priority native writes;
+- distinct `sn-target-player-number` / `sn-focus-player-number` ownership with attack lock/validation;
+- 42 train admissions paired with `up-train-site-ready`;
+- focus-player fact profile;
+- bounded deer controller and forage/deer food-source selection;
+- fail-closed escrow mutation boundary.
+
+Current static audit of `main`: zero duplicate `defconst` definitions; two `attack-now` rules with zero missing target guards; 42/42 train admissions with provider-readiness; no unsupported escrow mutation commands emitted by the Byzantine artifact.
+
+Pending: PR #327 contains a materially newer resource-camp placement lifecycle, but it is based on an older main and is 83 commits behind current main. It must be rebased/ported and re-verified before integration. Current desired flow: resource observation -> nearest viable resource object -> persisted point -> existing demand/builder lifecycle -> witness/recovery.
+
+See `docs/reports/2026-10-03-mainline-status.md` for the complete current project snapshot.
+
+Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compiler\
+
 ## Construction lifecycle — current mainline
 - Status: integrated on current `main`; PR #86 was audited and closed as superseded.
 - Current implementation: `semantic/action_issuance.py`, `semantic/completion_witness.py`,
