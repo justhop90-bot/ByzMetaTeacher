@@ -86,22 +86,25 @@ jobs:
         shell: bash
         run: |
           set +e
-          mkdir -p /tmp/native-reports
           git clone --depth 1 https://github.com/joerollman/aoe2-ai-parser.git /tmp/aoe2-ai-parser-0.1.82
-          PYTHONPATH=/tmp/aoe2-ai-parser-0.1.82/lab/src python -m aoe2_ai_lab lint Byzantine.per --json > /tmp/native-reports/byzantine-parser-0.1.82.json
+          PYTHONPATH=/tmp/aoe2-ai-parser-0.1.82/lab/src python -m aoe2_ai_lab lint Byzantine.per --json > parser-audit-0.1.82.json 2> parser-audit-0.1.82.stderr
           parser_rc=$?
           echo "parser_exit=${parser_rc}"
+          cat parser-audit-0.1.82.stderr || true
           python - <<'PY'
           import json
           from pathlib import Path
-          p = Path('/tmp/native-reports/byzantine-parser-0.1.82.json')
+          p = Path('parser-audit-0.1.82.json')
+          if not p.exists():
+              print('parser report missing')
+              raise SystemExit(0)
           d = json.loads(p.read_text())
           print(f"parser_0.1.82 finding_count={d.get('finding_count')} failed={d.get('failed')}")
           by_code = {}
           for f in d.get('findings', []):
               by_code.setdefault(f['code'], []).append(f['line'])
           for code, lines in sorted(by_code.items()):
-              print(code, lines[:20], '...' if len(lines) > 20 else '')
+              print(code, lines[:30], '...' if len(lines) > 30 else '')
           PY
           exit 0
       - name: Focused Byzantine camp controller regression
