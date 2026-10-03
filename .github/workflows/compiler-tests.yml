@@ -291,6 +291,20 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
+      - name: Pinned native parser - Byzantine relic and dropsite behavior fixture
+        run: |
+          python -m aoe2_ai_lab lint verification/byz-relic-dropsites.per --profile default --json > /tmp/byz-behavior-native-1.json
+          python -m aoe2_ai_lab lint verification/byz-relic-dropsites.per --profile default --json > /tmp/byz-behavior-native-2.json
+          cmp -s /tmp/byz-behavior-native-1.json /tmp/byz-behavior-native-2.json
+          python - <<'PY'
+          import json
+          payload = json.load(open('/tmp/byz-behavior-native-1.json', encoding='utf-8'))
+          assert payload['finding_count'] == 0, payload
+          assert payload['findings'] == [], payload
+          assert payload['failed'] is False, payload
+          print('Byzantine behavior fixture: native finding_count=0; deterministic')
+          PY
+
       - name: Upload native validation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
