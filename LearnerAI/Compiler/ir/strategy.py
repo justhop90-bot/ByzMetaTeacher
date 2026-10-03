@@ -471,6 +471,7 @@ class StrategyCompilation:
     map_profile: tuple["MapProfile", ...] = ()
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
+    camp_controller: "ByzantineCampControllerPlan | None" = None
 
 
 _AGE_ORDER = {
