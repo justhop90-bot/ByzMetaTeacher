@@ -1554,7 +1554,7 @@
     (current-age >= castle-age)
     (goal byzantine-relic-control-state byzantine-relic-control-idle)
     (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 2)
+    (unit-type-count-total monk >= 1)
     (or
         (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
         (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
@@ -1563,7 +1563,7 @@
     (up-full-reset-search)
     (up-find-remote c: 125 c: 1)
     (up-set-target-object search-remote c: 0)
-    (up-find-local c: monk c: 2)
+    (up-find-local c: monk c: 1)
     (up-target-objects 0 action-move -1 -1)
     (set-goal byzantine-relic-control-state byzantine-relic-control-acquire)
     (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
@@ -4485,7 +4485,7 @@
 (defconst bt-castle-varangian-floor 3)
 (defconst bt-castle-skirmisher-floor 4)
 (defconst bt-castle-mangonel-floor 2)
-(defconst bt-castle-monk-floor 2)
+(defconst bt-castle-monk-floor 1)
 (defconst bt-imperial-cavalier-target 2)
 (defconst bt-imperial-hussar-target 4)
 (defconst bt-imperial-onager-target 2)
@@ -16593,35 +16593,11 @@
     (set-goal demand-castle-monastery-capability 0)
 )
 
-; Strategic invalidation: monastery support demand clears when defensive, siege,
-; and conversion evidence is absent.
-(defrule
-    (goal demand-castle-monastery-capability 1)
-    (not
-        (or
-            (town-under-attack)
-            (or
-                (players-unit-type-count any-enemy mangonel-line >= 2)
-                (players-unit-type-count any-enemy monk >= 2)
-            )
-        )
-    )
-=>
-    (set-goal demand-castle-monastery-capability 0)
-)
-
 ; Recovery: castle-monastery-capability | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-castle-monastery-capability 0)
     (not (building-type-count monastery >= 1))
     (current-age >= castle-age)
-    (or
-        (town-under-attack)
-        (or
-            (players-unit-type-count any-enemy mangonel-line >= 2)
-            (players-unit-type-count any-enemy monk >= 2)
-        )
-    )
 =>
     (set-goal demand-castle-monastery-capability 1)
 )
@@ -16689,13 +16665,6 @@
     (not (building-type-count monastery > 0))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
-    (or
-        (town-under-attack)
-        (or
-            (players-unit-type-count any-enemy mangonel-line >= 2)
-            (players-unit-type-count any-enemy monk >= 2)
-        )
-    )
     (can-build monastery)
 =>
     (build monastery)
@@ -22590,35 +22559,11 @@
     (set-goal demand-castle-monk-floor 0)
 )
 
-; Strategic invalidation: Monk support demand clears when defensive, siege,
-; and conversion evidence is absent.
-(defrule
-    (goal demand-castle-monk-floor 1)
-    (not
-        (or
-            (town-under-attack)
-            (or
-                (players-unit-type-count any-enemy mangonel-line >= 2)
-                (players-unit-type-count any-enemy monk >= 2)
-            )
-        )
-    )
-=>
-    (set-goal demand-castle-monk-floor 0)
-)
-
 ; Recovery: castle-monk-floor | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-castle-monk-floor 0)
     (not (unit-type-count monk >= bt-castle-monk-floor))
     (building-type-count-total 104 >= 1)
-    (or
-        (town-under-attack)
-        (or
-            (players-unit-type-count any-enemy mangonel-line >= 2)
-            (players-unit-type-count any-enemy monk >= 2)
-        )
-    )
 =>
     (set-goal demand-castle-monk-floor 1)
 )
@@ -22668,13 +22613,6 @@
     (not (unit-type-count monk >= bt-castle-monk-floor))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
-    (or
-        (town-under-attack)
-        (or
-            (players-unit-type-count any-enemy mangonel-line >= 2)
-            (players-unit-type-count any-enemy monk >= 2)
-        )
-    )
     (up-train-site-ready c: monk)
     (can-train-with-escrow monk)
     (unit-type-count-total monk < bt-castle-monk-floor)
