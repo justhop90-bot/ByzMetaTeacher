@@ -8771,7 +8771,7 @@
     (goal byzantine-army-attack-ready 2)
     (or
         (town-under-attack)
-        (goal under-attack yes)
+        (town-under-attack)
     )
 =>
     (up-reset-attack-now)
@@ -15167,7 +15167,7 @@
     (current-age >= castle-age)
     (up-compare-goal byzantine-frontier-generation < 2)
     (not (town-under-attack))
-    (not (goal under-attack yes))
+    (not (town-under-attack))
     (or
         (goal strategic-primary-intent 3)
         (or
@@ -16579,7 +16579,7 @@
     (not (research-completed 322))
     (or
         (town-under-attack)
-        (goal under-attack yes)
+        (town-under-attack)
     )
     (or
         (players-unit-type-count any-enemy knight >= 2)
@@ -16870,7 +16870,7 @@
     (current-age == dark-age)
     (or
         (town-under-attack)
-        (goal under-attack yes)
+        (town-under-attack)
     )
     (or
         (dropsite-min-distance gold >= 7)
@@ -16895,7 +16895,7 @@
     (current-age == dark-age)
     (or
         (town-under-attack)
-        (goal under-attack yes)
+        (town-under-attack)
     )
     (or
         (dropsite-min-distance gold >= 7)
@@ -16924,7 +16924,7 @@
                 (players-unit-type-count any-enemy archer-line >= 4)
                 (or
                         (players-unit-type-count any-enemy militia-line >= 5)
-                        (goal under-attack yes)
+                        (town-under-attack)
                     )
             )
     )
@@ -16959,7 +16959,7 @@
                                 (players-unit-type-count any-enemy mangonel-line >= 2)
                                 (or
                                         (players-building-type-count any-enemy 82 >= 1)
-                                        (goal under-attack yes)
+                                        (town-under-attack)
                                     )
                             )
                     )
@@ -17114,7 +17114,7 @@
     (not (up-point-contains byzantine-wall-resource-point c: wall-class))
     (or
         (town-under-attack)
-        (goal under-attack yes)
+        (town-under-attack)
     )
     (or
         (dropsite-min-distance gold >= 7)
@@ -17220,7 +17220,7 @@
         (current-age < castle-age)
         (or
                 (stone-amount >= 650)
-                (goal under-attack yes)
+                (town-under-attack)
             )
     )
 =>
@@ -18731,7 +18731,7 @@
     )
     (or
         (town-under-attack)
-        (goal under-attack yes)
+        (town-under-attack)
     )
     (or
         (players-unit-type-count any-enemy knight >= 2)
