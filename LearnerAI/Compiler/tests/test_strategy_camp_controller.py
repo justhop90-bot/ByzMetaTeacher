@@ -14,6 +14,15 @@ class ByzantineCampControllerTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
+    def test_resource_found_has_a_semantic_adapter(self):
+        from LearnerAI.Compiler.primitives.native_binder import NativeSupportState
+        from LearnerAI.Compiler.primitives.registry import default_de_registry
+
+        self.assertIs(
+            default_de_registry().support_state("resource-found"),
+            NativeSupportState.EXECUTABLE_SAFE,
+        )
+
     def test_three_resource_front_observations_and_floors_exist(self):
         profile = build_byzantine_strategy(self.effective)
 
