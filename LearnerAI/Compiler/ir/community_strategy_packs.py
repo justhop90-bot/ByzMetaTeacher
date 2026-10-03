@@ -489,7 +489,7 @@ def community_strategy_observations(
                 _observation(
                     f"camp-front-{label}-active",
                     (
-                        f"(and (current-age >= feudal-age) (resource-found {resource.value}))"
+                        "(and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))"
                         if resource is CampResource.STONE
                         else f"(resource-found {resource.value})"
                     ),
