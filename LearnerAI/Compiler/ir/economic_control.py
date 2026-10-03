@@ -18,6 +18,7 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
+    FAST_IMPERIAL = 9
 
 
 @dataclass(frozen=True)
@@ -55,7 +56,7 @@ class EconomyControllerPlan:
     controller_id: str
     state_name: str = "economy-posture"
     opening_state: str = "opening-plan"
-    pressure_observation: str = "strategy-opening-pressure"
+    pressure_observation: str = "strategy-enemy-pressure"
     policies: tuple[EconomyModePolicy, ...] = ()
 
     def __post_init__(self) -> None:
@@ -77,6 +78,7 @@ def default_byzantine_economy_controller() -> EconomyControllerPlan:
             EconomyModePolicy(EconomyMode.WATER_CONTROL, EconomyAllocation(38, 42, 20, 8)),
             EconomyModePolicy(EconomyMode.CASTLE_CONVERSION, EconomyAllocation(45, 25, 30, 7)),
             EconomyModePolicy(EconomyMode.IMPERIAL_CONVERSION, EconomyAllocation(40, 25, 35, 7)),
+            EconomyModePolicy(EconomyMode.FAST_IMPERIAL, EconomyAllocation(42, 20, 38, 7)),
         ),
     )
 
@@ -150,14 +152,22 @@ def lower_economy_controller(
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
-    feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
     no_pressure = f"(not {pressure})"
+    arena = profile.observation("strategy-arena-map").expression
     opening = lambda value: f"(goal {plan.opening_state} {value})"
 
-    def select_rule(identity: str, mode: EconomyMode, guard: str) -> NativeControlRule:
+    def select_rule(
+        identity: str,
+        mode: EconomyMode,
+        guards: str | tuple[str, ...],
+    ) -> NativeControlRule:
+        sources = (guards,) if isinstance(guards, str) else guards
         return NativeControlRule(
             identity,
-            facts=(parse_expression(guard, SourceLocation(1)),),
+            facts=tuple(
+                parse_expression(source, SourceLocation(1))
+                for source in sources
+            ),
             actions=(
                 parse_expression(
                     f"(set-goal {plan.state_name} {int(mode)})",
@@ -196,32 +206,79 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-counter-pressure",
             EconomyMode.COUNTER_FEUDAL,
-            f"(and {feudal_window} {pressure})",
+            (
+                "(current-age >= feudal-age)",
+                "(current-age < castle-age)",
+                pressure,
+            ),
         ),
         select_rule(
             "economy-controller-select-fast-castle",
             EconomyMode.FAST_CASTLE,
-            f"(and {feudal_window} (and {no_pressure} {opening(3)}))",
+            (
+                "(current-age >= feudal-age)",
+                "(current-age < castle-age)",
+                no_pressure,
+                opening(3),
+            ),
         ),
         select_rule(
             "economy-controller-select-counter-feudal",
             EconomyMode.COUNTER_FEUDAL,
-            f"(and {feudal_window} (and {no_pressure} {opening(2)}))",
+            (
+                "(current-age >= feudal-age)",
+                "(current-age < castle-age)",
+                no_pressure,
+                opening(2),
+            ),
         ),
         select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            f"(and {feudal_window} (and {no_pressure} {opening(4)}))",
+            (
+                "(current-age >= feudal-age)",
+                "(current-age < castle-age)",
+                no_pressure,
+                opening(4),
+            ),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            f"(and {feudal_window} (and {no_pressure} {opening(5)}))",
+            (
+                "(current-age >= feudal-age)",
+                "(current-age < castle-age)",
+                no_pressure,
+                opening(5),
+            ),
         ),
         select_rule(
             "economy-controller-select-base",
             EconomyMode.BASE,
-            f"(and (current-age < castle-age) (and {no_pressure} {opening(1)}))",
+            (
+                "(current-age < castle-age)",
+                no_pressure,
+                opening(1),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-select-fast-imperial",
+            facts=tuple(
+                parse_expression(item, SourceLocation(1))
+                for item in (
+                    "(current-age >= castle-age)",
+                    "(current-age < imperial-age)",
+                    opening(3),
+                    arena,
+                    no_pressure,
+                )
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {int(EconomyMode.FAST_IMPERIAL)})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         select_rule(
             "economy-controller-select-castle-conversion",

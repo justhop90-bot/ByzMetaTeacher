@@ -1419,13 +1419,13 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     )
 
     current_age = "(current-age >= castle-age)"
-    allocation = "(goal strategy-posture 4)"
-    knight_pressure = "(players-unit-type-count any-enemy knight >= 3)"
-    knight_clear = "(players-unit-type-count any-enemy knight < 3)"
-    cataphract_floor = "(unit-type-count cataphract >= 2)"
-    cataphract_lost = "(unit-type-count cataphract < 2)"
+    allocation = "(or (goal strategy-posture 3) (goal strategy-posture 4))"
     infantry_pressure = "(players-unit-type-count any-enemy militia-line >= 5)"
     infantry_clear = "(players-unit-type-count any-enemy militia-line < 5)"
+    siege_pressure = "(players-unit-type-count any-enemy mangonel-line >= 2)"
+    siege_clear = "(players-unit-type-count any-enemy mangonel-line < 2)"
+    cataphract_floor = "(unit-type-count cataphract >= 2)"
+    cataphract_lost = "(unit-type-count cataphract < 2)"
     knight_floor = "(unit-type-count knight >= 3)"
     knight_lost = "(unit-type-count knight < 3)"
 
@@ -1447,7 +1447,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
                 parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
                 parse_expression(
                     f"(and {current_age} (and {allocation} "
-                    f"(and {knight_pressure} {cataphract_floor})))",
+                    f"(and {infantry_pressure} {cataphract_floor})))",
                     SourceLocation(1),
                 ),
             ),
@@ -1464,7 +1464,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
                 parse_expression(f"(goal {state_name} 1)", SourceLocation(1)),
                 parse_expression(
                     f"(and {current_age} (and {allocation} "
-                    f"(and {knight_pressure} {cataphract_floor})))",
+                    f"(and {infantry_pressure} {cataphract_floor})))",
                     SourceLocation(1),
                 ),
             ),
@@ -1481,7 +1481,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
                 parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
                 parse_expression(
                     f"(and {current_age} (and {allocation} "
-                    f"(and {infantry_pressure} {knight_floor})))",
+                    f"(and {siege_pressure} {knight_floor})))",
                     SourceLocation(1),
                 ),
             ),
@@ -1498,7 +1498,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
                 parse_expression(f"(goal {state_name} 3)", SourceLocation(1)),
                 parse_expression(
                     f"(and {current_age} (and {allocation} "
-                    f"(and {infantry_pressure} {knight_floor})))",
+                    f"(and {siege_pressure} {knight_floor})))",
                     SourceLocation(1),
                 ),
             ),
@@ -1513,7 +1513,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             "byzantine-attack-phase-complete-cataphract",
             facts=(
                 parse_expression(f"(goal {state_name} 2)", SourceLocation(1)),
-                parse_expression(knight_clear, SourceLocation(1)),
+                parse_expression(infantry_clear, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(
@@ -1526,7 +1526,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             "byzantine-attack-phase-complete-knight",
             facts=(
                 parse_expression(f"(goal {state_name} 4)", SourceLocation(1)),
-                parse_expression(infantry_clear, SourceLocation(1)),
+                parse_expression(siege_clear, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(
@@ -2163,7 +2163,7 @@ def build_land_castle_strategy(
             priority=40,
         ),
         PostureTransition(
-            from_postures=(StrategyPosture.FLUSH, StrategyPosture.BOOM),
+            from_postures=(StrategyPosture.FLUSH,),
             to_posture=StrategyPosture.CASTLE_POWER,
             evidence=(
                 StrategicEvidence(

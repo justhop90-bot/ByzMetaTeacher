@@ -5045,7 +5045,7 @@
 
 ; Native control rule: sn-mode-attack-groups-castle-008
 (defrule
-    (and (and (current-age >= castle-age) (goal strategy-posture 4)) (up-compare-sn sn-native-36 != 2))
+    (and (and (current-age >= castle-age) (or (goal strategy-posture 3) (goal strategy-posture 4))) (up-compare-sn sn-native-36 != 2))
 =>
     (set-strategic-number sn-native-36 2)
 )
@@ -5245,23 +5245,52 @@
 
 ; Native control rule: opening-selector-fast-castle
 (defrule
-    (and (goal opening-plan -1) (and (map-type arena) (not (players-unit-type-count any-enemy militia-line >= 5))))
+    (and (goal opening-plan -1) (and (map-type arena) (not (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5))))))
 =>
     (set-goal opening-plan 3)
 )
 
 ; Native control rule: opening-selector-counter-feudal
 (defrule
-    (and (goal opening-plan -1) (and (not (map-type islands)) (and (not (map-type arena)) (players-unit-type-count any-enemy militia-line >= 5))))
+    (and (goal opening-plan -1)
+         (and (not (map-type arena))
+              (or (players-unit-type-count any-enemy knight >= 3)
+                  (or (players-unit-type-count any-enemy archer-line >= 4)
+                      (players-unit-type-count any-enemy militia-line >= 5)))))
 =>
     (set-goal opening-plan 2)
 )
 
-; Native control rule: opening-selector-defensive-standard
+; Native control rule: opening-selector-fast-castle-standard-land
 (defrule
-    (and (goal opening-plan -1) (and (not (map-type islands)) (and (not (map-type arena)) (not (players-unit-type-count any-enemy militia-line >= 5)))))
+    (and (goal opening-plan -1)
+         (and (not (map-type islands))
+              (and (not (map-type arena))
+                   (and (not (map-type hybrid))
+                        (and (not (map-type arabia))
+                             (not (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))))))))
 =>
     (set-goal opening-plan 3)
+)
+
+; Native control rule: opening-selector-defensive-standard-arabia
+(defrule
+    (and (goal opening-plan -1)
+         (and (map-type arabia)
+              (not (or (players-unit-type-count any-enemy knight >= 3)
+                       (or (players-unit-type-count any-enemy archer-line >= 4)
+                           (players-unit-type-count any-enemy militia-line >= 5))))))
+=>
+    (set-goal opening-plan 1)
+)
+
+; Native control rule: opening-selector-defensive-standard
+(defrule
+    (and (goal opening-plan -1)
+         (and (map-type hybrid)
+              (not (players-unit-type-count any-enemy militia-line >= 5))))
+=>
+    (set-goal opening-plan 1)
 )
 
 ; Native economy rule: byzantine-community-economy-initialize
@@ -5833,8 +5862,24 @@
 )
 
 ; Native control rule: economy-controller-select-castle-conversion
+; Native control rule: economy-controller-select-fast-imperial
 (defrule
-    (and (current-age >= castle-age) (current-age < imperial-age))
+    (and (current-age >= castle-age)
+         (and (current-age < imperial-age)
+              (and (map-type arena)
+                   (and (goal opening-plan 3)
+                        (not (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5))))))))
+=>
+    (set-goal economy-posture 9)
+)
+
+; Native control rule: economy-controller-select-castle-conversion
+(defrule
+    (and (current-age >= castle-age)
+         (and (current-age < imperial-age)
+              (not (and (map-type arena)
+                        (and (goal opening-plan 3)
+                             (not (players-unit-type-count any-enemy militia-line >= 5)))))))
 =>
     (set-goal economy-posture 6)
 )
@@ -6080,6 +6125,38 @@
 ; Native control rule: economy-controller-write-imperial_conversion-sn-percent-civilian-builders
 (defrule
     (goal economy-posture 7)
+    (up-compare-sn sn-percent-civilian-builders != 7)
+=>
+    (set-strategic-number sn-percent-civilian-builders 7)
+)
+
+; Native control rule: economy-controller-write-fast_imperial-sn-food-gatherer-percentage
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-food-gatherer-percentage != 42)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 42)
+)
+
+; Native control rule: economy-controller-write-fast_imperial-sn-wood-gatherer-percentage
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-wood-gatherer-percentage != 20)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+
+; Native control rule: economy-controller-write-fast_imperial-sn-gold-gatherer-percentage
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-gold-gatherer-percentage != 38)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 38)
+)
+
+; Native control rule: economy-controller-write-fast_imperial-sn-percent-civilian-builders
+(defrule
+    (goal economy-posture 9)
     (up-compare-sn sn-percent-civilian-builders != 7)
 =>
     (set-strategic-number sn-percent-civilian-builders 7)
@@ -8664,10 +8741,20 @@
     (goal byzantine-army-plan-phase 1)
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
-    (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
-    (unit-type-count-total mangonel-line >= bt-castle-attack-siege-target)
-    (unit-type-count-total monk >= bt-castle-monk-floor)
+    (attack-soldier-count >= 8)
+    (or
+        (and
+            (goal counter-package-infantry_pressure_castle 1)
+            (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
+        )
+        (or
+            (and
+                (not (goal counter-package-infantry_pressure_castle 1))
+                (unit-type-count-total knight-line >= 2)
+            )
+            (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+        )
+    )
 =>
     (set-goal byzantine-army-attack-ready 1)
 )
@@ -18152,7 +18239,9 @@
     (goal research-retry-barrier-research-wheelbarrow 0)
     (not (up-research-status c: 213 >= 2))
     (not (research-completed 213))
-    (current-age >= castle-age)
+    (current-age >= feudal-age)
+    (food-amount >= 1000)
+    (gold-amount >= 250)
     (can-research-with-escrow wheelbarrow)
 =>
     (release-escrow food)
@@ -18219,7 +18308,9 @@
     (goal research-retry-barrier-research-double-bit-axe 0)
     (not (up-research-status c: 202 >= 2))
     (not (research-completed 202))
-    (current-age >= castle-age)
+    (current-age >= feudal-age)
+    (food-amount >= 900)
+    (gold-amount >= 250)
     (can-research-with-escrow double-bit-axe)
 =>
     (release-escrow food)
@@ -18287,7 +18378,9 @@
     (goal research-retry-barrier-research-horse-collar 0)
     (not (up-research-status c: 14 >= 2))
     (not (research-completed 14))
-    (current-age >= castle-age)
+    (current-age >= feudal-age)
+    (food-amount >= 900)
+    (gold-amount >= 250)
     (can-research-with-escrow horse-collar)
 =>
     (release-escrow food)
@@ -19175,7 +19268,9 @@
     (goal research-retry-barrier-research-gold-mining 0)
     (not (up-research-status c: 55 >= 2))
     (not (research-completed 55))
-    (current-age >= castle-age)
+    (current-age >= feudal-age)
+    (food-amount >= 900)
+    (gold-amount >= 250)
     (can-research-with-escrow gold-mining)
 =>
     (release-escrow food)
@@ -20686,6 +20781,14 @@
 =>
     (set-goal demand-castle-cataphract-floor 0)
 )
+    
+; Strategic invalidation: Castle Cataphract demand is only persistent while infantry pressure is real.
+(defrule
+    (goal demand-castle-cataphract-floor 1)
+    (not (players-unit-type-count any-enemy militia-line >= 5))
+=>
+    (set-goal demand-castle-cataphract-floor 0)
+)
 
 ; Recovery: castle-cataphract-floor | RELEASED -> ACTIVE on world-state loss
 (defrule
@@ -20736,6 +20839,7 @@
 (defrule
     (goal demand-castle-cataphract-floor 1)
     (goal byzantine-army-plan-phase 1)
+    (goal counter-package-infantry_pressure_castle 1)
     (not (unit-type-count cataphract-line >= bt-castle-cataphract-floor))
     (goal production-retry-barrier-castle-cataphract-floor 0)
     (not (up-pending-objects c: 40 >= 1))
@@ -20792,6 +20896,14 @@
 =>
     (set-goal demand-castle-varangian-guard-floor 0)
 )
+    
+; Strategic invalidation: Castle Varangian demand clears when infantry pressure clears.
+(defrule
+    (goal demand-castle-varangian-guard-floor 1)
+    (not (players-unit-type-count any-enemy militia-line >= 5))
+=>
+    (set-goal demand-castle-varangian-guard-floor 0)
+)
 
 ; Recovery: castle-varangian-guard-floor | RELEASED -> ACTIVE on world-state loss
 ; Recovery is symmetric with Castle issuance: only re-arm the
@@ -20844,7 +20956,7 @@
 (defrule
     (goal demand-castle-varangian-guard-floor 1)
     (goal byzantine-army-plan-phase 1)
-    (goal counter-package-mounted_pressure_castle 1)
+    (goal counter-package-infantry_pressure_castle 1)
     (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
     (goal production-retry-barrier-castle-varangian-guard-floor 0)
     (not (up-pending-objects c: 2703 >= 1))

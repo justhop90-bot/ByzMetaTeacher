@@ -24,8 +24,14 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         end = self.per.index(end_marker, start)
         return self.per[start:end]
 
-    def test_safe_land_opening_selects_fast_castle(self):
-        block = self._rule_block("; Native control rule: opening-selector-defensive-standard")
+    def test_safe_arabia_opening_selects_defensive_standard(self):
+        block = self._rule_block("; Native control rule: opening-selector-defensive-standard-arabia")
+        self.assertIn("(map-type arabia)", block)
+        self.assertIn("(set-goal opening-plan 1)", block)
+
+    def test_arena_opening_selects_fast_castle(self):
+        block = self._rule_block("; Native control rule: opening-selector-fast-castle")
+        self.assertIn("(map-type arena)", block)
         self.assertIn("(set-goal opening-plan 3)", block)
 
     def test_dark_age_does_not_spend_on_barracks_or_farms(self):
@@ -50,6 +56,40 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             self.per,
         )
 
+    def test_arena_fast_imperial_economy_mode_uses_posture_9(self):
+        block = self._rule_block("; Native control rule: economy-controller-select-fast-imperial")
+        self.assertIn("(map-type arena)", block)
+        self.assertIn("(set-goal economy-posture 9)", block)
+        writer = self._rule_block(
+            "; Native control rule: economy-controller-write-fast_imperial-sn-gold-gatherer-percentage"
+        )
+        self.assertIn("(goal economy-posture 9)", writer)
+        self.assertIn("(set-strategic-number sn-gold-gatherer-percentage 38)", writer)
+
+    def test_castle_attack_ready_uses_assembled_backbone_not_fixed_monk_siege_package(self):
+        block = self._rule_block("; ATTACK THRESHOLDS AND REINFORCEMENT")
+        self.assertIn("(attack-soldier-count >= 8)", block)
+        self.assertIn("(goal counter-package-infantry_pressure_castle 1)", block)
+        self.assertIn("(unit-type-count-total knight-line >= 2)", block)
+        self.assertNotIn("(unit-type-count-total monk >= bt-castle-monk-floor)", block)
+
+    def test_premium_castle_demands_invalidate_when_infantry_pressure_clears(self):
+        cat = self._rule_block(
+            "; Strategic invalidation: Castle Cataphract demand is only persistent while infantry pressure is real."
+        )
+        var = self._rule_block(
+            "; Strategic invalidation: Castle Varangian demand clears when infantry pressure clears."
+        )
+        self.assertIn("(goal demand-castle-cataphract-floor 1)", cat)
+        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", cat)
+        self.assertIn("(goal demand-castle-varangian-guard-floor 1)", var)
+        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", var)
+
+    def test_castle_attack_groups_are_enabled_for_boom(self):
+        block = self._rule_block("; Native control rule: sn-mode-attack-groups-castle-008")
+        self.assertIn("(goal strategy-posture 3)", block)
+        self.assertIn("(goal strategy-posture 4)", block)
+
     def test_fast_castle_economy_keeps_wood_and_gold_funded(self):
         block = self.per[
             self.per.index("; Native control rule: economy-controller-write-fast_castle-sn-food-gatherer-percentage"):
@@ -69,16 +109,19 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(build mill)", block)
         self.assertIn("(up-pending-placement c: 68)", block)
 
-    def test_fast_castle_defers_eco_research_until_castle(self):
-        for marker in (
-            "; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED",
-            "; Action issuance: research-double-bit-axe | ACTIVE -> ISSUED",
-            "; Action issuance: research-horse-collar | ACTIVE -> ISSUED",
-            "; Action issuance: research-gold-mining | ACTIVE -> ISSUED",
-        ):
-            block = self._rule_block(marker)
-            self.assertIn("(current-age >= castle-age)", block)
-            self.assertNotIn("(current-age >= feudal-age)", block)
+    def test_feudal_eco_research_uses_feudal_guard_and_castle_bank_floor(self):
+        expected = {
+            "double-bit-axe": ("900", "250"),
+            "horse-collar": ("900", "250"),
+            "wheelbarrow": ("1000", "250"),
+            "gold-mining": ("900", "250"),
+        }
+        for tech, (food_floor, gold_floor) in expected.items():
+            block = self._rule_block(f"; Action issuance: research-{tech} | ACTIVE -> ISSUED")
+            self.assertIn("(current-age >= feudal-age)", block)
+            self.assertNotIn("(current-age >= castle-age)", block)
+            self.assertIn(f"(food-amount >= {food_floor})", block)
+            self.assertIn(f"(gold-amount >= {gold_floor})", block)
 
 
 if __name__ == "__main__":

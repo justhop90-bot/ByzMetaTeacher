@@ -177,6 +177,10 @@ def _research_demand(
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
     floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
+    floor_requirements = tuple(
+        f"({floor.resource.value.lower()}-amount >= {floor.minimum})"
+        for floor in floors
+    )
     policy = None
     if floors:
         policy = _OpportunityCostPolicy(
@@ -213,6 +217,7 @@ def _research_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
+                *floor_requirements,
                 f"(can-research-with-escrow {token})",
             ),
             action=f"(research {token})",
@@ -285,17 +290,24 @@ def _training_demand(
     )
 
 
+_FEUDAL_RESEARCH_BANKS = {
+    "wheelbarrow": ((Resource.FOOD, 1000), (Resource.GOLD, 250)),
+    "double-bit-axe": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
+    "horse-collar": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
+    "gold-mining": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
+}
+
 _RESEARCH_PACK = (
-    ("research-wheelbarrow", "economy", "castle-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
-    ("research-double-bit-axe", "economy", "castle-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
-    ("research-horse-collar", "economy", "castle-age", "horse-collar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-horse-collar", "economy", "feudal-age", "horse-collar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-hand-cart", "economy", "castle-age", "hand-cart", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-bow-saw", "economy", "castle-age", "bow-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
     ("research-two-man-saw", "economy", "imperial-age", "two-man-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
     ("research-bodkin-arrow", "military", "castle-age", "bodkin-arrow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-conscription", "military", "imperial-age", "conscription", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-chemistry", "military", "imperial-age", "chemistry", _StrategicPriority.SUPPORT, (Resource.GOLD,)),
-    ("research-gold-mining", "economy", "castle-age", "gold-mining", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-gold-mining", "economy", "feudal-age", "gold-mining", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
     ("research-gold-shaft-mining", "economy", "castle-age", "gold-shaft-mining", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-heavy-plow", "economy", "castle-age", "heavy-plow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-fletching", "military", "feudal-age", "fletching", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
@@ -332,6 +344,11 @@ def community_strategy_observations(
         _observation(
             "strategy-arena-map",
             "(map-type arena)",
+            _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-arabia-map",
+            "(map-type arabia)",
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
@@ -815,6 +832,7 @@ def community_strategy_demands(
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
+            minimum_floors=_FEUDAL_RESEARCH_BANKS.get(tech_name, ()),
         )
         demands.append(demand)
 
@@ -839,11 +857,12 @@ def community_strategy_demands(
                 owner="military",
                 posture=_StrategyPosture.CASTLE_POWER,
                 priority=_StrategicPriority.CORE,
-                reason_ref="strategy-castle-age",
-                reason_label="Maintain the Byzantine premium Castle power floor",
+                reason_ref="strategy-enemy-infantry-pressure",
+                reason_label="Maintain the Byzantine premium Castle power floor against sustained infantry pressure",
                 line="cataphract-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
+                invalidate_ref="strategy-enemy-infantry-pressure-cleared",
             ),
             _training_demand(
                 effective=effective,
@@ -1209,7 +1228,7 @@ def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
             2,
             minimum_age=Age.CASTLE,
             maximum_age=Age.IMPERIAL,
-            postures=(_StrategyPosture.CASTLE_POWER,),
+            postures=(_StrategyPosture.CASTLE_POWER, _StrategyPosture.BOOM),
             priority=5,
         ),
     )
@@ -1279,7 +1298,7 @@ def build_byzantine_stock_strategy(
     for composition in (
         _StrategicMilitaryComposition(
             identity="castle-standard-package",
-            production_demands=("castle-knight-floor", "castle-cataphract-floor"),
+            production_demands=("castle-knight-floor",),
             attack_objective="castle-commitment",
         ),
         _StrategicMilitaryComposition(
@@ -1287,15 +1306,14 @@ def build_byzantine_stock_strategy(
             production_demands=(
                 "counter-mounted-spears",
                 "counter-ranged-skirmishers",
-                "counter-castle-cataphracts",
             ),
             attack_objective="byzantine-castle-pressure",
         ),
         _StrategicMilitaryComposition(
             identity="castle-infantry-package",
             production_demands=(
+                "castle-cataphract-floor",
                 "castle-varangian-guard-floor",
-                "counter-castle-cataphracts",
             ),
             attack_objective="byzantine-castle-pressure",
         ),
