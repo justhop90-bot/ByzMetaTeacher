@@ -106,7 +106,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             self.per,
         )
         self.assertIn(
-            "(up-lerp-tiles byzantine-siege-muster-point self-x c: bt-byzantine-muster-objective-distance)",
+            "(up-lerp-tiles byzantine-siege-muster-point position-self c: bt-byzantine-muster-objective-distance)",
             self.per,
         )
         self.assertIn(
