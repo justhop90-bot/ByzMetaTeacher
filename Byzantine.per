@@ -21,9 +21,6 @@
 (defconst arbalest 237)
 (defconst atonement 319)
 (defconst redemption 316)
-(defconst devotion 46)
-(defconst faith 45)
-(defconst heresy 439)
 (defconst illumination 233)
 (defconst block-printing 230)
 (defconst bodkin-arrow 200)
@@ -1629,6 +1626,7 @@
     (up-find-remote c: bombard-cannon c: 2)
     (up-find-remote c: mangonel-line c: 2)
     (up-find-remote c: cavalier-line c: 2)
+    (up-find-remote c: knight-line c: 2)
     (up-find-local c: all-units-class c: 4)
     (up-filter-include cmdid-monk -1 -1 -1)
     (up-target-objects 0 action-default -1 stance-aggressive)
@@ -1692,6 +1690,18 @@
     (not (research-completed block-printing))
 =>
     (set-goal demand-research-block-printing 1)
+)
+
+(defrule
+    (goal demand-research-illumination 0)
+    (current-age >= imperial-age)
+    (unit-type-count-total monk >= 4)
+    (goal byzantine-monk-defense-state byzantine-monk-defense-active)
+    (research-completed redemption)
+    (research-completed theocracy)
+    (not (research-completed illumination))
+=>
+    (set-goal demand-research-illumination 1)
 )
 
 ; -----------------------------------------------------------------------------
@@ -20367,6 +20377,74 @@
     (release-escrow gold)
     (research redemption)
     (set-goal demand-research-redemption 1010)
+)
+
+; Pending diagnostics: research-illumination
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1 and cannot reissue from pending goal 1013
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1013 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1014 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-illumination | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-illumination in ACTIVE; it is not PENDING.
+; Release: research-illumination | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-illumination 1014)
+    (research-completed illumination)
+=>
+    (set-goal demand-research-illumination 0)
+)
+
+; Completion witness: research-illumination | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-illumination 1015)
+        (goal demand-research-illumination 1013)
+    )
+    (research-completed illumination)
+=>
+    (set-goal demand-research-illumination 1014)
+)
+
+; Pending admission: research-illumination | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-illumination 1015)
+        (goal demand-research-illumination 1013)
+    )
+    (not (research-completed illumination))
+    (up-research-status c: illumination >= 2)
+=>
+    (set-goal demand-research-illumination 1013)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-illumination 1015)
+        (goal demand-research-illumination 1013)
+    )
+    (not (research-completed illumination))
+    (not (up-research-status c: illumination >= 2))
+=>
+    (set-goal demand-research-illumination 1)
+    (set-goal research-retry-barrier-research-illumination 1)
+)
+
+; Action issuance: research-illumination | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-illumination 1)
+    (not (research-completed illumination))
+    (goal research-retry-barrier-research-illumination 0)
+    (not (up-research-status c: illumination >= 2))
+    (current-age >= imperial-age)
+    (building-type-count-total monastery >= 1)
+    (unit-type-count-total monk >= 4)
+    (can-research-with-escrow illumination)
+=>
+    (release-escrow food)
+    (research illumination)
+    (set-goal demand-research-illumination 1015)
 )
 
 ; Pending diagnostics: castle-cataphract-floor
