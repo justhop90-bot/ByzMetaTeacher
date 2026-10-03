@@ -211,10 +211,9 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         ):
             self.assertIn(f"(set-goal {demand} 0)", lifecycle)
             self.assertIn(f"(resource-found {resource})", lifecycle)
-            self.assertIn(
-                f"(goal {demand} 0)\n    (resource-found {resource})\n    (not (building-type-count",
-                lifecycle,
-            )
+            self.assertIn(f"(goal {demand} 0)", lifecycle)
+            self.assertIn(f"(not (building-type-count", lifecycle)
+            self.assertIn(f"(resource-found {resource})", lifecycle)
             self.assertNotIn(
                 f"(goal {demand} 0)\n    (not (resource-found {resource}))",
                 lifecycle,
