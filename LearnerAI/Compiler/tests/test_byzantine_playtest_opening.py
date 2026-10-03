@@ -87,6 +87,13 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
 
         self.assertIn("(unit-type-count-total monk >= 2)", relic)
         self.assertIn("(up-find-local c: monk c: 1)", relic)
+    def test_defensive_monk_expansion_is_four_not_unconditional(self):
+        self.assertIn("(defconst bt-byzantine-defense-monk-floor 4)", self.per)
+        block = self._rule_block("; Conditional four-Monk floor.")
+        self.assertIn("(goal byzantine-monk-defense-state byzantine-monk-defense-active)", block)
+        self.assertIn("(unit-type-count-total monk < bt-byzantine-defense-monk-floor)", block)
+        self.assertNotIn("(set-goal demand-castle-monk-floor 1)", block)
+
     def test_premium_castle_demands_invalidate_when_infantry_pressure_clears(self):
         cat = self._rule_block(
             "; Strategic invalidation: Castle Cataphract demand is only persistent while infantry pressure is real."
