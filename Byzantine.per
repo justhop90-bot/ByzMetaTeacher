@@ -4551,6 +4551,36 @@
 (defconst byzantine-resource-camp-building-kind 749)
 (defconst byzantine-resource-camp-building-lumber 1)
 (defconst byzantine-resource-camp-building-mining 2)
+; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT
+; Local resource-camp placement ring. The persisted resource point remains the
+; economic objective; these eight offsets are legal-tile candidates around it.
+(defconst byzantine-resource-camp-candidate-point 768)
+(defconst byzantine-resource-camp-ring-ne 770)
+(defconst byzantine-resource-camp-ring-ne-y 771)
+(defconst byzantine-resource-camp-ring-e 772)
+(defconst byzantine-resource-camp-ring-e-y 773)
+(defconst byzantine-resource-camp-ring-se 774)
+(defconst byzantine-resource-camp-ring-se-y 775)
+(defconst byzantine-resource-camp-ring-s 776)
+(defconst byzantine-resource-camp-ring-s-y 777)
+(defconst byzantine-resource-camp-ring-sw 778)
+(defconst byzantine-resource-camp-ring-sw-y 779)
+(defconst byzantine-resource-camp-ring-w 780)
+(defconst byzantine-resource-camp-ring-w-y 781)
+(defconst byzantine-resource-camp-ring-nw 782)
+(defconst byzantine-resource-camp-ring-nw-y 783)
+(defconst byzantine-resource-camp-ring-n 784)
+(defconst byzantine-resource-camp-ring-n-y 785)
+(defconst byzantine-resource-camp-placement-state 788)
+(defconst byzantine-resource-camp-placement-state-idle 0)
+(defconst byzantine-resource-camp-placement-state-candidate 1)
+(defconst byzantine-resource-camp-ring-index 789)
+(defconst byzantine-resource-camp-radius-stage 790)
+(defconst byzantine-resource-camp-radius-stage-base 0)
+(defconst byzantine-resource-camp-radius-stage-wide 1)
+(defconst byzantine-resource-camp-radius-stage-remote 2)
+(defconst byzantine-resource-camp-radius-wide 24)
+(defconst byzantine-resource-camp-radius-remote 30)
 (defconst byzantine-offensive-castle-point 723)
 (defconst byzantine-offensive-castle-valid 725)
 (defconst byzantine-offensive-push-state 726)
@@ -4572,6 +4602,48 @@
     (goal byzantine-resource-camp-building-kind -1)
 =>
     (set-goal byzantine-resource-camp-building-kind 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-placement-state -1)
+=>
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-ring-index -1)
+=>
+    (set-goal byzantine-resource-camp-ring-index 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-radius-stage -1)
+=>
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
+)
+
+; The ring is centered on the persisted resource point but never builds there.
+; Each candidate is bounded into map space and tested with up-can-build-line.
+(defrule
+    (true)
+=>
+    (set-goal byzantine-resource-camp-ring-ne 3)
+    (set-goal byzantine-resource-camp-ring-ne-y 3)
+    (set-goal byzantine-resource-camp-ring-e 3)
+    (set-goal byzantine-resource-camp-ring-e-y 0)
+    (set-goal byzantine-resource-camp-ring-se 3)
+    (set-goal byzantine-resource-camp-ring-se-y -3)
+    (set-goal byzantine-resource-camp-ring-s 0)
+    (set-goal byzantine-resource-camp-ring-s-y -3)
+    (set-goal byzantine-resource-camp-ring-sw -3)
+    (set-goal byzantine-resource-camp-ring-sw-y -3)
+    (set-goal byzantine-resource-camp-ring-w -3)
+    (set-goal byzantine-resource-camp-ring-w-y 0)
+    (set-goal byzantine-resource-camp-ring-nw -3)
+    (set-goal byzantine-resource-camp-ring-nw-y 3)
+    (set-goal byzantine-resource-camp-ring-n 0)
+    (set-goal byzantine-resource-camp-ring-n-y 3)
+    (disable-self)
 )
 
 ; Native control rule: strategy-posture-initialize-000
@@ -5557,8 +5629,8 @@
     (set-strategic-number sn-maximum-food-drop-distance 16)
     (set-strategic-number sn-preferred-mill-placement 1)
     (set-strategic-number sn-boar-lure-destination 0)
-    (set-strategic-number sn-maximum-wood-drop-distance 16)
-    (set-strategic-number sn-maximum-gold-drop-distance 16)
+    (set-strategic-number sn-maximum-wood-drop-distance 14)
+    (set-strategic-number sn-maximum-gold-drop-distance 14)
     ; Keep automatic repair on critical structures, siege, houses, towers, walls, and gates.
     ; AIRef defines sn-object-repair-level as a bitmask: 1 critical castle/monastery,
     ; 2 town center, 4 barracks, 2048 houses, 4096 towers, 8192 walls/gates,
@@ -7181,7 +7253,7 @@
 ;----------------------------------------------------------------
 ; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER
 ; Resource observation -> nearest real resource object -> persisted point ->
-; existing demand/builder lifecycle -> exact point-centered native placement.
+; existing demand/builder lifecycle -> legal local candidate placement.
 
 (defrule
     (or
@@ -7194,31 +7266,62 @@
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (current-age < feudal-age)
 =>
     (set-strategic-number sn-lumber-camp-max-distance 14)
     (set-strategic-number sn-mining-camp-max-distance 14)
+    (set-strategic-number sn-maximum-wood-drop-distance 14)
+    (set-strategic-number sn-maximum-gold-drop-distance 14)
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (and (current-age >= feudal-age) (current-age < castle-age))
 =>
     (set-strategic-number sn-lumber-camp-max-distance 18)
     (set-strategic-number sn-mining-camp-max-distance 18)
+    (set-strategic-number sn-maximum-wood-drop-distance 18)
+    (set-strategic-number sn-maximum-gold-drop-distance 18)
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (and (current-age >= castle-age) (current-age < imperial-age))
 =>
     (set-strategic-number sn-lumber-camp-max-distance 18)
     (set-strategic-number sn-mining-camp-max-distance 18)
+    (set-strategic-number sn-maximum-wood-drop-distance 18)
+    (set-strategic-number sn-maximum-gold-drop-distance 18)
 )
 
 (defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (current-age >= imperial-age)
 =>
     (set-strategic-number sn-lumber-camp-max-distance 20)
     (set-strategic-number sn-mining-camp-max-distance 20)
+    (set-strategic-number sn-maximum-wood-drop-distance 20)
+    (set-strategic-number sn-maximum-gold-drop-distance 20)
+)
+
+; Sparse-resource fallback widens every camp-distance channel together.
+(defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-wide)
+    (set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-wide)
+    (set-strategic-number sn-maximum-wood-drop-distance byzantine-resource-camp-radius-wide)
+    (set-strategic-number sn-maximum-gold-drop-distance byzantine-resource-camp-radius-wide)
+)
+
+(defrule
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance byzantine-resource-camp-radius-remote)
+    (set-strategic-number sn-mining-camp-max-distance byzantine-resource-camp-radius-remote)
+    (set-strategic-number sn-maximum-wood-drop-distance byzantine-resource-camp-radius-remote)
+    (set-strategic-number sn-maximum-gold-drop-distance byzantine-resource-camp-radius-remote)
 )
 
 ; Fast new-resource activation reopens the next existing camp demand.
@@ -7228,7 +7331,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance wood == -1)
-        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance))
     )
     (building-type-count-total lumber-camp == 0)
     (can-build lumber-camp)
@@ -7242,7 +7345,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance wood == -1)
-        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance))
     )
     (building-type-count-total lumber-camp == 1)
     (can-build lumber-camp)
@@ -7256,7 +7359,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance wood == -1)
-        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance))
     )
     (building-type-count-total lumber-camp == 2)
     (can-build lumber-camp)
@@ -7270,7 +7373,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance wood == -1)
-        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance))
     )
     (building-type-count-total lumber-camp == 3)
     (can-build lumber-camp)
@@ -7284,7 +7387,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance wood == -1)
-        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance))
     )
     (building-type-count-total lumber-camp == 4)
     (can-build lumber-camp)
@@ -7298,7 +7401,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance wood == -1)
-        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood <= 18))
+        (and (dropsite-min-distance wood > 6) (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance))
     )
     (building-type-count-total lumber-camp == 5)
     (can-build lumber-camp)
@@ -7312,7 +7415,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance gold == -1)
-        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 0)
     (can-build mining-camp)
@@ -7326,7 +7429,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance gold == -1)
-        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 1)
     (can-build mining-camp)
@@ -7340,7 +7443,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance gold == -1)
-        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 2)
     (can-build mining-camp)
@@ -7354,7 +7457,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance gold == -1)
-        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 3)
     (can-build mining-camp)
@@ -7368,7 +7471,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance gold == -1)
-        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold <= 18))
+        (and (dropsite-min-distance gold > 6) (dropsite-min-distance gold s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 4)
     (can-build mining-camp)
@@ -7384,7 +7487,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance stone == -1)
-        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 0)
     (can-build mining-camp)
@@ -7400,7 +7503,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance stone == -1)
-        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 1)
     (can-build mining-camp)
@@ -7416,7 +7519,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance stone == -1)
-        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 2)
     (can-build mining-camp)
@@ -7432,7 +7535,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance stone == -1)
-        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 3)
     (can-build mining-camp)
@@ -7448,7 +7551,7 @@
     (not (goal byzantine-fortification-threat 1))
     (or
         (dropsite-min-distance stone == -1)
-        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone <= 18))
+        (and (dropsite-min-distance stone > 6) (dropsite-min-distance stone s:<= sn-mining-camp-max-distance))
     )
     (building-type-count-total mining-camp == 4)
     (can-build mining-camp)
@@ -7652,16 +7755,718 @@
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-resource-camp-point)
     (set-goal byzantine-resource-camp-target-valid 1)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+)
+
+; A sparse first-pass resource set does not release the demand immediately.
+; Widen once, re-search, then widen again before failing closed.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
+=>
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+    (set-goal byzantine-resource-camp-target-valid 0)
 )
 
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
     (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+=>
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+    (set-goal byzantine-resource-camp-target-valid 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
 =>
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
 )
+
+; Ring candidate search must finish before the existing builder lifecycle may issue the point build.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 0)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 0)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 0)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 1)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 0)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 1)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 1)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-e c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 1)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 1)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 2)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 1)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 2)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 2)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-se c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 2)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 2)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 3)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 2)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 3)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 3)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-s c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 3)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 3)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 4)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 3)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 4)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 4)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-sw c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 4)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 4)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 5)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 4)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 5)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 5)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-w c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 5)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 5)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 6)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 5)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 6)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 6)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-nw c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 6)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 6)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 7)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 6)
+    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-ring-index 7)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 7)
+=>
+    (up-copy-point byzantine-resource-camp-candidate-point byzantine-resource-camp-point)
+    (up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-n c: 1)
+    (up-bound-point byzantine-resource-camp-candidate-point byzantine-resource-camp-candidate-point)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 7)
+    (or
+        (and
+            (and
+                (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+                (can-build lumber-camp)
+            )
+            (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp)
+        )
+        (or
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+            (and
+                (and
+                    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+                    (can-build mining-camp)
+                )
+                (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp)
+            )
+        )
+    )
+=>
+    (up-copy-point byzantine-resource-camp-point byzantine-resource-camp-candidate-point)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 7)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (can-build lumber-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: lumber-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 7)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 7)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
+    (can-build mining-camp)
+    (not (up-can-build-line 0 byzantine-resource-camp-candidate-point c: mining-camp))
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
 
 ; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION
 ; Exact point-centered execution is attached to the existing demand rules below.
@@ -8370,6 +9175,8 @@
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-resource-camp-point)
     (set-goal byzantine-resource-camp-target-valid 1)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
 )
 
@@ -8444,7 +9251,7 @@
         (dropsite-min-distance gold == -1)
         (and
             (dropsite-min-distance gold > 6)
-            (dropsite-min-distance gold <= 18)
+        (dropsite-min-distance gold s:<= sn-mining-camp-max-distance)
         )
     )
 =>
@@ -8461,7 +9268,7 @@
         (dropsite-min-distance wood == -1)
         (and
             (dropsite-min-distance wood > 6)
-            (dropsite-min-distance wood <= 18)
+        (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)
         )
     )
     (not (resource-found gold))
@@ -8577,7 +9384,7 @@
     (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
     (dropsite-min-distance gold > 6)
-    (dropsite-min-distance gold <= 18)
+        (dropsite-min-distance gold s:<= sn-mining-camp-max-distance)
     (not (goal byzantine-fortification-threat 1))
 =>
     (up-retask-gatherers gold c: byzantine-economy-delta-step)
@@ -8592,7 +9399,7 @@
     (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
     (dropsite-min-distance wood > 6)
-    (dropsite-min-distance wood <= 18)
+        (dropsite-min-distance wood s:<= sn-lumber-camp-max-distance)
     (not (goal byzantine-fortification-threat 1))
 =>
     (up-retask-gatherers wood c: byzantine-economy-delta-step)
