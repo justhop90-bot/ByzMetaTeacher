@@ -182,8 +182,8 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
 
     def test_camp_loss_reopens_completed_floor_demand_for_lumber_and_gold(self):
         lumber = self._section_from(
-            "; economy-lumber-camp-floor-1",
-            "; economy-lumber-camp-floor-2",
+            "; Pending diagnostics: economy-lumber-camp-floor-1",
+            "; Pending diagnostics: economy-lumber-camp-floor-2",
         )
         gold_start = self.per.index("; economy-gold-camp-floor-1")
         gold = self.per[gold_start:self.per.index("; economy-gold-camp-floor-2", gold_start)]
