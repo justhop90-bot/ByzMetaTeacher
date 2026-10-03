@@ -70,7 +70,7 @@ def default_byzantine_economy_controller() -> EconomyControllerPlan:
     return EconomyControllerPlan(
         controller_id="byzantine-economy-v1",
         policies=(
-            EconomyModePolicy(EconomyMode.BASE, EconomyAllocation(50, 30, 20, 5)),
+            EconomyModePolicy(EconomyMode.BASE, EconomyAllocation(55, 30, 15, 5)),
             EconomyModePolicy(EconomyMode.COUNTER_FEUDAL, EconomyAllocation(42, 38, 20, 8)),
             EconomyModePolicy(EconomyMode.FAST_CASTLE, EconomyAllocation(55, 15, 30, 3)),
             EconomyModePolicy(EconomyMode.WATER_ECONOMY, EconomyAllocation(40, 40, 20, 5)),
@@ -251,6 +251,28 @@ def lower_economy_controller(
                     value,
                 )
             )
+
+    # Stone is deliberately outside the generic economy allocation tuple.
+    # The Byzantine Dark Age contract is nevertheless explicit: BASE owns a
+    # fail-safe zero-stone write instead of inheriting an engine/default split.
+    writer_rules.append(
+        NativeControlRule(
+            "economy-controller-write-base-sn-stone-gatherer-percentage",
+            facts=(
+                parse_expression("(goal economy-posture 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-compare-sn sn-stone-gatherer-percentage != 0)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    "(set-strategic-number sn-stone-gatherer-percentage 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        )
+    )
 
     return NativeControlPlan(
         states=tuple(states),

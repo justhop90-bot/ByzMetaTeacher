@@ -5518,9 +5518,9 @@
 ; Native control rule: economy-controller-write-base-sn-food-gatherer-percentage
 (defrule
     (goal economy-posture 1)
-    (up-compare-sn sn-food-gatherer-percentage != 50)
+    (up-compare-sn sn-food-gatherer-percentage != 55)
 =>
-    (set-strategic-number sn-food-gatherer-percentage 50)
+    (set-strategic-number sn-food-gatherer-percentage 55)
 )
 
 ; Native control rule: economy-controller-write-base-sn-wood-gatherer-percentage
@@ -5534,9 +5534,9 @@
 ; Native control rule: economy-controller-write-base-sn-gold-gatherer-percentage
 (defrule
     (goal economy-posture 1)
-    (up-compare-sn sn-gold-gatherer-percentage != 20)
+    (up-compare-sn sn-gold-gatherer-percentage != 15)
 =>
-    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 15)
 )
 
 ; Native control rule: economy-controller-write-base-sn-percent-civilian-builders
@@ -5545,6 +5545,14 @@
     (up-compare-sn sn-percent-civilian-builders != 5)
 =>
     (set-strategic-number sn-percent-civilian-builders 5)
+)
+
+; Native control rule: economy-controller-write-base-sn-stone-gatherer-percentage
+(defrule
+    (goal economy-posture 1)
+    (up-compare-sn sn-stone-gatherer-percentage != 0)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
 ; Native control rule: economy-controller-write-counter_feudal-sn-food-gatherer-percentage
