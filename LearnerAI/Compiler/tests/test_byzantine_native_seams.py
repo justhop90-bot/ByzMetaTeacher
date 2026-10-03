@@ -124,8 +124,11 @@ class ByzantineNativeSeamTest(unittest.TestCase):
         block_start = self.per.index("; NATIVE FOOD RESOURCE SELECTOR")
         block_end = self.per.index(";---------------------------------------------------------------", block_start)
         block = self.per[block_start:block_end]
-        for fragment in (
+        self.assertIn(
             "(defconst byzantine-food-source-selector 745)",
+            self.per,
+        )
+        for fragment in (
             "(goal byzantine-food-source-selector 0)",
             "(up-find-resource c: forage-bush-class c: 16)",
             "(up-find-resource c: deer-class c: 16)",
