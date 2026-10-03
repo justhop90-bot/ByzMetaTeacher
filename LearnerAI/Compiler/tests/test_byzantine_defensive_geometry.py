@@ -130,6 +130,14 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "(goal byzantine-static-defense-placement-kind byzantine-static-defense-placement-fortified)",
             self.per,
         )
+        self.assertIn(
+            "(goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)",
+            self.per,
+        )
+        self.assertIn(
+            "(up-compare-goal byzantine-static-defense-resource-score g:>= byzantine-static-defense-fortified-score)",
+            self.per,
+        )
 
     def test_keep_and_bombard_build_only_through_scored_geometry(self):
         self.assertIn(
