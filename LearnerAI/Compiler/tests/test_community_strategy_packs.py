@@ -50,7 +50,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         monastery = profile.demand("castle-monastery-capability")
         monks = profile.demand("castle-monk-floor")
 
-        self.assertEqual(monks.target.minimum, 1)
+        self.assertEqual(monks.target.minimum, 2)
         self.assertEqual(
             {evidence.observation_ref for evidence in monks.invalidation},
             set(),
