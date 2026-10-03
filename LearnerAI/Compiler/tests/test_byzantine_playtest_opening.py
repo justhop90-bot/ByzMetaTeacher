@@ -73,22 +73,20 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(unit-type-count-total knight-line >= 2)", block)
         self.assertNotIn("(unit-type-count-total monk >= bt-castle-monk-floor)", block)
 
-    def test_castle_monastery_and_monk_actions_require_support_evidence(self):
+    def test_castle_monastery_and_monk_keep_relic_baseline_without_four_monk_floor(self):
         monastery = self._rule_block("; Action issuance: castle-monastery-capability | ACTIVE -> ISSUED")
         monks = self._rule_block("; Action issuance: castle-monk-floor | ACTIVE -> ISSUED")
+        relic = self._rule_block("; Acquisition: two monks are a deliberately small escort package.")
 
-        support = (
-            "(or (town-under-attack) (or "
-            "(players-unit-type-count any-enemy mangonel-line >= 2) "
-            "(players-unit-type-count any-enemy monk >= 2)))"
-        )
-        self.assertIn(support, " ".join(monastery.split()))
-        self.assertIn(support, " ".join(monks.split()))
-        self.assertNotIn(
-            "(unit-type-count-total monk < bt-castle-monk-floor)\n=>(\n    (train monk)",
-            monks,
-        )
+        self.assertIn("(current-age >= castle-age)", monastery)
+        self.assertNotIn("(town-under-attack)", monastery)
+        self.assertIn("(current-age >= castle-age)", monks)
+        self.assertNotIn("(town-under-attack)", monks)
+        self.assertNotIn("(unit-type-count-total monk < 4)", monks)
+        self.assertIn("(unit-type-count-total monk < 1)", monks)
 
+        self.assertIn("(unit-type-count-total monk >= 1)", relic)
+        self.assertIn("(up-find-local c: monk c: 1)", relic)
     def test_premium_castle_demands_invalidate_when_infantry_pressure_clears(self):
         cat = self._rule_block(
             "; Strategic invalidation: Castle Cataphract demand is only persistent while infantry pressure is real."
