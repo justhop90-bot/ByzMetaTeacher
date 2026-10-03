@@ -131,8 +131,6 @@
 (defconst byzantine-natural-food-selector-forage 742)
 (defconst byzantine-natural-food-selector-deer 743)
 (defconst byzantine-food-source-selector 745)
-(defconst sn-maximum-hunt-drop-distance 235)
-(defconst sn-preferred-mill-placement 253)
 ; Native aliases used in typed c: operands below. IDs come from the
 ; checked-in Byzantine factual manifest / compiler unit-line registry.
 (defconst university 209)
@@ -5798,7 +5796,7 @@
     (set-goal byzantine-natural-food-deer-id -1)
     (set-goal byzantine-natural-food-deer-distance -1)
     (set-goal byzantine-natural-food-deer-state 0)
-    (set-strategic-number sn-maximum-hunt-drop-distance 0)
+    (set-strategic-number sn-maximum-hunt-drop-distance -1)
 )
 
 (defrule
@@ -5839,7 +5837,7 @@
     (set-goal byzantine-natural-food-deer-state 0)
     (set-goal byzantine-natural-food-deer-id -1)
     (set-goal byzantine-natural-food-deer-distance -1)
-    (set-strategic-number sn-maximum-hunt-drop-distance 0)
+    (set-strategic-number sn-maximum-hunt-drop-distance -1)
     (enable-timer byzantine-natural-food-deer-timer bt-byzantine-natural-food-deer-seconds)
 )
 
@@ -9991,6 +9989,10 @@
     (goal byzantine-siege-breach-witness 1)
     (goal byzantine-army-attack-ready 2)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
+    (strategic-number sn-target-player-number >= 1)
+    (strategic-number sn-target-player-number <= 8)
+    (player-in-game target-player)
+    (not (stance-toward target-player ally))
 =>
     (set-strategic-number sn-percent-attack-soldiers 100)
     (attack-now)
@@ -10148,6 +10150,10 @@
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-siege-approach byzantine-siege-approach-normal)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
+    (strategic-number sn-target-player-number >= 1)
+    (strategic-number sn-target-player-number <= 8)
+    (player-in-game target-player)
+    (not (stance-toward target-player ally))
 =>
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
