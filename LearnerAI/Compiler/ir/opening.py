@@ -100,58 +100,9 @@ def lower_opening_selector(
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})", SourceLocation(1)),),
         ),
         NativeControlRule(
-            "opening-selector-fast-castle",
-            facts=(
-                parse_expression(
-                    guard(
-                        f"(and (and {arena} (not {pressure})) (not {water}))"
-                    ),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
-            "opening-selector-fast-castle-standard-land",
-            facts=(
-                parse_expression(
-                    guard(
-                        f"(and (and (not {water}) (and (not {arena}) (and (not {arabia}) (and (not (map-type hybrid)) (not {pressure})))))"
-                    ),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
             "opening-selector-counter-feudal",
             facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) {pressure}))"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})", SourceLocation(1)),),
-        ),
-        NativeControlRule(
-            "opening-selector-defensive-standard-arabia",
-            facts=(
-                parse_expression(
-                    guard(f"(and {arabia} (not {pressure}))"),
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
-                    SourceLocation(1),
-                ),
-            ),
         ),
     ]
     if arena_default == OpeningFamily.FAST_CASTLE.value:
