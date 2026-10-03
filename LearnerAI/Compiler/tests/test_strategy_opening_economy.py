@@ -55,7 +55,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 for item in profile.map_profile
                 if item.identity in {"ARABIA", "STANDARD_LAND"}
             },
-            {"ARABIA": "FAST_CASTLE", "STANDARD_LAND": "FAST_CASTLE"},
+            {"ARABIA": "DEFENSIVE_STANDARD", "STANDARD_LAND": "FAST_CASTLE"},
         )
         self.assertEqual(profile.opening_selector.plan_id, "byzantine-opening-v1")
 
@@ -77,6 +77,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "opening-selector-water-economy",
                 "opening-selector-fast-castle",
                 "opening-selector-counter-feudal",
+                "opening-selector-defensive-standard-arabia",
                 "opening-selector-defensive-standard",
             ),
         )
@@ -94,12 +95,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity == "opening-selector-defensive-standard"
         )
         self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
-        self.assertIn("(not (map-type islands))", fast_castle.facts[0].source)
-        self.assertIn("(not (map-type arena))", fast_castle.facts[0].source)
-        self.assertIn("(not (map-type hybrid))", fast_castle.facts[0].source)
+        self.assertIn("(map-type arena)", fast_castle.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
+        arabia_standard = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-defensive-standard-arabia"
+        )
+        self.assertIn("(map-type arabia)", arabia_standard.facts[0].source)
+        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", arabia_standard.facts[0].source)
         self.assertIn("(map-type hybrid)", defensive_standard.facts[0].source)
-        self.assertNotIn("(not (map-type arena))", defensive_standard.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
@@ -160,17 +164,40 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             (50, 25, 25),
         )
 
+        expected_floors = {
+            "research-double-bit-axe": {"food": 900, "gold": 250},
+            "research-horse-collar": {"food": 900, "gold": 250},
+            "research-wheelbarrow": {"food": 1000, "gold": 250},
+            "research-gold-mining": {"food": 900, "gold": 250},
+        }
         for demand in profile.demands:
-            if demand.identity in {
-                "research-wheelbarrow",
-                "research-double-bit-axe",
-                "research-horse-collar",
-                "research-gold-mining",
-            }:
+            if demand.identity in expected_floors:
+                requirements = demand.execution_demands[0].requirements
+                self.assertIn("(current-age >= feudal-age)", requirements)
+                self.assertNotIn("(current-age >= castle-age)", requirements)
                 self.assertIn(
-                    "(current-age >= castle-age)",
-                    demand.execution_demands[0].requirements,
+                    f"(food-amount >= {expected_floors[demand.identity]['food']})",
+                    requirements,
                 )
+                self.assertIn(
+                    f"(gold-amount >= {expected_floors[demand.identity]['gold']})",
+                    requirements,
+                )
+                self.assertIsNotNone(demand.opportunity_cost)
+                floors = {
+                    floor.resource.value: floor.minimum
+                    for floor in demand.opportunity_cost.protected_floors
+                }
+                self.assertEqual(
+                    floors,
+                    {"food": expected_floors[demand.identity]["food"], "gold": 250},
+                )
+
+        from LearnerAI.Compiler.clients.basilisk import EconomyMode
+        self.assertIn(
+            EconomyMode.FAST_IMPERIAL,
+            {item.mode for item in profile.economy_controller.policies},
+        )
 
 
 if __name__ == "__main__":
