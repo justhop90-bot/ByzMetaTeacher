@@ -874,6 +874,25 @@
 ;   up-point-distance + existing wall-resource state + anchor-pair geometry.
 ; Equal scores prefer the resource point because it is an exact economic target.
 
+; Native load-order closure: every local constant referenced by the earliest
+; rules is defined before any defrule. This is semantically equivalent to the
+; prior scattered declarations, but avoids native forward-reference ambiguity.
+(defconst byzantine-wall-resource-state 494)
+(defconst byzantine-wall-resource-selected 2)
+(defconst byzantine-wall-resource-armed 3)
+(defconst byzantine-wall-resource-secured 4)
+(defconst byzantine-wall-resource-target 495)
+(defconst byzantine-wall-resource-target-gold 1)
+(defconst byzantine-wall-resource-target-stone 2)
+(defconst byzantine-wall-resource-target-wood 3)
+(defconst byzantine-wall-resource-point 496)
+(defconst byzantine-university-state 515)
+(defconst byzantine-university-state-tower-network 3)
+(defconst byzantine-university-state-imperial-gunline 4)
+(defconst byzantine-army-attack-ready 299)
+(defconst byzantine-fortification-threat 353)
+(defconst bt-byzantine-defense-monk-floor 6)
+
 (defrule
     (goal byzantine-static-defense-score-state -1)
 =>
@@ -1293,17 +1312,8 @@
 (defconst pending-adaptive-resource-palisade 491)
 (defconst complete-adaptive-resource-palisade 492)
 (defconst construction-retry-barrier-adaptive-resource-palisade 493)
-(defconst byzantine-wall-resource-state 494)
 (defconst byzantine-wall-resource-idle 0)
 (defconst byzantine-wall-resource-acquire 1)
-(defconst byzantine-wall-resource-selected 2)
-(defconst byzantine-wall-resource-armed 3)
-(defconst byzantine-wall-resource-secured 4)
-(defconst byzantine-wall-resource-target 495)
-(defconst byzantine-wall-resource-target-gold 1)
-(defconst byzantine-wall-resource-target-stone 2)
-(defconst byzantine-wall-resource-target-wood 3)
-(defconst byzantine-wall-resource-point 496)
 (defconst byzantine-wall-resource-line-a 498)
 (defconst byzantine-wall-resource-line-b 500)
 
@@ -1316,12 +1326,9 @@
 
 ; Professional Byzantine University / defensive map-control state machine.
 ; State: 0 idle, 1 Castle, 2 hardened perimeter, 3 tower network, 4 Imperial gunline.
-(defconst byzantine-university-state 515)
 (defconst byzantine-university-state-idle 0)
 (defconst byzantine-university-state-castle 1)
 (defconst byzantine-university-state-hardened-perimeter 2)
-(defconst byzantine-university-state-tower-network 3)
-(defconst byzantine-university-state-imperial-gunline 4)
 
 ; Persistent defensive frontier and army reposition state.
 (defconst byzantine-frontier-state 670)
@@ -4247,7 +4254,6 @@
 ; 1 = Castle standing army
 ; 2 = Imperial standing army
 (defconst byzantine-army-plan-phase 298)
-(defconst byzantine-army-attack-ready 299)
 (defconst byzantine-army-reinforcement 300)
 (defconst byzantine-army-stale-state 367)
 (defconst byzantine-army-stale-timer 6)
@@ -4275,7 +4281,6 @@
 (defconst byzantine-siege-approach 350)
 (defconst byzantine-siege-approach-claim 351)
 (defconst byzantine-siege-breach-witness 352)
-(defconst byzantine-fortification-threat 353)
 (defconst byzantine-remote-resource-state 354)
 (defconst byzantine-remote-resource-kind 355)
 (defconst byzantine-market-state 356)
@@ -4364,7 +4369,6 @@
 (defconst bt-castle-skirmisher-floor 4)
 (defconst bt-castle-mangonel-floor 2)
 (defconst bt-castle-monk-floor 4)
-(defconst bt-byzantine-defense-monk-floor 6)
 (defconst bt-imperial-cavalier-target 2)
 (defconst bt-imperial-hussar-target 4)
 (defconst bt-imperial-onager-target 2)
