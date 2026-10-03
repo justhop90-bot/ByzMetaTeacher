@@ -98,6 +98,11 @@ class ByzantineNativeSeamTest(unittest.TestCase):
             )
 
     def test_deer_controller_tracks_id_distance_and_actually_retasks_food_workers(self):
+        self.assertNotIn(
+            "(up-find-local c: villager-class g: villager-count)",
+            self.per,
+            "Deer villager selection must not reference the undefined villager-count goal.",
+        )
         for fragment in (
             "(defconst byzantine-natural-food-deer-state",
             "(defconst byzantine-natural-food-deer-id",
@@ -106,7 +111,7 @@ class ByzantineNativeSeamTest(unittest.TestCase):
             "(up-get-object-data object-data-id byzantine-natural-food-deer-id)",
             "(up-set-target-by-id g: byzantine-natural-food-deer-id)",
             "(up-set-target-point byzantine-natural-food-deer-point)",
-            "(up-find-local c: villager-class g: villager-count)",
+            "(up-find-local c: villager-class c: 240)",
             "(up-target-objects 1 action-default -1 -1)",
         ):
             self.assertIn(fragment, self.per)
