@@ -360,6 +360,19 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-enemy-pressure",
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("archer-line").provenance,
+                     *effective.unit_line("militia-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-arabia-early-pressure",
             "(or (players-unit-type-count any-enemy militia-line >= 3) "
             "(or (players-unit-type-count any-enemy scout-cavalry-line >= 3) "
             "(or (players-unit-type-count any-enemy archer-line >= 3) "
@@ -376,7 +389,7 @@ def community_strategy_observations(
             ),
         ),
         _observation(
-            "strategy-enemy-pressure-cleared",
+            "strategy-arabia-early-pressure-cleared",
             "(and (players-unit-type-count any-enemy militia-line < 3) "
             "(players-unit-type-count any-enemy scout-cavalry-line < 3) "
             "(players-unit-type-count any-enemy archer-line < 3) "
@@ -524,6 +537,16 @@ def community_strategy_observations(
                      *effective.tech(22).provenance)
                 )
             ),
+        ),
+        _observation(
+            "research-loom-complete",
+            "(research-completed 22)",
+            effective.tech(22).provenance,
+        ),
+        _observation(
+            "research-loom-pending",
+            "(not (research-completed 22))",
+            effective.tech(22).provenance,
         ),
     ]
 
