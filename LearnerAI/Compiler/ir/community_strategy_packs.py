@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
-from .game_data import Age, BuildingId, Resource, UnitLineId
+from .game_data import Age, BuildingId, Resource, ResourceCost, UnitLineId
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -171,7 +171,6 @@ def _research_demand(
     reason_label: str,
     resources: tuple[Resource, ...],
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
-    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
     token = _slug(tech.name)
@@ -219,7 +218,6 @@ def _research_demand(
             requirements=(
                 age_guard,
                 *floor_requirements,
-                *additional_requirements,
                 f"(can-research-with-escrow {token})",
             ),
             action=f"(research {token})",
@@ -292,12 +290,45 @@ def _training_demand(
     )
 
 
+_CASTLE_BANK_HARD_FOOD = 800
+_CASTLE_BANK_HARD_GOLD = 200
+
 _FEUDAL_RESEARCH_BANKS = {
     "wheelbarrow": ((Resource.FOOD, 1000), (Resource.GOLD, 250)),
     "double-bit-axe": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
     "horse-collar": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
     "gold-mining": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
 }
+
+def _feudal_research_bank_floors(
+    effective: EffectiveCivData,
+    tech_name: str,
+) -> tuple[tuple[Resource, int], ...]:
+    """Keep the Castle bank intact after the Feudal technology is paid."""
+    policy = dict(_FEUDAL_RESEARCH_BANKS.get(tech_name, ()))
+    tech = _tech(effective, tech_name)
+    cost = tech.base_cost
+    if isinstance(cost, ResourceCost):
+        policy[Resource.FOOD] = max(
+            policy.get(Resource.FOOD, 0),
+            _CASTLE_BANK_HARD_FOOD + cost.food,
+        )
+        policy[Resource.GOLD] = max(
+            policy.get(Resource.GOLD, 0),
+            _CASTLE_BANK_HARD_GOLD + cost.gold,
+        )
+    else:
+        # Variable costs are not a justified hard bank rule. Preserve the
+        # established research floor and leave the variable portion OPEN.
+        policy[Resource.FOOD] = max(
+            policy.get(Resource.FOOD, 0),
+            _CASTLE_BANK_HARD_FOOD,
+        )
+        policy[Resource.GOLD] = max(
+            policy.get(Resource.GOLD, 0),
+            _CASTLE_BANK_HARD_GOLD,
+        )
+    return tuple(sorted(policy.items(), key=lambda item: item[0].value))
 
 _RESEARCH_PACK = (
     ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
@@ -915,17 +946,10 @@ def community_strategy_demands(
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
-            minimum_floors=_FEUDAL_RESEARCH_BANKS.get(tech_name, ()),
-            additional_requirements=(
-                "(goal byzantine-castle-bank-state 0)",
-            )
-            if tech_name in {
-                "wheelbarrow",
-                "double-bit-axe",
-                "horse-collar",
-                "gold-mining",
-            }
-            else (),
+            minimum_floors=_feudal_research_bank_floors(
+                effective,
+                tech_name,
+            ),
         )
         demands.append(demand)
 
