@@ -22559,11 +22559,15 @@
     (set-goal demand-castle-monk-floor 0)
 )
 
-; Recovery: castle-monk-floor | RELEASED -> ACTIVE on world-state loss
+; Recovery: castle-monk-floor | LOST MONK -> ACTIVE
+; A lost relic/healing Monk reopens only the normal two-Monk Castle demand.
+; The four-Monk defensive package is a separate demand and cannot be revived
+; by this recovery rule.
 (defrule
     (goal demand-castle-monk-floor 0)
-    (not (unit-type-count monk >= bt-castle-monk-floor))
-    (building-type-count-total 104 >= 1)
+    (current-age >= castle-age)
+    (building-type-count-total monastery >= 1)
+    (not (unit-type-count-total monk >= bt-castle-monk-floor))
 =>
     (set-goal demand-castle-monk-floor 1)
 )
