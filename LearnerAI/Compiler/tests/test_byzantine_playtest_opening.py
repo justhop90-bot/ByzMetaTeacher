@@ -145,12 +145,12 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         )
         block = self.per[start:end]
         for fragment in (
-            "(players-unit-type-count focus-player militia-line >= 5)",
-            "(players-unit-type-count focus-player knight >= 3)",
-            "(players-unit-type-count focus-player knight >= 1)",
+            "(players-unit-type-count target-player militia-line >= 5)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player knight >= 1)",
             "(players-unit-type-count focus-player scout-cavalry-line >= 3)",
-            "(players-unit-type-count focus-player archer-line >= 3)",
-            "(players-unit-type-count focus-player mangonel-line >= 2)",
+            "(players-unit-type-count target-player archer-line >= 3)",
+            "(players-unit-type-count target-player mangonel-line >= 2)",
         ):
             self.assertIn(fragment, block)
 
