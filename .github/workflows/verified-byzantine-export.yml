@@ -1,0 +1,17 @@
+name: Verified Byzantine export
+
+on:
+  push:
+    branches:
+      - temp/verified-download-byzantine
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload authoritative Byzantine.per
+        uses: actions/upload-artifact@v4
+        with:
+          name: Byzantine-main-verified
+          path: Byzantine.per
