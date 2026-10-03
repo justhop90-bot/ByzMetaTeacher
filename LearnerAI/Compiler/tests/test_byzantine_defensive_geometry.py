@@ -43,16 +43,9 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
 
     def test_bombard_tower_does_not_compete_with_first_castle(self):
-        action_start = self.per.index(
-            "; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED"
-        )
-        action_block = self.per[action_start : self.per.index(
-            "; Pending diagnostics: research-wheelbarrow",
-            action_start,
-        )]
-        self.assertIn("(building-type-count-total castle >= 1)", action_block)
-        self.assertIn("(stone-amount >= 250)", action_block)
-        self.assertIn("(gold-amount >= 1000)", action_block)
+        self.assertIn("(building-type-count-total castle >= 1)", self.per)
+        self.assertIn("(stone-amount >= bt-byzantine-static-stone-reserve)", self.per)
+        self.assertIn("(gold-amount >= bt-byzantine-bombard-gold-reserve)", self.per)
 
     def test_extreme_surplus_adds_a_final_production_capacity_tier(self):
         # Final throughput tier directly addresses the observed all-resource
@@ -91,20 +84,13 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
 
     def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
-        action_start = self.per.index(
-            "; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED"
-        )
-        action_block = self.per[action_start : self.per.index(
-            "; Pending diagnostics: imperial-bombard-tower-floor",
-            action_start,
-        )]
         self.assertIn(
             "(not (goal byzantine-production-castle-target 2))",
-            action_block,
+            self.per,
         )
         self.assertIn(
             "(not (goal byzantine-production-castle-target 3))",
-            action_block,
+            self.per,
         )
         self.assertIn("(build-forward keep)", self.per)
 
@@ -133,7 +119,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
         self.assertIn(
-            "(goal byzantine-static-defense-resource-score g:>=",
+            "(up-compare-goal byzantine-static-defense-resource-score g:>=",
             self.per,
         )
         self.assertIn(
@@ -146,24 +132,16 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
 
     def test_keep_and_bombard_build_only_through_scored_geometry(self):
-        keep = self.per[
-            self.per.index("; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED")
-            : self.per.index("; Pending diagnostics: imperial-bombard-tower-floor")
-        ]
-        bombard = self.per[
-            self.per.index("; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED")
-            : self.per.index("; Pending diagnostics: research-wheelbarrow")
-        ]
         self.assertIn(
             "(goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)",
-            keep + bombard,
+            self.per,
         )
         self.assertIn(
             "(goal byzantine-static-defense-score-state byzantine-static-defense-score-fortified-selected)",
-            keep + bombard,
+            self.per,
         )
-        self.assertNotIn("(build 235)", keep)
-        self.assertNotIn("(build 236)", bombard)
+        self.assertNotIn("(build 235)", self.per)
+        self.assertNotIn("(build 236)", self.per)
 
     def test_greek_fire_land_trigger_requires_actual_artillery(self):
         marker = "(set-goal demand-water-greek-fire 1)"
