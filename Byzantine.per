@@ -82,6 +82,7 @@
 (defconst sn-object-repair-level 246)
 (defconst sn-wall-targeting-mode 262)
 (defconst sn-cap-civilian-builders 4)
+
 (defconst sn-gate-type-for-wall 304)
 (defconst wall-class 927)
 (defconst sn-enable-boar-hunting 244)
@@ -734,6 +735,15 @@
 (defconst production-retry-barrier-water-trade-cog-floor 265)
 (defconst action-claim-build-pass-singleton 167)
 (defconst action-claim-train-arbitration 222)
+; Professional multi-production capacity controller.
+; Targets are total building counts. The first building of each class remains
+; owned by the existing capability lifecycles; this plane only expands capacity.
+(defconst sn-enable-new-building-system 242)
+(defconst byzantine-production-barracks-target 690)
+(defconst byzantine-production-archery-target 691)
+(defconst byzantine-production-stable-target 692)
+(defconst byzantine-production-siege-target 693)
+(defconst byzantine-production-castle-target 694)
 
 ; BYZANTINE META DEFENSE / ECONOMY EXTENSIONS
 ; These are native .per state channels. They deliberately reuse the existing
@@ -909,6 +919,30 @@
 
 ; Native DUC execution plan
 ; Native DUC rule: byzantine-castle-target-knight
+; The new building system is enabled once, before the bot can create any
+; production foundations. This is the native community mechanism for parallel
+; construction; it is not a replacement scheduler.
+(defrule
+    (true)
+=>
+    (set-strategic-number sn-enable-new-building-system 1)
+    (disable-self)
+)
+
+; Byzantine construction worker policy. Two builders keep military capacity
+; moving; castles get four because their stone opportunity cost justifies faster
+; completion, while the global builder cap remains 200.
+(defrule
+    (true)
+=>
+    (up-assign-builders c: barracks c: 2)
+    (up-assign-builders c: archery-range c: 2)
+    (up-assign-builders c: stable c: 2)
+    (up-assign-builders c: siege-workshop c: 3)
+    (up-assign-builders c: castle c: 4)
+    (disable-self)
+)
+
 (defrule
     (current-age >= castle-age)
     (up-compare-sn 227 >= 75)
@@ -7356,66 +7390,6 @@
 )
 
 ;----------------------------------------------------------------
-; Extra Imperial production capacity only under genuine wood surplus.
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (not (town-under-attack))
-    (population-headroom > 8)
-    (wood-amount > 6500)
-    (building-type-count stable < 3)
-    (goal action-claim-build-pass-singleton 0)
-    (can-build stable)
-=>
-    (build stable)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
-    (not (town-under-attack))
-    (population-headroom > 8)
-    (wood-amount > 6500)
-    (building-type-count archery-range < 3)
-    (goal action-claim-build-pass-singleton 0)
-    (can-build archery-range)
-=>
-    (build archery-range)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
-    (not (town-under-attack))
-    (population-headroom > 8)
-    (wood-amount > 6500)
-    (building-type-count barracks < 3)
-    (goal action-claim-build-pass-singleton 0)
-    (can-build barracks)
-=>
-    (build barracks)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-    (not (town-under-attack))
-    (population-headroom > 8)
-    (wood-amount > 6500)
-    (building-type-count siege-workshop < 3)
-    (goal action-claim-build-pass-singleton 0)
-    (can-build siege-workshop)
-=>
-    (build siege-workshop)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
 ; BOUNDED LATE-GAME GATHERER DELTA CONTROL
 ;----------------------------------------------------------------
 ; Efficiency rule: late-game gatherer pressure is a small correction, not a
@@ -7881,81 +7855,6 @@
     (disable-timer byzantine-food-recovery-timer)
     (enable-timer byzantine-food-recovery-timer bt-byzantine-food-recovery-seconds)
     (up-retask-gatherers food c: 2)
-)
-
-; Production-capacity expansion: once the Byzantine economy has actually
-; reached Imperial scale, add production outlets before permitting the resource
-; bank to become the only "strategy" on the screen.
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-late-upgrade-priority 0)
-    (goal byzantine-army-reinforcement 0)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (population-headroom > 10)
-    (wood-amount > 2200)
-    (building-type-count barracks < 4)
-    (up-pending-objects c: 12 == 0)
-    (can-build barracks)
-=>
-    (build barracks)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-late-upgrade-priority 0)
-    (goal byzantine-army-reinforcement 0)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (population-headroom > 10)
-    (wood-amount > 2200)
-    (gold-amount > 1500)
-    (building-type-count stable < 3)
-    (up-pending-objects c: 101 == 0)
-    (or
-        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
-        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
-    )
-    (can-build stable)
-=>
-    (build stable)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-late-resource-burn 1)
-    (goal byzantine-late-upgrade-priority 0)
-    (goal byzantine-army-reinforcement 0)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (population-headroom > 10)
-    (wood-amount > 2200)
-    (building-type-count archery-range < 3)
-    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
-    (up-pending-objects c: 87 == 0)
-    (can-build archery-range)
-=>
-    (build archery-range)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-fortification-threat 1)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (population-headroom > 10)
-    (wood-amount > 2400)
-    (building-type-count siege-workshop < 2)
-    (up-pending-objects c: 49 == 0)
-    (can-build siege-workshop)
-=>
-    (build siege-workshop)
-    (set-goal action-claim-build-pass-singleton 1)
 )
 
 ; Team trade is a resource sink only after direct production/research pressure
@@ -15007,6 +14906,389 @@
     )
 =>
     (set-goal byzantine-university-state byzantine-university-state-castle)
+)
+
+; -----------------------------------------------------------------------------
+; PROFESSIONAL BYZANTINE PRODUCTION CAPACITY CONTROLLER
+; -----------------------------------------------------------------------------
+; Community-convergent pattern:
+;   desired capacity -> completed/under-construction capacity ->
+;   build admission -> repeated reassertion.
+;
+; Unlike the old ad-hoc Imperial sinks, this does not wait for a foundation
+; to finish before issuing the next capacity expansion. The new building
+; system plus up-pending-objects lets the controller sustain multiple
+; simultaneous foundations while the per-pass build mutex still limits this
+; script to one new build action per pass.
+;
+; Byzantine policy:
+;   - Barracks scale with infantry/trash backbone.
+;   - Archery Ranges scale with ranged posture / ranged pressure.
+;   - Stables scale with Cataphract/camel cavalry pressure.
+;   - Siege Workshops scale with siege/fortification pressure.
+;   - Castles scale only in Imperial when stone, population, map-control,
+;     and military demand justify another expensive anchor.
+;
+; The first building is still owned by the established capability lifecycles.
+; This controller only builds when total capacity is at least 2.
+
+; Recompute total capacity targets every pass. Later rules raise the targets
+; from these conservative defaults.
+(defrule
+    (true)
+=>
+    (set-goal byzantine-production-barracks-target 1)
+    (set-goal byzantine-production-archery-target 0)
+    (set-goal byzantine-production-stable-target 0)
+    (set-goal byzantine-production-siege-target 0)
+    (set-goal byzantine-production-castle-target 0)
+)
+
+; Mature Imperial infantry backbone: second Barracks.
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count-total villager >= 55)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+            (or
+                (unit-type-count-total halberdier-line >= 8)
+                (unit-type-count-total varangian-guard-line >= 6)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-production-barracks-target 2)
+)
+
+; Imperial infantry production expansion.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total villager >= 70)
+    (wood-amount > 3000)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+    )
+=>
+    (set-goal byzantine-production-barracks-target 3)
+)
+
+; Full late-game infantry capacity. Four Barracks is deliberately a surge
+; condition, not a permanent baseline.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total villager >= 85)
+    (population-headroom > 20)
+    (wood-amount > 5000)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+=>
+    (set-goal byzantine-production-barracks-target 4)
+)
+
+; Second Range when the ranged branch is real, not merely possible.
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count-total villager >= 55)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 4)
+            (players-unit-type-count any-enemy cavalry-archer-line >= 4)
+        )
+    )
+=>
+    (set-goal byzantine-production-archery-target 2)
+)
+
+; Third Range for sustained ranged Imperial output.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total villager >= 70)
+    (population-headroom > 10)
+    (wood-amount > 3000)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+=>
+    (set-goal byzantine-production-archery-target 3)
+)
+
+; Second Stable for Cataphract/camel production.
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count-total villager >= 55)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+            (unit-type-count-total cataphract-line >= 8)
+        )
+    )
+=>
+    (set-goal byzantine-production-stable-target 2)
+)
+
+; Third Stable for sustained mounted pressure.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total villager >= 70)
+    (population-headroom > 10)
+    (wood-amount > 3000)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+    )
+=>
+    (set-goal byzantine-production-stable-target 3)
+)
+
+; Second Siege Workshop when siege demand is durable, including Castle-age
+; fortified positions and persistent Mangonel pressure.
+(defrule
+    (current-age >= castle-age)
+    (unit-type-count-total villager >= 50)
+    (or
+        (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+        (goal byzantine-fortification-threat 1)
+    )
+=>
+    (set-goal byzantine-production-siege-target 2)
+)
+
+; Third Siege Workshop is an Imperial mass-siege condition.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total villager >= 75)
+    (population-headroom > 10)
+    (wood-amount > 3000)
+    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+=>
+    (set-goal byzantine-production-siege-target 3)
+)
+
+; Second Castle: only an Imperial, stone-rich, population-safe Byzantine can
+; justify the cost. Castle is both a defensive anchor and a Cataphract outlet.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (stone-amount > 1200)
+    (population-headroom > 20)
+    (not (town-under-attack))
+    (or
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (or
+            (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            (goal byzantine-army-attack-ready 2)
+        )
+    )
+=>
+    (set-goal byzantine-production-castle-target 2)
+)
+
+; Third Castle: an exceptional Byzantine late-game fortress/production
+; investment, requiring both the stone bank and a real Cataphract/army reason.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (stone-amount > 2000)
+    (population-headroom > 35)
+    (not (town-under-attack))
+    (or
+        (unit-type-count-total cataphract-line >= 12)
+        (and
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+            (unit-type-count-total cataphract-line >= 6)
+        )
+    )
+    (or
+        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+    )
+=>
+    (set-goal byzantine-production-castle-target 3)
+)
+
+; ---------------------------------------------------------------------------
+; Capacity execution. One action per pass remains the native script arbiter,
+; but pending foundations are explicitly counted so the next capacity request
+; can be issued without waiting for the previous building to finish.
+
+; Barracks: 2 / 3 / 4.
+(defrule
+    (goal byzantine-production-barracks-target 2)
+    (building-type-count-total barracks < 2)
+    (up-pending-objects c: barracks < 2)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 6)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (or
+        (goal byzantine-production-barracks-target 3)
+        (goal byzantine-production-barracks-target 4)
+    )
+    (building-type-count-total barracks < 3)
+    (up-pending-objects c: barracks < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 6)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-barracks-target 4)
+    (building-type-count-total barracks < 4)
+    (up-pending-objects c: barracks < 4)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Archery Ranges: 2 / 3.
+(defrule
+    (goal byzantine-production-archery-target 2)
+    (building-type-count-total archery-range < 2)
+    (up-pending-objects c: archery-range < 2)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 6)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-archery-target 3)
+    (building-type-count-total archery-range < 3)
+    (up-pending-objects c: archery-range < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Stables: 2 / 3.
+(defrule
+    (goal byzantine-production-stable-target 2)
+    (building-type-count-total stable < 2)
+    (up-pending-objects c: stable < 2)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 6)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-stable-target 3)
+    (building-type-count-total stable < 3)
+    (up-pending-objects c: stable < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Siege Workshops: 2 / 3.
+(defrule
+    (goal byzantine-production-siege-target 2)
+    (building-type-count-total siege-workshop < 2)
+    (up-pending-objects c: siege-workshop < 2)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 6)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-siege-target 3)
+    (building-type-count-total siege-workshop < 3)
+    (up-pending-objects c: siege-workshop < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Castles: 2 / 3.
+(defrule
+    (goal byzantine-production-castle-target 2)
+    (building-type-count-total castle < 2)
+    (up-pending-objects c: castle < 2)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 20)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow castle)
+=>
+    (build castle)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (goal byzantine-production-castle-target 3)
+    (building-type-count-total castle < 3)
+    (up-pending-objects c: castle < 3)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 30)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-late-upgrade-priority 0)
+    (can-build-with-escrow castle)
+=>
+    (build castle)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
 ; Aggressive defensive expansion: once the tower network exists and the
