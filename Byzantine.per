@@ -74,6 +74,10 @@
 (defconst action-attack-move 19)
 (defconst villager-class 904)
 (defconst object-data-id 0)
+(defconst object-data-hitpoints 10)
+(defconst object-data-status 19)
+(defconst object-data-tasks-count 32)
+(defconst object-data-gather-type 71)
 (defconst object-data-dropsite 14)
 (defconst object-data-distance 44)
 (defconst object-data-index -1)
@@ -5929,8 +5933,10 @@
     (goal byzantine-food-source-selector 0)
     (or
         (goal demand-economy-food-mill-feudal-berries 0)
-        (goal demand-economy-food-mill-feudal-berries 702)
-        (goal demand-economy-food-mill-feudal-berries 701)
+        (or
+            (goal demand-economy-food-mill-feudal-berries 702)
+            (goal demand-economy-food-mill-feudal-berries 701)
+        )
     )
 =>
     (set-strategic-number sn-preferred-mill-placement 0)
