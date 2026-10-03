@@ -196,6 +196,60 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         ):
             self.assertIn(fragment, block)
 
+    def test_counter_arbitration_yields_focus_writers_after_target_lock(self):
+        section = self._section(
+            "; TARGET PLAYER + FOCUS PROFILE PLANE",
+            "; NATIVE NATURAL-FOOD DEER CONTROLLER",
+        )
+        for fragment in (
+            "(goal byzantine-target-player-lock 0)",
+            "(goal byzantine-focus-stables >= 2)",
+            "(goal byzantine-focus-ranges >= 2)",
+            "(goal byzantine-focus-siege-workshops >= 1)",
+            "(goal byzantine-target-player-lock 1)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player mangonel-line >= 2)",
+            "(players-military-population target-player >= 6)",
+        ):
+            self.assertIn(fragment, section)
+
+        for rule in section.split("(defrule")[1:]:
+            if "(set-goal counter-package-" not in rule:
+                continue
+            action = rule.split("=>", 1)[-1]
+            if "counter-package-" in action:
+                self.assertIn(
+                    "(goal byzantine-target-player-lock ",
+                    rule,
+                    "counter-package writers must declare lock ownership",
+                )
+
+    def test_imperial_composition_preserves_global_defense_and_locks_offense_to_target(self):
+        section = self._section(
+            "; IMPERIAL MILITARY COMPOSITION ARBITRATION",
+            "; Pending diagnostics: imperial-conversion",
+        )
+        for fragment in (
+            "(goal byzantine-target-player-lock 0)",
+            "(players-unit-type-count any-enemy camel-rider-line >= 3)",
+            "(players-unit-type-count any-enemy archer-line >= 4)",
+            "(players-unit-type-count any-enemy cavalry-archer-line >= 4)",
+            "(goal byzantine-target-player-lock 1)",
+            "(players-unit-type-count target-player camel-rider-line >= 3)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player archer-line >= 4)",
+            "(players-unit-type-count target-player cavalry-archer-line >= 4)",
+        ):
+            self.assertIn(fragment, section)
+
+        for rule in section.split("(defrule")[1:]:
+            if "any-enemy" in rule and "set-goal byzantine-imperial-composition-posture" in rule:
+                self.assertIn(
+                    "(goal byzantine-target-player-lock 0)",
+                    rule,
+                    "global enemy composition may only write the defensive posture before offensive target lock",
+                )
+
     def test_fast_castle_economy_keeps_wood_and_gold_funded(self):
         block = self.per[
             self.per.index("; Native control rule: economy-controller-write-fast_castle-sn-food-gatherer-percentage"):
