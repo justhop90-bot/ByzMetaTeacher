@@ -14348,8 +14348,10 @@
     (building-type-count university >= 1)
     (or
         (building-type-count 117 >= 1)
-        (building-type-count guard-tower >= 1)
-        (building-type-count keep >= 1)
+        (or
+                (building-type-count guard-tower >= 1)
+                (building-type-count keep >= 1)
+            )
     )
 =>
     (set-goal byzantine-university-state byzantine-university-state-hardened-perimeter)
@@ -14364,9 +14366,13 @@
         (and
             (building-type-count castle >= 1)
             (building-type-count guard-tower >= 1))
-        (building-type-count guard-tower >= 2)
-        (building-type-count keep >= 1)
-        (building-type-count bombard-tower >= 1)
+        (or
+                (building-type-count guard-tower >= 2)
+                (or
+                        (building-type-count keep >= 1)
+                        (building-type-count bombard-tower >= 1)
+                    )
+            )
     )
 =>
     (set-goal byzantine-university-state byzantine-university-state-tower-network)
@@ -14417,8 +14423,10 @@
 (defrule
     (or
         (goal byzantine-university-state byzantine-university-state-castle)
-        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
-        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (or
+                (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+            )
     )
     (goal demand-byzantine-university-guard-tower 0)
     (not (research-completed 140))
@@ -14430,16 +14438,22 @@
 (defrule
     (or
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
-        (goal byzantine-university-state byzantine-university-state-tower-network)
-        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        (or
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            )
     )
     (goal demand-byzantine-university-ballistics 0)
     (not (research-completed 93))
     (or
         (building-type-count guard-tower >= 1)
-        (building-type-count castle >= 1)
-        (building-type-count keep >= 1)
-        (building-type-count bombard-tower >= 1)
+        (or
+                (building-type-count castle >= 1)
+                (or
+                        (building-type-count keep >= 1)
+                        (building-type-count bombard-tower >= 1)
+                    )
+            )
     )
 =>
     (set-goal demand-byzantine-university-ballistics 1)
@@ -14473,9 +14487,13 @@
     (not (research-completed 54))
     (or
         (up-pending-objects c: 117 >= 1)
-        (up-pending-objects c: 72 >= 1)
-        (up-pending-objects c: 234 >= 1)
-        (up-pending-objects c: 235 >= 1)
+        (or
+                (up-pending-objects c: 72 >= 1)
+                (or
+                        (up-pending-objects c: 234 >= 1)
+                        (up-pending-objects c: 235 >= 1)
+                    )
+            )
     )
 =>
     (set-goal demand-byzantine-university-treadmill-crane 1)
@@ -14487,8 +14505,10 @@
     (not (research-completed 608))
     (or
         (building-type-count guard-tower >= 2)
-        (building-type-count keep >= 1)
-        (building-type-count bombard-tower >= 1)
+        (or
+                (building-type-count keep >= 1)
+                (building-type-count bombard-tower >= 1)
+            )
     )
 =>
     (set-goal demand-byzantine-university-arrowslits 1)
@@ -14740,8 +14760,10 @@
     )
     (or
         (dropsite-min-distance gold >= 7)
-        (dropsite-min-distance stone >= 7)
-        (dropsite-min-distance wood >= 7)
+        (or
+                (dropsite-min-distance stone >= 7)
+                (dropsite-min-distance wood >= 7)
+            )
     )
     (wood-amount >= 75)
 =>
@@ -14763,8 +14785,10 @@
     )
     (or
         (dropsite-min-distance gold >= 7)
-        (dropsite-min-distance stone >= 7)
-        (dropsite-min-distance wood >= 7)
+        (or
+                (dropsite-min-distance stone >= 7)
+                (dropsite-min-distance wood >= 7)
+            )
     )
     (wood-amount >= 100)
 =>
@@ -14782,14 +14806,20 @@
     (current-age == feudal-age)
     (or
         (players-unit-type-count any-enemy knight >= 2)
-        (players-unit-type-count any-enemy archer-line >= 4)
-        (players-unit-type-count any-enemy militia-line >= 5)
-        (goal under-attack yes)
+        (or
+                (players-unit-type-count any-enemy archer-line >= 4)
+                (or
+                        (players-unit-type-count any-enemy militia-line >= 5)
+                        (goal under-attack yes)
+                    )
+            )
     )
     (or
         (dropsite-min-distance gold >= 7)
-        (dropsite-min-distance stone >= 7)
-        (dropsite-min-distance wood >= 7)
+        (or
+                (dropsite-min-distance stone >= 7)
+                (dropsite-min-distance wood >= 7)
+            )
     )
     (wood-amount >= 60)
 =>
@@ -14807,11 +14837,19 @@
     (current-age >= castle-age)
     (or
         (players-unit-type-count any-enemy knight >= 3)
-        (players-unit-type-count any-enemy archer-line >= 4)
-        (players-unit-type-count any-enemy militia-line >= 5)
-        (players-unit-type-count any-enemy mangonel-line >= 2)
-        (players-building-type-count any-enemy 82 >= 1)
-        (goal under-attack yes)
+        (or
+                (players-unit-type-count any-enemy archer-line >= 4)
+                (or
+                        (players-unit-type-count any-enemy militia-line >= 5)
+                        (or
+                                (players-unit-type-count any-enemy mangonel-line >= 2)
+                                (or
+                                        (players-building-type-count any-enemy 82 >= 1)
+                                        (goal under-attack yes)
+                                    )
+                            )
+                    )
+            )
     )
     (stone-amount >= 650)
 =>
@@ -14966,8 +15004,10 @@
     )
     (or
         (dropsite-min-distance gold >= 7)
-        (dropsite-min-distance stone >= 7)
-        (dropsite-min-distance wood >= 7)
+        (or
+                (dropsite-min-distance stone >= 7)
+                (dropsite-min-distance wood >= 7)
+            )
     )
 =>
     (set-goal byzantine-wall-resource-state byzantine-wall-resource-idle)
@@ -15064,8 +15104,10 @@
     (not (current-age >= imperial-age))
     (or
         (current-age < castle-age)
-        (stone-amount >= 650)
-        (goal under-attack yes)
+        (or
+                (stone-amount >= 650)
+                (goal under-attack yes)
+            )
     )
 =>
     (set-goal demand-adaptive-stone-wall 1)
@@ -15258,8 +15300,10 @@
     (goal byzantine-university-state byzantine-university-state-tower-network)
     (or
         (goal strategic-primary-intent 3)
-        (players-unit-type-count any-enemy knight >= 3)
-        (players-unit-type-count any-enemy militia-line >= 5)
+        (or
+                (players-unit-type-count any-enemy knight >= 3)
+                (players-unit-type-count any-enemy militia-line >= 5)
+            )
     )
     (not (building-type-count 234 >= 2))
     (goal construction-retry-barrier-adaptive-guard-tower 0)
@@ -16158,8 +16202,10 @@
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-castle)
-        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
-        (goal byzantine-university-state byzantine-university-state-tower-network)
+        (or
+                (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+            )
     )
     (goal demand-adaptive-guard-tower 1)
     (can-research-with-escrow ri-guard-tower)
@@ -16217,14 +16263,20 @@
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
-        (goal byzantine-university-state byzantine-university-state-tower-network)
-        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        (or
+                (goal byzantine-university-state byzantine-university-state-tower-network)
+                (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+            )
     )
     (or
         (building-type-count guard-tower >= 1)
-        (building-type-count castle >= 1)
-        (building-type-count keep >= 1)
-        (building-type-count bombard-tower >= 1)
+        (or
+                (building-type-count castle >= 1)
+                (or
+                        (building-type-count keep >= 1)
+                        (building-type-count bombard-tower >= 1)
+                    )
+            )
     )
     (can-research-with-escrow ri-ballistics)
 =>
@@ -16350,9 +16402,13 @@
     )
     (or
         (up-pending-objects c: 117 >= 1)
-        (up-pending-objects c: 72 >= 1)
-        (up-pending-objects c: 234 >= 1)
-        (up-pending-objects c: 235 >= 1)
+        (or
+                (up-pending-objects c: 72 >= 1)
+                (or
+                        (up-pending-objects c: 234 >= 1)
+                        (up-pending-objects c: 235 >= 1)
+                    )
+            )
     )
     (can-research-with-escrow ri-treadmill-crane)
 =>
@@ -16409,8 +16465,10 @@
     (goal byzantine-university-state byzantine-university-state-imperial-gunline)
     (or
         (building-type-count guard-tower >= 2)
-        (building-type-count keep >= 1)
-        (building-type-count bombard-tower >= 1)
+        (or
+                (building-type-count keep >= 1)
+                (building-type-count bombard-tower >= 1)
+            )
     )
     (can-research-with-escrow ri-arrowslits)
 =>
