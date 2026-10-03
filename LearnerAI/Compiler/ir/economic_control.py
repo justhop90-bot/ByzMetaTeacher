@@ -71,19 +71,17 @@ class EconomyControllerPlan:
     policies: tuple[EconomyModePolicy, ...] = ()
 
     def __post_init__(self) -> None:
+        if not self.controller_id.strip():
+            raise ValueError("economy controller id must not be empty")
+        modes = tuple(item.mode for item in self.policies)
+        if len(modes) != len(set(modes)):
+            raise ValueError("economy controller modes must be unique")
         if self.castle_bank_hard_food <= 0 or self.castle_bank_hard_gold <= 0:
             raise ValueError("Castle bank hard reserve must be positive")
         if self.castle_bank_buffer_food < self.castle_bank_hard_food:
             raise ValueError("Castle bank food buffer must cover the hard reserve")
         if self.castle_bank_buffer_gold < self.castle_bank_hard_gold:
             raise ValueError("Castle bank gold buffer must cover the hard reserve")
-
-    def __post_init__(self) -> None:
-        if not self.controller_id.strip():
-            raise ValueError("economy controller id must not be empty")
-        modes = tuple(item.mode for item in self.policies)
-        if len(modes) != len(set(modes)):
-            raise ValueError("economy controller modes must be unique")
 
 
 def default_byzantine_economy_controller() -> EconomyControllerPlan:
@@ -111,31 +109,8 @@ _SN_TARGETS = (
 )
 
 
-def lower_economy_controller(
-    plan: EconomyControllerPlan,
-    profile,
-) -> NativeControlPlan:
-    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
+def lower_economy_controller(plan: EconomyControllerPlan) -> NativeControlPlan:
     from ..semantic.analyzer import parse_expression
-
-    existing_ids = {
-        mode.native_strategic_number_id
-        for mode in profile.strategic_number_modes
-    }
-    overlap = existing_ids.intersection({item[1] for item in _SN_TARGETS})
-    if overlap:
-        raise ValueError(
-            f"economy controller Strategic Number writers overlap strategy-owned ids: {sorted(overlap)}"
-        )
-
-    profile_ids = {item.mode for item in plan.policies}
-    required_modes = set(EconomyMode)
-    if profile_ids != required_modes:
-        missing = sorted(required_modes - profile_ids, key=int)
-        extra = sorted(profile_ids - required_modes, key=int)
-        raise ValueError(
-            f"economy controller policy coverage mismatch; missing={missing}, extra={extra}"
-        )
 
     states = [
         NativeControlState(
@@ -165,40 +140,20 @@ def lower_economy_controller(
         states.append(
             NativeControlState(
                 symbol,
-                StrategicNumberRequest(
+                GoalSlotRequest(
                     StorageRequestId(
                         SemanticId(plan.controller_id, symbol),
-                        "economy-strategic-number",
+                        "strategic-number-writer",
                     ),
-                    why_not_goal=(
-                        "Native civilian-allocation Strategic Number; the controller "
-                        "does not infer a deeper villager scheduler contract."
-                    ),
-                    stability_key=f"{plan.controller_id}:{native_id}",
-                    origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-                    native_strategic_number_id=native_id,
+                    role=GoalRole.NATIVE_OUTPUT,
                 ),
             )
         )
 
-    allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
-    pressure = profile.observation(plan.pressure_observation).expression
-    no_pressure = f"(not {pressure})"
-    arena = profile.observation("strategy-arena-map").expression
-    opening = lambda value: f"(goal {plan.opening_state} {value})"
-
-    def select_rule(
-        identity: str,
-        mode: EconomyMode,
-        guards: str | tuple[str, ...],
-    ) -> NativeControlRule:
-        sources = (guards,) if isinstance(guards, str) else guards
+    def select_rule(identity: str, mode: EconomyMode, guard: str) -> NativeControlRule:
         return NativeControlRule(
             identity,
-            facts=tuple(
-                parse_expression(source, SourceLocation(1))
-                for source in sources
-            ),
+            facts=(parse_expression(guard, SourceLocation(1)),),
             actions=(
                 parse_expression(
                     f"(set-goal {plan.state_name} {int(mode)})",
@@ -207,31 +162,114 @@ def lower_economy_controller(
             ),
         )
 
-    def write_rule(
-        identity: str,
-        mode: EconomyMode,
-        symbol: str,
-        value: int,
-    ) -> NativeControlRule:
+    selection_rules = (
+        select_rule(
+            "economy-controller-select-counter-pressure",
+            EconomyMode.COUNTER_FEUDAL,
+            f"(and (and (current-age >= feudal-age) (current-age < castle-age)) "
+            f"({plan.pressure_observation}))",
+        ),
+        select_rule(
+            "economy-controller-select-fast-castle",
+            EconomyMode.FAST_CASTLE,
+            f"(and (and (current-age >= feudal-age) (current-age < castle-age)) "
+            f"(and (not ({plan.pressure_observation})) (goal {plan.opening_state} 3)))",
+        ),
+        select_rule(
+            "economy-controller-select-counter-feudal",
+            EconomyMode.COUNTER_FEUDAL,
+            f"(and (and (current-age >= feudal-age) (current-age < castle-age)) "
+            f"(and (not ({plan.pressure_observation})) (goal {plan.opening_state} 2)))",
+        ),
+        select_rule(
+            "economy-controller-select-water-economy",
+            EconomyMode.WATER_ECONOMY,
+            f"(and (and (current-age >= feudal-age) (current-age < castle-age)) "
+            f"(and (not ({plan.pressure_observation})) (goal {plan.opening_state} 4)))",
+        ),
+        select_rule(
+            "economy-controller-select-water-control",
+            EconomyMode.WATER_CONTROL,
+            f"(and (and (current-age >= feudal-age) (current-age < castle-age)) "
+            f"(and (not ({plan.pressure_observation})) (goal {plan.opening_state} 5)))",
+        ),
+        select_rule(
+            "economy-controller-select-base",
+            EconomyMode.BASE,
+            f"(and (current-age < castle-age) "
+            f"(and (not ({plan.pressure_observation})) "
+            f"(goal {plan.opening_state} 1)))",
+        ),
+        select_rule(
+            "economy-controller-select-castle-conversion",
+            EconomyMode.CASTLE_CONVERSION,
+            "(and (current-age >= castle-age) (current-age < imperial-age))",
+        ),
+        select_rule(
+            "economy-controller-select-imperial-conversion",
+            EconomyMode.IMPERIAL_CONVERSION,
+            "(current-age >= imperial-age)",
+        ),
+        select_rule(
+            "economy-controller-select-food-recovery",
+            EconomyMode.COUNTER_FEUDAL,
+            "(food-amount < 350)",
+        ),
+    )
+
+    policy_map = {policy.mode: policy for policy in plan.policies}
+
+    def write_rule(identity: str, goal_value: str, command: str, value: int) -> NativeControlRule:
         return NativeControlRule(
             identity,
             facts=(
                 parse_expression(
-                    f"(goal {plan.state_name} {int(mode)})",
+                    f"(goal {plan.state_name} {goal_value})",
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    f"(up-compare-sn {symbol} != {value})",
+                    f"(up-compare-sn {command} != {value})",
                     SourceLocation(1),
                 ),
             ),
             actions=(
                 parse_expression(
-                    f"(set-strategic-number {symbol} {value})",
+                    f"(set-strategic-number {command} {value})",
                     SourceLocation(1),
                 ),
             ),
         )
+
+    writer_rules = []
+    mode_names = {
+        EconomyMode.BASE: "base",
+        EconomyMode.COUNTER_FEUDAL: "counter_feudal",
+        EconomyMode.FAST_CASTLE: "fast_castle",
+        EconomyMode.WATER_ECONOMY: "water_economy",
+        EconomyMode.WATER_CONTROL: "water_control",
+        EconomyMode.CASTLE_CONVERSION: "castle_conversion",
+        EconomyMode.IMPERIAL_CONVERSION: "imperial_conversion",
+        EconomyMode.FAST_IMPERIAL: "fast_imperial",
+    }
+    for mode in EconomyMode:
+        policy = policy_map.get(mode)
+        if policy is None:
+            continue
+        mode_name = mode_names[mode]
+        for symbol, attr, value in (
+            ("sn-food-gatherer-percentage", "food", policy.allocation.food),
+            ("sn-wood-gatherer-percentage", "wood", policy.allocation.wood),
+            ("sn-gold-gatherer-percentage", "gold", policy.allocation.gold),
+            ("sn-percent-civilian-builders", "builders", policy.allocation.builders),
+        ):
+            writer_rules.append(
+                write_rule(
+                    f"economy-controller-write-{mode_name}-{symbol}",
+                    str(int(mode)),
+                    symbol,
+                    value,
+                )
+            )
 
     bank_state = plan.castle_bank_state_name
     bank_rules = (
@@ -351,136 +389,6 @@ def lower_economy_controller(
                 ),
             ),
         ),
-    )
-
-    selection_rules = (
-        select_rule(
-            "economy-controller-select-counter-pressure",
-            EconomyMode.COUNTER_FEUDAL,
-            (
-                "(current-age >= feudal-age)",
-                "(current-age < castle-age)",
-                pressure,
-            ),
-        ),
-        select_rule(
-            "economy-controller-select-fast-castle",
-            EconomyMode.FAST_CASTLE,
-            (
-                "(current-age >= feudal-age)",
-                "(current-age < castle-age)",
-                no_pressure,
-                opening(3),
-            ),
-        ),
-        select_rule(
-            "economy-controller-select-counter-feudal",
-            EconomyMode.COUNTER_FEUDAL,
-            (
-                "(current-age >= feudal-age)",
-                "(current-age < castle-age)",
-                no_pressure,
-                opening(2),
-            ),
-        ),
-        select_rule(
-            "economy-controller-select-water-economy",
-            EconomyMode.WATER_ECONOMY,
-            (
-                "(current-age >= feudal-age)",
-                "(current-age < castle-age)",
-                no_pressure,
-                opening(4),
-            ),
-        ),
-        select_rule(
-            "economy-controller-select-water-control",
-            EconomyMode.WATER_CONTROL,
-            (
-                "(current-age >= feudal-age)",
-                "(current-age < castle-age)",
-                no_pressure,
-                opening(5),
-            ),
-        ),
-        select_rule(
-            "economy-controller-select-base",
-            EconomyMode.BASE,
-            (
-                "(current-age < castle-age)",
-                no_pressure,
-                opening(1),
-            ),
-        ),
-        NativeControlRule(
-            "economy-controller-select-fast-imperial",
-            facts=tuple(
-                parse_expression(item, SourceLocation(1))
-                for item in (
-                    "(current-age >= castle-age)",
-                    "(current-age < imperial-age)",
-                    opening(3),
-                    arena,
-                    no_pressure,
-                )
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {int(EconomyMode.FAST_IMPERIAL)})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        select_rule(
-            "economy-controller-select-castle-conversion",
-            EconomyMode.CASTLE_CONVERSION,
-            "(and (current-age >= castle-age) (current-age < imperial-age))",
-        ),
-        select_rule(
-            "economy-controller-select-imperial-conversion",
-            EconomyMode.IMPERIAL_CONVERSION,
-            "(current-age >= imperial-age)",
-        ),
-    )
-
-    writer_rules = []
-    for mode in EconomyMode:
-        allocation = allocation_by_mode[mode]
-        for symbol, value in (
-            ("sn-food-gatherer-percentage", allocation.food),
-            ("sn-wood-gatherer-percentage", allocation.wood),
-            ("sn-gold-gatherer-percentage", allocation.gold),
-            ("sn-percent-civilian-builders", allocation.builders),
-        ):
-            writer_rules.append(
-                write_rule(
-                    f"economy-controller-write-{mode.name.lower()}-{symbol}",
-                    mode,
-                    symbol,
-                    value,
-                )
-            )
-
-    # Stone is deliberately outside the generic economy allocation tuple.
-    # The Byzantine Dark Age contract is nevertheless explicit: BASE owns a
-    # fail-safe zero-stone write instead of inheriting an engine/default split.
-    writer_rules.append(
-        NativeControlRule(
-            "economy-controller-write-base-sn-stone-gatherer-percentage",
-            facts=(
-                parse_expression("(goal economy-posture 1)", SourceLocation(1)),
-                parse_expression(
-                    "(up-compare-sn sn-stone-gatherer-percentage != 0)",
-                    SourceLocation(1),
-                ),
-            ),
-            actions=(
-                parse_expression(
-                    "(set-strategic-number sn-stone-gatherer-percentage 0)",
-                    SourceLocation(1),
-                ),
-            ),
-        )
     )
 
     return NativeControlPlan(
