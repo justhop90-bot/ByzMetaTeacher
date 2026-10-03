@@ -1,0 +1,21 @@
+name: Export final Byzantine.per
+
+on:
+  push:
+    branches:
+      - temp/export-final-byzantine
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify final Byzantine.per exists
+        run: test -s Byzantine.per
+      - name: Export Byzantine.per
+        uses: actions/upload-artifact@v7
+        with:
+          name: final-byzantine-per
+          path: Byzantine.per
+          if-no-files-found: error
+          retention-days: 7
