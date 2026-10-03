@@ -1,0 +1,29 @@
+name: Export authoritative Byzantine.per
+
+on:
+  push:
+    branches:
+      - temp/export-authoritative-byzantine-fixed
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source file
+        run: |
+          test -f Byzantine.per
+          sha256sum Byzantine.per
+          python - <<'PY'
+          import hashlib, pathlib
+          p = pathlib.Path("Byzantine.per")
+          b = p.read_bytes()
+          blob = hashlib.sha1(b"blob " + str(len(b)).encode() + b"\0" + b).hexdigest()
+          print("git-blob", blob)
+          assert blob == "9ae0bbd4ca6cc7d463118c0345be74584d2be7bb"
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Byzantine-main-fixed
+          path: Byzantine.per
+          if-no-files-found: error
