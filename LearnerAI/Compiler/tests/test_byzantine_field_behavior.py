@@ -26,7 +26,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         )
         gold = self._section_from(
             "; Byzantine near-resource mining-camp recovery",
-            "; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL",
+            "; The same bounded front rule applies to stone",
         )
 
         self.assertIn("(resource-found wood)", wood)
