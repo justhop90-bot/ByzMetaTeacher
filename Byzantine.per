@@ -4888,8 +4888,7 @@
 ; Native control rule: counter-package-selection-001-infantry_pressure_castle
 (defrule
     (and (current-age >= castle-age)
-         (and (goal byzantine-focus-military-pop >= 6)
-              (players-unit-type-count target-player militia-line >= 5)))
+         (and (goal byzantine-focus-military-pop >= 6) (players-unit-type-count target-player militia-line >= 5)))
 =>
     (set-goal counter-package-infantry_pressure_castle 1)
 )
