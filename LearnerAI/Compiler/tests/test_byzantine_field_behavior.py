@@ -266,6 +266,45 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             ring,
         )
 
+    def test_opening_camp_arbitration_does_not_deadlock_gold_behind_wood_demand(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertNotIn(
+            "(current-age == dark-age)\n                (unit-type-count-total villager >= 12)",
+            controller,
+        )
+        self.assertNotIn(
+            "(current-age == dark-age)\n    (unit-type-count-total villager >= 12)",
+            controller,
+        )
+        self.assertIn(
+            "(goal demand-economy-gold-camp-floor-1 1)",
+            controller,
+        )
+        self.assertIn(
+            "(goal demand-economy-lumber-camp-floor-1 1)",
+            controller,
+        )
+
+    def test_resource_camp_prefers_persisted_resource_point_before_candidate_ring(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        direct = controller.index(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)"
+        )
+        ring = controller.index(
+            "(up-add-point byzantine-resource-camp-candidate-point byzantine-resource-camp-ring-ne c: 1)"
+        )
+        self.assertLess(direct, ring)
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            controller,
+        )
+
     def test_resource_camp_executes_at_persisted_point_through_existing_builder_lifecycle(self):
         for building, demand in (
             ("lumber-camp", "demand-economy-lumber-camp-floor-1"),
