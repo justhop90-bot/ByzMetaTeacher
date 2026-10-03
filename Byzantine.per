@@ -905,10 +905,10 @@
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-idle)
     (current-age >= castle-age)
     (or
-        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
         (or
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
         )
     )
     (or
@@ -948,10 +948,10 @@
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (or
-        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
         (or
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
         )
     )
 =>
@@ -981,28 +981,28 @@
 
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
 =>
     (up-modify-goal byzantine-static-defense-resource-score c:+ 120)
 )
 
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
 =>
     (up-modify-goal byzantine-static-defense-resource-score c:+ 80)
 )
 
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
 =>
     (up-modify-goal byzantine-static-defense-resource-score c:+ 40)
 )
 
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
     (or
         (up-point-distance byzantine-wall-resource-point byzantine-wall-tc-point <= 12)
@@ -1145,7 +1145,7 @@
 
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
     (goal byzantine-wall-anchor-pair > 0)
     (or
@@ -1175,10 +1175,10 @@
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (or
-        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
         (or
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
         )
     )
     (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
@@ -1191,10 +1191,10 @@
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (or
-        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
         (or
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
         )
     )
     (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
@@ -1208,10 +1208,10 @@
 (defrule
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-evaluating)
     (or
-        (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+        (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
         (or
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
-            (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
+            (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
         )
     )
     (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
@@ -17364,7 +17364,7 @@
 (defrule
     (goal demand-adaptive-guard-tower 1)
     (goal byzantine-university-state byzantine-university-state-tower-network)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
     (not (building-type-count 234 >= 2))
@@ -17383,7 +17383,7 @@
 (defrule
     (goal demand-adaptive-guard-tower 1)
     (goal byzantine-university-state byzantine-university-state-tower-network)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
     (not (building-type-count 234 >= 2))
@@ -17402,7 +17402,7 @@
 (defrule
     (goal demand-adaptive-guard-tower 1)
     (goal byzantine-university-state byzantine-university-state-tower-network)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
     (not (building-type-count 234 >= 2))
@@ -17559,7 +17559,7 @@
 
 (defrule
     (goal demand-imperial-keep-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
@@ -17581,7 +17581,7 @@
 
 (defrule
     (goal demand-imperial-keep-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
@@ -17603,7 +17603,7 @@
 
 (defrule
     (goal demand-imperial-keep-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
@@ -17790,7 +17790,7 @@
 
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-selected)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-selected)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
@@ -17813,7 +17813,7 @@
 
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-armed)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-armed)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
@@ -17836,7 +17836,7 @@
 
 (defrule
     (goal demand-imperial-bombard-tower-floor 1)
-    (goal byzantine-wall-resource-state byzantine-wall-resource-state-secured)
+    (goal byzantine-wall-resource-state byzantine-wall-resource-secured)
     (goal byzantine-static-defense-score-state byzantine-static-defense-score-resource-selected)
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
