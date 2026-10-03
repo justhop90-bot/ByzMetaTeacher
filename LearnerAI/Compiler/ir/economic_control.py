@@ -56,7 +56,7 @@ class EconomyControllerPlan:
     controller_id: str
     state_name: str = "economy-posture"
     opening_state: str = "opening-plan"
-    pressure_observation: str = "strategy-opening-pressure"
+    pressure_observation: str = "strategy-enemy-pressure"
     policies: tuple[EconomyModePolicy, ...] = ()
 
     def __post_init__(self) -> None:
