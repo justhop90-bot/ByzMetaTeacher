@@ -262,6 +262,26 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             block,
         )
 
+    def test_imperial_fortified_package_loss_preserves_all_siege_approach_states(self):
+        block = self._find_rule(
+            "(current-age >= imperial-age)",
+            "(goal byzantine-army-attack-ready 2)",
+            "(set-goal byzantine-siege-approach byzantine-siege-approach-recover)",
+            "(set-goal byzantine-siege-breach-witness 0)",
+            "(unit-type-count-total 359 < bt-imperial-halberdier-floor)",
+        )
+        for state in (
+            "byzantine-siege-approach-staging",
+            "byzantine-siege-approach-escorted",
+            "byzantine-siege-approach-breach",
+            "byzantine-siege-approach-assault",
+            "byzantine-siege-approach-recover",
+        ):
+            self.assertIn(
+                f"(goal byzantine-siege-approach {state})",
+                block,
+            )
+
     def test_castle_monastery_and_monk_keep_two_monk_relic_healing_baseline(self):
         monastery = self._rule_block("; Action issuance: castle-monastery-capability | ACTIVE -> ISSUED")
         monks = self._rule_block("; Action issuance: castle-monk-floor | ACTIVE -> ISSUED")

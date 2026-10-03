@@ -11754,7 +11754,19 @@
 )
 
 (defrule
-    (goal byzantine-siege-approach byzantine-siege-approach-staging)
+    (or
+        (goal byzantine-siege-approach byzantine-siege-approach-staging)
+        (or
+            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+            (or
+                (goal byzantine-siege-approach byzantine-siege-approach-breach)
+                (or
+                    (goal byzantine-siege-approach byzantine-siege-approach-assault)
+                    (goal byzantine-siege-approach byzantine-siege-approach-recover)
+                )
+            )
+        )
+    )
     (goal byzantine-army-attack-ready 2)
     (current-age >= imperial-age)
     (or
