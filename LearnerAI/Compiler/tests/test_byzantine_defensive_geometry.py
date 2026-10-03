@@ -142,7 +142,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         # `up-compare-goal`; letting `(goal G > 0)` through produces a native
         # parser failure that can misleadingly surface on the operator line.
         invalid = re.findall(
-            r"\\(goal\\s+[^\\s()]+\\s+(?:==|!=|<=|>=|<|>)\\s+[^()]+\\)",
+            r"\(goal\s+[^\s()]+\s+(?:==|!=|<=|>=|<|>)\s+",
             self.per,
         )
         self.assertEqual(
