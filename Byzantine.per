@@ -8131,6 +8131,101 @@
 )
 
 ;----------------------------------------------------------------
+;----------------------------------------------------------------
+; ARMY REPOSITION / WITHDRAWAL CONTROLLER
+;----------------------------------------------------------------
+; Naga-style mechanism: cancel the active attack control, regroup surviving
+; military around a defensible anchor, then let normal reinforcement/reassessment
+; decide when the army can re-enter the fight.
+
+(defrule
+    (goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+    (goal byzantine-army-attack-ready 2)
+    (or
+        (town-under-attack)
+        (goal under-attack yes)
+    )
+=>
+    (up-reset-attack-now)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
+)
+
+(defrule
+    (goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (attack-soldier-count < 6)
+=>
+    (up-reset-attack-now)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
+)
+
+(defrule
+    (goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
+    (or
+        (goal byzantine-frontier-state byzantine-frontier-state-anchored)
+        (or
+            (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
+            (goal byzantine-frontier-state byzantine-frontier-state-protected)
+        )
+    )
+    (up-compare-goal byzantine-frontier-anchor-point > 0)
+=>
+    (up-copy-point byzantine-army-reposition-point byzantine-frontier-anchor-point)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-staging)
+    (disable-timer byzantine-army-reposition-timer)
+    (enable-timer byzantine-army-reposition-timer bt-byzantine-army-reposition-seconds)
+)
+
+(defrule
+    (goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
+    (not (goal byzantine-frontier-state byzantine-frontier-state-anchored))
+    (not (goal byzantine-frontier-state byzantine-frontier-state-wall-pending))
+    (not (goal byzantine-frontier-state byzantine-frontier-state-protected))
+=>
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-army-reposition-point)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-staging)
+    (disable-timer byzantine-army-reposition-timer)
+    (enable-timer byzantine-army-reposition-timer bt-byzantine-army-reposition-seconds)
+)
+
+(defrule
+    (goal byzantine-army-reposition-state byzantine-army-reposition-staging)
+    (or
+        (up-timer-status byzantine-army-reposition-timer c:== timer-disabled)
+        (up-timer-status byzantine-army-reposition-timer c:== timer-triggered)
+    )
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-army-reposition-point)
+    (up-filter-distance c: -1 c: 16)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-target-point 0 action-move -1 stance-defensive)
+    (disable-timer byzantine-army-reposition-timer)
+    (enable-timer byzantine-army-reposition-timer bt-byzantine-army-reposition-seconds)
+)
+
+(defrule
+    (goal byzantine-army-reposition-state byzantine-army-reposition-staging)
+    (or
+        (goal byzantine-army-reinforcement 1)
+        (goal byzantine-army-attack-ready 1)
+    )
+=>
+    (disable-timer byzantine-army-reposition-timer)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+)
+
 ; FORTIFICATION-AWARE SIEGE APPROACH
 ;----------------------------------------------------------------
 ; Locality contract: fortifications only affect the offensive controller when
@@ -8493,6 +8588,7 @@
     (set-goal byzantine-army-stale-state byzantine-army-stale-triggered)
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
 )
 
 ; Timer expires while an army is deliberately in fortified staging/breach.
