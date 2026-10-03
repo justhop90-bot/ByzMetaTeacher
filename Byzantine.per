@@ -8735,10 +8735,18 @@
     (goal byzantine-army-plan-phase 1)
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
-    (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
-    (unit-type-count-total mangonel-line >= bt-castle-attack-siege-target)
-    (unit-type-count-total monk >= bt-castle-monk-floor)
+    (attack-soldier-count >= 8)
+    (or
+        (and
+            (goal counter-package-infantry_pressure_castle 1)
+            (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
+        )
+        (and
+            (not (goal counter-package-infantry_pressure_castle 1))
+            (unit-type-count-total knight-line >= 2)
+        )
+        (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+    )
 =>
     (set-goal byzantine-army-attack-ready 1)
 )
@@ -20765,6 +20773,14 @@
 =>
     (set-goal demand-castle-cataphract-floor 0)
 )
+    
+; Strategic invalidation: Castle Cataphract demand is only persistent while infantry pressure is real.
+(defrule
+    (goal demand-castle-cataphract-floor 1)
+    (not (players-unit-type-count any-enemy militia-line >= 5))
+=>
+    (set-goal demand-castle-cataphract-floor 0)
+)
 
 ; Recovery: castle-cataphract-floor | RELEASED -> ACTIVE on world-state loss
 (defrule
@@ -20869,6 +20885,14 @@
 (defrule
     (goal demand-castle-varangian-guard-floor 59)
     (unit-type-count varangian-guard-line >= bt-castle-varangian-floor)
+=>
+    (set-goal demand-castle-varangian-guard-floor 0)
+)
+    
+; Strategic invalidation: Castle Varangian demand clears when infantry pressure clears.
+(defrule
+    (goal demand-castle-varangian-guard-floor 1)
+    (not (players-unit-type-count any-enemy militia-line >= 5))
 =>
     (set-goal demand-castle-varangian-guard-floor 0)
 )
