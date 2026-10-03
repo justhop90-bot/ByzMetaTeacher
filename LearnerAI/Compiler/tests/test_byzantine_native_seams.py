@@ -83,7 +83,7 @@ class ByzantineNativeSeamTest(unittest.TestCase):
             "(up-get-focus-fact building-type-count stable byzantine-focus-stables)",
             "(up-get-focus-fact building-type-count archery-range byzantine-focus-ranges)",
             "(up-get-focus-fact building-type-count siege-workshop byzantine-focus-siege-workshops)",
-            "(goal byzantine-focus-military-pop >= 6)",
+            "(up-compare-goal byzantine-focus-military-pop g:>= 6)",
         ):
             self.assertIn(fragment, self.per)
 
