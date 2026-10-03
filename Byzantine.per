@@ -4355,6 +4355,8 @@
 ; 2 = Imperial standing army
 (defconst byzantine-army-plan-phase 298)
 (defconst byzantine-army-reinforcement 300)
+(defconst byzantine-army-reinforcement-target-validation 303)
+(defconst byzantine-army-reinforcement-admission 305)
 (defconst byzantine-army-stale-state 367)
 (defconst byzantine-army-stale-timer 6)
 (defconst byzantine-army-stale-ready 0)
@@ -7880,6 +7882,18 @@
     (goal byzantine-army-reinforcement -1)
 =>
     (set-goal byzantine-army-reinforcement 0)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement-target-validation -1)
+=>
+    (set-goal byzantine-army-reinforcement-target-validation 0)
+)
+
+(defrule
+    (goal byzantine-army-reinforcement-admission -1)
+=>
+    (set-goal byzantine-army-reinforcement-admission 0)
 )
 
 (defrule
