@@ -196,6 +196,44 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         ):
             self.assertIn(fragment, block)
 
+    def test_reinforcement_rearm_requires_fresh_target_validation_and_opponent_admission(self):
+        start = self.per.index("; ATTACK THRESHOLDS AND REINFORCEMENT")
+        end = self.per.index("; ARMY REPOSITION / WITHDRAWAL CONTROLLER", start)
+        block = self.per[start:end]
+
+        for fragment in (
+            "(defconst byzantine-army-reinforcement-target-validation 303)",
+            "(defconst byzantine-army-reinforcement-admission 305)",
+            "(goal byzantine-army-reinforcement-target-validation 1)",
+            "(goal byzantine-army-reinforcement-admission 1)",
+            "(goal byzantine-target-player-lock 1)",
+            "(players-unit-type-count target-player knight >= 3)",
+            "(players-unit-type-count target-player archer-line >= 3)",
+            "(players-unit-type-count target-player mangonel-line >= 2)",
+            "(players-military-population target-player >= 6)",
+        ):
+            self.assertIn(fragment, block)
+
+        rearm_rules = [
+            rule for rule in block.split("(defrule")[1:]
+            if "(goal byzantine-army-reinforcement 1)" in rule
+            and "set-goal byzantine-army-attack-ready 1" in rule
+        ]
+        self.assertGreaterEqual(len(rearm_rules), 4)
+        for rule in rearm_rules:
+            self.assertIn(
+                "(goal byzantine-army-reinforcement-target-validation 1)",
+                rule,
+            )
+            self.assertIn(
+                "(goal byzantine-army-reinforcement-admission 1)",
+                rule,
+            )
+            self.assertIn(
+                "(goal byzantine-target-player-lock 1)",
+                rule,
+            )
+
     def test_counter_arbitration_yields_focus_writers_after_target_lock(self):
         section = self._section(
             "; TARGET PLAYER + FOCUS PROFILE PLANE",
