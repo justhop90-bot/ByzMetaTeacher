@@ -1,0 +1,35 @@
+name: Verify Byzantine behavior repair native syntax
+
+on:
+  push:
+    branches:
+      - verify/byz-relic-dropsites-native
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Parse fixture twice
+        shell: bash
+        run: |
+          python -m aoe2_ai_lab lint verification/byz-relic-dropsites.per --profile default --json > native-1.json
+          python -m aoe2_ai_lab lint verification/byz-relic-dropsites.per --profile default --json > native-2.json
+          cmp -s native-1.json native-2.json
+          python - <<'PY'
+          import json
+          payload=json.load(open("native-1.json", encoding="utf-8"))
+          assert payload["finding_count"] == 0, payload
+          assert payload["findings"] == [], payload
+          assert payload["failed"] is False, payload
+          print("finding_count=0")
+          PY
