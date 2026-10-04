@@ -38,7 +38,7 @@ class RoleSeparationTests(unittest.TestCase):
         self.assertEqual(plan.state_values[RoleControllerState.COMMITTED], 2)
         self.assertEqual(plan.state_values[RoleControllerState.RAID_SPLIT], 3)
         self.assertEqual(plan.state_values[RoleControllerState.RECOVERING], 4)
-        self.assertEqual(len(plan.storage_requests), 9)
+        self.assertEqual(len(plan.storage_requests), 10)
 
     def test_role_rules_never_issue_attack_or_move(self):
         plan = self.profile.role_separation_plan
@@ -58,6 +58,16 @@ class RoleSeparationTests(unittest.TestCase):
         }
         self.assertTrue(commands)
         self.assertTrue(forbidden.isdisjoint(commands))
+        self.assertNotIn(
+            "set-goal",
+            {
+                expression.head
+                for rule in plan.rules
+                for expression in rule.actions
+                if expression.args
+                and "byzantine-army-attack-ready" in str(expression.args[0])
+            },
+        )
 
     def test_native_role_plan_validates(self):
         from LearnerAI.Compiler.primitives import default_de_registry
