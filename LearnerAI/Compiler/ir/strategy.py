@@ -898,7 +898,6 @@ def lower_strategy_profile(
         source_unit=profile.profile_id,
     )
 
-
     bindings: dict[str, StrategicBinding] = {}
     bound_demands: list[SemanticDemand] = []
     from dataclasses import replace as dc_replace
