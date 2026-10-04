@@ -82,5 +82,21 @@ def default_de_native_profile() -> NativeEngineProfile:
                 local_alias_required=True,
                 introduced=patch,
             ),
+            NativeIdentifier(
+                symbol="ri-fishing-lines",
+                native_kind="TechId",
+                numeric_id=906,
+                built_in=False,
+                local_alias_required=True,
+                introduced=patch,
+            ),
+            NativeIdentifier(
+                symbol="ri-demolition-ship",
+                native_kind="TechId",
+                numeric_id=905,
+                built_in=False,
+                local_alias_required=True,
+                introduced=patch,
+            ),
         ),
     )
