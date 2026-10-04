@@ -2404,7 +2404,7 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
                 identity="byzantine-attack-phase-knight-input",
                 rule_identity="byzantine-castle-attack-now-knight",
                 section="FACT",
-                expression_index=3,
+                expression_index=4,
                 argument_index=0,
                 request=phase_request,
             ),
