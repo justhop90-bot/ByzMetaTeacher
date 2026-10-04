@@ -265,6 +265,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             (
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
+                "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
+                "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
                 "(unit-type-count cataphract >= 2)",
                 "(goal byzantine-attack-phase 2)",
             ),
@@ -274,6 +276,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             (
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
+                "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
+                "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
                 "(unit-type-count knight >= 3)",
                 "(goal byzantine-attack-phase 4)",
             ),
@@ -312,7 +316,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         self.assertIn("; Native Byzantine role-separation plan", output)
         self.assertIn("; Native role rule: role-forming-screen", output)
-        self.assertIn("; Native control rule: byzantine-role-recovery-bridge", output)
+        self.assertIn("; Native role rule: role-recovery-to-idle", output)
+        self.assertNotIn("; Native control rule: byzantine-role-recovery-bridge", output)
         self.assertIn(
             "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
             "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
