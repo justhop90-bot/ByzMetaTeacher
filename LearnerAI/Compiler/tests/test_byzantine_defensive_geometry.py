@@ -211,7 +211,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             section,
         )
 
-    def test_minimum_viable_attack_admission_does_not_require_monks_or_ideal_mass(self):
+    def test_minimum_viable_attack_admission_accepts_native_skirmisher_id(self):
         start = self.per.index("; MINIMUM-VIABLE CASTLE ATTACK ADMISSION")
         end = self.per.index("; FULL CASTLE ATTACK PACKAGE", start)
         section = self.per[start:end]
@@ -228,7 +228,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             section,
         )
         self.assertIn(
-            "(unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)",
+            "(unit-type-count-total 358 >= bt-castle-timing-skirmisher-floor)",
             section,
         )
         self.assertIn(
@@ -270,7 +270,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             section,
         )
         self.assertIn(
-            "(unit-type-count-total skirmisher-line < bt-castle-timing-skirmisher-floor)",
+            "(unit-type-count-total 358 < bt-castle-timing-skirmisher-floor)",
             section,
         )
         self.assertIn(
