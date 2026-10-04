@@ -52,7 +52,9 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertIn("scout-cavalry-line >= 3", expression)
         self.assertIn("archer-line >= 3", expression)
         self.assertIn("knight >= 1", expression)
-        self.assertIn("players-building-type-count any-enemy barracks >= 1", expression)
+        army_presence = profile.observation("strategy-arabia-early-army-presence").expression
+        self.assertIn("(players-building-type-count any-enemy barracks >= 1)", army_presence)
+        self.assertIn("(players-military-population any-enemy >= 3)", army_presence)
 
 
     def test_pressure_clear_returns_economy_to_base_arbitration(self):
