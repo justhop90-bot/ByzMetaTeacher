@@ -290,6 +290,36 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             section,
         )
 
+    def test_objective_execution_revalidates_attack_admission(self):
+        objective_classes = (
+            "byzantine-offensive-objective-class-siege",
+            "byzantine-offensive-objective-class-defense",
+            "byzantine-offensive-objective-class-production",
+            "byzantine-offensive-objective-class-town-center",
+        )
+        for objective_class in objective_classes:
+            state = (
+                "(goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-"
+            )
+            if objective_class.endswith("siege"):
+                state += "siege)"
+            elif objective_class.endswith("defense"):
+                state += "defense)"
+            elif objective_class.endswith("production"):
+                state += "production)"
+            else:
+                state += "town-center)"
+            class_marker = f"    {state}\n    (goal {objective_class})"
+            start = self.per.index(class_marker)
+            end = self.per.index("\n\n(defrule", start + len(class_marker))
+            section = self.per[start:end]
+            self.assertIn("(goal byzantine-army-attack-ready 1)", section)
+            self.assertIn(
+                "(up-target-objects 1 action-attack-move -1 -1)",
+                section,
+            )
+
     def test_fortified_breach_preserves_attack_reserve(self):
         start = self.per.index(
             "(goal byzantine-siege-approach byzantine-siege-approach-breach)"
