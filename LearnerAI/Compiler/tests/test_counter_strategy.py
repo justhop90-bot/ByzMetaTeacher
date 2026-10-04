@@ -27,13 +27,13 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
         self.assertEqual(
             tuple(package.identity for package in self.profile.counter_packages),
             (
+                "MOUNTED_COMMITMENT_FEUDAL",
+                "RANGED_COMMITMENT_FEUDAL",
                 "MOUNTED_PRESSURE_FEUDAL",
                 "RANGED_PRESSURE_FEUDAL",
                 "MOUNTED_PRESSURE_CASTLE",
                 "INFANTRY_PRESSURE_CASTLE",
                 "SIEGE_PRESSURE_CASTLE",
-                "MOUNTED_COMMITMENT_FEUDAL",
-                "RANGED_COMMITMENT_FEUDAL",
             ),
         )
         self.assertEqual(
