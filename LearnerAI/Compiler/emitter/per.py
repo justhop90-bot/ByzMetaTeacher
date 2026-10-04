@@ -361,6 +361,7 @@ def emit(
     for demand in demands:
         slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = LifecycleEncoding.for_goal_slot(slot)
+        research = demand.research_lifecycle
         encoded[demand.name] = lifecycle
 
         native_pass_constraints = registry.pass_constraints_for(demand.action.expression.head)
@@ -811,7 +812,7 @@ def emit(
             f"; Release: {demand.name} | COMPLETE -> RELEASED",
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.complete.value})",
-            f"    {demand.release.source}",
+            f"    {_research_runtime_source(demand.release, research)}",
             "=>",
             f"    (set-goal demand-{demand.name} {lifecycle.released.value})",
             ")",
@@ -859,7 +860,7 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    (not {demand.witness.source})",
+                        f"    (not {_research_runtime_source(demand.witness, research)})",
                         f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                         f"    {construction.pending_placement_fact.source}",
                     ]
@@ -873,7 +874,7 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    (not {demand.witness.source})",
+                        f"    (not {_research_runtime_source(demand.witness, research)})",
                         f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                         f"    (not {construction.pending_placement_fact.source})",
                     ]
@@ -890,7 +891,6 @@ def emit(
                     )
                 out += [label, "(defrule", *guards, "=>", *actions, ")", ""]
         elif demand.research_lifecycle is not None:
-            research = demand.research_lifecycle
             out += [
                 f"; Completion witness: {demand.name} | PENDING/ISSUED -> COMPLETE",
                 "(defrule",
@@ -898,7 +898,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    {demand.witness.source}",
+                f"    {_research_runtime_source(demand.witness, research)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
@@ -909,7 +909,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
+                f"    (not {_research_runtime_source(demand.witness, research)})",
                 f"    {research.pending_fact.source}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
@@ -921,7 +921,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
+                f"    (not {_research_runtime_source(demand.witness, research)})",
                 f"    (not {research.pending_fact.source})",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
@@ -944,7 +944,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    {demand.witness.source}",
+                f"    {_research_runtime_source(demand.witness, research)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
@@ -955,7 +955,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
+                f"    (not {_research_runtime_source(demand.witness, research)})",
                 f"    {production.pending_fact.source}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
@@ -967,7 +967,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
+                f"    (not {_research_runtime_source(demand.witness, research)})",
                 f"    (not {production.pending_fact.source})",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
@@ -987,7 +987,7 @@ def emit(
                 f"; Completion witness: {demand.name} | PENDING -> COMPLETE",
                 "(defrule",
                 f"    (goal demand-{demand.name} {lifecycle.pending.value})",
-                f"    {demand.witness.source}",
+                f"    {_research_runtime_source(demand.witness, research)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
@@ -1005,7 +1005,7 @@ def emit(
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.active.value})",
-            f"    (not {demand.witness.source})",
+            f"    (not {_research_runtime_source(demand.witness, research)})",
         ]
 
         if construction is not None:
