@@ -1946,11 +1946,22 @@ def build_land_castle_strategy(
             observation_ref="current-feudal-age",
         ),
     )
+    castle_age = effective.age_advance(Age.CASTLE)
+    castle_age_cost = effective.cost_of_age_advance(Age.CASTLE)
 
     castle_policy = OpportunityCostPolicy(
         owner="castle-trajectory",
         protected_floors=(
             ProtectedResourceFloor(Resource.STONE, 650),
+        ),
+        emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+    )
+
+    castle_age_policy = OpportunityCostPolicy(
+        owner="age-transition",
+        protected_floors=(
+            ProtectedResourceFloor(Resource.FOOD, castle_age_cost.food),
+            ProtectedResourceFloor(Resource.GOLD, castle_age_cost.gold),
         ),
         emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
     )
@@ -2034,21 +2045,14 @@ def build_land_castle_strategy(
                 CapabilityIntentKind.AGE_ADVANCE,
                 "age-advance",
                 "castle-age",
-                BuildingId(87),
+                castle_age.provider_building,
             ),
             target=StrategicTarget(
                 StrategicTargetKind.EXACT,
                 "age-advance",
                 "castle-age",
             ),
-            opportunity_cost=OpportunityCostPolicy(
-                owner="age-transition",
-                protected_floors=(
-                    ProtectedResourceFloor(Resource.FOOD, 800),
-                    ProtectedResourceFloor(Resource.GOLD, 200),
-                ),
-                emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
-            ),
+            opportunity_cost=castle_age_policy,
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == feudal-age)",
