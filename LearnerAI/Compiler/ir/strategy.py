@@ -2956,11 +2956,6 @@ def build_byzantine_castle_strategy(
 
     def annotate_demand(demand: StrategicDemandSpec) -> StrategicDemandSpec:
         execution = demand.execution
-        if demand.identity == "feudal-transition":
-            execution = replace(
-                execution,
-                action_witness_gates=("(research-completed 22)",),
-            )
         return replace(
             demand,
             reason=tuple(annotate_meta(evidence) for evidence in demand.reason),
