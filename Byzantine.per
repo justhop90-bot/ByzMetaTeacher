@@ -9369,25 +9369,22 @@
         (and
             (current-age == castle-age)
             (or
-                (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+                (unit-type-count-total cataphract-line < bt-castle-timing-cataphract-floor)
                 (or
-                    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
-                    (or
-                        (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
-                        (unit-type-count-total monk < bt-castle-monk-floor)
-                    )
+                    (unit-type-count-total skirmisher-line < bt-castle-timing-skirmisher-floor)
+                    (unit-type-count-total mangonel-line < bt-castle-timing-siege-floor)
                 )
             )
         )
         (and
             (current-age >= imperial-age)
             (or
-                (unit-type-count-total 359 < bt-imperial-halberdier-floor)
+                (unit-type-count-total 359 < bt-imperial-timing-halberdier-floor)
                 (or
-                    (unit-type-count-total trebuchet < bt-imperial-attack-siege-target)
+                    (unit-type-count-total trebuchet < bt-imperial-timing-siege-floor)
                     (or
-                        (unit-type-count-total bombard-cannon < bt-imperial-bombard-floor)
-                        (unit-type-count-total battering-ram-line < bt-imperial-attack-siege-target)
+                        (unit-type-count-total bombard-cannon < bt-imperial-timing-siege-floor)
+                        (unit-type-count-total battering-ram-line < bt-imperial-timing-siege-floor)
                     )
                 )
             )
