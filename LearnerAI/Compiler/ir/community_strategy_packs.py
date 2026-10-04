@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
-from .game_data import Age, BuildingId, Resource, UnitLineId
+from .game_data import Age, BuildingId, Resource, ResourceCost, UnitLineId
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -290,12 +290,45 @@ def _training_demand(
     )
 
 
+_CASTLE_BANK_HARD_FOOD = 800
+_CASTLE_BANK_HARD_GOLD = 200
+
 _FEUDAL_RESEARCH_BANKS = {
     "wheelbarrow": ((Resource.FOOD, 1000), (Resource.GOLD, 250)),
     "double-bit-axe": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
     "horse-collar": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
     "gold-mining": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
 }
+
+def _feudal_research_bank_floors(
+    effective: EffectiveCivData,
+    tech_name: str,
+) -> tuple[tuple[Resource, int], ...]:
+    """Keep the Castle bank intact after a Feudal technology is paid."""
+    if tech_name not in _FEUDAL_RESEARCH_BANKS:
+        return ()
+    policy = dict(_FEUDAL_RESEARCH_BANKS[tech_name])
+    tech = _tech(effective, tech_name)
+    cost = tech.base_cost
+    if isinstance(cost, ResourceCost):
+        policy[Resource.FOOD] = max(
+            policy.get(Resource.FOOD, 0),
+            _CASTLE_BANK_HARD_FOOD + cost.food,
+        )
+        policy[Resource.GOLD] = max(
+            policy.get(Resource.GOLD, 0),
+            _CASTLE_BANK_HARD_GOLD + cost.gold,
+        )
+    else:
+        policy[Resource.FOOD] = max(
+            policy.get(Resource.FOOD, 0),
+            _CASTLE_BANK_HARD_FOOD,
+        )
+        policy[Resource.GOLD] = max(
+            policy.get(Resource.GOLD, 0),
+            _CASTLE_BANK_HARD_GOLD,
+        )
+    return tuple(sorted(policy.items(), key=lambda item: item[0].value))
 
 _RESEARCH_PACK = (
     ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
@@ -364,6 +397,46 @@ def community_strategy_observations(
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("archer-line").provenance,
+                     *effective.unit_line("militia-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-arabia-early-pressure",
+            "(or (players-unit-type-count any-enemy militia-line >= 3) "
+            "(or (players-unit-type-count any-enemy scout-cavalry-line >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 3) "
+            "(players-unit-type-count any-enemy knight >= 1))))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("scout-cavalry-line").provenance,
+                     *effective.unit_line("archer-line").provenance,
+                     *effective.unit_line("militia-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-arabia-early-army-presence",
+            "(and (players-building-type-count any-enemy barracks >= 1) "
+            "(players-military-population any-enemy >= 3))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("militia-line").provenance,)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-arabia-early-pressure-cleared",
+            "(and (players-unit-type-count any-enemy militia-line < 3) "
+            "(and (players-unit-type-count any-enemy scout-cavalry-line < 3) "
+            "(and (players-unit-type-count any-enemy archer-line < 3) "
+            "(players-unit-type-count any-enemy knight < 1))))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("scout-cavalry-line").provenance,
                      *effective.unit_line("archer-line").provenance,
                      *effective.unit_line("militia-line").provenance)
                 )
@@ -486,6 +559,31 @@ def community_strategy_observations(
             f"(building-type-count-total {int(university.id)} >= 1)",
             university.provenance,
         ),
+        _observation(
+            "strategy-standard-loom-admission",
+            "(and (current-age == dark-age) "
+            "(and (unit-type-count-total villager >= 13) "
+            "(and (building-type-count-total lumber-camp >= 1) "
+            "(and (building-type-count-total mining-camp >= 1) "
+            "(food-amount >= 50)))))",
+            tuple(
+                dict.fromkeys(
+                    (*lumber_camp.provenance,
+                     *mining_camp.provenance,
+                     *effective.tech(22).provenance)
+                )
+            ),
+        ),
+        _observation(
+            "research-loom-complete",
+            "(research-completed 22)",
+            effective.tech(22).provenance,
+        ),
+        _observation(
+            "research-loom-pending",
+            "(not (research-completed 22))",
+            effective.tech(22).provenance,
+        ),
     ]
 
     # resource-found is the supported native resource-front fact. Its latch/live
@@ -551,6 +649,27 @@ def community_strategy_demands(
     observations = community_strategy_observations(effective)
 
     demands: list[_StrategicDemandSpec] = []
+
+    demands.append(
+        _research_demand(
+            effective=effective,
+            identity="research-loom",
+            owner="economy",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.CORE,
+            age_guard=(
+                "(and (current-age == dark-age) "
+                "(and (unit-type-count-total villager >= 13) "
+                "(and (building-type-count-total lumber-camp >= 1) "
+                "(and (building-type-count-total mining-camp >= 1) "
+                "(food-amount >= 50)))))"
+            ),
+            age_observation_ref="strategy-standard-loom-admission",
+            tech_name="loom",
+            reason_label="Standard Arabia opening requires Loom before the Feudal click window",
+            resources=(Resource.FOOD,),
+        )
+    )
 
     camp_specs = (
         (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
@@ -830,7 +949,10 @@ def community_strategy_demands(
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
-            minimum_floors=_FEUDAL_RESEARCH_BANKS.get(tech_name, ()),
+            minimum_floors=_feudal_research_bank_floors(
+                effective,
+                tech_name,
+            ),
         )
         demands.append(demand)
 

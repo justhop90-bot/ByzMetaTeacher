@@ -995,6 +995,10 @@ def emit(
             f"    {requirement.expression.source}"
             for requirement in demand.requirements
         )
+        out.extend(
+            f"    {gate.source}"
+            for gate in demand.action_witness_gates
+        )
         out += [
             "=>",
         ]
@@ -1015,3 +1019,5 @@ def emit(
     result = "\n".join(out).rstrip() + "\n"
     _validate_artifact_budget(result)
     return result
+
+
