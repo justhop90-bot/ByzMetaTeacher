@@ -1277,7 +1277,32 @@ def build_byzantine_stock_strategy(
             observations.append(observation)
 
     demands = []
+    opening_resource_front = next(
+        item.expression
+        for item in observations
+        if item.identity == "strategy-opening-resource-front-ready"
+    )
     for base_demand in base.demands:
+        if base_demand.identity == "feudal-transition":
+            execution = replace(
+                base_demand.execution,
+                requirements=(
+                    "(current-age == dark-age)",
+                    opening_resource_front,
+                    "(can-research-with-escrow feudal-age)",
+                ),
+            )
+            base_demand = replace(
+                base_demand,
+                execution=execution,
+                admissibility=(
+                    *base_demand.admissibility,
+                    _persistent(
+                        "Feudal transition waits for the opening resource front to be established",
+                        "strategy-opening-resource-front-ready",
+                    ),
+                ),
+            )
         if (
             base_demand.execution is not None
             and base_demand.execution.action.startswith("(train ")
