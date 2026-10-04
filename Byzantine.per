@@ -9430,6 +9430,39 @@
     (set-goal byzantine-siege-approach byzantine-siege-approach-escorted)
 )
 
+; Fortified breach admission must witness that at least one live siege
+; option from the minimum package still exists. If the sole siege piece was
+; lost during staging/escort, fail closed and return to normal admission rather
+; than issuing attack-now with an infantry/cavalry-only package.
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+    (goal byzantine-siege-approach-claim 1)
+    (goal byzantine-army-attack-ready 1)
+    (unit-type-count-total mangonel-line < bt-castle-timing-siege-floor)
+    (unit-type-count-total battering-ram-line < bt-castle-timing-siege-floor)
+=>
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (set-goal byzantine-siege-approach-claim 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+    (goal byzantine-siege-approach-claim 1)
+    (goal byzantine-army-attack-ready 1)
+    (unit-type-count-total trebuchet < bt-imperial-timing-siege-floor)
+    (unit-type-count-total bombard-cannon < bt-imperial-timing-siege-floor)
+    (unit-type-count-total battering-ram-line < bt-imperial-timing-siege-floor)
+=>
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (set-goal byzantine-siege-approach-claim 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
 (defrule
     (goal byzantine-siege-approach byzantine-siege-approach-escorted)
     (goal byzantine-siege-approach-claim 1)
