@@ -38,7 +38,7 @@ class RoleSeparationTests(unittest.TestCase):
         self.assertEqual(plan.state_values[RoleControllerState.COMMITTED], 2)
         self.assertEqual(plan.state_values[RoleControllerState.RAID_SPLIT], 3)
         self.assertEqual(plan.state_values[RoleControllerState.RECOVERING], 4)
-        self.assertEqual(len(plan.storage_requests), 2)
+        self.assertEqual(len(plan.storage_requests), 3)
 
     def test_role_rules_never_issue_attack_or_move(self):
         plan = self.profile.role_separation_plan
@@ -59,15 +59,26 @@ class RoleSeparationTests(unittest.TestCase):
         self.assertTrue(commands)
         self.assertTrue(forbidden.isdisjoint(commands))
 
+    def test_native_role_plan_validates(self):
+        from LearnerAI.Compiler.primitives import default_de_registry
+        from LearnerAI.Compiler.ir.role_separation import (
+            validate_native_role_separation_plan,
+        )
+
+        validate_native_role_separation_plan(
+            self.profile.role_separation_plan,
+            default_de_registry(),
+        )
+
     def test_fortified_siege_contract_blocks_raid(self):
         plan = self.profile.role_separation_plan
         self.assertIn(
-            "role-raid-admission-fortified-block",
-            tuple(rule.identity for rule in plan.rules),
+            "role-raid-fortified-ineligible",
+            tuple(witness.identity for witness in plan.witnesses),
         )
         self.assertIn(
-            "role-fortified-siege-witness",
-            tuple(rule.identity for rule in plan.rules),
+            "role-fortified-siege",
+            tuple(witness.identity for witness in plan.witnesses),
         )
 
 
