@@ -14,6 +14,22 @@ class ByzantineCampControllerTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
+
+    def test_all_strategy_requirement_expressions_parse(self):
+        from LearnerAI.Compiler.ast import SourceLocation
+        from LearnerAI.Compiler.semantic.analyzer import parse_expression
+
+        profile = build_byzantine_strategy(self.effective)
+        for demand in profile.demands:
+            for requirement in demand.execution_demands[0].requirements:
+                try:
+                    parse_expression(requirement, SourceLocation(1))
+                except Exception as exc:
+                    self.fail(
+                        f"malformed requirement in {demand.identity}: "
+                        f"{requirement!r}: {exc}"
+                    )
+
     def test_resource_found_has_a_semantic_adapter(self):
         from LearnerAI.Compiler.primitives.native_binder import NativeSupportState
         from LearnerAI.Compiler.primitives.registry import default_de_registry
