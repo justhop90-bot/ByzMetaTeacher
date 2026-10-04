@@ -404,7 +404,7 @@ def emit(
         out.append("; Native Byzantine role-separation plan")
         emitted_names = _defconst_bindings(out)
         for state in role_plan.states:
-            binding = bindings.binding_for(state.request_id)
+            binding = bindings.binding_for(state.request.request_id)
             if not isinstance(binding, GoalSlot):
                 raise CompileError(
                     f"EMITTER-ROLE-GOAL-BINDING: role state '{state.identifier}' "
