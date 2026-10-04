@@ -99,20 +99,24 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
     def test_standard_arabia_feudal_reservation_preempts_dark_age_villager_spending(self):
         bank = self._rule_block("; Native control rule: feudal-transition-bank-ready")
         self.assertIn("(unit-type-count-total villager >= 19)", bank)
+        self.assertIn("(unit-type-count-total villager >= 20)", bank)
+        self.assertIn("(goal opening-plan 1)", bank)
+        self.assertIn("(map-type arabia)", bank)
+        self.assertIn("(goal opening-plan 2)", bank)
+        self.assertIn("(goal opening-plan 3)", bank)
         self.assertIn("(building-type-count-total lumber-camp >= 1)", bank)
         self.assertIn("(building-type-count-total mining-camp >= 1)", bank)
-        self.assertIn("(food-amount >= 500)", bank)
-        self.assertIn("(gold-amount >= 200)", bank)
         self.assertIn("(research-completed ri-loom)", bank)
-        self.assertIn("(goal feudal-transition-loom-recovery 1)", bank)
+        self.assertIn("(food-amount >= 500)", bank)
+        self.assertNotIn("(gold-amount >= 200)", bank)
         self.assertIn("(defconst feudal-transition-bank-state", self.per)
         self.assertIn("(set-goal feudal-transition-bank-state 0)", self.per)
         self.assertNotIn("economy-controller-feudal-bank-", self.per)
 
-        villager = self._find_rule(
-            "(train villager)",
-            "(can-train villager)",
-        )
+        villager = self._find_rule("(train villager)", "(can-train villager)")
+        self.assertIn("(goal feudal-transition-bank-state 1)", villager)
+        self.assertIn("(unit-type-count-total villager >= 19)", villager)
+        self.assertIn("(unit-type-count-total villager >= 20)", villager)
         self.assertIn("(not (goal feudal-transition-bank-state 2))", villager)
 
         release = self._rule_block(
@@ -120,6 +124,7 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         )
         self.assertIn("(current-age >= feudal-age)", release)
         self.assertIn("(set-goal feudal-transition-bank-state 0)", release)
+        self.assertNotIn("(set-goal demand-feudal-transition 0)", release)
 
     def test_loom_initialization_precedes_its_first_runtime_consumer(self):
         initialization = self.per.index("; Demand initialization")
@@ -161,8 +166,10 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
     def test_standard_arabia_feudal_action_has_explicit_resource_floor(self):
         age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
         self.assertIn("(food-amount >= 500)", age)
-        self.assertIn("(gold-amount >= 200)", age)
+        self.assertNotIn("(gold-amount >= 200)", age)
         self.assertIn("(can-research-with-escrow feudal-age)", age)
+        self.assertIn("(release-escrow food)", age)
+        self.assertNotIn("(release-escrow gold)", age)
 
     def test_standard_arabia_does_not_build_first_mill_in_dark_age(self):
         mill = self._find_rule(

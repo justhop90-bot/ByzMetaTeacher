@@ -496,49 +496,16 @@ def lower_economy_controller(
 
     # The age-transition controller owns the Feudal reservation state. The
     # economy controller only reacts to that state by writing civilian-allocation
-    # Strategic Numbers.
+    # Strategic Numbers. Feudal itself has a 500-food floor; gold remains available
+    # for other active demands but is not an age-up gate.
     feudal_state = "feudal-transition-bank-state"
     feudal_food = 500
-    feudal_gold = 200
     feudal_reservation_rules = (
         NativeControlRule(
             "economy-controller-feudal-reservation-prioritize-food",
             facts=(
                 parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
                 parse_expression(f"(food-amount < {feudal_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount < {feudal_gold})", SourceLocation(1)),
-                parse_expression("(up-compare-sn sn-food-gatherer-percentage != 55)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression("(set-strategic-number sn-food-gatherer-percentage 55)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-wood-gatherer-percentage 20)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-gold-gatherer-percentage 25)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-percent-civilian-builders 3)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-stone-gatherer-percentage 0)", SourceLocation(1)),
-            ),
-        ),
-        NativeControlRule(
-            "economy-controller-feudal-reservation-prioritize-gold",
-            facts=(
-                parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
-                parse_expression(f"(food-amount >= {feudal_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount < {feudal_gold})", SourceLocation(1)),
-                parse_expression("(up-compare-sn sn-gold-gatherer-percentage != 30)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression("(set-strategic-number sn-food-gatherer-percentage 50)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-wood-gatherer-percentage 20)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-gold-gatherer-percentage 30)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-percent-civilian-builders 3)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-stone-gatherer-percentage 0)", SourceLocation(1)),
-            ),
-        ),
-        NativeControlRule(
-            "economy-controller-feudal-reservation-prioritize-food-after-gold",
-            facts=(
-                parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
-                parse_expression(f"(food-amount < {feudal_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {feudal_gold})", SourceLocation(1)),
                 parse_expression("(up-compare-sn sn-food-gatherer-percentage != 65)", SourceLocation(1)),
             ),
             actions=(
@@ -554,7 +521,6 @@ def lower_economy_controller(
             facts=(
                 parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
                 parse_expression(f"(food-amount >= {feudal_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {feudal_gold})", SourceLocation(1)),
                 parse_expression("(up-compare-sn sn-food-gatherer-percentage != 60)", SourceLocation(1)),
             ),
             actions=(
@@ -566,6 +532,7 @@ def lower_economy_controller(
             ),
         ),
     )
+
 
     return NativeControlPlan(
         states=tuple(states),
