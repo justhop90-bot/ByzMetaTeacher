@@ -299,16 +299,16 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
         for objective_class in objective_classes:
             state_marker = (
-                "(goal byzantine-offensive-objective-state "
+                "    (goal byzantine-offensive-objective-state "
                 f"byzantine-offensive-objective-state-{objective_class})"
             )
             class_marker = (
-                "(goal byzantine-offensive-objective-class "
+                "    (goal byzantine-offensive-objective-class "
                 f"byzantine-offensive-objective-class-{objective_class})"
             )
-            start = self.per.index(state_marker)
-            class_start = self.per.index(class_marker, start)
-            end = self.per.index("\n\n(defrule", class_start)
+            execution_marker = f"{state_marker}\n{class_marker}"
+            start = self.per.index(execution_marker)
+            end = self.per.index("\n\n(defrule", start)
             section = self.per[start:end]
             self.assertIn("(goal byzantine-army-attack-ready 1)", section)
             self.assertIn(
