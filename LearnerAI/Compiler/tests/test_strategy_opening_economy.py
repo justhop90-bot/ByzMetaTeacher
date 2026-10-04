@@ -217,5 +217,63 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
 
 
+    def test_feudal_bank_state_and_control_rules_are_compiler_owned(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        self.assertIn(
+            "byzantine-feudal-bank-state",
+            {state.identifier for state in control.states},
+        )
+        rule_ids = {
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("economy-controller-feudal-bank-")
+        }
+        self.assertIn("economy-controller-feudal-bank-initialize", rule_ids)
+        self.assertIn("economy-controller-feudal-bank-enter", rule_ids)
+        self.assertIn("economy-controller-feudal-bank-ready", rule_ids)
+        self.assertIn("economy-controller-feudal-bank-release-on-feudal", rule_ids)
+
+    def test_feudal_bank_uses_resource_deficit_writers_not_a_static_age_allocation(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("economy-controller-feudal-bank-")
+        }
+        self.assertIn(
+            "(food-amount < 500)",
+            " ".join(f.source for f in rules["economy-controller-feudal-bank-prioritize-food"].facts),
+        )
+        self.assertIn(
+            "(gold-amount < 200)",
+            " ".join(f.source for f in rules["economy-controller-feudal-bank-prioritize-gold"].facts),
+        )
+        output = compile_strategy_profile(profile, self.effective)
+        self.assertIn("economy-controller-feudal-bank-prioritize-food", output)
+        self.assertIn("economy-controller-feudal-bank-prioritize-gold", output)
+
+    def test_feudal_transition_declares_a_protected_500_food_200_gold_floor(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("feudal-transition")
+        requirements = demand.execution_demands[0].requirements
+
+        self.assertIn("(food-amount >= 500)", requirements)
+        self.assertIn("(gold-amount >= 200)", requirements)
+        self.assertIsNotNone(demand.opportunity_cost)
+        floors = {
+            floor.resource.value: floor.minimum
+            for floor in demand.opportunity_cost.protected_floors
+        }
+        self.assertEqual(floors, {"FOOD": 500, "GOLD": 200})
+
+
 if __name__ == "__main__":
     unittest.main()

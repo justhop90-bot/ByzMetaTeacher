@@ -1957,10 +1957,19 @@ def build_land_castle_strategy(
                 "age-advance",
                 "feudal-age",
             ),
-            opportunity_cost=None,
+            opportunity_cost=OpportunityCostPolicy(
+                owner="age-transition",
+                protected_floors=(
+                    ProtectedResourceFloor(Resource.FOOD, 500),
+                    ProtectedResourceFloor(Resource.GOLD, 200),
+                ),
+                emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+            ),
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == dark-age)",
+                    "(food-amount >= 500)",
+                    "(gold-amount >= 200)",
                     "(can-research-with-escrow feudal-age)",
                 ),
                 action="(research feudal-age)",
