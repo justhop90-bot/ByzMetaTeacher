@@ -122,6 +122,8 @@ def default_byzantine_counter_packages(
 
     scout_provenance = effective.unit_line("scout-cavalry-line").provenance
     archer_provenance = effective.unit_line("archer-line").provenance
+    stable_provenance = effective.building(101).provenance
+    archery_range_provenance = effective.building(87).provenance
     knight_provenance = effective.unit_line("knight-line").provenance
     militia_provenance = effective.unit_line("militia-line").provenance
 
@@ -138,7 +140,7 @@ def default_byzantine_counter_packages(
                 provenance=tuple(
                     dict.fromkeys(
                         (
-                            *knight_provenance,
+                            *stable_provenance,
                             *scout_provenance,
                         )
                     )
@@ -161,6 +163,7 @@ def default_byzantine_counter_packages(
                 provenance=tuple(
                     dict.fromkeys(
                         (
+                            *archery_range_provenance,
                             *archer_provenance,
                         )
                     )
