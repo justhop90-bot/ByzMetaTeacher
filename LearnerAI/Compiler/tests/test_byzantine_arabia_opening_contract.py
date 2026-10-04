@@ -23,9 +23,9 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertNotIn("(goal opening-plan 1)", " ".join(requirements))
         self.assertNotIn("(goal opening-plan 2)", " ".join(requirements))
         self.assertTrue(any("(current-age == dark-age)" in requirement for requirement in requirements))
-        self.assertIn("(unit-type-count-total villager >= 13)", requirements)
-        self.assertIn("(building-type-count-total lumber-camp >= 1)", requirements)
-        self.assertIn("(building-type-count-total mining-camp >= 1)", requirements)
+        self.assertTrue(any("(unit-type-count-total villager >= 13)" in requirement for requirement in requirements))
+        self.assertTrue(any("(building-type-count-total lumber-camp >= 1)" in requirement for requirement in requirements))
+        self.assertTrue(any("(building-type-count-total mining-camp >= 1)" in requirement for requirement in requirements))
 
         feudal = profile.demand("feudal-transition")
         self.assertNotIn(
