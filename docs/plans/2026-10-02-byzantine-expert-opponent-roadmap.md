@@ -111,7 +111,8 @@ Focused acceptance scenarios:
 Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, and protect economically meaningful positions; it does not blindly perimeter-wall, trap itself, repeatedly rebuild obsolete segments, or feed armies into predictable fortified chokes.
 
 ## Phase 4: Army control, attack, and recovery
-- [ ] Audit attack admission versus actual attack execution.
+- [x] Repair one verified attack-admission/execution mismatch: own military acquisition now scans 60 tiles while enemy-objective discovery remains bounded to 40; the attack-move actuator is unchanged.
+- [ ] Complete the broader attack admission versus execution audit across staging, siege commitment, and objective reassessment.
 - [ ] Establish screen/main/siege/raid/reserve roles.
 - [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
 - [ ] Preserve armies under defensive fire where native control permits.
