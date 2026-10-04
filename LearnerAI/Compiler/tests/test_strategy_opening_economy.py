@@ -266,7 +266,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("feudal_bank_", control_output := compile_strategy_profile(profile, self.effective))
         self.assertIn("economy-controller-feudal-reservation-", control_output)
 
-    def test_feudal_bank_uses_resource_deficit_writers_not_a_static_age_allocation(self):
+    def test_feudal_reservation_uses_resource_deficit_writers_not_a_static_age_allocation(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
         control = compilation.control_plan
