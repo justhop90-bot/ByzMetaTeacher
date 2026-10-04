@@ -72,6 +72,17 @@
 (defconst list-active 0)
 (defconst status-ready 2)
 (defconst action-default "action-default")
+(defconst action-attack-move "action-attack-move")
+(defconst cavalry-class 912)
+(defconst infantry-class 906)
+(defconst archery-class 900)
+(defconst siege-weapon-class 913)
+(defconst tower-class 952)
+(defconst bombard-cannon 36)
+(defconst trebuchet 331)
+(defconst mangonel-line 280)
+(defconst battering-ram-line 1258)
+(defconst monastery 104)
 (defconst villager-class 904)
 (defconst object-data-id 0)
 (defconst object-data-dropsite 14)
@@ -4334,6 +4345,36 @@
 (defconst byzantine-siege-approach-breach 4)
 (defconst byzantine-siege-approach-assault 5)
 (defconst byzantine-siege-approach-recover 6)
+
+; Narrow late-game objective controller.
+; 0 = idle/fallback to the proven attack-now path
+; 1 = enemy siege
+; 2 = defensive structures
+; 3 = military production
+; 4 = Town Centers
+; 5 = execute current objective
+; 6 = witness current objective
+(defconst byzantine-offensive-objective-state 410)
+(defconst byzantine-offensive-objective-class 411)
+(defconst byzantine-offensive-objective-point 412)
+(defconst byzantine-offensive-objective-search 414)
+(defconst byzantine-offensive-enemy-player 418)
+(defconst byzantine-offensive-objective-claim 419)
+(defconst byzantine-offensive-objective-timer 8)
+(defconst byzantine-offensive-objective-state-idle 0)
+(defconst byzantine-offensive-objective-state-siege 1)
+(defconst byzantine-offensive-objective-state-defense 2)
+(defconst byzantine-offensive-objective-state-production 3)
+(defconst byzantine-offensive-objective-state-town-center 4)
+(defconst byzantine-offensive-objective-state-executing 5)
+(defconst byzantine-offensive-objective-state-witness 6)
+(defconst byzantine-offensive-objective-class-none 0)
+(defconst byzantine-offensive-objective-class-siege 1)
+(defconst byzantine-offensive-objective-class-defense 2)
+(defconst byzantine-offensive-objective-class-production 3)
+(defconst byzantine-offensive-objective-class-town-center 4)
+(defconst bt-offensive-objective-witness-seconds 20)
+(defconst bt-offensive-objective-radius 40)
 
 (defconst byzantine-remote-resource-idle 0)
 (defconst byzantine-remote-resource-observe 1)
@@ -9225,6 +9266,7 @@
         (goal byzantine-siege-approach byzantine-siege-approach-normal)
         (goal byzantine-siege-approach byzantine-siege-approach-assault)
     )
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
     ; attack-ready already proves the selected package exists; do not add a
     ; military-population floor that is larger than the 11-unit Castle package.
     (attack-soldier-count <= 3)
@@ -9269,13 +9311,407 @@
     (set-goal byzantine-army-stale-state byzantine-army-stale-ready)
 )
 
+; =================================================================
+; LATE-GAME OBJECTIVE SEQUENCE
+; Strictly siege -> defenses -> production -> Town Centers.
+; Every release returns to a fresh siege-first search.
+; Timer use is cadence only; objective release requires fresh world state.
+; =================================================================
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (goal byzantine-offensive-objective-claim 0)
+=>
+    (set-goal byzantine-offensive-enemy-player 0)
+    (up-find-player enemy find-closest byzantine-offensive-enemy-player)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-claim 1)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-offensive-objective-point)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search == 0)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (set-goal byzantine-offensive-objective-claim 0)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+)
+
+; siege objective search, with candidate order preserved by the retained DUC list.
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: cavalry-class c: 1)
+    (up-find-local c: infantry-class c: 1)
+    (up-find-local c: archery-class c: 1)
+    (up-find-local c: siege-weapon-class c: 1)
+    (up-find-local c: trebuchet c: 1)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: bombard-cannon c: 1)
+    (up-find-remote c: trebuchet c: 1)
+    (up-find-remote c: mangonel-line c: 1)
+    (up-find-remote c: battering-ram-line c: 1)
+    (up-find-remote c: siege-weapon-class c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-offensive-objective-point)
+    (up-target-objects 1 action-attack-move -1 -1)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (disable-timer byzantine-army-stale-timer)
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search == 0)
+=>
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-defense)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+)
+
+; defense objective search, with candidate order preserved by the retained DUC list.
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-defense)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: cavalry-class c: 1)
+    (up-find-local c: infantry-class c: 1)
+    (up-find-local c: archery-class c: 1)
+    (up-find-local c: siege-weapon-class c: 1)
+    (up-find-local c: trebuchet c: 1)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: castle c: 1)
+    (up-find-remote c: keep c: 1)
+    (up-find-remote c: bombard-tower c: 1)
+    (up-find-remote c: tower-class c: 1)
+    (up-find-remote c: wall-class c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-defense)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-offensive-objective-point)
+    (up-target-objects 1 action-attack-move -1 -1)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (disable-timer byzantine-army-stale-timer)
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-defense)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search == 0)
+=>
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-production)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+)
+
+; production objective search, with candidate order preserved by the retained DUC list.
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-production)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: cavalry-class c: 1)
+    (up-find-local c: infantry-class c: 1)
+    (up-find-local c: archery-class c: 1)
+    (up-find-local c: siege-weapon-class c: 1)
+    (up-find-local c: trebuchet c: 1)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: siege-workshop c: 1)
+    (up-find-remote c: barracks c: 1)
+    (up-find-remote c: archery-range c: 1)
+    (up-find-remote c: stable c: 1)
+    (up-find-remote c: monastery c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-production)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-offensive-objective-point)
+    (up-target-objects 1 action-attack-move -1 -1)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (disable-timer byzantine-army-stale-timer)
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-production)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search == 0)
+=>
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-town-center)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+)
+
+; town-center objective search, with candidate order preserved by the retained DUC list.
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-town-center)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: cavalry-class c: 1)
+    (up-find-local c: infantry-class c: 1)
+    (up-find-local c: archery-class c: 1)
+    (up-find-local c: siege-weapon-class c: 1)
+    (up-find-local c: trebuchet c: 1)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-town-center)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-offensive-objective-point)
+    (up-target-objects 1 action-attack-move -1 -1)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (disable-timer byzantine-army-stale-timer)
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-town-center)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search == 0)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-claim 0)
+)
+
+; A newly observed fortification supersedes an unfinished open-ground objective.
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (disable-timer byzantine-offensive-objective-timer)
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-claim 0)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (set-goal byzantine-army-attack-ready 1)
+    (disable-timer byzantine-army-stale-timer)
+    (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
+)
+
+(defrule
+    (timer-triggered byzantine-offensive-objective-timer)
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (disable-timer byzantine-offensive-objective-timer)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: bombard-cannon c: 1)
+    (up-find-remote c: trebuchet c: 1)
+    (up-find-remote c: mangonel-line c: 1)
+    (up-find-remote c: battering-ram-line c: 1)
+    (up-find-remote c: siege-weapon-class c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: castle c: 1)
+    (up-find-remote c: keep c: 1)
+    (up-find-remote c: bombard-tower c: 1)
+    (up-find-remote c: tower-class c: 1)
+    (up-find-remote c: wall-class c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: siege-workshop c: 1)
+    (up-find-remote c: barracks c: 1)
+    (up-find-remote c: archery-range c: 1)
+    (up-find-remote c: stable c: 1)
+    (up-find-remote c: monastery c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: 0 c: bt-offensive-objective-radius)
+    (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state byzantine-offensive-objective-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search == 0)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (disable-timer byzantine-offensive-objective-timer)
+    (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
+    (set-goal byzantine-army-attack-ready 1)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+    (goal byzantine-offensive-objective-claim 1)
+    (goal byzantine-army-attack-ready 0)
+=>
+    (disable-timer byzantine-offensive-objective-timer)
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-claim 0)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (disable-timer byzantine-army-stale-timer)
+    (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
+)
+
+
 ; Ordinary open-ground attack remains exactly where it belonged: behind the
-; tactical admission gate. Fortified states cannot bypass it.
+; tactical admission gate. The objective controller must have released the
+; package before this fallback primitive is allowed to fire.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-siege-approach byzantine-siege-approach-normal)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (goal byzantine-offensive-objective-claim 0)
 =>
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
