@@ -292,27 +292,23 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
 
     def test_objective_execution_revalidates_attack_admission(self):
         objective_classes = (
-            "byzantine-offensive-objective-class-siege",
-            "byzantine-offensive-objective-class-defense",
-            "byzantine-offensive-objective-class-production",
-            "byzantine-offensive-objective-class-town-center",
+            "siege",
+            "defense",
+            "production",
+            "town-center",
         )
         for objective_class in objective_classes:
-            state = (
+            state_marker = (
                 "(goal byzantine-offensive-objective-state "
-                "byzantine-offensive-objective-state-"
+                f"byzantine-offensive-objective-state-{objective_class})"
             )
-            if objective_class.endswith("siege"):
-                state += "siege)"
-            elif objective_class.endswith("defense"):
-                state += "defense)"
-            elif objective_class.endswith("production"):
-                state += "production)"
-            else:
-                state += "town-center)"
-            class_marker = f"    {state}\n    (goal {objective_class})"
-            start = self.per.index(class_marker)
-            end = self.per.index("\n\n(defrule", start + len(class_marker))
+            class_marker = (
+                "(goal byzantine-offensive-objective-class "
+                f"byzantine-offensive-objective-class-{objective_class})"
+            )
+            start = self.per.index(state_marker)
+            class_start = self.per.index(class_marker, start)
+            end = self.per.index("\n\n(defrule", class_start)
             section = self.per[start:end]
             self.assertIn("(goal byzantine-army-attack-ready 1)", section)
             self.assertIn(
