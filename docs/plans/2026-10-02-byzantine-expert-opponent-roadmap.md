@@ -8,8 +8,8 @@
 
 **Roadmap status as of 2026-10-04**
 
-- **Completed/merged:** resource-front lumber placement lifecycle (PR #363); unified opening pressure + five-selector multi-fact emission (PR #365); Feudal transition gated by witnessed lumber/gold infrastructure; reinforcement-driven second production capacity (PR #366); production-commitment prediction with lower-priority Feudal counter floors and confirmed-pressure suppression (PR #367).
-- **Still open:** the broader Phase 0 baseline freeze, continuous late-game spending envelope, wall/geometry implementation, full scouting/prediction doctrine, attack admission/recovery, Byzantine breadth audit, and standardized runtime scenario verification.
+- **Completed/merged:** resource-front lumber placement lifecycle (PR #363); unified opening pressure + five-selector multi-fact emission and Feudal resource-front gating (PR #365); reinforcement-driven second production capacity (PR #366); production-commitment prediction with lower-priority Feudal counter floors, confirmed-pressure suppression, native fail-closed parity, and synchronized `Byzantine.per` lifecycle (PR #367 + corrective PR #370).
+- **Still open:** the broader Phase 0 baseline freeze, continuous late-game spending envelope, exposed-economy/production-target prediction, stale-intel expiry, wall/geometry implementation, attack admission/force preservation/recovery, Byzantine breadth audit, and standardized runtime scenario verification.
 - **Roadmap correction:** the static late-game objective ladder already implements the intended `siege -> defensive structures -> production -> Town Centers` sequence with reassessment. The next Phase 4 work should therefore focus on attack admission, force preservation, siege commitment, and recovery rather than reordering the target ladder without replay evidence.
 - **Evidence boundary:** queue-capacity semantics remain `OPEN`; production-capacity repairs may use verified reinforcement/pressure policy, but must not fabricate queue-depth witnesses. Runtime replay validation remains a separate claim from parser/native/compiler CI.
 
@@ -59,11 +59,11 @@ Acceptance: zero logical arity defects and zero rules above 32 elements.
 Acceptance: persistent late-game surplus is converted into relevant military/economic/technology/siege demand without oscillation or starvation.
 
 ## Phase 3: Scouting, prediction, and counter doctrine
-- [ ] Audit observation -> prediction -> counter transitions.
+- [x] Audit observation -> prediction -> counter transitions for Feudal mounted/ranged production commitment.
 - [ ] Reduce redundant scout phase states when behavior is identical.
-- [ ] Predict enemy commitment from production buildings, upgrades, and early unit evidence.
-- [ ] Distinguish expected composition from confirmed composition.
-- [ ] Pre-position counters before full contact.
+- [x] Predict enemy commitment from production buildings plus early-unit absence; confirmed unit pressure remains higher priority.
+- [x] Distinguish expected composition from confirmed composition.
+- [x] Pre-position small counters before full contact while keeping prediction fail-closed.
 - [ ] Add exposed-economy and production-target decisions.
 - [ ] Add intelligent wall/fortification handling and stale-intel expiry.
 
