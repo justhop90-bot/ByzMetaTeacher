@@ -7933,6 +7933,18 @@
 
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+    (goal byzantine-resource-camp-gold-handoff 1)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+=>
+    (set-goal byzantine-resource-camp-gold-handoff 0)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
     (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
     (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
 =>
