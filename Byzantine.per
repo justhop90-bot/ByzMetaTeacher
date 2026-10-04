@@ -4613,6 +4613,7 @@
 (defconst byzantine-resource-camp-search-state-remote-total 793)
 (defconst byzantine-resource-camp-search-state-remote-list 794)
 (defconst byzantine-resource-camp-gold-handoff 795)
+(defconst byzantine-resource-camp-placement-failure-kind 747)
 (defconst byzantine-resource-camp-target-valid 748)
 (defconst byzantine-resource-camp-building-kind 749)
 (defconst byzantine-resource-camp-building-lumber 1)
@@ -4663,6 +4664,7 @@
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-building-kind 0)
     (set-goal byzantine-resource-camp-gold-handoff 0)
+    (set-goal byzantine-resource-camp-placement-failure-kind 0)
 )
 
 (defrule
@@ -7715,6 +7717,7 @@
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
     (goal byzantine-resource-camp-gold-handoff 0)
+    (not (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-wood))
     (not (town-under-attack))
     (or
         (goal demand-economy-lumber-camp-floor-1 1)
@@ -7740,6 +7743,7 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
+    (not (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-gold))
     (not (town-under-attack))
     (or
         (goal byzantine-resource-camp-gold-handoff 1)
@@ -7784,6 +7788,7 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
+    (not (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-stone))
     (not (town-under-attack))
     (or
         (goal demand-economy-stone-camp-floor-1 1)
@@ -16065,6 +16070,7 @@
     (up-remove-objects search-remote object-data-index c:== 0)
     (up-clean-search search-remote object-data-distance search-order-asc)
     (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-wood)
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-ring-index 0)
     (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
@@ -16108,6 +16114,13 @@
     (building-type-count lumber-camp >= 1)
 =>
     (set-goal demand-economy-lumber-camp-floor-1 76)
+)
+
+(defrule
+    (goal demand-economy-lumber-camp-floor-1 76)
+    (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-wood)
+=>
+    (set-goal byzantine-resource-camp-placement-failure-kind 0)
 )
 
 ; Pending admission: economy-lumber-camp-floor-1 | ISSUED/PENDING -> PENDING
@@ -16652,6 +16665,7 @@
     (up-remove-objects search-remote object-data-index c:== 0)
     (up-clean-search search-remote object-data-distance search-order-asc)
     (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-gold)
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-ring-index 0)
     (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
@@ -16683,6 +16697,13 @@
     (building-type-count mining-camp >= 1)
 =>
     (set-goal demand-economy-gold-camp-floor-1 623)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-1 623)
+    (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-gold)
+=>
+    (set-goal byzantine-resource-camp-placement-failure-kind 0)
 )
 
 (defrule
