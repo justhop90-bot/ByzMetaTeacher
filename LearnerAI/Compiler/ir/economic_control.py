@@ -63,6 +63,7 @@ class EconomyControllerPlan:
     state_name: str = "economy-posture"
     opening_state: str = "opening-plan"
     pressure_observation: str = "strategy-arabia-early-pressure"
+    secondary_pressure_observation: str = "strategy-arabia-early-army-presence"
     castle_bank_state_name: str = "byzantine-castle-bank-state"
     castle_bank_hard_food: int = 800
     castle_bank_hard_gold: int = 200
@@ -73,6 +74,8 @@ class EconomyControllerPlan:
     def __post_init__(self) -> None:
         if not self.controller_id.strip():
             raise ValueError("economy controller id must not be empty")
+        if not self.secondary_pressure_observation.strip():
+            raise ValueError("secondary pressure observation must not be empty")
         modes = tuple(item.mode for item in self.policies)
         if len(modes) != len(set(modes)):
             raise ValueError("economy controller modes must be unique")
@@ -181,7 +184,9 @@ def lower_economy_controller(
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
+    secondary_pressure = profile.observation(plan.secondary_pressure_observation).expression
     no_pressure = f"(not {pressure})"
+    no_secondary_pressure = f"(not {secondary_pressure})"
     arena = profile.observation("strategy-arena-map").expression
     opening = lambda value: f"(goal {plan.opening_state} {value})"
 
@@ -368,12 +373,22 @@ def lower_economy_controller(
             ),
         ),
         select_rule(
+            "economy-controller-select-counter-army-presence",
+            EconomyMode.COUNTER_FEUDAL,
+            (
+                "(current-age >= feudal-age)",
+                "(current-age < castle-age)",
+                secondary_pressure,
+            ),
+        ),
+        select_rule(
             "economy-controller-select-fast-castle",
             EconomyMode.FAST_CASTLE,
             (
                 "(current-age >= feudal-age)",
                 "(current-age < castle-age)",
                 no_pressure,
+                no_secondary_pressure,
                 opening(3),
             ),
         ),
@@ -384,6 +399,7 @@ def lower_economy_controller(
                 "(current-age >= feudal-age)",
                 "(current-age < castle-age)",
                 no_pressure,
+                no_secondary_pressure,
                 opening(4),
             ),
         ),
@@ -394,6 +410,7 @@ def lower_economy_controller(
                 "(current-age >= feudal-age)",
                 "(current-age < castle-age)",
                 no_pressure,
+                no_secondary_pressure,
                 opening(5),
             ),
         ),
@@ -403,6 +420,7 @@ def lower_economy_controller(
             (
                 "(current-age < castle-age)",
                 no_pressure,
+                no_secondary_pressure,
                 f"(or {opening(1)} {opening(2)})",
             ),
         ),
