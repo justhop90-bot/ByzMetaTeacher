@@ -90,6 +90,11 @@ class NativeRoleSeparationPlan:
     state: NativeControlState
     formation_mask: NativeControlState
     selection_cap: NativeControlState
+    screen_size: NativeControlState
+    main_size: NativeControlState
+    siege_size: NativeControlState
+    raid_size: NativeControlState
+    reserve_size: NativeControlState
     roles: tuple[RoleMembershipSpec, ...]
     witnesses: tuple[RoleWitnessSpec, ...]
     rules: tuple[NativeRoleRule, ...]
@@ -134,12 +139,21 @@ class NativeRoleSeparationPlan:
             raise ValueError("role witness identities must be unique")
 
     @property
-    def storage_requests(self) -> tuple[GoalSlotRequest, ...]:
+    def states(self) -> tuple[NativeControlState, ...]:
         return (
-            self.state.request,
-            self.formation_mask.request,
-            self.selection_cap.request,
+            self.state,
+            self.formation_mask,
+            self.selection_cap,
+            self.screen_size,
+            self.main_size,
+            self.siege_size,
+            self.raid_size,
+            self.reserve_size,
         )
+
+    @property
+    def storage_requests(self) -> tuple[GoalSlotRequest, ...]:
+        return tuple(state.request for state in self.states)
 
     @property
     def state_value_map(self) -> dict[RoleControllerState, int]:
@@ -215,6 +229,11 @@ def default_byzantine_role_separation_plan(
     state_name = "byzantine-army-role-state"
     mask_name = "byzantine-army-role-formation-mask"
     cap_name = "byzantine-army-role-selection-cap"
+    screen_size_name = "byzantine-army-role-screen-size"
+    main_size_name = "byzantine-army-role-main-size"
+    siege_size_name = "byzantine-army-role-siege-size"
+    raid_size_name = "byzantine-army-role-raid-size"
+    reserve_size_name = "byzantine-army-role-reserve-size"
 
     roles = (
         RoleMembershipSpec(RoleKind.SCREEN, 5, 2, "cheap threat-facing protective layer"),
