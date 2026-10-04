@@ -705,5 +705,61 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         )
 
 
+    def test_blocked_ring_candidate_restores_candidate_state_for_next_slot(self):
+        ring = self._section_from(
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-ring-index 0)\n"
+            "    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)",
+            ring,
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-target-valid 1)\n"
+            "    (set-goal byzantine-resource-camp-placement-state "
+            "byzantine-resource-camp-placement-state-candidate)\n"
+            "    (set-goal byzantine-resource-camp-ring-index 1)",
+            ring,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-ring-index 0)\n"
+            "    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)",
+            ring,
+        )
+
+    def test_arabia_first_camp_does_not_bypass_persisted_point_legality(self):
+        self.assertNotIn(
+            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality probe.",
+            self.per,
+        )
+        controller = self._section_from(
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
+            controller,
+        )
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            controller,
+        )
+
+    def test_foundational_camps_are_required_before_feudal_research_issuance(self):
+        action = self._section_from(
+            "; Action issuance: feudal-transition | ACTIVE -> ISSUED",
+            "; Recovery: feudal-resource-claim | RELEASED/COMPLETE cleanup",
+        )
+        self.assertIn(
+            "(building-type-count-total lumber-camp >= 1)",
+            action,
+        )
+        self.assertIn(
+            "(building-type-count-total mining-camp >= 1)",
+            action,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
