@@ -74,6 +74,11 @@ class EconomyControllerPlan:
     castle_bank_hard_gold: int = 200
     castle_bank_buffer_food: int = 950
     castle_bank_buffer_gold: int = 300
+    feudal_bank_state_name: str = "byzantine-feudal-bank-state"
+    feudal_bank_start_villagers: int = 17
+    feudal_bank_click_villagers: int = 19
+    feudal_bank_food: int = 500
+    feudal_bank_gold: int = 200
     policies: tuple[EconomyModePolicy, ...] = ()
 
     def __post_init__(self) -> None:
@@ -90,6 +95,12 @@ class EconomyControllerPlan:
             raise ValueError("Castle bank food buffer must cover the hard reserve")
         if self.castle_bank_buffer_gold < self.castle_bank_hard_gold:
             raise ValueError("Castle bank gold buffer must cover the hard reserve")
+        if self.feudal_bank_start_villagers <= 0:
+            raise ValueError("Feudal bank start-villager threshold must be positive")
+        if self.feudal_bank_click_villagers < self.feudal_bank_start_villagers:
+            raise ValueError("Feudal bank click threshold must cover bank activation")
+        if self.feudal_bank_food <= 0 or self.feudal_bank_gold <= 0:
+            raise ValueError("Feudal bank resource floors must be positive")
 
 
 def default_byzantine_economy_controller() -> EconomyControllerPlan:
@@ -162,6 +173,18 @@ def lower_economy_controller(
                 StorageRequestId(
                     SemanticId(plan.controller_id, "castle-bank-state"),
                     "castle-bank-selection",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        )
+    )
+    states.append(
+        NativeControlState(
+            plan.feudal_bank_state_name,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.controller_id, "feudal-bank-state"),
+                    "feudal-bank-selection",
                 ),
                 role=GoalRole.PERSISTENT_STATE,
             ),
