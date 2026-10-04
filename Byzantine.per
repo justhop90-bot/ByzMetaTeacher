@@ -9387,9 +9387,32 @@
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
 )
 
+; Reselect exhaustion widens before giving up. A failed/covered nearest resource
+; must not collapse the controller back onto the same radius and same target.
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
     (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
+=>
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)
+=>
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
 =>
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
@@ -16027,6 +16050,27 @@
     (set-goal demand-economy-farm-boom-imperial 70)
 )
 
+; Failed first-camp placement recovery: remove the consumed wood candidate before retry.
+(defrule
+    (or
+        (goal demand-economy-lumber-camp-floor-1 77)
+        (goal demand-economy-lumber-camp-floor-1 75)
+    )
+    (not (building-type-count lumber-camp >= 1))
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
+)
+
 ; Pending diagnostics: economy-lumber-camp-floor-1
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 74 and cannot reissue from pending goal 75
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 75 is active
@@ -16591,6 +16635,27 @@
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-wood-camp-floor-6 616)
+)
+
+; Failed first-camp placement recovery: remove the consumed gold candidate before retry.
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-1 621)
+        (goal demand-economy-gold-camp-floor-1 622)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+=>
+    (up-remove-objects search-remote object-data-index c:== 0)
+    (up-clean-search search-remote object-data-distance search-order-asc)
+    (up-get-search-state byzantine-resource-camp-search-state)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-ring-index 0)
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)
 )
 
 ; economy-gold-camp-floor-1
