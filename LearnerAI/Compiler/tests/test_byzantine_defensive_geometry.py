@@ -1,4 +1,5 @@
 import re
+import shutil
 import unittest
 from pathlib import Path
 
@@ -11,6 +12,16 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.per = PER_PATH.read_text(encoding="utf-8")
+
+    def test_export_repository_replay_for_analysis(self):
+        replay = REPO_ROOT / "rec.aoe2record"
+        evidence_dir = Path("/tmp/native-reports")
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+        exported = evidence_dir / "rec.aoe2record"
+        self.assertTrue(replay.is_file(), f"missing replay: {replay}")
+        shutil.copyfile(replay, exported)
+        self.assertEqual(exported.stat().st_size, replay.stat().st_size)
+        self.assertGreater(exported.stat().st_size, 0)
 
     def test_tower_geometry_prefers_elevation_and_point_placement(self):
         self.assertIn(
