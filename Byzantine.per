@@ -9159,8 +9159,6 @@
     (goal byzantine-siege-breach-witness 1)
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
-    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
-    (goal byzantine-offensive-objective-claim 0)
 =>
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
@@ -9556,8 +9554,11 @@
     (goal byzantine-offensive-objective-claim 1)
     (up-compare-goal byzantine-offensive-objective-search == 0)
 =>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
     (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
     (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-claim 0)
 )
 
 ; A newly observed fortification supersedes an unfinished open-ground objective.
@@ -9698,12 +9699,15 @@
 
 
 ; Ordinary open-ground attack remains exactly where it belonged: behind the
-; tactical admission gate. Fortified states cannot bypass it.
+; tactical admission gate. The objective controller must have released the
+; package before this fallback primitive is allowed to fire.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-siege-approach byzantine-siege-approach-normal)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (goal byzantine-offensive-objective-claim 0)
 =>
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
