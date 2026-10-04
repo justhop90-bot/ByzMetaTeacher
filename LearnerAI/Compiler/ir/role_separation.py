@@ -970,6 +970,7 @@ def validate_native_role_separation_plan(plan, registry) -> None:
         "up-modify-group-flag",
         "up-reset-search",
         "up-full-reset-search",
+        "up-set-target-point",
         "up-filter-include",
         "up-filter-distance",
         "up-find-local",
