@@ -121,17 +121,23 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         witness_start = self.per.index(
             "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)"
         )
-        witness_production_start = self.per.index(
-            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
-"
-            "    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)",
+        witness_production_class = self.per.index(
+            "(goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)",
             witness_start,
         )
-        witness_town_start = self.per.index(
-            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
-"
-            "    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)",
-            witness_production_start,
+        witness_production_start = self.per.rfind(
+            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)",
+            witness_start,
+            witness_production_class,
+        )
+        witness_town_class = self.per.index(
+            "(goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)",
+            witness_production_class,
+        )
+        witness_town_start = self.per.rfind(
+            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)",
+            witness_production_class,
+            witness_town_class,
         )
         witness_production = self.per[witness_production_start:witness_town_start]
         self.assertIn("(up-find-remote c: villager c: 1)", witness_production)
