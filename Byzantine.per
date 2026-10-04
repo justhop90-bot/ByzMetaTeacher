@@ -7415,10 +7415,10 @@
     (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)
     (current-age < feudal-age)
 =>
-    (set-strategic-number sn-lumber-camp-max-distance 14)
-    (set-strategic-number sn-mining-camp-max-distance 14)
-    (set-strategic-number sn-maximum-wood-drop-distance 14)
-    (set-strategic-number sn-maximum-gold-drop-distance 14)
+    (set-strategic-number sn-lumber-camp-max-distance 16)
+    (set-strategic-number sn-mining-camp-max-distance 16)
+    (set-strategic-number sn-maximum-wood-drop-distance 16)
+    (set-strategic-number sn-maximum-gold-drop-distance 16)
 )
 
 (defrule
@@ -7896,6 +7896,32 @@
 =>
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+)
+
+; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality
+; probe. The existing native up-build place-point executor still owns the final placement.
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)
+    (goal byzantine-resource-camp-target-valid 1)
+    (goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)
+    (goal byzantine-resource-camp-ring-index 0)
+    (goal opening-plan 1)
+    (map-type arabia)
+    (current-age == dark-age)
+    (or
+        (and
+            (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+            (building-type-count-total lumber-camp == 0)
+            (can-build lumber-camp)
+        )
+        (and
+            (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+            (building-type-count-total mining-camp == 0)
+            (can-build mining-camp)
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)
 )
 
 ; Standard opening placement prefers the persisted resource point. The candidate ring remains a fallback
