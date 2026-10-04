@@ -4325,10 +4325,6 @@
 (defconst sn-native-18 18)
 (defconst sn-native-227 227)
 (defconst sn-native-36 36)
-(defconst sn-number-attack-groups 36)
-(defconst sn-minimum-attack-group-size 16)
-(defconst sn-maximum-attack-group-size 26)
-(defconst sn-attack-group-gather-spacing 41)
 (defconst sn-native-4 4)
 (defconst sn-native-42 42)
 (defconst sn-percent-civilian-builders 1)
@@ -4478,29 +4474,6 @@
 (defconst byzantine-siege-approach-breach 4)
 (defconst byzantine-siege-approach-assault 5)
 (defconst byzantine-siege-approach-recover 6)
-
-; Byzantine late-game MUSTER witness.
-; The approach state says where the attack is going; this controller proves
-; the army and siege are physically assembled before ESCORTED/BREACH.
-(defconst byzantine-siege-muster-state 15000)
-(defconst byzantine-siege-muster-witness 15001)
-(defconst byzantine-siege-muster-objective-point 15002)
-(defconst byzantine-siege-muster-point 15004)
-(defconst byzantine-siege-muster-timer 18)
-(defconst byzantine-siege-muster-idle 0)
-(defconst byzantine-siege-muster-positioning 1)
-(defconst byzantine-siege-muster-holding 2)
-(defconst byzantine-siege-muster-confirmed 3)
-(defconst byzantine-siege-muster-mangonel-group 15)
-(defconst byzantine-siege-muster-army-group 16)
-(defconst byzantine-siege-muster-trebuchet-group 17)
-(defconst byzantine-siege-muster-bombard-group 18)
-(defconst byzantine-siege-muster-ram-group 19)
-(defconst bt-byzantine-muster-objective-distance 24)
-(defconst bt-byzantine-muster-radius 6)
-(defconst bt-byzantine-muster-confirm-seconds 5)
-(defconst bt-byzantine-muster-castle-army 8)
-(defconst bt-byzantine-muster-imperial-army 14)
 
 (defconst byzantine-remote-resource-idle 0)
 (defconst byzantine-remote-resource-observe 1)
@@ -11680,10 +11653,7 @@
         (goal byzantine-siege-approach byzantine-siege-approach-fortified)
         (or
             (goal byzantine-siege-approach byzantine-siege-approach-staging)
-            (or
-                (goal byzantine-siege-approach byzantine-siege-approach-escorted)
-                (goal byzantine-siege-approach byzantine-siege-approach-breach)
-            )
+            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
         )
     )
     (not (goal byzantine-fortification-threat 1))
@@ -11691,12 +11661,6 @@
     (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
     (set-goal byzantine-siege-approach-claim 0)
     (set-goal byzantine-siege-breach-witness 0)
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-idle)
-    (set-goal byzantine-siege-muster-witness 0)
-    (disable-timer byzantine-siege-muster-timer)
-    (set-strategic-number sn-number-attack-groups 0)
-    (set-strategic-number sn-minimum-attack-group-size 0)
-    (set-strategic-number sn-maximum-attack-group-size 0)
 )
 
 
@@ -11709,19 +11673,8 @@
 )
 
 ; Fortified Castle repair: the probe now owns an exact Castle point.
-; The Castle point is the OBJECTIVE. It is never used as the muster point.
-;
-; Naga/community pattern cross-reference:
-;   - native attack-group SNs provide execution cohesion;
-;   - DUC local searches build target-local unit sets;
-;   - siege is kept separate from the escort measurement;
-;   - retreat/recovery clears attack-group state instead of silently reusing it.
-;
-; Byzantine policy:
-;   objective -> 24-tile muster point toward self -> 6-tile muster disk.
-;   The disk therefore sits outside the existing 16-tile fortification-locality
-;   probe by policy geometry (24 - 6 = 18). The distance is a policy invariant,
-;   not a fabricated engine-distance witness.
+; Do not leave the controller stranded in FORTIFIED. Transition into STAGING,
+; then issue one target-object attack-move with the entire military search result.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-army-attack-ready 1)
@@ -11729,296 +11682,81 @@
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-offensive-castle-valid 1)
 =>
-    (up-copy-point byzantine-siege-muster-objective-point byzantine-offensive-castle-point)
-    (up-copy-point byzantine-siege-muster-point byzantine-offensive-castle-point)
-    ; Native Point operand: position-self is the engine-native self-location Point.
-    (up-lerp-tiles byzantine-siege-muster-point position-self c: bt-byzantine-muster-objective-distance)
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-    (set-goal byzantine-siege-muster-witness 0)
-    (disable-timer byzantine-siege-muster-timer)
-    (set-strategic-number sn-percent-attack-soldiers 100)
-    (set-strategic-number sn-number-attack-groups 1)
-    (set-strategic-number sn-minimum-attack-group-size 8)
-    (set-strategic-number sn-maximum-attack-group-size 40)
-    (set-strategic-number sn-attack-group-gather-spacing 6)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-staging)
     (set-goal byzantine-offensive-push-state byzantine-offensive-push-staging)
 )
 
-; Position the existing army at the persistent rally point. No attack command
-; is issued here. This is assembly, not assault.
 (defrule
     (goal byzantine-siege-approach byzantine-siege-approach-staging)
-    (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
     (goal byzantine-army-attack-ready 1)
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-include cmdid-military -1 -1 -1)
-    (up-find-local c: all-units-class c: 240)
-    (up-target-point 0 action-move -1 stance-no-attack)
-)
-
-; Refresh the physical muster witness: army group.
-(defrule
-    (or
-        (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-        (or
-            (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-            (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-        )
-    )
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
-    (up-filter-include cmdid-military -1 -1 -1)
-    (up-find-local c: all-units-class c: 40)
-    (up-remove-objects search-local object-data-class == siege-weapon-class)
-    (up-remove-objects search-local object-data-class == packed-trebuchet-class)
-    (up-remove-objects search-local object-data-class == unpacked-trebuchet-class)
-    (up-create-group 0 40 c: byzantine-siege-muster-army-group)
-)
-
-; Refresh the physical muster witness: trebuchet group.
-(defrule
-    (or
-        (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-        (or
-            (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-            (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-        )
-    )
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
-    (up-find-local c: packed-trebuchet-class c: 40)
-    (up-find-local c: unpacked-trebuchet-class c: 40)
-    (up-create-group 0 40 c: byzantine-siege-muster-trebuchet-group)
-)
-
-; Refresh the physical muster witness: Bombard Cannon group.
-(defrule
-    (or
-        (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-        (or
-            (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-            (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-        )
-    )
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
-    (up-find-local c: bombard-cannon-line c: 40)
-    (up-create-group 0 40 c: byzantine-siege-muster-bombard-group)
-)
-
-; Refresh the physical muster witness: Mangonel group.
-(defrule
-    (or
-        (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-        (or
-            (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-            (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-        )
-    )
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
-    (up-find-local c: mangonel-line c: 40)
-    (up-create-group 0 40 c: byzantine-siege-muster-mangonel-group)
-)
-
-; Refresh the physical muster witness: Ram group.
-(defrule
-    (or
-        (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-        (or
-            (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-            (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-        )
-    )
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
-    (up-find-local c: battering-ram-line c: 40)
-    (up-create-group 0 40 c: byzantine-siege-muster-ram-group)
-)
-
-; Fresh physical package witness. Siege thresholds intentionally mirror the
-; existing Byzantine attack-ready package. This rule does not create a second
-; production floor.
-(defrule
-    (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-    (up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-castle-army)
-    (up-group-size c: byzantine-siege-muster-mangonel-group >= bt-castle-mangonel-floor)
-=>
-    (set-goal byzantine-siege-muster-witness 1)
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-    (enable-timer byzantine-siege-muster-timer bt-byzantine-muster-confirm-seconds)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-    (up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-imperial-army)
-    (or
-        (and
-            (goal byzantine-siege-scale byzantine-siege-scale-standard)
-            (and
-                (up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-imperial-trebuchet-target)
-                (and
-                    (up-group-size c: byzantine-siege-muster-bombard-group >= bt-imperial-bombard-floor)
-                    (up-group-size c: byzantine-siege-muster-ram-group >= bt-imperial-attack-siege-target)
-                )
-            )
-        )
-        (and
-            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-            (and
-                (up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-imperial-fortified-trebuchet-target)
-                (and
-                    (up-group-size c: byzantine-siege-muster-bombard-group >= bt-imperial-fortified-bombard-target)
-                    (up-group-size c: byzantine-siege-muster-ram-group >= bt-imperial-fortified-ram-target)
-                )
-            )
-        )
-    )
-=>
-    (set-goal byzantine-siege-muster-witness 1)
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-    (enable-timer byzantine-siege-muster-timer bt-byzantine-muster-confirm-seconds)
-)
-
-; Holding remains a world-state witness, never a timer-only state.
-(defrule
-    (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-    (goal byzantine-siege-muster-witness 1)
-    (not
-        (and
-            (up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-castle-army)
-            (up-group-size c: byzantine-siege-muster-mangonel-group >= bt-castle-mangonel-floor)
-        )
-    )
-=>
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-    (set-goal byzantine-siege-muster-witness 0)
-    (disable-timer byzantine-siege-muster-timer)
-)
-
-; Imperial holding-loss recovery. The same package thresholds used for admission
-; own the invalidation boundary.
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-    (goal byzantine-siege-muster-witness 1)
-    (not
-        (and
-            (up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-imperial-army)
-            (or
-                (and
-                    (goal byzantine-siege-scale byzantine-siege-scale-standard)
-                    (and
-                        (up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-imperial-trebuchet-target)
-                        (and
-                            (up-group-size c: byzantine-siege-muster-bombard-group >= bt-imperial-bombard-floor)
-                            (up-group-size c: byzantine-siege-muster-ram-group >= bt-imperial-attack-siege-target)
-                        )
-                    )
-                )
-                (and
-                    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-                    (and
-                        (up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-imperial-fortified-trebuchet-target)
-                        (and
-                            (up-group-size c: byzantine-siege-muster-bombard-group >= bt-imperial-fortified-bombard-target)
-                            (up-group-size c: byzantine-siege-muster-ram-group >= bt-imperial-fortified-ram-target)
-                        )
-                    )
-                )
-            )
-        )
-    )
-=>
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-positioning)
-    (set-goal byzantine-siege-muster-witness 0)
-    (disable-timer byzantine-siege-muster-timer)
-)
-
-; Confirmation requires the physical witness to survive the debounce interval.
-(defrule
-    (timer-triggered byzantine-siege-muster-timer)
-    (goal byzantine-siege-muster-state byzantine-siege-muster-holding)
-    (goal byzantine-siege-muster-witness 1)
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-offensive-castle-valid 1)
-    (goal byzantine-army-attack-ready 1)
-=>
-    (disable-timer byzantine-siege-muster-timer)
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-    (set-goal byzantine-offensive-push-state byzantine-offensive-push-assault)
-    (set-goal byzantine-siege-approach byzantine-siege-approach-escorted)
-)
-
-; Once the formation is physically confirmed, issue ONE target-point
-; attack-move from the muster disk to the real objective. This is the Naga-like
-; "local assembled force -> target point" handoff.
-(defrule
-    (goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
-    (goal byzantine-siege-approach byzantine-siege-approach-escorted)
-    (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-push-state byzantine-offensive-push-staging)
     (goal byzantine-offensive-castle-valid 1)
 =>
     (set-strategic-number sn-percent-attack-soldiers 100)
-    (set-strategic-number sn-number-attack-groups 1)
-    (set-strategic-number sn-minimum-attack-group-size 8)
-    (set-strategic-number sn-maximum-attack-group-size 40)
-    (set-strategic-number sn-attack-group-gather-spacing 6)
+    (set-strategic-number sn-number-tasked-units 20)
     (up-full-reset-search)
-    (up-set-target-point byzantine-siege-muster-point)
-    (up-filter-distance c: 0 c: bt-byzantine-muster-radius)
+    (up-set-target-point byzantine-offensive-castle-point)
+    (up-filter-distance c: 0 c: 12)
+    (up-find-remote c: 82 c: 1)
     (up-filter-include cmdid-military -1 -1 -1)
-    (up-find-local c: all-units-class c: 40)
-    (up-set-target-point byzantine-siege-muster-objective-point)
-    (up-target-point 0 action-attack-move -1 stance-aggressive)
+    (up-find-local c: all-units-class c: 240)
+    (up-target-objects 0 action-attack-move -1 stance-aggressive)
+    (up-reset-filters)
+    (up-full-reset-search)
+    (set-goal byzantine-offensive-push-state byzantine-offensive-push-assault)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-assault)
     (set-goal byzantine-army-attack-ready 2)
+)
+
+; Once the group order is issued, restore the normal policy underlay. The
+; attack-move order remains issued to the selected units; later attack-now
+; cycles inherit the ordinary 75% policy instead of permanently mutating it.
+(defrule
+    (goal byzantine-offensive-push-state byzantine-offensive-push-assault)
+    (goal byzantine-army-attack-ready 2)
+=>
+    (set-strategic-number sn-percent-attack-soldiers 75)
+    (set-strategic-number sn-number-tasked-units 0)
+)
+
+; The attack-ready witness already proves the selected army and required siege
+; package. Its posture-specific standing units therefore provide the escort
+; without inventing another production demand.
+(defrule
+    (goal byzantine-siege-approach byzantine-siege-approach-staging)
+    (goal byzantine-siege-approach-claim 1)
+    (goal byzantine-army-attack-ready 1)
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-escorted)
+)
+
+(defrule
+    (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+    (goal byzantine-siege-approach-claim 1)
+    (goal byzantine-army-attack-ready 1)
+=>
     (set-goal byzantine-siege-approach byzantine-siege-approach-breach)
 )
 
-; Breach release remains guarded. The target-point assault above has already
-; moved the assembled formation; attack-now is reserved for the later assault
-; phase once the fortification witness changes.
+; Guarded breach admission. This is deliberately bounded: the engine's current
+; proven attack primitive is attack-now, not a target-position micro controller.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-siege-approach byzantine-siege-approach-breach)
     (goal byzantine-siege-approach-claim 1)
-    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-attack-ready 1)
 =>
+    (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
+    (set-goal byzantine-army-attack-ready 2)
 )
 
-; Breach truth is world-state truth, not action issuance.
+
+; Breach truth is world-state truth, not action issuance. The current evidence
+; contract is conservative and only releases after the relevant static-defense
+; class has materially disappeared. DUC target association remains OPEN.
 (defrule
     (goal byzantine-siege-approach byzantine-siege-approach-breach)
     (goal byzantine-siege-approach-claim 1)
@@ -12027,30 +11765,36 @@
 =>
     (set-goal byzantine-siege-breach-witness 1)
     (set-goal byzantine-siege-approach byzantine-siege-approach-assault)
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-confirmed)
 )
 
-; The assault state re-enters attack-now only after the breach witness, including
-; after a reinforcement cycle.
+; The assault state re-enters the ordinary attack primitive only after the
+; breach witness, including after a reinforcement cycle.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-siege-approach byzantine-siege-approach-assault)
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-siege-breach-witness 1)
-    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-attack-ready 1)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
-    (strategic-number sn-target-player-number >= 1)
-    (strategic-number sn-target-player-number <= 8)
-    (player-in-game target-player)
-    (not (stance-toward target-player ally))
 =>
     (set-strategic-number sn-percent-attack-soldiers 100)
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
     (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
+    (set-goal byzantine-army-attack-ready 2)
 )
- 
+
+(defrule
+    (goal byzantine-siege-approach byzantine-siege-approach-assault)
+    (goal byzantine-army-attack-ready 2)
+    (not (goal byzantine-fortification-threat 1))
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (set-goal byzantine-siege-approach-claim 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
 ; Package loss during a fortified approach returns through the existing army
 ; reinforcement path, never directly back to assault. Castle recovery is split
 ; by role so each native rule stays below DE's 32-element limit.
@@ -12201,12 +11945,6 @@
 (defrule
     (goal byzantine-siege-approach byzantine-siege-approach-recover)
 =>
-    (set-goal byzantine-siege-muster-state byzantine-siege-muster-idle)
-    (set-goal byzantine-siege-muster-witness 0)
-    (disable-timer byzantine-siege-muster-timer)
-    (set-strategic-number sn-number-attack-groups 0)
-    (set-strategic-number sn-minimum-attack-group-size 0)
-    (set-strategic-number sn-maximum-attack-group-size 0)
 )
 
 (defrule
