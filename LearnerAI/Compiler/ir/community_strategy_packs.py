@@ -318,6 +318,11 @@ def community_strategy_observations(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
+    opening_pressure = (
+        "(or (players-unit-type-count any-enemy knight >= 3) "
+        "(or (players-unit-type-count any-enemy archer-line >= 4) "
+        "(players-unit-type-count any-enemy militia-line >= 5)))"
+    )
     observations = [
         _observation(
             "strategy-castle-age",
@@ -336,14 +341,18 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-opening-pressure",
-            "(players-unit-type-count any-enemy militia-line >= 5)",
-            effective.unit_line("militia-line").provenance,
+            opening_pressure,
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("archer-line").provenance,
+                     *effective.unit_line("militia-line").provenance)
+                )
+            ),
         ),
         _observation(
             "strategy-enemy-pressure",
-            "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(or (players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5)))",
+            opening_pressure,
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
