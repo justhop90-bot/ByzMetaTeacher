@@ -65,6 +65,10 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "(not (can-research-with-escrow castle-age))",
             horse_collar.execution.requirements,
         )
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            wheelbarrow.execution.requirements,
+        )
 
         feudal_research_order = [
             demand.identity
