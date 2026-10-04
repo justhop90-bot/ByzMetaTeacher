@@ -7,7 +7,7 @@
 ; Demand goal constants
 
 ; Research technology constants
-(defconst ri-wheel-barrow 213)
+(defconst ri-wheelbarrow 213)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
 (defconst demand-castle 41)
 (defconst issued-castle 44)
@@ -239,7 +239,7 @@
 ; Release: wheelbarrow | COMPLETE -> RELEASED
 (defrule
     (goal demand-wheelbarrow 45)
-    (research-completed ri-wheel-barrow)
+    (research-completed ri-wheelbarrow)
 =>
     (set-goal demand-wheelbarrow 0)
 )
@@ -250,7 +250,7 @@
         (goal demand-wheelbarrow 46)
         (goal demand-wheelbarrow 44)
     )
-    (research-completed ri-wheel-barrow)
+    (research-completed ri-wheelbarrow)
 =>
     (set-goal demand-wheelbarrow 45)
 )
@@ -261,7 +261,7 @@
         (goal demand-wheelbarrow 46)
         (goal demand-wheelbarrow 44)
     )
-    (not (research-completed ri-wheel-barrow))
+    (not (research-completed ri-wheelbarrow))
     (up-research-status c: ri-wheel-barrow >= research-pending)
 =>
     (set-goal demand-wheelbarrow 44)
@@ -273,7 +273,7 @@
         (goal demand-wheelbarrow 46)
         (goal demand-wheelbarrow 44)
     )
-    (not (research-completed ri-wheel-barrow))
+    (not (research-completed ri-wheelbarrow))
     (not (up-research-status c: ri-wheel-barrow >= research-pending))
 =>
     (set-goal demand-wheelbarrow 1)
@@ -283,14 +283,14 @@
 ; Action issuance: wheelbarrow | ACTIVE -> ISSUED
 (defrule
     (goal demand-wheelbarrow 1)
-    (not (research-completed ri-wheel-barrow))
+    (not (research-completed ri-wheelbarrow))
     (goal research-retry-barrier-wheelbarrow 0)
     (not (up-research-status c: ri-wheel-barrow >= research-pending))
-    (not (research-completed ri-wheel-barrow))
+    (not (research-completed ri-wheelbarrow))
     (research-available ri-wheelbarrow)
     (can-afford-research ri-wheelbarrow)
     (can-research ri-wheelbarrow)
 =>
-    (research ri-wheel-barrow)
+    (research ri-wheelbarrow)
     (set-goal demand-wheelbarrow 46)
 )
