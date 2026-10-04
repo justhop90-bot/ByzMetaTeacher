@@ -1598,10 +1598,15 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
     economy controller may react to it by writing civilian-allocation SNs, but
     it never writes this state.
     """
-    if profile.profile_id not in {
-        "byzantine-land-castle-v1",
-        "byzantine-stock-v1",
-    }:
+    if (
+        profile.profile_id not in {
+            "byzantine-land-castle-v1",
+            "byzantine-stock-v1",
+        }
+        or profile.opening_selector is None
+    ):
+        # Compatibility Castle runtime profiles do not carry the opening-selection
+        # control plane. Feudal reservation belongs to the normal stock/opening path.
         return None
 
     from ..runtime_binding import GoalSlotRequest
