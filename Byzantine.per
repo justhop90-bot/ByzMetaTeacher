@@ -8744,8 +8744,10 @@
 ;----------------------------------------------------------------
 ; The attack gate is persistent and army-based. Enemy composition changes the
 ; selected backbone, but does not create the need to attack.
-; Castle: 4 Cataphracts + 4 Skirmishers + 2 Mangonels + 1 Monk.
-; Imperial: selected 6-unit backbone + 8 Halberdiers + 2/2/2 siege.
+
+; MINIMUM-VIABLE CASTLE ATTACK ADMISSION
+; Full-package thresholds remain preferred, but a smaller role-balanced force
+; can launch when it has a real siege piece. Reinforcement remains separate.
 
 (defrule
     (current-age == castle-age)
