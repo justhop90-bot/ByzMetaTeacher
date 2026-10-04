@@ -96,6 +96,7 @@ class NativeRoleSeparationPlan:
     raid_size: NativeControlState
     reserve_size: NativeControlState
     fortified_latch: NativeControlState
+    recovery_request: NativeControlState
     roles: tuple[RoleMembershipSpec, ...]
     witnesses: tuple[RoleWitnessSpec, ...]
     rules: tuple[NativeRoleRule, ...]
@@ -151,6 +152,7 @@ class NativeRoleSeparationPlan:
             self.raid_size,
             self.reserve_size,
             self.fortified_latch,
+            self.recovery_request,
         )
 
     @property
@@ -237,6 +239,7 @@ def default_byzantine_role_separation_plan(
     raid_size_name = "byzantine-army-role-raid-size"
     reserve_size_name = "byzantine-army-role-reserve-size"
     fortified_latch_name = "byzantine-army-role-fortified-latch"
+    recovery_request_name = "byzantine-army-role-recovery-request"
 
     roles = (
         RoleMembershipSpec(RoleKind.SCREEN, 5, 2, "cheap threat-facing protective layer"),
@@ -515,7 +518,7 @@ def default_byzantine_role_separation_plan(
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
-                "(set-goal byzantine-army-attack-ready 0)",
+                f"(set-goal {recovery_request_name} 1)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
                 "(up-reset-group c: 7)",
@@ -623,6 +626,7 @@ def default_byzantine_role_separation_plan(
             (
                 f"(set-goal {state_name} byzantine-army-role-idle)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {recovery_request_name} 0)",
             ),
         ),
         _rule(
@@ -854,6 +858,12 @@ def default_byzantine_role_separation_plan(
             fortified_latch_name,
             "byzantine-army-role-fortified-latch",
             GoalRole.EXECUTION_MEMORY,
+        ),
+        recovery_request=_state(
+            profile_id,
+            recovery_request_name,
+            "byzantine-army-role-recovery-request",
+            GoalRole.PERSISTENT_STATE,
         ),
         roles=roles,
         witnesses=witnesses,
