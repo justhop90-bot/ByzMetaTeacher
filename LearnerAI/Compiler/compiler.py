@@ -505,6 +505,7 @@ def _compile_package_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
     _return_ir: bool = False,
 ):
@@ -595,6 +596,7 @@ def compile_package(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     result, _bindings, _context, _graph = _compile_package_parts(
@@ -605,6 +607,7 @@ def compile_package(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        role_plan=role_plan,
         escrow_plan=escrow_plan,
     )
     return result
@@ -620,6 +623,7 @@ def compile_source(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
@@ -631,6 +635,7 @@ def compile_source(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        role_plan=role_plan,
         escrow_plan=escrow_plan,
     )
     return result
@@ -666,6 +671,7 @@ def compile_package_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
+            role_plan=role_plan,
             escrow_plan=escrow_plan,
             _return_ir=True,
         )
@@ -806,6 +812,7 @@ def compile_source_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
+            role_plan=role_plan,
             escrow_plan=escrow_plan,
             _return_ir=True,
         )
