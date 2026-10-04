@@ -152,26 +152,28 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             objective_start,
         )
         objective = self.per[objective_start:objective_end]
-
-        for marker in (
+        markers = (
             "; siege objective search,",
             "; defense objective search,",
             "; production objective search,",
             "; town-center objective search,",
-        ):
-            start = objective.index(marker)
-            block_end = objective.index(
-                "(up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)",
-                start,
+        )
+        for index, marker in enumerate(markers):
+            start_marker = objective.index(marker)
+            end_marker = (
+                objective.index(markers[index + 1], start_marker)
+                if index + 1 < len(markers)
+                else len(objective)
             )
-            block = objective[start:block_end]
+            block = objective[start_marker:end_marker]
             actor_radius = "(up-filter-distance c: 0 c: bt-offensive-objective-actor-radius)"
             target_radius = "(up-filter-distance c: 0 c: bt-offensive-objective-radius)"
             self.assertIn(actor_radius, block)
             self.assertIn(target_radius, block)
+            self.assertIn("(up-find-remote", block)
             self.assertLess(
                 block.index(actor_radius),
-                block.index("(up-find-remote"),
+                block.index("(up-find-local c: cavalry-class c: 1)"),
             )
             self.assertLess(
                 block.index("(up-find-local c: trebuchet c: 1)"),
