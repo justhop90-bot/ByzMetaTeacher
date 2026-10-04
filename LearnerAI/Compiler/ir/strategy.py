@@ -1613,6 +1613,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         from .native_control import NativeControlPlan, NativeControlRule
 
         role_recovery_bridge_plan = NativeControlPlan(
+            states=(profile.role_separation_plan.recovery_request,),
             rules=(
                 NativeControlRule(
                     "byzantine-role-recovery-bridge",
