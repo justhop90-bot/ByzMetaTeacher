@@ -4515,6 +4515,7 @@
 (defconst byzantine-army-role-raid-size 426)
 (defconst byzantine-army-role-reserve-size 427)
 (defconst byzantine-army-role-fortified-latch 430)
+(defconst byzantine-army-role-recovery-request 431)
 
 (defconst byzantine-army-role-id-screen 5)
 (defconst byzantine-army-role-id-main 6)
@@ -4699,7 +4700,7 @@
     )
 =>
     (set-goal byzantine-army-role-state byzantine-army-role-recovering)
-    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-role-recovery-request 1)
     (up-reset-group c: 5)
     (up-reset-group c: 6)
     (up-reset-group c: 7)
@@ -4734,7 +4735,7 @@
     (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
 =>
     (set-goal byzantine-army-role-state byzantine-army-role-recovering)
-    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-role-recovery-request 1)
     (up-reset-group c: 5)
     (up-reset-group c: 6)
     (up-reset-group c: 7)
@@ -4782,6 +4783,7 @@
     (set-goal byzantine-army-role-state byzantine-army-role-idle)
     (set-goal byzantine-army-role-formation-mask 0)
     (set-goal byzantine-army-role-fortified-latch 0)
+    (set-goal byzantine-army-role-recovery-request 0)
 )
 
 ; Raid is limited to production/TC objectives and only steals from reserve.
@@ -4896,7 +4898,7 @@
     (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
 =>
     (set-goal byzantine-army-role-state byzantine-army-role-recovering)
-    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-role-recovery-request 1)
     (up-reset-group c: 5)
     (up-reset-group c: 6)
     (up-reset-group c: 7)
@@ -4913,6 +4915,16 @@
     (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
 =>
     (set-goal byzantine-army-role-formation-mask 31)
+)
+
+
+; Recovery bridge: role controller requests; army recovery owner clears attack-ready.
+(defrule
+    (goal byzantine-army-role-recovery-request 1)
+=>
+    (up-reset-attack-now)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-role-recovery-request 0)
 )
 
 (defconst bt-imperial-fortified-trebuchet-target 3)
