@@ -223,8 +223,6 @@ class ActionIssuanceTests(unittest.TestCase):
 
 
     def test_research_lifecycle_uses_native_in_progress_status(self):
-        from Compiler.semantic.native_tech_catalog import resolve_tech_id
-
         output = compile_source(
             """
             demand wheelbarrow {
@@ -241,11 +239,11 @@ class ActionIssuanceTests(unittest.TestCase):
         action_start = output.index("; Action issuance: wheelbarrow")
         lifecycle = output[pending_start:action_start]
         self.assertIn(
-            f"(up-research-status c: {native_tech_id} >= 2)",
+            "(up-research-status c: ri-wheel-barrow >= research-pending)",
             lifecycle,
         )
         self.assertIn(
-            f"(not (up-research-status c: {native_tech_id} >= 2))",
+            "(not (up-research-status c: ri-wheel-barrow >= research-pending))",
             lifecycle,
         )
 
@@ -280,9 +278,9 @@ class ActionIssuanceTests(unittest.TestCase):
         self.assertEqual(int(ResearchState.COMPLETE), 3)
         self.assertEqual(int(ResearchState.QUEUED), 4)
         self.assertEqual(lifecycle.pending_fact.args[0], "c:")
-        self.assertEqual(int(lifecycle.pending_fact.args[1]), lifecycle.native_tech_id)
+        self.assertEqual(lifecycle.pending_fact.args[1], "ri-wheel-barrow")
         self.assertEqual(lifecycle.pending_fact.args[2], ">=")
-        self.assertEqual(lifecycle.pending_fact.args[3], str(int(ResearchState.PENDING)))
+        self.assertEqual(lifecycle.pending_fact.args[3], "research-pending")
 
     def test_research_retry_is_barriered_to_a_later_pass(self):
         output = compile_source(
