@@ -493,6 +493,10 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             self.assertIn("(up-remove-objects search-remote object-data-index c:== 0)", recovery)
             self.assertIn("(up-clean-search search-remote object-data-distance search-order-asc)", recovery)
             self.assertIn("(up-get-search-state byzantine-resource-camp-search-state)", recovery)
+            self.assertIn(
+                f"(set-goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-{resource})",
+                recovery,
+            )
             self.assertIn("(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)", recovery)
             for state in demand_states:
                 self.assertIn(f"(goal demand-economy-{'lumber-camp-floor-1' if resource == 'wood' else 'gold-camp-floor-1'} {state})", recovery)
@@ -516,6 +520,16 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)",
             controller,
         )
+        self.assertIn("(defconst byzantine-resource-camp-placement-failure-kind 747)", self.per)
+        self.assertIn(
+            "(not (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-wood))",
+            self.per,
+        )
+        self.assertIn(
+            "(not (goal byzantine-resource-camp-placement-failure-kind byzantine-resource-camp-kind-gold))",
+            self.per,
+        )
+        self.assertIn("(set-goal byzantine-resource-camp-placement-failure-kind 0)", self.per)
 
         lumber_start = self.per.index("; Failed first-camp placement recovery: remove the consumed wood candidate before retry.")
         lumber_end = self.per.index("; Pending diagnostics: economy-lumber-camp-floor-2", lumber_start)
