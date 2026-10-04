@@ -233,7 +233,6 @@ class ActionIssuanceTests(unittest.TestCase):
             }
             """
         )
-        native_tech_id = resolve_tech_id("ri-wheelbarrow")
         self.assertIn("research-retry-barrier-wheelbarrow", output)
         pending_start = output.index("; Completion witness: wheelbarrow")
         action_start = output.index("; Action issuance: wheelbarrow")
