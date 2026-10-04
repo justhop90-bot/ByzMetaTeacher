@@ -876,7 +876,7 @@ def default_byzantine_role_separation_plan(
         ("byzantine-army-role-id-raid", 8),
         ("byzantine-army-role-id-reserve", 9),
         ("bt-role-screen-floor", 2),
-        ("bt-role-main-floor", 3),
+        ("bt-role-main-floor", 4),
         ("bt-role-siege-floor-standard", 1),
         ("bt-role-siege-floor-fortified", 2),
         ("bt-role-raid-floor", 2),
