@@ -510,11 +510,11 @@ def default_byzantine_role_separation_plan(
                 f"(goal {mask_name} 31)",
                 "(goal byzantine-army-attack-ready 1)",
                 f"(or (up-compare-goal {screen_size_name} < c:bt-role-screen-floor) "
-                f"(up-compare-goal {main_size_name} < c:bt-role-main-floor) "
-                f"(and (goal byzantine-fortification-threat 0) "
+                f"(or (up-compare-goal {main_size_name} < c:bt-role-main-floor) "
+                f"(or (and (goal byzantine-fortification-threat 0) "
                 f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-standard)) "
                 f"(and (goal byzantine-fortification-threat 1) "
-                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified)))",
+                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified))))",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
@@ -642,7 +642,7 @@ def default_byzantine_role_separation_plan(
                 f"(up-compare-goal {siege_size_name} >= c:bt-role-siege-floor-standard)",
                 f"(up-compare-goal {reserve_size_name} >= c:bt-role-raid-floor)",
                 "(or (unit-type-count-total knight-line >= bt-role-raid-floor) "
-                "(unit-type-count-total camel-line >= bt-role-raid-floor) "
+                "(or (unit-type-count-total camel-line >= bt-role-raid-floor) "
                 "(unit-type-count-total cataphract-line >= bt-role-raid-floor))",
             ),
             (
@@ -711,11 +711,11 @@ def default_byzantine_role_separation_plan(
             (
                 f"(goal {state_name} byzantine-army-role-raid-split)",
                 "(or (goal byzantine-fortification-threat 1) "
-                "(goal byzantine-offensive-objective-class 1) "
-                "(goal byzantine-offensive-objective-class 2) "
-                "(goal byzantine-offensive-objective-claim 0) "
-                "(goal byzantine-army-attack-ready 0) "
-                "(goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered))",
+                "(or (goal byzantine-offensive-objective-class 1) "
+                "(or (goal byzantine-offensive-objective-class 2) "
+                "(or (goal byzantine-offensive-objective-claim 0) "
+                "(or (goal byzantine-army-attack-ready 0) "
+                "(goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered))))))",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-forming)",
