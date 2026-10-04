@@ -290,6 +290,18 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             section,
         )
 
+    def test_fortified_breach_preserves_attack_reserve(self):
+        start = self.per.index(
+            "(goal byzantine-siege-approach byzantine-siege-approach-breach)"
+        )
+        end = self.per.index(
+            "; Breach truth is world-state truth, not action issuance.",
+            start,
+        )
+        section = self.per[start:end]
+        self.assertIn("(set-strategic-number sn-percent-attack-soldiers 75)", section)
+        self.assertNotIn("(set-strategic-number sn-percent-attack-soldiers 100)", section)
+
     def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
         self.assertIn(
             "(not (goal byzantine-production-castle-target 2))",
