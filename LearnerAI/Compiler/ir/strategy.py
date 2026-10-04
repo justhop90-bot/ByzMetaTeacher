@@ -286,7 +286,6 @@ class StrategicDemandSpec:
     provenance: tuple[EvidenceRef, ...] = ()
     recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
     production_arbitration_group: str | None = None
-    initially_active: bool = True
 
     @property
     def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
@@ -899,15 +898,6 @@ def lower_strategy_profile(
         source_unit=profile.profile_id,
     )
 
-    semantic_demands = tuple(
-        replace(
-            demand,
-            initially_active=profile.demand(
-                execution_owner[demand.name]
-            ).initially_active,
-        )
-        for demand in semantic_demands
-    )
 
     bindings: dict[str, StrategicBinding] = {}
     bound_demands: list[SemanticDemand] = []
