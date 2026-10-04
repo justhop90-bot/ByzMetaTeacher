@@ -422,7 +422,7 @@ def community_strategy_observations(
             "(and (players-building-type-count any-enemy barracks >= 1) "
             "(players-military-population any-enemy >= 3))",
             tuple(
-                dict.fromKeys(
+                dict.fromkeys(
                     (*effective.unit_line("militia-line").provenance,)
                 )
             ),
