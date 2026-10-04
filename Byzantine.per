@@ -4741,8 +4741,6 @@
         )
     )
     (unit-type-count-total villager >= 17)
-    (building-type-count-total lumber-camp >= 1)
-    (building-type-count-total mining-camp >= 1)
     (goal feudal-transition-bank-state 0)
 =>
     (set-goal feudal-transition-bank-state 1)
@@ -4759,11 +4757,23 @@
             (goal opening-plan 3)
         )
     )
-    (unit-type-count-total villager >= 19)
+    (or
+        (and
+            (goal opening-plan 1)
+            (map-type arabia)
+            (unit-type-count-total villager >= 19)
+        )
+        (and
+            (or
+                (goal opening-plan 2)
+                (goal opening-plan 3)
+            )
+            (unit-type-count-total villager >= 20)
+        )
+    )
     (building-type-count-total lumber-camp >= 1)
     (building-type-count-total mining-camp >= 1)
     (food-amount >= 500)
-    (gold-amount >= 200)
     (can-research-with-escrow feudal-age)
     (not (research-completed ri-loom))
     (not (up-research-status c: ri-loom >= research-pending))
@@ -4789,11 +4799,23 @@
 (defrule
     (goal feudal-transition-bank-state 1)
     (current-age == dark-age)
-    (unit-type-count-total villager >= 19)
+    (or
+        (and
+            (goal opening-plan 1)
+            (map-type arabia)
+            (unit-type-count-total villager >= 19)
+        )
+        (and
+            (or
+                (goal opening-plan 2)
+                (goal opening-plan 3)
+            )
+            (unit-type-count-total villager >= 20)
+        )
+    )
     (building-type-count-total lumber-camp >= 1)
     (building-type-count-total mining-camp >= 1)
     (food-amount >= 500)
-    (gold-amount >= 200)
     (can-research-with-escrow feudal-age)
     (or
         (research-completed ri-loom)
@@ -4810,7 +4832,6 @@
 =>
     (set-goal feudal-transition-bank-state 0)
     (set-goal feudal-transition-loom-recovery 0)
-    (set-goal demand-feudal-transition 0)
 )
 
 ; Native control rule: feudal-transition-loom-recovery-reset-on-complete
@@ -4826,35 +4847,6 @@
 (defrule
     (goal feudal-transition-bank-state 1)
     (food-amount < 500)
-    (gold-amount < 200)
-    (up-compare-sn sn-food-gatherer-percentage != 55)
-=>
-    (set-strategic-number sn-food-gatherer-percentage 55)
-    (set-strategic-number sn-wood-gatherer-percentage 20)
-    (set-strategic-number sn-gold-gatherer-percentage 25)
-    (set-strategic-number sn-percent-civilian-builders 3)
-    (set-strategic-number sn-stone-gatherer-percentage 0)
-)
-
-; Native control rule: economy-controller-feudal-reservation-prioritize-gold
-(defrule
-    (goal feudal-transition-bank-state 1)
-    (food-amount >= 500)
-    (gold-amount < 200)
-    (up-compare-sn sn-gold-gatherer-percentage != 30)
-=>
-    (set-strategic-number sn-food-gatherer-percentage 50)
-    (set-strategic-number sn-wood-gatherer-percentage 20)
-    (set-strategic-number sn-gold-gatherer-percentage 30)
-    (set-strategic-number sn-percent-civilian-builders 3)
-    (set-strategic-number sn-stone-gatherer-percentage 0)
-)
-
-; Native control rule: economy-controller-feudal-reservation-prioritize-food-after-gold
-(defrule
-    (goal feudal-transition-bank-state 1)
-    (food-amount < 500)
-    (gold-amount >= 200)
     (up-compare-sn sn-food-gatherer-percentage != 65)
 =>
     (set-strategic-number sn-food-gatherer-percentage 65)
@@ -4868,7 +4860,6 @@
 (defrule
     (goal feudal-transition-bank-state 1)
     (food-amount >= 500)
-    (gold-amount >= 200)
     (up-compare-sn sn-food-gatherer-percentage != 60)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
@@ -13219,13 +13210,11 @@
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
     (food-amount >= 500)
-    (gold-amount >= 200)
     (building-type-count-total lumber-camp >= 1)
     (building-type-count-total mining-camp >= 1)
 =>
     (set-goal byzantine-resource-claim 1)
     (release-escrow food)
-    (release-escrow gold)
     (research feudal-age)
     (set-goal demand-feudal-transition 83)
 )
@@ -13343,6 +13332,25 @@
     (up-train-site-ready c: villager)
     (can-train villager)
     (not (goal feudal-transition-bank-state 2))
+    (not
+        (and
+            (goal feudal-transition-bank-state 1)
+            (or
+                (and
+                    (goal opening-plan 1)
+                    (map-type arabia)
+                    (unit-type-count-total villager >= 19)
+                )
+                (and
+                    (or
+                        (goal opening-plan 2)
+                        (goal opening-plan 3)
+                    )
+                    (unit-type-count-total villager >= 20)
+                )
+            )
+        )
+    )
     (not (goal byzantine-resource-claim 1))
     (not (goal byzantine-resource-claim 2))
     (not (goal byzantine-resource-claim 3))
