@@ -32,8 +32,8 @@ def main() -> int:
         "(up-research-status c: ri-wheel-barrow >= research-pending)",
         "(defconst ri-wheelbarrow 213)",
         "research-retry-barrier-research-wheelbarrow",
-        "(research ri-wheelbarrow)",
-        "(research-completed ri-wheelbarrow)",
+        "(research ri-wheel-barrow)",
+        "(research-completed ri-wheel-barrow)",
     )
     missing = tuple(fragment for fragment in required if fragment not in first)
     if missing:
