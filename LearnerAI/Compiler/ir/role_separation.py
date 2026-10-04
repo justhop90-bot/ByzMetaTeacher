@@ -248,7 +248,7 @@ def default_byzantine_role_separation_plan(
 
     roles = (
         RoleMembershipSpec(RoleKind.SCREEN, 5, 2, "cheap threat-facing protective layer"),
-        RoleMembershipSpec(RoleKind.MAIN, 6, 3, "primary non-screen non-siege combat body"),
+        RoleMembershipSpec(RoleKind.MAIN, 6, 4, "primary non-screen non-siege combat body"),
         RoleMembershipSpec(RoleKind.SIEGE, 7, 1, "protected siege support"),
         RoleMembershipSpec(RoleKind.RAID, 8, 2, "detachable mobile force"),
         RoleMembershipSpec(RoleKind.RESERVE, 9, 0, "deliberately uncommitted combat capacity"),
@@ -429,32 +429,48 @@ def default_byzantine_role_separation_plan(
             "role-forming-reserve",
             (
                 f"(goal {state_name} byzantine-army-role-forming)",
-                f"(goal {mask_name} 7)",
+                f"(goal {mask_name} 15)",
+                "(up-group-size c: 6 >= 6)",
             ),
             (
                 "(up-full-reset-search)",
                 "(up-set-target-point byzantine-offensive-objective-point)",
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
-                "(up-filter-include cmdid-monk -1 -1 -1)",
-                "(up-find-local c: cavalry-class c: 40)",
-                "(up-find-local c: monk c: 40)",
+                "(up-find-local c: all-units-class c: 240)",
                 "(up-remove-objects search-local object-data-status != 2)",
-                "(up-remove-objects search-local object-data-group-flag == 5)",
-                "(up-remove-objects search-local object-data-group-flag == 7)",
-                f"(set-goal {cap_name} 4)",
+                "(up-remove-objects search-local object-data-group-flag != 6)",
+                f"(set-goal {cap_name} 2)",
                 f"(up-create-group 0 {cap_name} c: 9)",
                 "(up-modify-group-flag 1 c: 9)",
-                f"(set-goal {mask_name} 15)",
+                "(up-full-reset-search)",
+                "(up-find-local c: all-units-class c: 240)",
+                "(up-remove-objects search-local object-data-status != 2)",
+                "(up-remove-objects search-local object-data-group-flag != 9)",
+                "(up-modify-group-flag 0 c: 6)",
+                f"(set-goal {mask_name} 23)",
             ),
             RoleKind.RESERVE,
         ),
+
+        _rule(
+            65,
+            "role-forming-reserve-skip",
+            (
+                f"(goal {state_name} byzantine-army-role-forming)",
+                f"(goal {mask_name} 15)",
+                "(up-group-size c: 6 < 6)",
+            ),
+            (f"(set-goal {mask_name} 23)",),
+            RoleKind.RESERVE,
+        ),
+
         _rule(
             70,
             "role-forming-main",
             (
                 f"(goal {state_name} byzantine-army-role-forming)",
-                f"(goal {mask_name} 15)",
+                f"(goal {mask_name} 7)",
             ),
             (
                 "(up-full-reset-search)",
@@ -470,10 +486,11 @@ def default_byzantine_role_separation_plan(
                 f"(set-goal {cap_name} 40)",
                 f"(up-create-group 0 {cap_name} c: 6)",
                 "(up-modify-group-flag 1 c: 6)",
-                f"(set-goal {mask_name} 23)",
+                f"(set-goal {mask_name} 15)",
             ),
             RoleKind.MAIN,
         ),
+
         _rule(
             80,
             "role-forming-size-witness",
@@ -491,6 +508,24 @@ def default_byzantine_role_separation_plan(
                 f"(set-goal {mask_name} 31)",
             ),
         ),
+        _rule(
+            85,
+            "role-forming-cancel-not-ready",
+            (
+                f"(goal {state_name} byzantine-army-role-forming)",
+                "(goal byzantine-army-attack-ready 0)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {mask_name} 0)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
+                "(up-reset-group c: 8)",
+                "(up-reset-group c: 9)",
+            ),
+        ),
+
         _rule(
             90,
             "role-forming-commit",
@@ -573,6 +608,32 @@ def default_byzantine_role_separation_plan(
             ),
         ),
         _rule(
+            125,
+            "role-committed-recovery-siege-loss",
+            (
+                f"(or (goal {state_name} byzantine-army-role-committed) "
+                f"(goal {state_name} byzantine-army-role-raid-split))",
+                f"(or (and (goal byzantine-fortification-threat 1) "
+                f"(goal byzantine-siege-scale byzantine-siege-scale-fortified) "
+                f"(up-group-size c: 7 < 2)) "
+                f"(and (goal byzantine-fortification-threat 0) "
+                f"(up-group-size c: 7 < 1)))",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {recovery_request_name} 1)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
+                "(up-reset-group c: 8)",
+                "(up-reset-group c: 9)",
+                f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
+            ),
+            RoleKind.SIEGE,
+        ),
+
+        _rule(
             130,
             "role-raid-fortification-block",
             (
@@ -597,8 +658,7 @@ def default_byzantine_role_separation_plan(
             (
                 f"(or (goal {state_name} byzantine-army-role-committed) "
                 f"(goal {state_name} byzantine-army-role-raid-split))",
-                "(or (goal byzantine-offensive-objective-state 6) "
-                "(goal byzantine-offensive-objective-claim 0))",
+                "(goal byzantine-offensive-objective-claim 0)",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-idle)",
@@ -610,6 +670,7 @@ def default_byzantine_role_separation_plan(
                 "(up-reset-group c: 9)",
             ),
         ),
+
         _rule(
             150,
             "role-recovery-to-forming",
@@ -639,8 +700,7 @@ def default_byzantine_role_separation_plan(
             "role-raid-admission",
             (
                 f"(goal {state_name} byzantine-army-role-committed)",
-                "(or (goal byzantine-offensive-objective-class 3) "
-                "(goal byzantine-offensive-objective-class 4))",
+                "(goal byzantine-offensive-objective-class 3)",
                 "(goal byzantine-fortification-threat 0)",
                 f"(up-compare-goal {screen_size_name} >= c:bt-role-screen-floor)",
                 f"(up-compare-goal {main_size_name} >= c:bt-role-main-floor)",
@@ -659,13 +719,19 @@ def default_byzantine_role_separation_plan(
                 "(up-find-local c: cavalry-class c: 40)",
                 "(up-remove-objects search-local object-data-status != 2)",
                 "(up-remove-objects search-local object-data-group-flag != 9)",
-                f"(set-goal {cap_name} 4)",
+                f"(set-goal {cap_name} 2)",
                 f"(up-create-group 0 {cap_name} c: 8)",
                 "(up-modify-group-flag 1 c: 8)",
+                "(up-full-reset-search)",
+                "(up-find-local c: all-units-class c: 240)",
+                "(up-remove-objects search-local object-data-status != 2)",
+                "(up-remove-objects search-local object-data-group-flag != 8)",
+                "(up-modify-group-flag 0 c: 9)",
                 f"(set-goal {mask_name} 40)",
             ),
             RoleKind.RAID,
         ),
+
         _rule(
             180,
             "role-raid-size-witness",
@@ -705,11 +771,17 @@ def default_byzantine_role_separation_plan(
                 f"(up-compare-goal {raid_size_name} < c:bt-role-raid-floor)",
             ),
             (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {mask_name} 0)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
                 "(up-reset-group c: 8)",
-                f"(set-goal {mask_name} 31)",
+                "(up-reset-group c: 9)",
             ),
             RoleKind.RAID,
         ),
+
         _rule(
             210,
             "role-raid-objective-release",
@@ -766,8 +838,8 @@ def default_byzantine_role_separation_plan(
             (
                 f"(goal {state_name} byzantine-army-role-committed)",
                 "(goal byzantine-fortification-threat 1)",
-                f"(goal {mask_name} 50)",
-                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified)",
+                "(goal byzantine-siege-scale byzantine-siege-scale-fortified)",
+                f"(up-group-size c: 7 < 2)",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
@@ -782,6 +854,7 @@ def default_byzantine_role_separation_plan(
             ),
             RoleKind.SIEGE,
         ),
+
         _rule(
             250,
             "role-fortified-siege-armed",
