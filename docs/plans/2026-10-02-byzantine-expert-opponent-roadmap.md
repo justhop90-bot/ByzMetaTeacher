@@ -64,7 +64,7 @@ Acceptance: persistent late-game surplus is converted into relevant military/eco
 - [ ] Predict enemy commitment from production buildings, upgrades, and early unit evidence.
 - [ ] Distinguish expected composition from confirmed composition.
 - [ ] Pre-position counters before full contact.
-- [ ] Add exposed-economy and production-target decisions.
+- [x] Add exposed-economy and production-target decisions: the late objective controller now raids a bounded exposed-villager target when nearby production is exhausted, then reassesses before the Town Center tier.
 - [ ] Add intelligent wall/fortification handling and stale-intel expiry.
 
 Acceptance: the bot changes counters because of meaningful enemy evidence and can turn information into a target or timing advantage.
