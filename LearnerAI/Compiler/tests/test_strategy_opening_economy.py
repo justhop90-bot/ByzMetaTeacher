@@ -7,6 +7,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     lower_strategy_profile,
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.ir.game_data import Resource
 
 
 class ByzantineStrategyControlSliceTests(unittest.TestCase):
@@ -266,7 +267,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("feudal_bank_", control_output := compile_strategy_profile(profile, self.effective))
         self.assertIn("economy-controller-feudal-reservation-", control_output)
 
-    def test_feudal_reservation_uses_resource_deficit_writers_not_a_static_age_allocation(self):
+    def test_feudal_reservation_uses_food_deficit_without_a_gold_ageup_floor(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
         control = compilation.control_plan
@@ -279,29 +280,39 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         }
         self.assertIn(
             "(food-amount < 500)",
-            " ".join(f.source for f in rules["economy-controller-feudal-reservation-prioritize-food"].facts),
+            " ".join(
+                f.source
+                for f in rules["economy-controller-feudal-reservation-prioritize-food"].facts
+            ),
         )
-        self.assertIn(
-            "(gold-amount < 200)",
-            " ".join(f.source for f in rules["economy-controller-feudal-reservation-prioritize-gold"].facts),
+        sources = " ".join(
+            f.source
+            for rule in rules.values()
+            for f in rule.facts
         )
+        self.assertNotIn("(gold-amount < 200)", sources)
+        self.assertNotIn("(gold-amount >= 200)", sources)
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("economy-controller-feudal-reservation-prioritize-food", output)
-        self.assertIn("economy-controller-feudal-reservation-prioritize-gold", output)
+        self.assertNotIn("economy-controller-feudal-reservation-prioritize-gold", output)
 
-    def test_feudal_transition_declares_a_protected_500_food_200_gold_floor(self):
+    def test_feudal_transition_declares_only_a_protected_500_food_floor(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("feudal-transition")
         requirements = demand.execution_demands[0].requirements
 
         self.assertIn("(food-amount >= 500)", requirements)
-        self.assertIn("(gold-amount >= 200)", requirements)
+        self.assertNotIn("(gold-amount >= 200)", requirements)
         self.assertIsNotNone(demand.opportunity_cost)
         floors = {
             floor.resource.value: floor.minimum
             for floor in demand.opportunity_cost.protected_floors
         }
-        self.assertEqual(floors, {"FOOD": 500, "GOLD": 200})
+        self.assertEqual(floors, {"FOOD": 500})
+        self.assertEqual(
+            demand.execution_demands[0].escrow_release_resources,
+            (Resource.FOOD,),
+        )
 
 
 if __name__ == "__main__":
