@@ -137,6 +137,38 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_dark_age_second_mill_requires_positive_forage_search_witness(self):
+        rules = ["(defrule" + chunk for chunk in self.per.split("(defrule")[1:]]
+        search_rule = next(
+            rule
+            for rule in rules
+            if "(current-age == dark-age)" in rule
+            and "(up-find-remote c: byzantine-forage-bush c: 40)" in rule
+            and "(up-get-search-state byzantine-dark-mill-search-state)" in rule
+        )
+        build_rule = next(
+            rule
+            for rule in rules
+            if "(current-age == dark-age)" in rule
+            and "(up-build place-point 0 c: mill)" in rule
+        )
+        self.assertIn(
+            "(defconst byzantine-dark-mill-search-state 1040)",
+            self.per,
+        )
+        self.assertIn(
+            "(defconst byzantine-dark-mill-search-remote-count 1042)",
+            self.per,
+        )
+        self.assertIn(
+            "(up-compare-goal byzantine-dark-mill-search-remote-count > 0)",
+            build_rule,
+        )
+        self.assertNotIn(
+            "(up-build place-point 0 c: mill)",
+            search_rule,
+        )
+
     def test_goal_comparisons_use_up_compare_goal(self):
         # `goal` is exact equality only. Comparator forms belong to
         # `up-compare-goal`; letting `(goal G > 0)` through produces a native
