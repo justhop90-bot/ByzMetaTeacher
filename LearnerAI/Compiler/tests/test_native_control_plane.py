@@ -357,6 +357,33 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         self.assertEqual(scheduler.goals["g"], 7)
         self.assertEqual(scheduler.goals["result"], 1)
 
+    def test_control_plane_can_read_compiler_lifecycle_goal_when_declared(self):
+        from Compiler.primitives.registry import default_de_registry
+
+        plan = NativeControlPlan(
+            states=(),
+            rules=(
+                NativeControlRule(
+                    "lifecycle-reader",
+                    facts=(
+                        Expression(
+                            "(goal demand-bootstrap 1)",
+                            "goal",
+                            ("demand-bootstrap", "1"),
+                        ),
+                    ),
+                    actions=(),
+                ),
+            ),
+        )
+
+        report = validate_native_control_plan(
+            plan,
+            default_de_registry(),
+            known_goal_states=("demand-bootstrap",),
+        )
+        self.assertIn("lifecycle-reader", report.rule_identities)
+
     def test_control_plane_requires_declared_symbolic_storage(self):
         from Compiler.primitives.registry import default_de_registry
 
