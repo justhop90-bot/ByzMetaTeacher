@@ -6,6 +6,13 @@
 
 **Architecture:** Keep the existing ByzMetaTeacher compiler and native .per model. Use Naga and other community AIs as behavioral evidence, not templates. Use Sandy Petersen's documented test-driven design philosophy as a process reference: explicit rules, strong faction identity, observed play, rapid correction, repeated playtesting.
 
+**Roadmap status as of 2026-10-04**
+
+- **Completed/merged:** resource-front lumber placement lifecycle (PR #363); unified opening pressure + five-selector multi-fact emission (PR #365); Feudal transition gated by witnessed lumber/gold infrastructure; reinforcement-driven second production capacity (PR #366); production-commitment prediction with lower-priority Feudal counter floors and confirmed-pressure suppression (PR #367).
+- **Still open:** the broader Phase 0 baseline freeze, continuous late-game spending envelope, wall/geometry implementation, full scouting/prediction doctrine, attack admission/recovery, Byzantine breadth audit, and standardized runtime scenario verification.
+- **Roadmap correction:** the static late-game objective ladder already implements the intended `siege -> defensive structures -> production -> Town Centers` sequence with reassessment. The next Phase 4 work should therefore focus on attack admission, force preservation, siege commitment, and recovery rather than reordering the target ladder without replay evidence.
+- **Evidence boundary:** queue-capacity semantics remain `OPEN`; production-capacity repairs may use verified reinforcement/pressure policy, but must not fabricate queue-depth witnesses. Runtime replay validation remains a separate claim from parser/native/compiler CI.
+
 **Global constraints**
 - Byzantine behavior remains the product; the compiler is the substrate.
 - Do not become a tournament-only bot, generic utility AI, simulator, or second .per language.
