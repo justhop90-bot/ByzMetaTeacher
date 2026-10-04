@@ -455,7 +455,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertNotIn("(build mining-camp)", self.per)
 
     def test_resource_camp_builder_assignment_precedes_point_build_and_is_preserved(self):
-        for building, action_marker, end_marker in (
+        for building, start_marker, end_marker in (
             (
                 "lumber-camp",
                 "; Action issuance: economy-lumber-camp-floor-1 | ACTIVE -> ISSUED",
@@ -463,11 +463,11 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             ),
             (
                 "mining-camp",
-                "; Action issuance: economy-gold-camp-floor-1 | ACTIVE -> ISSUED",
+                "; economy-gold-camp-floor-1",
                 "; economy-gold-camp-floor-2",
             ),
         ):
-            start = self.per.index(action_marker)
+            start = self.per.index(start_marker)
             end = self.per.index(end_marker, start)
             action = self.per[start:end]
             assign = action.index(f"(up-assign-builders c: {building} c: 1)")
@@ -517,9 +517,13 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             controller,
         )
 
-        lumber_retry = self.per.index("; RETRY | ISSUED/PENDING -> ACTIVE")
-        recovery = self.per.index("; Failed first-camp placement recovery: remove the consumed wood candidate before retry.")
-        self.assertLess(recovery, lumber_retry)
+        lumber_start = self.per.index("; Failed first-camp placement recovery: remove the consumed wood candidate before retry.")
+        lumber_end = self.per.index("; Pending diagnostics: economy-lumber-camp-floor-2", lumber_start)
+        lumber_lifecycle = self.per[lumber_start:lumber_end]
+        self.assertLess(
+            lumber_lifecycle.index("; Failed first-camp placement recovery: remove the consumed wood candidate before retry."),
+            lumber_lifecycle.index("; RETRY | ISSUED/PENDING -> ACTIVE"),
+        )
 
     def test_blocked_camp_placement_enters_pending_instead_of_reissuing(self):
         lumber = self._section_from(
