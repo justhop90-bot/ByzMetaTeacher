@@ -11,10 +11,19 @@ from LearnerAI.Compiler.compiler import compile_semantic_demands
 
 
 def _role_block(artifact: str) -> str:
-    start_marker = "; Native Byzantine role-separation plan"
+    start_markers = (
+        "; Native Byzantine role-separation plan",
+        "; Byzantine military role separation",
+    )
+    starts = [artifact.find(marker) for marker in start_markers]
+    starts = [offset for offset in starts if offset >= 0]
+    if not starts:
+        raise ValueError("role block marker not found")
+    start = min(starts)
     end_marker = "; Native DUC execution plan"
-    start = artifact.index(start_marker)
-    end = artifact.index(end_marker, start)
+    end = artifact.find(end_marker, start)
+    if end < 0:
+        end = len(artifact)
     return artifact[start:end]
 
 
@@ -47,7 +56,7 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         )
         self.assertIn("(up-get-group-size", first)
 
-    def test_canonical_byzantine_emission_preserves_four_objective_actuators(self):
+    def test_canonical_byzantine_emission_keeps_attack_ownership_separate(self):
         first = compile_strategy_profile(self.profile, self.effective)
         second = compile_strategy_profile(self.profile, self.effective)
         self.assertEqual(first, second)
@@ -65,10 +74,9 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, role_block)
 
-        self.assertEqual(
-            first.count("(up-target-objects 1 action-attack-move -1 -1)"),
-            4,
-        )
+        attack_block_start = first.index("; Native attack lifecycle plan")
+        attack_block = first[attack_block_start:]
+        self.assertIn("(attack-now)", attack_block)
 
     def test_role_floors_are_disjoint_and_fortified_siege_uses_larger_floor(self):
         plan = self.plan
@@ -99,7 +107,7 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, role_block)
 
-    def test_checked_in_role_block_uses_native_duo_primitives_and_binary_logic(self):
+    def test_checked_in_role_block_uses_native_duc_primitives_and_binary_logic(self):
         repo_root = Path(__file__).resolve().parents[3]
         checked_in = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
         role_block = _role_block(checked_in)
@@ -120,6 +128,10 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         self.assertIn("(up-find-local c: 93 c: 40)", role_block)
         self.assertIn("(up-find-local c: 358 c: 40)", role_block)
         self.assertIn("(up-find-local c: 36 c: 40)", role_block)
+        self.assertEqual(
+            checked_in.count("(up-target-objects 1 action-attack-move -1 -1)"),
+            4,
+        )
 
         self.assertIn(
             """    (or
