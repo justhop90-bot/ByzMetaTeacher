@@ -33,6 +33,10 @@ class ByzantineCampControllerTests(unittest.TestCase):
             self.assertIn("dropsite-min-distance", remote.expression)
 
             for floor in range(1, max_count + 1):
+                self.assertEqual(
+                    profile.demand(f"economy-{resource}-camp-floor-{floor}").initially_active,
+                    resource != "stone",
+                )
                 demand = profile.demand(f"economy-{resource}-camp-floor-{floor}")
                 self.assertEqual(demand.capability_intent.kind.value, "BUILD")
                 self.assertEqual(demand.execution_demands[0].action, f"(build {'lumber-camp' if resource == 'wood' else 'mining-camp'})")
