@@ -544,29 +544,69 @@ def default_byzantine_role_separation_plan(
         ),
         _rule(
             100,
-            "role-forming-fail-recover",
+            "role-forming-fail-screen",
             (
                 f"(goal {state_name} byzantine-army-role-forming)",
                 f"(goal {mask_name} 31)",
                 "(goal byzantine-army-attack-ready 1)",
-                f"(or (up-compare-goal {screen_size_name} < c:bt-role-screen-floor) "
-                f"(or (up-compare-goal {main_size_name} < c:bt-role-main-floor) "
-                f"(or (and (goal byzantine-fortification-threat 0) "
-                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-standard)) "
-                f"(and (goal byzantine-fortification-threat 1) "
-                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified)))))",
+                f"(up-compare-goal {screen_size_name} < c:bt-role-screen-floor)",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
                 f"(set-goal {recovery_request_name} 1)",
-                "(up-reset-group c: 5)",
-                "(up-reset-group c: 6)",
-                "(up-reset-group c: 7)",
-                "(up-reset-group c: 8)",
-                "(up-reset-group c: 9)",
                 f"(set-goal {mask_name} 0)",
-                f"(set-goal {fortified_latch_name} 0)",
             ),
+            RoleKind.SCREEN,
+        ),
+        _rule(
+            101,
+            "role-forming-fail-main",
+            (
+                f"(goal {state_name} byzantine-army-role-forming)",
+                f"(goal {mask_name} 31)",
+                "(goal byzantine-army-attack-ready 1)",
+                f"(up-compare-goal {main_size_name} < c:bt-role-main-floor)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {recovery_request_name} 1)",
+                f"(set-goal {mask_name} 0)",
+            ),
+            RoleKind.MAIN,
+        ),
+        _rule(
+            102,
+            "role-forming-fail-siege-standard",
+            (
+                f"(goal {state_name} byzantine-army-role-forming)",
+                f"(goal {mask_name} 31)",
+                "(goal byzantine-army-attack-ready 1)",
+                f"(goal byzantine-fortification-threat 0)",
+                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-standard)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {recovery_request_name} 1)",
+                f"(set-goal {mask_name} 0)",
+            ),
+            RoleKind.SIEGE,
+        ),
+        _rule(
+            103,
+            "role-forming-fail-siege-fortified",
+            (
+                f"(goal {state_name} byzantine-army-role-forming)",
+                f"(goal {mask_name} 31)",
+                "(goal byzantine-army-attack-ready 1)",
+                "(goal byzantine-fortification-threat 1)",
+                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {recovery_request_name} 1)",
+                f"(set-goal {mask_name} 0)",
+            ),
+            RoleKind.SIEGE,
         ),
         _rule(
             110,
