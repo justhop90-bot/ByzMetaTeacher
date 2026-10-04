@@ -44,10 +44,33 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertIn("(research-completed 22)", issuance_block)
         self.assertIn("(research ri-loom)", output)
 
-        # The generic compiler slice owns the research lifecycle. Byzantine-only
-        # activation is emitted in the authoritative runtime artifact and is
-        # covered by test_byzantine_playtest_opening.
-        self.assertNotIn("(goal demand-research-loom 0)", output)
+        output_init = output.index("; Demand initialization")
+        loom_init = output.index("(set-goal demand-research-loom 1)", output_init)
+        barrier_init = output.index(
+            "(set-goal research-retry-barrier-research-loom 0)"
+        )
+        loom_consumers = [
+            index
+            for index in (
+                output.find("(goal demand-research-loom 1)"),
+                output.find("(goal demand-research-loom 15006)"),
+                output.find("(goal demand-research-loom 15007)"),
+                output.find("(goal demand-research-loom 15008)"),
+            )
+            if index >= 0
+        ]
+        barrier_consumers = [
+            index
+            for index in (
+                output.find("(goal research-retry-barrier-research-loom 0)"),
+                output.find("(set-goal research-retry-barrier-research-loom 1)"),
+            )
+            if index >= 0
+        ]
+        self.assertTrue(loom_consumers)
+        self.assertTrue(barrier_consumers)
+        self.assertLess(loom_init, min(loom_consumers))
+        self.assertLess(barrier_init, min(barrier_consumers))
 
         self.assertNotIn(
             "(goal feudal-transition-bank-state 2)",
