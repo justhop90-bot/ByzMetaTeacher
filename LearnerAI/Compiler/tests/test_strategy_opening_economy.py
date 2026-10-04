@@ -153,6 +153,22 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotEqual(expected["base"][:3], expected["fast_castle"][:3])
         self.assertNotEqual(expected["base"][:3], expected["counter_feudal"][:3])
 
+        fast_selection = next(
+            rule for rule in control.rules
+            if rule.identity == "economy-controller-select-fast-castle"
+        )
+        self.assertEqual(
+            tuple(fact.source for fact in fast_selection.facts),
+            (
+                "(and (current-age >= feudal-age) (current-age < castle-age))",
+                "(not (players-unit-type-count any-enemy knight >= 3))",
+                "(not (players-unit-type-count any-enemy archer-line >= 4))",
+                "(not (players-unit-type-count any-enemy militia-line >= 5))",
+                "(goal opening-plan 3)",
+            ),
+        )
+        self.assertTrue(all(len(fact.source) <= 255 for fact in fast_selection.facts))
+
     def test_economy_controller_uses_only_documented_civilian_allocation_sns(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
