@@ -186,7 +186,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertEqual(
             tuple(
-                (floor.resource, floor.amount)
+                (floor.resource, floor.minimum)
                 for floor in transition.opportunity_cost.protected_floors
             ),
             ((Resource.FOOD, 800), (Resource.GOLD, 200)),
