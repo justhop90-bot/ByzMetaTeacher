@@ -10040,11 +10040,42 @@
 
 (defrule
     (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
     (goal byzantine-offensive-objective-claim 1)
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
-    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-defense)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-production)
+)
+
+(defrule
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+=>
+    (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-town-center)
 )
 
 (defrule
