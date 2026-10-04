@@ -37,11 +37,11 @@ class RoleSeparationTests(unittest.TestCase):
 
     def test_role_state_contract(self):
         plan = self.profile.role_separation_plan
-        self.assertEqual(plan.state_values[RoleControllerState.IDLE], 0)
-        self.assertEqual(plan.state_values[RoleControllerState.FORMING], 1)
-        self.assertEqual(plan.state_values[RoleControllerState.COMMITTED], 2)
-        self.assertEqual(plan.state_values[RoleControllerState.RAID_SPLIT], 3)
-        self.assertEqual(plan.state_values[RoleControllerState.RECOVERING], 4)
+        self.assertEqual(plan.state_value_map[RoleControllerState.IDLE], 0)
+        self.assertEqual(plan.state_value_map[RoleControllerState.FORMING], 1)
+        self.assertEqual(plan.state_value_map[RoleControllerState.COMMITTED], 2)
+        self.assertEqual(plan.state_value_map[RoleControllerState.RAID_SPLIT], 3)
+        self.assertEqual(plan.state_value_map[RoleControllerState.RECOVERING], 4)
         self.assertEqual(len(plan.storage_requests), 10)
 
     def test_role_rules_never_issue_attack_or_move(self):
