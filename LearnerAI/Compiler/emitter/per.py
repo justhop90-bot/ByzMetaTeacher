@@ -403,11 +403,7 @@ def emit(
     if role_plan is not None:
         out.append("; Native Byzantine role-separation plan")
         emitted_names = _defconst_bindings(out)
-        for state in (
-            role_plan.state,
-            role_plan.formation_mask,
-            role_plan.selection_cap,
-        ):
+        for state in role_plan.states:
             binding = bindings.binding_for(state.request_id)
             if not isinstance(binding, GoalSlot):
                 raise CompileError(
