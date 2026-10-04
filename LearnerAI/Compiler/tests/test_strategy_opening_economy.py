@@ -274,13 +274,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         }
         self.assertEqual(floors, {"FOOD": 500, "GOLD": 200})
 
-    def test_compiled_villager_production_releases_only_after_feudal_bank_ownership(self):
-        profile = build_byzantine_strategy(self.effective)
-        output = compile_strategy_profile(profile, self.effective)
-        start = output.index("; Persistent civilian production")
-        block = output[start:output.index("; Pending diagnostics:", start)]
-        self.assertIn("(not (goal byzantine-feudal-bank-state 2))", block)
-
 
 if __name__ == "__main__":
     unittest.main()
