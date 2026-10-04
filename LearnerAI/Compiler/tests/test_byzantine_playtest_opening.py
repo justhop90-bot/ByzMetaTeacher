@@ -117,7 +117,7 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(goal feudal-transition-bank-state 1)", villager)
         self.assertIn("(unit-type-count-total villager >= 19)", villager)
         self.assertIn("(unit-type-count-total villager >= 20)", villager)
-        self.assertNotIn("(not (goal feudal-transition-bank-state 2))", villager)
+        self.assertIn("(not (goal feudal-transition-bank-state 2))", villager)
 
         release = self._rule_block(
             "; Native control rule: feudal-transition-bank-release-on-feudal"
