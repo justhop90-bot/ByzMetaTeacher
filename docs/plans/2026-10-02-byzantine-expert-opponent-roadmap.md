@@ -110,6 +110,7 @@ Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, an
 
 ## Phase 4: Army control, attack, and recovery
 - [ ] Audit attack admission versus actual attack execution.
+- [ ] Use bounded native attack-group pulses for ordinary open-ground pressure, with a fresh reassessment before another pulse.
 - [ ] Establish screen/main/siege/raid/reserve roles.
 - [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
 - [ ] Preserve armies under defensive fire where native control permits.
