@@ -4300,6 +4300,14 @@
 
 (defconst byzantine-feudal-bank-state 160)
 
+; Native bootstrap: persistent Goal slots start at -1; this bank uses 0 as IDLE.
+(defrule
+    (true)
+=>
+    (set-goal byzantine-feudal-bank-state 0)
+    (disable-self)
+)
+
 ; Native control rule: economy-controller-feudal-bank-release-on-feudal
 (defrule
     (current-age >= feudal-age)
@@ -12767,6 +12775,8 @@
     (true)
 =>
     (set-goal demand-feudal-transition 1)
+    (set-goal demand-research-loom 1)
+    (set-goal research-retry-barrier-research-loom 0)
     (set-goal demand-castle-age-transition 1)
     (set-goal demand-early-defensive-spears 1)
     (set-goal demand-feudal-infrastructure 1)
@@ -17976,7 +17986,10 @@
 
 (defrule
     (goal demand-economy-food-mill-feudal-berries 1)
-    (goal opening-plan 3)
+    (or
+        (goal opening-plan 1)
+        (goal opening-plan 3)
+    )
     (current-age == feudal-age)
     (building-type-count-total mill >= 1)
     (building-type-count-total mill < 2)
