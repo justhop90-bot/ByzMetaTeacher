@@ -283,46 +283,22 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             controller,
         )
 
-    def test_arabia_dark_age_first_camps_bypass_candidate_ring_legality_probe(self):
+    def test_arabia_dark_age_first_camps_use_persisted_point_legality_then_ring_fallback(self):
+        self.assertNotIn(
+            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality probe.",
+            self.per,
+        )
         controller = self._section_from(
-            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
             "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
         )
-        opening = self._section_from(
-            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality",
-            "; Standard opening placement prefers the persisted resource point.",
-        )
         self.assertIn(
-            "(goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)",
-            opening,
-        )
-        self.assertIn(
-            "(goal byzantine-resource-camp-target-valid 1)",
-            opening,
-        )
-        self.assertIn(
-            "(goal opening-plan 1)",
-            opening,
-        )
-        self.assertIn(
-            "(map-type arabia)",
-            opening,
-        )
-        self.assertIn(
-            "(current-age == dark-age)",
-            opening,
-        )
-        self.assertNotIn(
             "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
-            opening,
-        )
-        self.assertNotIn(
-            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
-            opening,
+            controller,
         )
         self.assertIn(
-            "(up-set-target-point byzantine-resource-camp-point)",
-            self.per,
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            controller,
         )
 
     def test_remote_resource_recovery_never_retasks_into_far_or_fortified_resource(self):
@@ -702,6 +678,62 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertIn(
             "(set-goal demand-research-siege-ram 1)",
             self.per,
+        )
+
+
+    def test_blocked_ring_candidate_restores_candidate_state_for_next_slot(self):
+        ring = self._section_from(
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-ring-index 0)\n"
+            "    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)",
+            ring,
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-target-valid 1)\n"
+            "    (set-goal byzantine-resource-camp-placement-state "
+            "byzantine-resource-camp-placement-state-candidate)\n"
+            "    (set-goal byzantine-resource-camp-ring-index 1)",
+            ring,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-ring-index 0)\n"
+            "    (goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)",
+            ring,
+        )
+
+    def test_arabia_first_camp_does_not_bypass_persisted_point_legality(self):
+        self.assertNotIn(
+            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality probe.",
+            self.per,
+        )
+        controller = self._section_from(
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
+            controller,
+        )
+        self.assertIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            controller,
+        )
+
+    def test_foundational_camps_are_required_before_feudal_research_issuance(self):
+        action = self._section_from(
+            "; Action issuance: feudal-transition | ACTIVE -> ISSUED",
+            "; Recovery: feudal-resource-claim | RELEASED/COMPLETE cleanup",
+        )
+        self.assertIn(
+            "(building-type-count-total lumber-camp >= 1)",
+            action,
+        )
+        self.assertIn(
+            "(building-type-count-total mining-camp >= 1)",
+            action,
         )
 
 
