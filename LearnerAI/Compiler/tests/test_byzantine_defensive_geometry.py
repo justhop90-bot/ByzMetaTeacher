@@ -111,7 +111,6 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         import json
         import subprocess
         import sys
-        import traceback
 
         replay = REPO_ROOT / "rec.aoe2record"
         out_dir = Path("/tmp/native-reports")
@@ -121,67 +120,83 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "parsers": {},
         }
 
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", "aoe2rec-py==0.1.22"],
-            check=True,
-        )
-        try:
-            import aoe2rec_py
-            data = replay.read_bytes()
-            parsed = aoe2rec_py.parse_rec(data)
-            report["parsers"]["aoe2rec_py"] = {
-                "status": "success",
-                "top_keys": sorted(parsed.keys()) if isinstance(parsed, dict) else repr(parsed),
-                "json": parsed,
-            }
-        except Exception as exc:
-            report["parsers"]["aoe2rec_py"] = {
-                "status": "error",
-                "type": type(exc).__name__,
-                "message": str(exc),
-                "traceback": traceback.format_exc(),
-            }
-
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", "age-alyser==0.0.5"],
-            check=True,
-        )
-        try:
-            from agealyser import AgeGame
-            stats = AgeGame(str(replay)).advanced_parser(include_map_analysis=False)
-            if hasattr(stats, "to_dict"):
-                stats = stats.to_dict()
-            report["parsers"]["age_alyser"] = {
-                "status": "success",
-                "stats": stats,
-            }
-        except Exception as exc:
-            report["parsers"]["age_alyser"] = {
-                "status": "error",
-                "type": type(exc).__name__,
-                "message": str(exc),
-                "traceback": traceback.format_exc(),
+        def run_python(code, packages):
+            install = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-q", *packages],
+                capture_output=True,
+                text=True,
+            )
+            if install.returncode != 0:
+                return {
+                    "status": "install_error",
+                    "returncode": install.returncode,
+                    "stdout": install.stdout[-4000:],
+                    "stderr": install.stderr[-4000:],
+                }
+            result = subprocess.run(
+                [sys.executable, "-c", code, str(replay)],
+                capture_output=True,
+                text=True,
+            )
+            return {
+                "status": "success" if result.returncode == 0 else "runtime_error",
+                "returncode": result.returncode,
+                "stdout": result.stdout[-20000:],
+                "stderr": result.stderr[-20000:],
             }
 
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", "mgz==1.8.51"],
-            check=True,
+        report["parsers"]["aoe2rec_py"] = run_python(
+            '''
+import json
+import sys
+from pathlib import Path
+import aoe2rec_py
+p = Path(sys.argv[1])
+data = aoe2rec_py.parse_rec(p.read_bytes())
+Path("/tmp/native-reports/aoe2rec-py.json").write_text(
+    json.dumps(data, indent=2, default=str),
+    encoding="utf-8",
+)
+print(json.dumps({"top_keys": sorted(data.keys()) if isinstance(data, dict) else repr(data)}))
+''',
+            ["aoe2rec-py==0.1.22"],
         )
-        try:
-            from mgz.model import parse_match, serialize
-            with replay.open("rb") as handle:
-                match = parse_match(handle)
-            report["parsers"]["mgz_model"] = {
-                "status": "success",
-                "json": serialize(match),
-            }
-        except Exception as exc:
-            report["parsers"]["mgz_model"] = {
-                "status": "error",
-                "type": type(exc).__name__,
-                "message": str(exc),
-                "traceback": traceback.format_exc(),
-            }
+
+        report["parsers"]["age_alyser"] = run_python(
+            '''
+import json
+import sys
+from pathlib import Path
+from agealyser import AgeGame
+stats = AgeGame(sys.argv[1]).advanced_parser(include_map_analysis=False)
+if hasattr(stats, "to_dict"):
+    stats = stats.to_dict()
+Path("/tmp/native-reports/age-alyser.json").write_text(
+    json.dumps(stats, indent=2, default=str),
+    encoding="utf-8",
+)
+print(json.dumps({"keys": sorted(stats.keys()) if isinstance(stats, dict) else repr(stats)}))
+''',
+            ["age-alyser==0.0.5"],
+        )
+
+        report["parsers"]["mgz_model"] = run_python(
+            '''
+import json
+import sys
+from pathlib import Path
+from mgz.model import parse_match, serialize
+with open(sys.argv[1], "rb") as handle:
+    match = parse_match(handle)
+data = serialize(match)
+Path("/tmp/native-reports/mgz-model.json").write_text(
+    json.dumps(data, indent=2, default=str),
+    encoding="utf-8",
+)
+print(json.dumps({"top_keys": sorted(data.keys()) if isinstance(data, dict) else repr(data)}))
+''',
+            ["mgz==1.8.51"],
+        )
 
         (out_dir / "replay-cross-parser.json").write_text(
             json.dumps(report, indent=2, sort_keys=True, default=str),
