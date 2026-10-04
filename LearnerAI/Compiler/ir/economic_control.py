@@ -151,13 +151,28 @@ def lower_economy_controller(
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
-    no_pressure = f"(not {pressure})"
+    no_knight_pressure = "(not (players-unit-type-count any-enemy knight >= 3))"
+    no_ranged_pressure = "(not (players-unit-type-count any-enemy archer-line >= 4))"
+    no_infantry_pressure = "(not (players-unit-type-count any-enemy militia-line >= 5))"
+    no_pressure = (
+        no_knight_pressure,
+        no_ranged_pressure,
+        no_infantry_pressure,
+    )
     opening = lambda value: f"(goal {plan.opening_state} {value})"
 
-    def select_rule(identity: str, mode: EconomyMode, guard: str) -> NativeControlRule:
+    def select_rule(
+        identity: str,
+        mode: EconomyMode,
+        guard: str | tuple[str, ...],
+    ) -> NativeControlRule:
+        guard_terms = (guard,) if isinstance(guard, str) else guard
         return NativeControlRule(
             identity,
-            facts=(parse_expression(guard, SourceLocation(1)),),
+            facts=tuple(
+                parse_expression(term, SourceLocation(1))
+                for term in guard_terms
+            ),
             actions=(
                 parse_expression(
                     f"(set-goal {plan.state_name} {int(mode)})",
@@ -201,27 +216,27 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-fast-castle",
             EconomyMode.FAST_CASTLE,
-            f"(and {feudal_window} (and {no_pressure} {opening(3)}))",
+            (feudal_window, *no_pressure, opening(3)),
         ),
         select_rule(
             "economy-controller-select-counter-feudal",
             EconomyMode.COUNTER_FEUDAL,
-            f"(and {feudal_window} (and {no_pressure} {opening(2)}))",
+            (feudal_window, *no_pressure, opening(2)),
         ),
         select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            f"(and {feudal_window} (and {no_pressure} {opening(4)}))",
+            (feudal_window, *no_pressure, opening(4)),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            f"(and {feudal_window} (and {no_pressure} {opening(5)}))",
+            (feudal_window, *no_pressure, opening(5)),
         ),
         select_rule(
             "economy-controller-select-base",
             EconomyMode.BASE,
-            f"(and (current-age < castle-age) (and {no_pressure} {opening(1)}))",
+            ("(current-age < castle-age)", *no_pressure, opening(1)),
         ),
         select_rule(
             "economy-controller-select-castle-conversion",
