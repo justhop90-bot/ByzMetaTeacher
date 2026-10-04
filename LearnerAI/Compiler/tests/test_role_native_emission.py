@@ -25,6 +25,8 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         self.assertIn("(defconst byzantine-army-role-main-size", first)
         self.assertIn("(up-get-group-size", first)
         self.assertIn("; Native role rule: role-forming-screen", first)
+        self.assertIn("(defconst byzantine-army-role-recovery-request", first)
+        self.assertIn("(up-get-group-size", first)
 
     def test_role_emission_contains_no_attack_or_move_action(self):
         output = compile_semantic_demands((), role_plan=self.plan)
