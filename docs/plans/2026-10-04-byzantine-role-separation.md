@@ -344,3 +344,6 @@ The compiler strategy profile now carries NativeRoleSeparationPlan, allocates ni
 
 ### Hard constraints preserved
 No second attack scheduler was introduced. No timer is used as role completion evidence. Role formation is not a recurring initializer. Foreign/stale objects are removed from the local search before role flags are rewritten. Recovery clears the five role groups before re-forming. The 25% reserve policy in fortified breach remains owned by the existing siege controller.
+
+### Ownership correction
+The role controller does not mutate `byzantine-army-attack-ready`. It raises `byzantine-army-role-recovery-request`. The existing persistent control plane consumes that request, performs `up-reset-attack-now`, clears `army-attack-ready`, and clears the request. This preserves the original state-owner boundary while allowing role formation/fortified/overmatch failure to fail closed.
