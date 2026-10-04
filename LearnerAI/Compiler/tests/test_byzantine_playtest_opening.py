@@ -103,10 +103,8 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(building-type-count-total mining-camp >= 1)", bank)
         self.assertIn("(food-amount >= 500)", bank)
         self.assertIn("(gold-amount >= 200)", bank)
-        self.assertIn(
-            "(or (research-completed ri-loom) (goal feudal-transition-loom-recovery 1))",
-            bank,
-        )
+        self.assertIn("(research-completed ri-loom)", bank)
+        self.assertIn("(goal feudal-transition-loom-recovery 1)", bank)
         self.assertIn("(defconst feudal-transition-bank-state", self.per)
         self.assertIn("(set-goal feudal-transition-bank-state 0)", self.per)
         self.assertNotIn("economy-controller-feudal-bank-", self.per)
@@ -136,10 +134,8 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
 
     def test_feudal_liveness_has_an_explicit_loom_recovery_path(self):
         age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
-        self.assertIn(
-            "(or (research-completed ri-loom) (goal feudal-transition-loom-recovery 1))",
-            age,
-        )
+        self.assertNotIn("(goal feudal-transition-bank-state 2)", age)
+        self.assertNotIn("(goal feudal-transition-loom-recovery 1)", age)
         self.assertNotIn("(building-type-count-total barracks >= 1)", age)
 
     def test_standard_arabia_feudal_action_has_explicit_resource_floor(self):
