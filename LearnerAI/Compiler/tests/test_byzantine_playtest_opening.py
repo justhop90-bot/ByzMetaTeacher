@@ -96,28 +96,51 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(map-type arabia)", blacksmith)
         self.assertIn("(building-type-count archery-range >= 1)", blacksmith)
 
-    def test_standard_arabia_feudal_bank_preempts_dark_age_villager_spending(self):
-        bank = self._rule_block("; Native control rule: economy-controller-feudal-bank-ready")
+    def test_standard_arabia_feudal_reservation_preempts_dark_age_villager_spending(self):
+        bank = self._rule_block("; Native control rule: feudal-transition-bank-ready")
         self.assertIn("(unit-type-count-total villager >= 19)", bank)
         self.assertIn("(building-type-count-total lumber-camp >= 1)", bank)
         self.assertIn("(building-type-count-total mining-camp >= 1)", bank)
-        self.assertIn("(research-completed ri-loom)", bank)
         self.assertIn("(food-amount >= 500)", bank)
         self.assertIn("(gold-amount >= 200)", bank)
-        self.assertNotIn("(goal byzantine-feudal-bank-state -1)", self.per)
-        declaration = self.per.index("(defconst byzantine-feudal-bank-state 160)")
-        first_use = self.per.index("(goal byzantine-feudal-bank-state")
-        self.assertLess(
-            declaration,
-            first_use,
-            "Feudal bank Goal defconst must precede its first native use",
+        self.assertIn(
+            "(or (research-completed ri-loom) (goal feudal-transition-loom-recovery 1))",
+            bank,
         )
+        self.assertIn("(defconst feudal-transition-bank-state", self.per)
+        self.assertIn("(set-goal feudal-transition-bank-state 0)", self.per)
+        self.assertNotIn("economy-controller-feudal-bank-", self.per)
 
         villager = self._find_rule(
             "(train villager)",
             "(can-train villager)",
         )
-        self.assertIn("(not (goal byzantine-feudal-bank-state 2))", villager)
+        self.assertIn("(not (goal feudal-transition-bank-state 2))", villager)
+
+        release = self._rule_block(
+            "; Native control rule: feudal-transition-bank-release-on-feudal"
+        )
+        self.assertIn("(current-age >= feudal-age)", release)
+        self.assertIn("(set-goal feudal-transition-bank-state 0)", release)
+
+    def test_loom_initialization_precedes_its_arabia_activation_block(self):
+        initialization = self.per.index("; Demand initialization")
+        loom_init = self.per.index("(set-goal demand-research-loom 1)", initialization)
+        barrier_init = self.per.index(
+            "(set-goal research-retry-barrier-research-loom 0)",
+            initialization,
+        )
+        activation = self.per.index("; Arabia Loom demand activation")
+        self.assertLess(loom_init, activation)
+        self.assertLess(barrier_init, activation)
+
+    def test_feudal_liveness_has_an_explicit_loom_recovery_path(self):
+        age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
+        self.assertIn(
+            "(or (research-completed ri-loom) (goal feudal-transition-loom-recovery 1))",
+            age,
+        )
+        self.assertNotIn("(building-type-count-total barracks >= 1)", age)
 
     def test_standard_arabia_feudal_action_has_explicit_resource_floor(self):
         age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
