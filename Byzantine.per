@@ -4317,6 +4317,9 @@
 ; 2 = Imperial standing army
 (defconst byzantine-army-plan-phase 298)
 (defconst byzantine-army-reinforcement 300)
+(defconst byzantine-army-overmatch-state 357)
+(defconst byzantine-army-overmatch-none 0)
+(defconst byzantine-army-overmatch-triggered 1)
 (defconst byzantine-army-stale-state 367)
 (defconst byzantine-army-stale-timer 6)
 (defconst byzantine-army-stale-ready 0)
@@ -6916,6 +6919,12 @@
 =>
     (set-goal byzantine-army-reinforcement 0)
 )
+(defrule
+    (goal byzantine-army-overmatch-state -1)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+)
+
 
 (defrule
     (goal byzantine-army-stale-state -1)
@@ -9026,6 +9035,92 @@
 
 ;----------------------------------------------------------------
 ;----------------------------------------------------------------
+; COMMUNITY MILITARY-OVERMATCH REASSESSMENT
+; Coarse military-population buckets adapted from the community military-
+; superiority staircase. This is deliberately a veto/reassessment policy:
+; military-population is an engine fact, not a combat-power model.
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+    (players-military-population any-enemy > 5)
+    (military-population < 2)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+    (players-military-population any-enemy > 10)
+    (military-population < 6)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+    (players-military-population any-enemy > 15)
+    (military-population < 10)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+    (players-military-population any-enemy > 20)
+    (military-population < 15)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+    (players-military-population any-enemy > 25)
+    (military-population < 20)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+)
+
+; Once the bucket fires, return control to the existing reinforcement and
+; reposition lifecycle. No new military scheduler is created.
+(defrule
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+    (goal byzantine-army-reinforcement 0)
+    (or
+        (goal byzantine-siege-approach byzantine-siege-approach-normal)
+        (goal byzantine-siege-approach byzantine-siege-approach-assault)
+    )
+=>
+    (up-reset-attack-now)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (set-goal byzantine-siege-approach-claim 0)
+    (set-goal byzantine-siege-breach-witness 0)
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+)
+
+(defrule
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+    (goal byzantine-army-reinforcement 1)
+=>
+    (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
+)
+
 ; ARMY REPOSITION / WITHDRAWAL CONTROLLER
 ;----------------------------------------------------------------
 ; Naga-style mechanism: cancel the active attack control, regroup surviving
