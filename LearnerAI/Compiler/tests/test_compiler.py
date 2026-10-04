@@ -438,6 +438,28 @@ class CompilerTests(unittest.TestCase):
         self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(train spearman)", witness_block)
 
+    def test_research_runtime_alias_is_used_for_escrow_and_action(self):
+        source = """
+        demand wheelbarrow {
+            require (can-research-with-escrow ri-wheelbarrow)
+            action (research ri-wheelbarrow)
+            witness (research-completed ri-wheelbarrow)
+            release (research-completed ri-wheelbarrow)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(defconst ri-wheelbarrow 213)", output)
+        self.assertIn("(defconst ri-wheel-barrow 213)", output)
+        self.assertIn(
+            "(can-research-with-escrow ri-wheel-barrow)",
+            output,
+        )
+        self.assertIn("(research ri-wheel-barrow)", output)
+        self.assertIn("(research-completed ri-wheel-barrow)", output)
+        self.assertNotIn("(can-research-with-escrow ri-wheelbarrow)", output)
+        self.assertNotIn("(research ri-wheelbarrow)", output)
+        self.assertNotIn("(research-completed ri-wheelbarrow)", output)
+
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
         output = compile_source(EXAMPLES)
         action_start = output.find("; Action issuance: wheelbarrow | ACTIVE -> ISSUED")
