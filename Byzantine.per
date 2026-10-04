@@ -4612,6 +4612,7 @@
 (defconst byzantine-resource-camp-search-state-local-list 792)
 (defconst byzantine-resource-camp-search-state-remote-total 793)
 (defconst byzantine-resource-camp-search-state-remote-list 794)
+(defconst byzantine-resource-camp-gold-handoff 795)
 (defconst byzantine-resource-camp-target-valid 748)
 (defconst byzantine-resource-camp-building-kind 749)
 (defconst byzantine-resource-camp-building-lumber 1)
@@ -4661,6 +4662,7 @@
     (set-goal byzantine-resource-camp-kind 0)
     (set-goal byzantine-resource-camp-target-valid 0)
     (set-goal byzantine-resource-camp-building-kind 0)
+    (set-goal byzantine-resource-camp-gold-handoff 0)
 )
 
 (defrule
@@ -7712,6 +7714,7 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-gold-handoff 0)
     (not (town-under-attack))
     (or
         (goal demand-economy-lumber-camp-floor-1 1)
@@ -7734,6 +7737,30 @@
     (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-lumber)
     (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
 )
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-resource-camp-gold-handoff 1)
+    (not (town-under-attack))
+    (or
+        (goal demand-economy-gold-camp-floor-1 1)
+        (or
+            (goal demand-economy-gold-camp-floor-2 1)
+            (or
+                (goal demand-economy-gold-camp-floor-3 1)
+                (or
+                    (goal demand-economy-gold-camp-floor-4 1)
+                    (goal demand-economy-gold-camp-floor-5 1)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
+)
+
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
@@ -7887,6 +7914,21 @@
 =>
     (set-goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
     (set-goal byzantine-resource-camp-target-valid 0)
+)
+
+(defrule
+    (goal byzantine-resource-camp-state byzantine-resource-camp-state-search)
+    (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
+    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)
+    (goal byzantine-resource-camp-gold-handoff 0)
+    (up-compare-goal byzantine-resource-camp-search-state-remote-list == 0)
+    (goal demand-economy-gold-camp-floor-1 1)
+=>
+    (set-goal byzantine-resource-camp-gold-handoff 1)
+    (set-goal byzantine-resource-camp-target-valid 0)
+    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
+    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
+    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
 )
 
 (defrule
@@ -16566,6 +16608,7 @@
     (building-type-count mining-camp >= 1)
 =>
     (set-goal demand-economy-gold-camp-floor-1 0)
+    (set-goal byzantine-resource-camp-gold-handoff 0)
 )
 
 (defrule
