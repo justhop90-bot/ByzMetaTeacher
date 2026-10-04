@@ -3,6 +3,7 @@ import unittest
 from Compiler.clients.basilisk import ByzantineProfile, resolve_effective_civ
 from Compiler.ir.community_strategy_packs import build_byzantine_stock_strategy
 from Compiler.ir.strategy import (
+    StrategicPriority,
     resolve_strategy_profile,
     lower_strategy_profile,
 )
@@ -44,6 +45,48 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         ):
             self.assertIn(f"{identity}-pending", observations)
             self.assertIn(f"{identity}-complete", observations)
+
+    def test_feudal_economic_multipliers_precede_generic_support_research(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        dba = by_id["research-double-bit-axe"]
+        horse_collar = by_id["research-horse-collar"]
+        wheelbarrow = by_id["research-wheelbarrow"]
+
+        self.assertEqual(dba.priority, StrategicPriority.ECONOMIC_MULTIPLIER)
+        self.assertEqual(horse_collar.priority, StrategicPriority.ECONOMIC_MULTIPLIER)
+        self.assertEqual(wheelbarrow.priority, StrategicPriority.ECONOMIC_MULTIPLIER)
+        self.assertGreater(dba.priority, StrategicPriority.DEFENSE)
+        self.assertTrue(
+            any(
+                requirement.expression == "(not (can-research-with-escrow castle-age))"
+                for requirement in dba.execution.requirements
+            )
+        )
+        self.assertTrue(
+            any(
+                requirement.expression == "(not (can-research-with-escrow castle-age))"
+                for requirement in horse_collar.execution.requirements
+            )
+        )
+
+        feudal_research_order = [
+            demand.identity
+            for demand in profile.demands
+            if demand.identity in {
+                "research-double-bit-axe",
+                "research-horse-collar",
+                "research-wheelbarrow",
+            }
+        ]
+        self.assertEqual(
+            feudal_research_order,
+            [
+                "research-double-bit-axe",
+                "research-horse-collar",
+                "research-wheelbarrow",
+            ],
+        )
 
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
