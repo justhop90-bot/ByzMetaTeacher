@@ -107,6 +107,87 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def test_cross_parse_replay_with_rust_and_agealyser(self):
+        import json
+        import subprocess
+        import sys
+        import traceback
+
+        replay = REPO_ROOT / "rec.aoe2record"
+        out_dir = Path("/tmp/native-reports")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        report = {
+            "replay_size_bytes": replay.stat().st_size,
+            "parsers": {},
+        }
+
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "aoe2rec-py==0.1.22"],
+            check=True,
+        )
+        try:
+            import aoe2rec_py
+            data = replay.read_bytes()
+            parsed = aoe2rec_py.parse_rec(data)
+            report["parsers"]["aoe2rec_py"] = {
+                "status": "success",
+                "top_keys": sorted(parsed.keys()) if isinstance(parsed, dict) else repr(parsed),
+                "json": parsed,
+            }
+        except Exception as exc:
+            report["parsers"]["aoe2rec_py"] = {
+                "status": "error",
+                "type": type(exc).__name__,
+                "message": str(exc),
+                "traceback": traceback.format_exc(),
+            }
+
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "age-alyser==0.0.5"],
+            check=True,
+        )
+        try:
+            from agealyser import AgeGame
+            stats = AgeGame(str(replay)).advanced_parser(include_map_analysis=False)
+            if hasattr(stats, "to_dict"):
+                stats = stats.to_dict()
+            report["parsers"]["age_alyser"] = {
+                "status": "success",
+                "stats": stats,
+            }
+        except Exception as exc:
+            report["parsers"]["age_alyser"] = {
+                "status": "error",
+                "type": type(exc).__name__,
+                "message": str(exc),
+                "traceback": traceback.format_exc(),
+            }
+
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "mgz==1.8.51"],
+            check=True,
+        )
+        try:
+            from mgz.model import parse_match, serialize
+            with replay.open("rb") as handle:
+                match = parse_match(handle)
+            report["parsers"]["mgz_model"] = {
+                "status": "success",
+                "json": serialize(match),
+            }
+        except Exception as exc:
+            report["parsers"]["mgz_model"] = {
+                "status": "error",
+                "type": type(exc).__name__,
+                "message": str(exc),
+                "traceback": traceback.format_exc(),
+            }
+
+        (out_dir / "replay-cross-parser.json").write_text(
+            json.dumps(report, indent=2, sort_keys=True, default=str),
+            encoding="utf-8",
+        )
+
     def test_export_repository_replay_for_analysis(self):
         replay = REPO_ROOT / "rec.aoe2record"
         evidence_dir = Path("/tmp/native-reports")
