@@ -53,6 +53,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             operation_counts = {}
             action_counts = {}
             selected_events = []
+            postgame = []
             chat = []
 
             while handle.tell() < eof:
@@ -67,6 +68,10 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
                 if op_type == Operation.SYNC:
                     increment, checksum, data = payload
                     elapsed_ms += int(increment)
+                    continue
+
+                if op_name == "POSTGAME":
+                    postgame.append({"time_s": round(elapsed_ms / 1000.0, 3), "data": scrub(payload)})
                     continue
 
                 if op_type == Operation.CHAT:
@@ -100,6 +105,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "operation_counts": operation_counts,
             "action_counts": action_counts,
             "chat": chat,
+            "postgame": postgame,
             "events": selected_events,
         }
         analysis_path.write_text(
