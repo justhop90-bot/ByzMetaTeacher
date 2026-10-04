@@ -614,7 +614,6 @@ def community_strategy_demands(
                         witness=witness,
                         release=witness,
                     ),
-                    initially_active=(resource is not CampResource.STONE),
                     provenance=_airef_provenance(
                         effective,
                         "commands/commands-details.html#build",
