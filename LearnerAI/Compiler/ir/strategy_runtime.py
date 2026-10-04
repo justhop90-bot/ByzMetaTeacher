@@ -542,7 +542,6 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "unit-type-count": StrategicObservationType.UNIT_CURRENT_COUNT,
     "unit-type-count-total": StrategicObservationType.UNIT_CURRENT_PLUS_QUEUED,
     "players-unit-type-count": StrategicObservationType.ENEMY_UNIT_COUNT,
-    "players-military-population": StrategicObservationType.ENEMY_COMPOSITION,
     "players-building-type-count": StrategicObservationType.ENEMY_BUILDING_COUNT,
     "map-type": StrategicObservationType.MAP_PROFILE,
     "warboat-count": StrategicObservationType.UNIT_CURRENT_COUNT,
@@ -653,8 +652,6 @@ def _validate_native_operand(
     if family == "techid":
         if not _lookup_token(token, _tech_tokens(effective)) and token not in {
             "ri-logistica",
-            "ri-demolition-ship",
-            "ri-fishing-lines",
             "ri-elite-varangian-guard",
         }:
             raise ValueError(f"unresolved TechId '{token}'")

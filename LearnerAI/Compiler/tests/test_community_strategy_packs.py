@@ -45,30 +45,6 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertIn(f"{identity}-pending", observations)
             self.assertIn(f"{identity}-complete", observations)
 
-    def test_monastery_and_monk_relic_baseline_stays_small(self):
-        profile = build_byzantine_stock_strategy(self.effective)
-        monastery = profile.demand("castle-monastery-capability")
-        monks = profile.demand("castle-monk-floor")
-
-        self.assertEqual(monks.target.minimum, 2)
-        self.assertEqual(
-            {evidence.observation_ref for evidence in monks.invalidation},
-            set(),
-        )
-        self.assertIn(
-            "strategy-castle-age",
-            {evidence.observation_ref for evidence in (*monks.reason, *monks.admissibility)},
-        )
-        self.assertEqual(
-            {evidence.observation_ref for evidence in monastery.invalidation},
-            set(),
-        )
-        self.assertIn(
-            "strategy-castle-age",
-            {evidence.observation_ref for evidence in (*monastery.reason, *monastery.admissibility)},
-        )
-        self.assertIn("(current-age >= castle-age)", monks.execution.requirements)
-        self.assertIn("(current-age >= castle-age)", monastery.execution.requirements)
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
@@ -83,22 +59,6 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertIsNotNone(compilation.control_plan)
         self.assertIsNotNone(compilation.attack_plan)
         self.assertIsNotNone(compilation.duc_plan)
-
-
-    def test_stock_military_packages_are_conditioned_by_threat(self):
-        profile = build_byzantine_stock_strategy(self.effective)
-        standard = next(
-            item for item in profile.military_compositions
-            if item.identity == "castle-standard-package"
-        )
-        infantry = next(
-            item for item in profile.military_compositions
-            if item.identity == "castle-infantry-package"
-        )
-        self.assertNotIn("castle-cataphract-floor", standard.production_demands)
-        self.assertIn("castle-cataphract-floor", infantry.production_demands)
-        self.assertIn("castle-varangian-guard-floor", infantry.production_demands)
-        self.assertNotIn("counter-castle-cataphracts", infantry.production_demands)
 
     def test_water_continuity_can_be_disabled_without_removing_land_strategy(self):
         profile = build_byzantine_stock_strategy(

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
-from .game_data import Age, BuildingId, Resource, ResourceCost, UnitLineId
+from .game_data import Age, BuildingId, Resource, UnitLineId
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -173,19 +173,10 @@ def _research_demand(
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
-    token = {
-        "wheelbarrow": "ri-wheel-barrow",
-    }.get(
-        _slug(tech.name),
-        f"ri-{_slug(tech.name)}",
-    )
+    token = _slug(tech.name)
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
     floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
-    floor_requirements = tuple(
-        f"({floor.resource.value.lower()}-amount >= {floor.minimum})"
-        for floor in floors
-    )
     policy = None
     if floors:
         policy = _OpportunityCostPolicy(
@@ -222,7 +213,6 @@ def _research_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
-                *floor_requirements,
                 f"(can-research-with-escrow {token})",
             ),
             action=f"(research {token})",
@@ -295,46 +285,6 @@ def _training_demand(
     )
 
 
-_CASTLE_BANK_HARD_FOOD = 800
-_CASTLE_BANK_HARD_GOLD = 200
-
-_FEUDAL_RESEARCH_BANKS = {
-    "wheelbarrow": ((Resource.FOOD, 1000), (Resource.GOLD, 250)),
-    "double-bit-axe": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
-    "horse-collar": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
-    "gold-mining": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
-}
-
-def _feudal_research_bank_floors(
-    effective: EffectiveCivData,
-    tech_name: str,
-) -> tuple[tuple[Resource, int], ...]:
-    """Keep the Castle bank intact after a Feudal technology is paid."""
-    if tech_name not in _FEUDAL_RESEARCH_BANKS:
-        return ()
-    policy = dict(_FEUDAL_RESEARCH_BANKS[tech_name])
-    tech = _tech(effective, tech_name)
-    cost = tech.base_cost
-    if isinstance(cost, ResourceCost):
-        policy[Resource.FOOD] = max(
-            policy.get(Resource.FOOD, 0),
-            _CASTLE_BANK_HARD_FOOD + cost.food,
-        )
-        policy[Resource.GOLD] = max(
-            policy.get(Resource.GOLD, 0),
-            _CASTLE_BANK_HARD_GOLD + cost.gold,
-        )
-    else:
-        policy[Resource.FOOD] = max(
-            policy.get(Resource.FOOD, 0),
-            _CASTLE_BANK_HARD_FOOD,
-        )
-        policy[Resource.GOLD] = max(
-            policy.get(Resource.GOLD, 0),
-            _CASTLE_BANK_HARD_GOLD,
-        )
-    return tuple(sorted(policy.items(), key=lambda item: item[0].value))
-
 _RESEARCH_PACK = (
     ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
     ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
@@ -385,11 +335,6 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
-            "strategy-arabia-map",
-            "(map-type arabia)",
-            _airef_provenance(effective, "commands/commands-details.html#map-type"),
-        ),
-        _observation(
             "strategy-opening-pressure",
             "(players-unit-type-count any-enemy militia-line >= 5)",
             effective.unit_line("militia-line").provenance,
@@ -402,46 +347,6 @@ def community_strategy_observations(
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
-                     *effective.unit_line("archer-line").provenance,
-                     *effective.unit_line("militia-line").provenance)
-                )
-            ),
-        ),
-        _observation(
-            "strategy-arabia-early-pressure",
-            "(or (players-unit-type-count any-enemy militia-line >= 3) "
-            "(or (players-unit-type-count any-enemy scout-cavalry-line >= 3) "
-            "(or (players-unit-type-count any-enemy archer-line >= 3) "
-            "(players-unit-type-count any-enemy knight >= 1))))",
-            tuple(
-                dict.fromkeys(
-                    (*effective.unit_line("knight-line").provenance,
-                     *effective.unit_line("scout-cavalry-line").provenance,
-                     *effective.unit_line("archer-line").provenance,
-                     *effective.unit_line("militia-line").provenance)
-                )
-            ),
-        ),
-        _observation(
-            "strategy-arabia-early-army-presence",
-            "(and (players-building-type-count any-enemy barracks >= 1) "
-            "(players-military-population any-enemy >= 3))",
-            tuple(
-                dict.fromkeys(
-                    (*effective.unit_line("militia-line").provenance,)
-                )
-            ),
-        ),
-        _observation(
-            "strategy-arabia-early-pressure-cleared",
-            "(and (players-unit-type-count any-enemy militia-line < 3) "
-            "(and (players-unit-type-count any-enemy scout-cavalry-line < 3) "
-            "(and (players-unit-type-count any-enemy archer-line < 3) "
-            "(players-unit-type-count any-enemy knight < 1))))",
-            tuple(
-                dict.fromkeys(
-                    (*effective.unit_line("knight-line").provenance,
-                     *effective.unit_line("scout-cavalry-line").provenance,
                      *effective.unit_line("archer-line").provenance,
                      *effective.unit_line("militia-line").provenance)
                 )
@@ -490,6 +395,11 @@ def community_strategy_observations(
         _observation(
             "strategy-monastery-capability",
             f"(building-type-count-total {int(monastery.id)} < 1)",
+            monastery.provenance,
+        ),
+        _observation(
+            "strategy-monastery-exists",
+            f"(building-type-count-total {int(monastery.id)} >= 1)",
             monastery.provenance,
         ),
         _observation(
@@ -564,31 +474,6 @@ def community_strategy_observations(
             f"(building-type-count-total {int(university.id)} >= 1)",
             university.provenance,
         ),
-        _observation(
-            "strategy-standard-loom-admission",
-            "(and (current-age == dark-age) "
-            "(and (unit-type-count-total villager >= 13) "
-            "(and (building-type-count-total lumber-camp >= 1) "
-            "(and (building-type-count-total mining-camp >= 1) "
-            "(food-amount >= 50)))))",
-            tuple(
-                dict.fromkeys(
-                    (*lumber_camp.provenance,
-                     *mining_camp.provenance,
-                     *effective.tech(22).provenance)
-                )
-            ),
-        ),
-        _observation(
-            "research-loom-complete",
-            "(research-completed 22)",
-            effective.tech(22).provenance,
-        ),
-        _observation(
-            "research-loom-pending",
-            "(not (research-completed 22))",
-            effective.tech(22).provenance,
-        ),
     ]
 
     # resource-found is the supported native resource-front fact. Its latch/live
@@ -604,7 +489,7 @@ def community_strategy_observations(
                 _observation(
                     f"camp-front-{label}-active",
                     (
-                        "(and (current-age >= castle-age) (and (stone-amount < 650) (resource-found stone)))"
+                        f"(and (current-age >= feudal-age) (resource-found {resource.value}))"
                         if resource is CampResource.STONE
                         else f"(resource-found {resource.value})"
                     ),
@@ -654,27 +539,6 @@ def community_strategy_demands(
     observations = community_strategy_observations(effective)
 
     demands: list[_StrategicDemandSpec] = []
-
-    demands.append(
-        _research_demand(
-            effective=effective,
-            identity="research-loom",
-            owner="economy",
-            posture=_StrategyPosture.BOOM,
-            priority=_StrategicPriority.CORE,
-            age_guard=(
-                "(and (current-age == dark-age) "
-                "(and (unit-type-count-total villager >= 13) "
-                "(and (building-type-count-total lumber-camp >= 1) "
-                "(and (building-type-count-total mining-camp >= 1) "
-                "(food-amount >= 50)))))"
-            ),
-            age_observation_ref="strategy-standard-loom-admission",
-            tech_name="loom",
-            reason_label="Standard Arabia opening requires Loom before the Feudal click window",
-            resources=(Resource.FOOD,),
-        )
-    )
 
     camp_specs = (
         (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
@@ -902,14 +766,11 @@ def community_strategy_demands(
                 identity="castle-monastery-capability",
                 owner="support",
                 posture=_StrategyPosture.CASTLE_POWER,
-                priority=_StrategicPriority.SUPPORT,
+                priority=_StrategicPriority.OPTIONAL,
                 reason_ref="strategy-castle-age",
-                reason_label="Castle Age enables the Byzantine relic and Monk capability",
+                reason_label="Castle support includes a Monk/relic capability",
                 building=monastery,
-                requirements=(
-                    "(current-age >= castle-age)",
-                    "(can-build monastery)",
-                ),
+                requirements=(" (can-build monastery)".strip(),),
             ),
             _build_demand(
                 identity="imperial-university-capability",
@@ -954,10 +815,6 @@ def community_strategy_demands(
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
-            minimum_floors=_feudal_research_bank_floors(
-                effective,
-                tech_name,
-            ),
         )
         demands.append(demand)
 
@@ -982,12 +839,11 @@ def community_strategy_demands(
                 owner="military",
                 posture=_StrategyPosture.CASTLE_POWER,
                 priority=_StrategicPriority.CORE,
-                reason_ref="strategy-enemy-infantry-pressure",
-                reason_label="Maintain the Byzantine premium Castle power floor against sustained infantry pressure",
+                reason_ref="strategy-castle-age",
+                reason_label="Maintain the Byzantine premium Castle power floor",
                 line="cataphract-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
-                invalidate_ref="strategy-enemy-infantry-pressure-cleared",
             ),
             _training_demand(
                 effective=effective,
@@ -1047,9 +903,9 @@ def community_strategy_demands(
                 identity="castle-monk-floor",
                 owner="support",
                 posture=_StrategyPosture.CASTLE_POWER,
-                priority=_StrategicPriority.CORE,
-                reason_ref="strategy-castle-age",
-                reason_label="Maintain a two-Monk Castle core for relic control and Byzantine battlefield healing",
+                priority=_StrategicPriority.OPTIONAL,
+                reason_ref="strategy-monastery-exists",
+                reason_label="Use a bounded Monk support floor once the monastery capability exists",
                 line="monk-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
@@ -1353,7 +1209,7 @@ def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
             2,
             minimum_age=Age.CASTLE,
             maximum_age=Age.IMPERIAL,
-            postures=(_StrategyPosture.CASTLE_POWER, _StrategyPosture.BOOM),
+            postures=(_StrategyPosture.CASTLE_POWER,),
             priority=5,
         ),
     )
@@ -1423,7 +1279,7 @@ def build_byzantine_stock_strategy(
     for composition in (
         _StrategicMilitaryComposition(
             identity="castle-standard-package",
-            production_demands=("castle-knight-floor",),
+            production_demands=("castle-knight-floor", "castle-cataphract-floor"),
             attack_objective="castle-commitment",
         ),
         _StrategicMilitaryComposition(
@@ -1431,14 +1287,15 @@ def build_byzantine_stock_strategy(
             production_demands=(
                 "counter-mounted-spears",
                 "counter-ranged-skirmishers",
+                "counter-castle-cataphracts",
             ),
             attack_objective="byzantine-castle-pressure",
         ),
         _StrategicMilitaryComposition(
             identity="castle-infantry-package",
             production_demands=(
-                "castle-cataphract-floor",
                 "castle-varangian-guard-floor",
+                "counter-castle-cataphracts",
             ),
             attack_objective="byzantine-castle-pressure",
         ),

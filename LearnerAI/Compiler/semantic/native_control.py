@@ -338,25 +338,11 @@ def _validate_leaf(
 def validate_native_control_plan(
     plan: NativeControlPlan,
     registry,
-    *,
-    known_goal_states: tuple[str, ...] = (),
 ) -> NativeControlValidationReport:
     if not isinstance(plan, NativeControlPlan):
         raise TypeError("plan must be a NativeControlPlan")
 
     states = _validate_storage_request_names(plan)
-    for identifier in known_goal_states:
-        if not _IDENTIFIER_RE.fullmatch(identifier):
-            raise ValueError(
-                f"known lifecycle Goal state '{identifier}' is not a valid .per identifier"
-            )
-        existing_kind = states.get(identifier)
-        if existing_kind is not None and existing_kind != "GOAL":
-            raise ValueError(
-                f"known lifecycle Goal state '{identifier}' conflicts with native control "
-                f"state kind '{existing_kind}'"
-            )
-        states.setdefault(identifier, "GOAL")
     rule_identities: set[str] = set()
     commands: set[str] = set()
 

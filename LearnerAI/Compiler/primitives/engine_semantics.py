@@ -245,7 +245,6 @@ _OBSERVATION_SPECS = (
     ("gold-amount", "observation.resource.gold"),
     ("stone-amount", "observation.resource.stone"),
     ("players-unit-type-count", "observation.threat.unit-count"),
-    ("players-military-population", "observation.threat.military-population"),
     ("players-building-type-count", "observation.world.building-count"),
     ("game-time", "observation.timing.game-time"),
     ("dropsite-min-distance", "observation.placement.dropsite-distance"),

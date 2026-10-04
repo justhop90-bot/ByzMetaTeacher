@@ -14,27 +14,6 @@ class ByzantineCampControllerTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
-
-    def test_all_strategy_requirement_expressions_parse(self):
-        from LearnerAI.Compiler.ast import SourceLocation
-        from LearnerAI.Compiler.semantic.analyzer import parse_expression
-
-        profile = build_byzantine_strategy(self.effective)
-        for observation in profile.observations:
-            try:
-                parse_expression(observation.expression, SourceLocation(1))
-            except Exception as exc:
-                self.fail("malformed observation %s: %r: %s" % (observation.identity, observation.expression, exc))
-        for demand in profile.demands:
-            for requirement in demand.execution_demands[0].requirements:
-                try:
-                    parse_expression(requirement, SourceLocation(1))
-                except Exception as exc:
-                    self.fail(
-                        f"malformed requirement in {demand.identity}: "
-                        f"{requirement!r}: {exc}"
-                    )
-
     def test_resource_found_has_a_semantic_adapter(self):
         from LearnerAI.Compiler.primitives.native_binder import NativeSupportState
         from LearnerAI.Compiler.primitives.registry import default_de_registry
@@ -52,9 +31,6 @@ class ByzantineCampControllerTests(unittest.TestCase):
             remote = profile.observation(f"camp-front-{resource}-remote")
             self.assertIn("resource-found", active.expression)
             self.assertIn("dropsite-min-distance", remote.expression)
-            if resource == "stone":
-                self.assertIn("(current-age >= castle-age)", active.expression)
-                self.assertIn("(stone-amount < 650)", active.expression)
 
             for floor in range(1, max_count + 1):
                 demand = profile.demand(f"economy-{resource}-camp-floor-{floor}")

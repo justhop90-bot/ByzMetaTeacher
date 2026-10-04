@@ -28,7 +28,6 @@ class DemandNode:
     invalidate_location: SourceLocation | None = None
     strategic_number_states: tuple[tuple[str, int, SourceLocation], ...] = ()
     timer_states: tuple[tuple[str, SourceLocation], ...] = ()
-    action_witness_gates: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

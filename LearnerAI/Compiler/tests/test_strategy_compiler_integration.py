@@ -29,7 +29,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         demand = self.profile.demand("feudal-transition")
         self.assertEqual(
             demand.execution.escrow_release_resources,
-            (Resource.FOOD,),
+            (Resource.FOOD, Resource.GOLD),
         )
 
     def test_strategy_lowering_produces_targeted_escrow_release_plan(self):
@@ -40,7 +40,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         assert plan is not None
         self.assertEqual(
             tuple(operation.resource for operation in plan.operations),
-            ("food",),
+            ("food", "gold"),
         )
         self.assertTrue(
             all(
@@ -63,7 +63,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             action_block.index("(release-escrow food)"),
             action_block.index("(research feudal-age)"),
         )
-        self.assertNotIn("(release-escrow gold)", action_block)
+        self.assertLess(
+            action_block.index("(release-escrow gold)"),
+            action_block.index("(research feudal-age)"),
+        )
 
     def test_strategy_compilation_exposes_profile_and_override_duc_channels(self):
         profile_plan = NativeDucPlan(

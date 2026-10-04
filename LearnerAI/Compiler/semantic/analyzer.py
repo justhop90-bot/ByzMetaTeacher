@@ -44,7 +44,7 @@ from ..primitives import NativeSupportState, PrimitiveRegistry
 from .construction import canonical_build_completion_witness
 from .native_building_catalog import NativeBuildingIdError, resolve_building_id
 from .native_unit_catalog import NativeUnitIdError, resolve_unit_id
-from .native_tech_catalog import NativeTechIdError, resolve_tech_id, resolve_tech_symbol
+from .native_tech_catalog import NativeTechIdError, resolve_tech_id
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -376,18 +376,6 @@ def analyze(
                     location=location,
                 )
             )
-        action_witness_gates = []
-        for gate_index, raw in enumerate(demand.action_witness_gates):
-            gate = parse_expression(raw, demand.location)
-            _validate_context(
-                gate,
-                registry,
-                {"WITNESS"},
-                f"demand '{demand.name}' action witness gate",
-            )
-            _validate_completion_witness(gate, registry)
-            action_witness_gates.append(gate)
-
         if any(_context_roles(req.expression, registry) == {"TIMING"} for req in requirements):
             if not any(_has_non_timing_evidence(req.expression, registry) for req in requirements):
                 raise CompileError("TIMING-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " uses timing as its only evidence")
@@ -895,11 +883,10 @@ def analyze(
             technology = action.args[0]
             try:
                 native_tech_id = resolve_tech_id(technology)
-                native_tech_symbol = resolve_tech_symbol(technology)
             except (NativeTechIdError, KeyError, TypeError, ValueError) as exc:
                 raise CompileError(
                     f"RESEARCH-TECH-ID: demand '{demand.name}' cannot resolve "
-                    f"runtime TechId symbol '{technology}'"
+                    f"TechId '{technology}'"
                 ) from exc
             research_retry_barrier = GoalSlotRequest(
                 request_id=StorageRequestId(
@@ -913,15 +900,15 @@ def analyze(
                 native_tech_id=native_tech_id,
                 pending_fact=Expression(
                     source=(
-                        f"(up-research-status c: {native_tech_symbol} >= "
-                        f"research-pending)"
+                        f"(up-research-status c: {native_tech_id} >= "
+                        f"{int(ResearchState.PENDING)})"
                     ),
                     head="up-research-status",
                     args=(
                         "c:",
-                        native_tech_symbol,
+                        str(native_tech_id),
                         ">=",
-                        "research-pending",
+                        str(int(ResearchState.PENDING)),
                     ),
                     location=action.location,
                 ),
@@ -1224,7 +1211,6 @@ def analyze(
                 identity=semantic_id,
                 lifecycle=lifecycle,
                 requirements=tuple(requirements),
-                action_witness_gates=tuple(action_witness_gates),
                 action=SemanticAction(
                     action,
                     "ACTION",

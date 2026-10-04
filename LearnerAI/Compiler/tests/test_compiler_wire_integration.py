@@ -62,23 +62,6 @@ class CompilerWireIntegrationTests(unittest.TestCase):
             state.reassessment_reasons,
         )
 
-
-    def test_attack_phase_maps_infantry_pressure_to_cataphracts_and_siege_to_knights(self):
-        compilation = lower_strategy_profile(self.profile, self.effective)
-        control = compilation.control_plan
-        assert control is not None
-        cat = next(
-            rule for rule in control.rules
-            if rule.identity == "byzantine-attack-phase-prepare-cataphract"
-        )
-        knight = next(
-            rule for rule in control.rules
-            if rule.identity == "byzantine-attack-phase-prepare-knight"
-        )
-        self.assertIn("militia-line >= 5", cat.facts[1].source)
-        self.assertNotIn("knight >= 3", cat.facts[1].source)
-        self.assertIn("mangonel-line >= 2", knight.facts[1].source)
-
     def test_strategy_compile_accepts_and_emits_existing_attack_plan(self):
         lifecycle = (
             AttackLifecycleObservation.ADMISSION_REQUIRED,

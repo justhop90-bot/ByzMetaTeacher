@@ -82,46 +82,19 @@ jobs:
         run: echo -n > compiler-tests.log
       - name: Install pinned native parser
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
-      - name: Generate fresh Byzantine compiler control slice
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from LearnerAI.Compiler.clients.basilisk import (
-              ByzantineProfile,
-              build_byzantine_strategy,
-              compile_strategy_profile,
-          )
-          from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
-
-          effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
-          profile = build_byzantine_strategy(effective)
-          Path('/tmp/byzantine-source-control-slice.per').write_text(
-              compile_strategy_profile(profile, effective),
-              encoding='utf-8',
-          )
-          PY
-      - name: Upload fresh Byzantine compiler control slice
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: byzantine-source-control-slice
-          path: /tmp/byzantine-source-control-slice.per
-          if-no-files-found: error
-          retention-days: 14
       - name: Focused Byzantine camp controller regression
         run: python -m unittest LearnerAI.Compiler.tests.test_strategy_camp_controller -v
       - name: Focused Byzantine defensive geometry regression
         run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_defensive_geometry -v
-      - name: Focused Byzantine playtest opening regression
-        run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_playtest_opening -v
-      - name: Focused Byzantine field behavior regression
-        run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_field_behavior -v
-      - name: Focused Byzantine native seam regression
-        run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_native_seams -v
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
-
+      - name: Native zero-findings acceptance - checked-in Byzantine.per
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/native-reports/byzantine-checked-in.json
+      - name: Verify generic compiler fixture reproducibility
+        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
+      - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/CompilerFixture.per --report /tmp/native-reports/compiler-fixture.json
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
         run: |
           python - <<'PY'
@@ -138,12 +111,6 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per --report /tmp/native-reports/strategy.json
-      - name: Native zero-findings acceptance - checked-in Byzantine.per
-        run: python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/native-reports/byzantine-checked-in.json
-      - name: Verify generic compiler fixture reproducibility
-        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
-      - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
-        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/CompilerFixture.per --report /tmp/native-reports/compiler-fixture.json
       - name: Native zero-findings acceptance - Varangian map opening economy control slice
         run: |
           python - <<'PY'

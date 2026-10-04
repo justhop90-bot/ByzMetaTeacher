@@ -34,8 +34,7 @@ class OpeningSelectorPlan:
     water_observation: str = "strategy-water-islands"
     naval_pressure_observation: str = "strategy-enemy-naval-pressure"
     arena_observation: str = "strategy-arena-map"
-    arabia_observation: str = "strategy-arabia-map"
-    enemy_pressure_observation: str = "strategy-enemy-pressure"
+    enemy_pressure_observation: str = "strategy-opening-pressure"
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -44,7 +43,6 @@ class OpeningSelectorPlan:
             ("water_observation", self.water_observation),
             ("naval_pressure_observation", self.naval_pressure_observation),
             ("arena_observation", self.arena_observation),
-            ("arabia_observation", self.arabia_observation),
             ("enemy_pressure_observation", self.enemy_pressure_observation),
         ):
             if not value.strip():
@@ -64,15 +62,7 @@ def lower_opening_selector(
     water = profile.observation(plan.water_observation).expression
     naval = profile.observation(plan.naval_pressure_observation).expression
     arena = profile.observation(plan.arena_observation).expression
-    arabia = profile.observation(plan.arabia_observation).expression
     pressure = profile.observation(plan.enemy_pressure_observation).expression
-    map_defaults = {
-        getattr(item.identity, "value", str(item.identity)): item.default_opening
-        for item in getattr(profile, "map_profile", ())
-    }
-    arena_default = map_defaults.get("ARENA", "FAST_CASTLE")
-    arabia_default = map_defaults.get("ARABIA", "DEFENSIVE_STANDARD")
-    standard_land_default = map_defaults.get("STANDARD_LAND", "FAST_CASTLE")
 
     state = NativeControlState(
         plan.state_name,
@@ -84,11 +74,10 @@ def lower_opening_selector(
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
-    # Native Goal slots default to -1; keep -1 as the unopened selector sentinel.
     unselected = f"(goal {plan.state_name} -1)"
     guard = lambda body: f"(and {unselected} {body})"
 
-    rules = [
+    rules = (
         NativeControlRule(
             "opening-selector-water-control",
             facts=(parse_expression(guard(f"(and {water} {naval})"), SourceLocation(1)),),
@@ -99,69 +88,23 @@ def lower_opening_selector(
             facts=(parse_expression(guard(f"(and {water} (not {naval}))"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})", SourceLocation(1)),),
         ),
-    ]
-    if arena_default == OpeningFamily.FAST_CASTLE.value:
-        rules.append(
-            NativeControlRule(
-                "opening-selector-fast-castle",
-                facts=(
-                    parse_expression(
-                        guard(f"(and {arena} (not {pressure}))"),
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
-                        SourceLocation(1),
-                    ),
-                ),
-            )
-        )
-    if arabia_default == OpeningFamily.DEFENSIVE_STANDARD.value:
-        rules.append(
-            NativeControlRule(
-                "opening-selector-defensive-standard-arabia",
-                facts=(
-                    parse_expression(
-                        guard(f"(and {arabia} (not {pressure}))"),
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
-                        SourceLocation(1),
-                    ),
-                ),
-            )
-        )
-    if standard_land_default == OpeningFamily.FAST_CASTLE.value:
-        rules.append(
-            NativeControlRule(
-                "opening-selector-fast-castle-standard-land",
-                facts=(
-                    parse_expression(
-                        guard(f"(and (not {arena}) (not {pressure}))"),
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
-                        SourceLocation(1),
-                    ),
-                ),
-            )
-        )
-    rules.append(
+        NativeControlRule(
+            "opening-selector-fast-castle",
+            facts=(parse_expression(guard(f"(and {arena} (not {pressure}))"), SourceLocation(1)),),
+            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})", SourceLocation(1)),),
+        ),
         NativeControlRule(
             "opening-selector-counter-feudal",
-            facts=(parse_expression(guard(f"(and (not {arena}) {pressure})"), SourceLocation(1)),),
+            facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) {pressure}))"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})", SourceLocation(1)),),
         ),
+        NativeControlRule(
+            "opening-selector-defensive-standard",
+            facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) (not {pressure})))"), SourceLocation(1)),),
+            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})", SourceLocation(1)),),
+        ),
     )
-    return NativeControlPlan(states=(state,), rules=tuple(rules))
+    return NativeControlPlan(states=(state,), rules=rules)
 
 
 __all__ = (
