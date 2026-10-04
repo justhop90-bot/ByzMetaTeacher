@@ -2002,6 +2002,67 @@ def build_land_castle_strategy(
             ),
         ),
         StrategicDemandSpec(
+            identity="castle-age-transition",
+            owner="age-transition",
+            posture=StrategyPosture.BOOM,
+            priority=StrategicPriority.CORE,
+            reason=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Reach Castle as the selected Feudal trajectory without allowing optional Feudal purchases to starve the age bank",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle transition remains admissible until Castle Age is witnessed",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle transition is obsolete after Imperial Age",
+                    observation_ref="current-imperial-age",
+                ),
+            ),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.AGE_ADVANCE,
+                "age-advance",
+                "castle-age",
+                BuildingId(87),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.EXACT,
+                "age-advance",
+                "castle-age",
+            ),
+            opportunity_cost=OpportunityCostPolicy(
+                owner="age-transition",
+                protected_floors=(
+                    ProtectedResourceFloor(Resource.FOOD, 800),
+                    ProtectedResourceFloor(Resource.GOLD, 200),
+                ),
+                emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+            ),
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age == feudal-age)",
+                    "(building-type-count-total blacksmith >= 1)",
+                    "(building-type-count-total market >= 1)",
+                    "(can-research-with-escrow castle-age)",
+                ),
+                action="(research castle-age)",
+                witness="(current-age >= castle-age)",
+                release="(current-age >= castle-age)",
+                escrow_release_resources=(Resource.FOOD, Resource.GOLD),
+            ),
+        ),
+        StrategicDemandSpec(
             identity="early-defensive-spears",
             owner="defense",
             production_arbitration_group="defense",
