@@ -55,6 +55,8 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             fact_results=(
                 ("(current-age == feudal-age)", True),
                 ("(current-age >= feudal-age)", True),
+                ("(players-unit-type-count any-enemy archer-line < 3)", True),
+                ("(players-unit-type-count any-enemy scout-cavalry-line < 3)", True),
                 ("(players-building-type-count any-enemy stable >= 1)", True),
                 ("(can-train-with-escrow spearman-line)", True),
                 ("(unit-type-count-total spearman-line < 2)", True),
