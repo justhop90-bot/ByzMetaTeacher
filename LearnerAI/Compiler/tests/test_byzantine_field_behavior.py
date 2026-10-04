@@ -283,46 +283,22 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             controller,
         )
 
-    def test_arabia_dark_age_first_camps_bypass_candidate_ring_legality_probe(self):
+    def test_arabia_dark_age_first_camps_use_persisted_point_legality_then_ring_fallback(self):
+        self.assertNotIn(
+            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality probe.",
+            self.per,
+        )
         controller = self._section_from(
-            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; BYZANTINE RESOURCE CAMP CANDIDATE-RING PLACEMENT",
             "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
         )
-        opening = self._section_from(
-            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality",
-            "; Standard opening placement prefers the persisted resource point.",
-        )
         self.assertIn(
-            "(goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)",
-            opening,
-        )
-        self.assertIn(
-            "(goal byzantine-resource-camp-target-valid 1)",
-            opening,
-        )
-        self.assertIn(
-            "(goal opening-plan 1)",
-            opening,
-        )
-        self.assertIn(
-            "(map-type arabia)",
-            opening,
-        )
-        self.assertIn(
-            "(current-age == dark-age)",
-            opening,
-        )
-        self.assertNotIn(
             "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
-            opening,
-        )
-        self.assertNotIn(
-            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
-            opening,
+            controller,
         )
         self.assertIn(
-            "(up-set-target-point byzantine-resource-camp-point)",
-            self.per,
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            controller,
         )
 
     def test_remote_resource_recovery_never_retasks_into_far_or_fortified_resource(self):
