@@ -260,6 +260,36 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             imperial_section,
         )
 
+    def test_attack_recovery_uses_minimum_viable_package_after_a_small_push(self):
+        start = self.per.index("; Package loss during a fortified approach")
+        end = self.per.index("; Bounded stale-army recovery", start)
+        section = self.per[start:end]
+
+        self.assertIn(
+            "(unit-type-count-total cataphract-line < bt-castle-timing-cataphract-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total skirmisher-line < bt-castle-timing-skirmisher-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total mangonel-line < bt-castle-timing-siege-floor)",
+            section,
+        )
+        self.assertNotIn(
+            "(unit-type-count-total monk < bt-castle-monk-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total 359 < bt-imperial-timing-halberdier-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total trebuchet < bt-imperial-timing-siege-floor)",
+            section,
+        )
+
     def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
         self.assertIn(
             "(not (goal byzantine-production-castle-target 2))",
