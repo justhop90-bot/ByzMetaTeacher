@@ -40,22 +40,34 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(compilation.escrow_plan)
         plan = compilation.escrow_plan
         assert plan is not None
+
+        feudal_operations = tuple(
+            operation
+            for operation in plan.operations
+            if operation.target_demand.local_name == "feudal-transition"
+        )
+        castle_operations = tuple(
+            operation
+            for operation in plan.operations
+            if operation.target_demand.local_name == "castle-age-transition"
+        )
         self.assertEqual(
-            tuple(operation.resource for operation in plan.operations),
+            tuple(operation.resource for operation in feudal_operations),
+            ("food", "gold"),
+        )
+        self.assertEqual(
+            tuple(operation.resource for operation in castle_operations),
             ("food", "gold"),
         )
         self.assertTrue(
-            all(
-                operation.target_demand.local_name == "feudal-transition"
-                for operation in plan.operations
-            )
+            all(operation.command == "release-escrow" for operation in plan.operations)
         )
         self.assertTrue(
             all(operation.command == "release-escrow" for operation in plan.operations)
         )
 
     def test_strategy_compiler_emits_castle_age_transition_and_priority_guards(self):
-        output = compile_strategy_profile(self.profile, self.effective)
+        output = compile_strategy_profile(self.stock_profile, self.effective)
 
         self.assertIn("demand-castle-age-transition", output)
         self.assertIn("(research castle-age)", output)
