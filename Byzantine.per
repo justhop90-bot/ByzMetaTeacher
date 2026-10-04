@@ -161,6 +161,16 @@
 (defconst complete-castle-commitment 50)
 (defconst cancelled-castle-commitment 52)
 (defconst construction-retry-barrier-castle-commitment 175)
+(defconst demand-expected-mounted-spears 76)
+(defconst issued-expected-mounted-spears 79)
+(defconst pending-expected-mounted-spears 77)
+(defconst complete-expected-mounted-spears 78)
+(defconst production-retry-barrier-expected-mounted-spears 144)
+(defconst demand-expected-ranged-skirmishers 77)
+(defconst issued-expected-ranged-skirmishers 80)
+(defconst pending-expected-ranged-skirmishers 78)
+(defconst complete-expected-ranged-skirmishers 79)
+(defconst production-retry-barrier-expected-ranged-skirmishers 145)
 (defconst demand-counter-mounted-spears 61)
 (defconst issued-counter-mounted-spears 64)
 (defconst pending-counter-mounted-spears 62)
@@ -6623,6 +6633,18 @@
 (defrule
     (true)
 =>
+    (set-goal production-retry-barrier-expected-mounted-spears 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal production-retry-barrier-expected-ranged-skirmishers 0)
+)
+
+(defrule
+    (true)
+=>
     (set-goal production-retry-barrier-counter-mounted-spears 0)
 )
 
@@ -11061,6 +11083,8 @@
     (not (current-age >= imperial-age))
 =>
     (set-goal demand-castle-commitment 1)
+    (set-goal demand-expected-mounted-spears 1)
+    (set-goal demand-expected-ranged-skirmishers 1)
 )
 
 ; Construction observation: castle-commitment
@@ -11133,6 +11157,146 @@
     (build castle)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-castle-commitment 51)
+)
+
+; Pending diagnostics: expected-mounted-spears
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 76 and cannot reissue from pending goal 77
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 77 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 78 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: expected-mounted-spears | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-expected-mounted-spears in ACTIVE; it is not PENDING.
+; Release: expected-mounted-spears | COMPLETE -> RELEASED
+(defrule
+    (goal demand-expected-mounted-spears 78)
+    (unit-type-count spearman-line >= 2)
+=>
+    (set-goal demand-expected-mounted-spears 0)
+)
+
+; Completion witness: expected-mounted-spears | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-expected-mounted-spears 79)
+        (goal demand-expected-mounted-spears 77)
+    )
+    (unit-type-count spearman-line >= 2)
+=>
+    (set-goal demand-expected-mounted-spears 78)
+)
+
+; Pending admission: expected-mounted-spears | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-expected-mounted-spears 79)
+        (goal demand-expected-mounted-spears 77)
+    )
+    (not (unit-type-count spearman-line >= 2))
+    (up-pending-objects c: 93 >= 1)
+=>
+    (set-goal demand-expected-mounted-spears 77)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-expected-mounted-spears 79)
+        (goal demand-expected-mounted-spears 77)
+    )
+    (not (unit-type-count spearman-line >= 2))
+    (not (up-pending-objects c: 93 >= 1))
+=>
+    (set-goal demand-expected-mounted-spears 1)
+    (set-goal production-retry-barrier-expected-mounted-spears 1)
+)
+
+; Action issuance: expected-mounted-spears | ACTIVE -> ISSUED
+(defrule
+    (goal demand-expected-mounted-spears 1)
+    (not (unit-type-count spearman-line >= 2))
+    (goal production-retry-barrier-expected-mounted-spears 0)
+    (not (up-pending-objects c: 93 >= 1))
+    (not (unit-type-count spearman-line >= 2))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= feudal-age)
+    (and (players-building-type-count any-enemy stable >= 1) (players-unit-type-count any-enemy scout-cavalry-line < 3))
+    (can-train-with-escrow spearman-line)
+    (unit-type-count-total spearman-line < 2)
+=>
+    (train spearman-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-expected-mounted-spears 79)
+)
+
+; Pending diagnostics: expected-ranged-skirmishers
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 77 and cannot reissue from pending goal 78
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 78 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 79 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: expected-ranged-skirmishers | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-expected-ranged-skirmishers in ACTIVE; it is not PENDING.
+; Release: expected-ranged-skirmishers | COMPLETE -> RELEASED
+(defrule
+    (goal demand-expected-ranged-skirmishers 79)
+    (unit-type-count skirmisher-line >= 2)
+=>
+    (set-goal demand-expected-ranged-skirmishers 0)
+)
+
+; Completion witness: expected-ranged-skirmishers | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-expected-ranged-skirmishers 80)
+        (goal demand-expected-ranged-skirmishers 78)
+    )
+    (unit-type-count skirmisher-line >= 2)
+=>
+    (set-goal demand-expected-ranged-skirmishers 79)
+)
+
+; Pending admission: expected-ranged-skirmishers | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-expected-ranged-skirmishers 80)
+        (goal demand-expected-ranged-skirmishers 78)
+    )
+    (not (unit-type-count skirmisher-line >= 2))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-expected-ranged-skirmishers 78)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-expected-ranged-skirmishers 80)
+        (goal demand-expected-ranged-skirmishers 78)
+    )
+    (not (unit-type-count skirmisher-line >= 2))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-expected-ranged-skirmishers 1)
+    (set-goal production-retry-barrier-expected-ranged-skirmishers 1)
+)
+
+; Action issuance: expected-ranged-skirmishers | ACTIVE -> ISSUED
+(defrule
+    (goal demand-expected-ranged-skirmishers 1)
+    (not (unit-type-count skirmisher-line >= 2))
+    (goal production-retry-barrier-expected-ranged-skirmishers 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count skirmisher-line >= 2))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= feudal-age)
+    (and (players-building-type-count any-enemy archery-range >= 1) (players-unit-type-count any-enemy archer-line < 3))
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 2)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-expected-ranged-skirmishers 80)
 )
 
 ; Pending diagnostics: counter-mounted-spears
