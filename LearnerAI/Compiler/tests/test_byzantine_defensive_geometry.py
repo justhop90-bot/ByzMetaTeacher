@@ -299,22 +299,24 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
         for objective_class in objective_classes:
             state_marker = (
-                "    (goal byzantine-offensive-objective-state "
+                "(goal byzantine-offensive-objective-state "
                 f"byzantine-offensive-objective-state-{objective_class})"
             )
             class_marker = (
-                "    (goal byzantine-offensive-objective-class "
+                "(goal byzantine-offensive-objective-class "
                 f"byzantine-offensive-objective-class-{objective_class})"
             )
-            execution_marker = f"{state_marker}\n{class_marker}"
-            start = self.per.index(execution_marker)
-            end = self.per.index("\n\n(defrule", start)
-            section = self.per[start:end]
-            self.assertIn("(goal byzantine-army-attack-ready 1)", section)
-            self.assertIn(
+            class_start = self.per.index(class_marker)
+            action_start = self.per.index(
                 "(up-target-objects 1 action-attack-move -1 -1)",
-                section,
+                class_start,
             )
+            rule_start = self.per.rfind("(defrule", class_start, action_start)
+            next_rule = self.per.index("\n(defrule", action_start)
+            section = self.per[rule_start:next_rule]
+            self.assertIn(state_marker, section)
+            self.assertIn(class_marker, section)
+            self.assertIn("(goal byzantine-army-attack-ready 1)", section)
 
     def test_fortified_breach_preserves_attack_reserve(self):
         start = self.per.index(
