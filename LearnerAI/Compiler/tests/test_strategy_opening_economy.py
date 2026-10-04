@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
@@ -207,6 +208,41 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn(
             "(not (can-research-with-escrow castle-age))",
             wheelbarrow,
+        )
+
+    def test_checked_in_runtime_preserves_age_bank_arbitration(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        villager_start = runtime.index("; Persistent civilian production")
+        villager_end = runtime.index(
+            "; Pending diagnostics: early-defensive-spears",
+            villager_start,
+        )
+        villager_rule = runtime[villager_start:villager_end]
+        self.assertIn(
+            "(not (and\n        (current-age == dark-age)\n        (can-research-with-escrow feudal-age)\n    ))",
+            villager_rule,
+        )
+        self.assertIn(
+            "(not (and\n        (current-age == feudal-age)\n        (can-research-with-escrow castle-age)\n    ))",
+            villager_rule,
+        )
+
+        dba_start = runtime.index("; Action issuance: research-double-bit-axe")
+        dba_end = runtime.index("; Pending diagnostics: research-horse-collar", dba_start)
+        dba_rule = runtime[dba_start:dba_end]
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            dba_rule,
+        )
+
+        horse_start = runtime.index("; Action issuance: research-horse-collar")
+        horse_end = runtime.index("; Pending diagnostics: research-hand-cart", horse_start)
+        horse_rule = runtime[horse_start:horse_end]
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            horse_rule,
         )
 
     def test_opening_selection_materially_changes_native_economy_writers(self):
