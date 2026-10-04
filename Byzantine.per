@@ -15418,7 +15418,11 @@
     (building-type-count-total mining-camp < 5)
 =>
     (build mining-camp)
-  ; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-5 666)
+)
+
+; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
 ; Search is staged like the repaired gold-camp path: capture DUC search state first,
 ; then let the build rule consume the target only when the remote forage search
 ; produced a positive witness. This prevents empty-search placement.
@@ -15463,10 +15467,6 @@
     (up-build place-point 0 c: mill)
     (set-goal action-claim-build-pass-singleton 1)
 )
-us-player-number g:= byzantine-scout-focus-player)
-    (set-goal action-claim-build-pass-singleton 1)
-)
-
 ; Pending diagnostics: economy-food-mill-boom
 ; Community farm-boom pattern: add local food dropsites as the farm bank expands.
 ; TC1 = 1 mill, TC2 + sustained farm bank = 2 mills, TC3 + expanded farm bank = 3.
