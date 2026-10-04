@@ -455,13 +455,21 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertNotIn("(build mining-camp)", self.per)
 
     def test_resource_camp_builder_assignment_precedes_point_build_and_is_preserved(self):
-        for building in ("lumber-camp", "mining-camp"):
-            action = self.per[
-                self.per.index(
-                    f"(up-set-target-point byzantine-resource-camp-point)"
-                ):
-                self.per.index("; Pending diagnostics: economy-lumber-camp-floor-2")
-            ]
+        for building, action_marker, end_marker in (
+            (
+                "lumber-camp",
+                "; Action issuance: economy-lumber-camp-floor-1 | ACTIVE -> ISSUED",
+                "; Pending diagnostics: economy-lumber-camp-floor-2",
+            ),
+            (
+                "mining-camp",
+                "; Action issuance: economy-gold-camp-floor-1 | ACTIVE -> ISSUED",
+                "; economy-gold-camp-floor-2",
+            ),
+        ):
+            start = self.per.index(action_marker)
+            end = self.per.index(end_marker, start)
+            action = self.per[start:end]
             assign = action.index(f"(up-assign-builders c: {building} c: 1)")
             build = action.index(f"(up-build place-point 0 c: {building})")
             self.assertLess(assign, build)
