@@ -75,32 +75,37 @@ def lower_opening_selector(
         ),
     )
     unselected = f"(goal {plan.state_name} -1)"
-    guard = lambda body: f"(and {unselected} {body})"
+
+    def native_facts(*expressions: str):
+        return tuple(
+            parse_expression(expression, SourceLocation(1))
+            for expression in expressions
+        )
 
     rules = (
         NativeControlRule(
             "opening-selector-water-control",
-            facts=(parse_expression(guard(f"(and {water} {naval})"), SourceLocation(1)),),
+            facts=native_facts(unselected, water, naval),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL})", SourceLocation(1)),),
         ),
         NativeControlRule(
             "opening-selector-water-economy",
-            facts=(parse_expression(guard(f"(and {water} (not {naval}))"), SourceLocation(1)),),
+            facts=native_facts(unselected, water, f"(not {naval})"),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})", SourceLocation(1)),),
         ),
         NativeControlRule(
             "opening-selector-fast-castle",
-            facts=(parse_expression(guard(f"(and {arena} (not {pressure}))"), SourceLocation(1)),),
+            facts=native_facts(unselected, arena, f"(not {pressure})"),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})", SourceLocation(1)),),
         ),
         NativeControlRule(
             "opening-selector-counter-feudal",
-            facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) {pressure}))"), SourceLocation(1)),),
+            facts=native_facts(unselected, f"(not {water})", f"(not {arena})", pressure),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})", SourceLocation(1)),),
         ),
         NativeControlRule(
             "opening-selector-defensive-standard",
-            facts=(parse_expression(guard(f"(and (not {water}) (and (not {arena}) (not {pressure})))"), SourceLocation(1)),),
+            facts=native_facts(unselected, f"(not {water})", f"(not {arena})", f"(not {pressure})"),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})", SourceLocation(1)),),
         ),
     )
