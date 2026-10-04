@@ -37,6 +37,37 @@ def _claim_name(conflict_class: str) -> str:
     return "action-claim-" + conflict_class.lower().replace("_", "-")
 
 
+def _research_runtime_source(expression, research) -> str:
+    """Lower source-level research aliases to the exact runtime TechId symbol."""
+    source = expression.source
+    if research is None or not isinstance(source, str):
+        return source
+
+    pending_args = getattr(research.pending_fact, "args", ())
+    if len(pending_args) < 2 or pending_args[0] != "c:":
+        return source
+    runtime_symbol = pending_args[1]
+    if not isinstance(runtime_symbol, str) or not runtime_symbol:
+        return source
+
+    research_heads = {
+        "research",
+        "research-available",
+        "research-completed",
+        "can-research",
+        "can-afford-research",
+        "can-research-with-escrow",
+    }
+    if getattr(expression, "head", None) not in research_heads:
+        return source
+
+    technology = research.technology
+    if not technology or technology == runtime_symbol:
+        return source
+
+    return source.replace(f" {technology}", f" {runtime_symbol}")
+
+
 def _defconst_bindings(lines: list[str]) -> dict[str, str]:
     bindings: dict[str, str] = {}
     for line in lines:
@@ -803,7 +834,7 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    {demand.witness.source}",
+                        f"    {_research_runtime_source(demand.witness, research)}",
                     ]
                     actions = [
                         f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
@@ -815,7 +846,7 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    (not {demand.witness.source})",
+                        f"    (not {_research_runtime_source(demand.witness, research)})",
                         f"    {construction.pending_foundation_fact.source}",
                     ]
                     actions = [
@@ -997,7 +1028,7 @@ def emit(
             ]
 
         out += [
-            f"    (not {demand.release.source})",
+            f"    (not {_research_runtime_source(demand.release, research)})",
         ]
 
         request = demand.action.arbitration_request
@@ -1006,11 +1037,19 @@ def emit(
             out.append(f"    (goal {_claim_name(conflict_class)} 0)")
 
         out.extend(
-            f"    {requirement.expression.source}"
+            (
+                f"    {_research_runtime_source(requirement.expression, research)}"
+                if demand.research_lifecycle is not None
+                else f"    {requirement.expression.source}"
+            )
             for requirement in demand.requirements
         )
         out.extend(
-            f"    {gate.source}"
+            (
+                f"    {_research_runtime_source(gate, research)}"
+                if demand.research_lifecycle is not None
+                else f"    {gate.source}"
+            )
             for gate in demand.action_witness_gates
         )
         out += [
@@ -1018,7 +1057,13 @@ def emit(
         ]
         for operation in targeted_releases.get(demand.identity, ()):
             out.append(f"    (release-escrow {operation.resource})")
-        out.append(f"    {demand.action.expression.source}")
+        out.append(
+            (
+                f"    {_research_runtime_source(demand.action.expression, research)}"
+                if demand.research_lifecycle is not None
+                else f"    {demand.action.expression.source}"
+            )
+        )
 
         if request is not None:
             conflict_class = request.request_id.purpose.split(":", 1)[1]
