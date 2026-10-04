@@ -1727,6 +1727,20 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
+            "feudal-transition-demand-hold-before-bank",
+            facts=(
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+                parse_expression(
+                    f"(goal {FEUDAL_TRANSITION_BANK_STATE} {int(FeudalTransitionBankState.READY) - 1})",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal demand-feudal-transition 1)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal demand-feudal-transition 0)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
             "feudal-transition-bank-ready",
             facts=(
                 parse_expression(
@@ -1753,6 +1767,7 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                     f"(set-goal {FEUDAL_TRANSITION_BANK_STATE} {int(FeudalTransitionBankState.READY)})",
                     SourceLocation(1),
                 ),
+                parse_expression("(set-goal demand-feudal-transition 1)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -1769,6 +1784,7 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                     f"(set-goal {FEUDAL_TRANSITION_LOOM_RECOVERY} 0)",
                     SourceLocation(1),
                 ),
+                parse_expression("(set-goal demand-feudal-transition 0)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -2191,15 +2207,11 @@ def build_land_castle_strategy(
                     "(food-amount >= 500)",
                     "(gold-amount >= 200)",
                     "(can-research-with-escrow feudal-age)",
-                    "(goal feudal-transition-bank-state 2)",
                 ),
                 action="(research feudal-age)",
                 witness="(current-age >= feudal-age)",
                 release="(current-age >= feudal-age)",
                 escrow_release_resources=(Resource.FOOD, Resource.GOLD),
-                action_witness_gates=(
-                    "(or (research-completed 22) (goal feudal-transition-loom-recovery 1))",
-                ),
             ),
         ),
         StrategicDemandSpec(
