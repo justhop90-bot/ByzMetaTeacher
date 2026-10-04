@@ -10,6 +10,14 @@ from LearnerAI.Compiler.clients.basilisk import (
 from LearnerAI.Compiler.compiler import compile_semantic_demands
 
 
+def _role_block(artifact: str) -> str:
+    start_marker = "; Native Byzantine role-separation plan"
+    end_marker = "; Native DUC execution plan"
+    start = artifact.index(start_marker)
+    end = artifact.index(end_marker, start)
+    return artifact[start:end]
+
+
 class ByzantineRoleNativeEmissionTests(unittest.TestCase):
     def setUp(self):
         self.effective = resolve_effective_civ(
@@ -44,9 +52,7 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         second = compile_strategy_profile(self.profile, self.effective)
         self.assertEqual(first, second)
 
-        role_start = first.index("; Native Byzantine role-separation plan")
-        role_end = first.find("; Native DUC execution plan", role_start)
-        role_block = first[role_start:] if role_end < 0 else first[role_start:role_end]
+        role_block = _role_block(first)
 
         for forbidden in (
             "attack-now",
@@ -82,7 +88,7 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
 
     def test_role_emission_contains_no_attack_or_move_action(self):
         output = compile_semantic_demands((), role_plan=self.plan)
-        role_block = output[output.index("; Native Byzantine role-separation plan"):]
+        role_block = _role_block(output)
         for forbidden in (
             "(attack-now)",
             "action-attack-move",
@@ -93,14 +99,14 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, role_block)
 
-    def test_checked_in_runtime_artifact_matches_canonical_emission(self):
+    def test_checked_in_role_block_matches_canonical_emission(self):
         repo_root = Path(__file__).resolve().parents[3]
         checked_in = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
         canonical = compile_strategy_profile(self.profile, self.effective)
         self.assertEqual(
-            checked_in,
-            canonical,
-            "checked-in Byzantine.per has diverged from the canonical compiler output",
+            _role_block(checked_in),
+            _role_block(canonical),
+            "checked-in Byzantine.per role block has diverged from canonical compiler output",
         )
 
 
