@@ -288,9 +288,11 @@ def _training_demand(
 
 
 _RESEARCH_PACK = (
-    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
-    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
-    ("research-horse-collar", "economy", "feudal-age", "horse-collar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    # Feudal economic multipliers take precedence over generic support research,
+    # but the execution guard still yields whenever Castle Age is natively feasible.
+    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", _StrategicPriority.ECONOMIC_MULTIPLIER, (Resource.FOOD, Resource.WOOD)),
+    ("research-horse-collar", "economy", "feudal-age", "horse-collar", _StrategicPriority.ECONOMIC_MULTIPLIER, (Resource.FOOD, Resource.WOOD)),
+    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.ECONOMIC_MULTIPLIER, (Resource.FOOD,)),
     ("research-hand-cart", "economy", "castle-age", "hand-cart", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
     ("research-bow-saw", "economy", "castle-age", "bow-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
     ("research-two-man-saw", "economy", "imperial-age", "two-man-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
