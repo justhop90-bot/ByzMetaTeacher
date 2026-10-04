@@ -982,30 +982,75 @@ def validate_native_role_separation_plan(plan, registry) -> None:
     if len(request_ids) != len(plan.storage_requests):
         raise ValueError("role separation storage requests must be unique")
 
-    for rule in plan.rules:
-        for expression in rule.facts:
-            registry.validate_native_signature(expression.head, len(expression.args))
-            native = registry.require_native(expression.head)
+    logical_arity = {
+        "and": 2,
+        "or": 2,
+        "nand": 2,
+        "nor": 2,
+        "xor": 2,
+        "xnor": 2,
+        "not": 1,
+    }
+
+    def validate_expression(expression, *, rule_identity: str, section: str) -> None:
+        if expression.head in logical_arity:
+            expected = logical_arity[expression.head]
+            if len(expression.args) != expected:
+                raise ValueError(
+                    f"role rule '{rule_identity}' logical operator '{expression.head}' "
+                    f"expects {expected} operands, got {len(expression.args)}"
+                )
+            for argument in expression.args:
+                if isinstance(argument, type(expression)):
+                    validate_expression(
+                        argument,
+                        rule_identity=rule_identity,
+                        section=section,
+                    )
+            return
+
+        registry.validate_native_signature(expression.head, len(expression.args))
+        native = registry.require_native(expression.head)
+        if section == "FACT":
             if native.command_type not in {"Fact", "Fact/Action"}:
                 raise ValueError(
                     f"role rule fact '{expression.head}' is not a native fact"
                 )
-        for expression in rule.actions:
+        else:
             if expression.head in forbidden_actions:
                 raise ValueError(
-                    f"role rule '{rule.identity}' illegally owns objective/movement action "
+                    f"role rule '{rule_identity}' illegally owns objective/movement action "
                     f"'{expression.head}'"
                 )
             if expression.head not in allowed_actions:
                 raise ValueError(
-                    f"role rule '{rule.identity}' uses unsupported action '{expression.head}'"
+                    f"role rule '{rule_identity}' uses unsupported action '{expression.head}'"
                 )
-            registry.validate_native_signature(expression.head, len(expression.args))
-            native = registry.require_native(expression.head)
             if native.command_type not in {"Action", "Fact/Action"}:
                 raise ValueError(
                     f"role rule action '{expression.head}' is not a native action"
                 )
+        for argument in expression.args:
+            if isinstance(argument, type(expression)):
+                validate_expression(
+                    argument,
+                    rule_identity=rule_identity,
+                    section=section,
+                )
+
+    for rule in plan.rules:
+        for expression in rule.facts:
+            validate_expression(
+                expression,
+                rule_identity=rule.identity,
+                section="FACT",
+            )
+        for expression in rule.actions:
+            validate_expression(
+                expression,
+                rule_identity=rule.identity,
+                section="ACTION",
+            )
 
     for role in plan.roles:
         if role.group_id < 0 or role.group_id > 9:
