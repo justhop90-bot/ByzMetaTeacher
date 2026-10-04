@@ -695,6 +695,68 @@ def emit(
             out.extend(f"    {action.source}" for action in rule.actions)
             out += [")", ""]
 
+    if role_plan is not None:
+        out.append("; Byzantine execution role-separation plan")
+        emitted_defconsts = _defconst_bindings(out)
+        role_bindings = {}
+        for state in role_plan.states:
+            binding = bindings.binding_for(state.request.request_id)
+            if not isinstance(binding, GoalSlot):
+                raise CompileError(
+                    f"ROLE-PLAN-BINDING: state '{state.identifier}' resolved to "
+                    f"'{type(binding).__name__}', expected GoalSlot"
+                )
+            role_bindings[state.identifier] = binding.id.value
+            existing_value = emitted_defconsts.get(state.identifier)
+            if existing_value is not None and existing_value != str(binding.id.value):
+                raise CompileError(
+                    f"ROLE-PLAN-SYMBOL: duplicate emitted defconst '{state.identifier}' "
+                    f"is bound to {existing_value}, expected {binding.id.value}"
+                )
+            if existing_value is None:
+                emitted_defconsts[state.identifier] = str(binding.id.value)
+                out.append(f"(defconst {state.identifier} {binding.id.value})")
+
+        for name, value in sorted(role_plan.constant_map.items()):
+            existing_value = emitted_defconsts.get(name)
+            if existing_value is not None and existing_value != str(value):
+                raise CompileError(
+                    f"ROLE-PLAN-CONSTANT: duplicate emitted defconst '{name}' "
+                    f"is bound to {existing_value}, expected {value}"
+                )
+            if existing_value is None:
+                emitted_defconsts[name] = str(value)
+                out.append(f"(defconst {name} {value})")
+        out.append("")
+
+        def _render_role_expression(expression):
+            arguments = []
+            for index, argument in enumerate(expression.args):
+                if hasattr(argument, "head") and hasattr(argument, "args"):
+                    arguments.append(_render_role_expression(argument))
+                    continue
+                token = str(argument)
+                if token in role_bindings:
+                    token = str(role_bindings[token])
+                elif token in emitted_defconsts and token in role_plan.constant_map:
+                    token = str(emitted_defconsts[token])
+                elif token.startswith(("c:", "g:", "s:")):
+                    prefix, value = token[:2], token[2:]
+                    if prefix == "c:" and value in role_bindings:
+                        token = f"c:{role_bindings[value]}"
+                    elif prefix == "c:" and value in role_plan.constant_map:
+                        token = f"c:{role_plan.constant_map[value]}"
+                arguments.append(token)
+            return expression.source if arguments == [str(arg) for arg in expression.args] else f"({expression.head} {' '.join(arguments)})"
+
+        for rule in role_plan.rules:
+            out.append(f"; Byzantine role rule: {rule.identity}")
+            out.append("(defrule")
+            out.extend(f"    {_render_role_expression(fact)}" for fact in rule.facts)
+            out.append("=>")
+            out.extend(f"    {_render_role_expression(action)}" for action in rule.actions)
+            out += [")", ""]
+
     if arbitration_requests:
         out.append("; Per-pass transient action arbitration")
         for request_id, _request in sorted(
