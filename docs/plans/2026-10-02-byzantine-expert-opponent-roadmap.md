@@ -64,7 +64,7 @@ Acceptance: persistent late-game surplus is converted into relevant military/eco
 - [x] Predict enemy commitment from production buildings plus early-unit absence; confirmed unit pressure remains higher priority.
 - [x] Distinguish expected composition from confirmed composition.
 - [x] Pre-position small counters before full contact while keeping prediction fail-closed.
-- [ ] Add exposed-economy and production-target decisions.
+- [x] Add exposed-economy and production-target decisions.
 - [ ] Add intelligent wall/fortification handling and stale-intel expiry.
 
 Acceptance: the bot changes counters because of meaningful enemy evidence and can turn information into a target or timing advantage.
@@ -116,8 +116,8 @@ Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, an
 - [x] Use bounded native attack-group pulses for ordinary open-ground pressure, with a fresh reassessment before another pulse.
 - [ ] Establish screen/main/siege/raid/reserve roles.
 - [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
-- [ ] Preserve armies under defensive fire where native control permits.
-- [ ] Make army-loss recovery change production and attack posture.
+- [x] Preserve armies under defensive fire where native control permits.
+- [x] Make army-loss recovery change production and attack posture.
 - [ ] Reassess attack continuation after enemy strength changes.
 - [ ] Expire obsolete counter packages.
 
