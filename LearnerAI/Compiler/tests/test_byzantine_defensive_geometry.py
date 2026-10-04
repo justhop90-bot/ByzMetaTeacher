@@ -318,7 +318,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 action_guard_start,
             )
-            rule_start = self.per.rfind("(defrule", action_guard_start, action_start)
+            rule_start = self.per.rfind("(defrule", 0, action_start)
             next_rule = self.per.index("\n(defrule", action_start)
             section = self.per[rule_start:next_rule]
             self.assertIn(state_marker, section)
