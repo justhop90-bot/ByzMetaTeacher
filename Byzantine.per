@@ -4298,24 +4298,6 @@
     (release-escrow gold)
 )
 
-(defconst byzantine-feudal-bank-state 160)
-
-; Native bootstrap: persistent Goal slots start at -1; this bank uses 0 as IDLE.
-(defrule
-    (true)
-=>
-    (set-goal byzantine-feudal-bank-state 0)
-    (disable-self)
-)
-
-; Native control rule: economy-controller-feudal-bank-release-on-feudal
-(defrule
-    (current-age >= feudal-age)
-    (not (goal byzantine-feudal-bank-state 0))
-=>
-    (set-goal byzantine-feudal-bank-state 0)
-)
-
 (defconst opening-plan 142)
 ; Native control rule: economy-controller-feudal-bank-enter
 (defrule
@@ -4421,6 +4403,8 @@
 (defconst counter-package-ranged_pressure_feudal 146)
 (defconst counter-package-siege_pressure_castle 147)
 (defconst economy-posture 141)
+(defconst feudal-transition-bank-state 160)
+(defconst feudal-transition-loom-recovery 161)
 (defconst sn-food-gatherer-percentage 117)
 (defconst sn-gold-gatherer-percentage 118)
 (defconst sn-native-18 18)
@@ -4434,11 +4418,11 @@
 (defconst sn-native-42 42)
 (defconst sn-percent-civilian-builders 1)
 (defconst sn-wood-gatherer-percentage 120)
-(defconst strategic-primary-intent 161)
-(defconst strategy-posture 162)
-(defconst transport-phase 163)
-(defconst water-posture 164)
-(defconst byzantine-natural-food-state 165)
+(defconst strategic-primary-intent 162)
+(defconst strategy-posture 163)
+(defconst transport-phase 164)
+(defconst water-posture 165)
+(defconst byzantine-natural-food-state 166)
 (defconst byzantine-natural-food-stable 0)
 (defconst byzantine-natural-food-transition 1)
 (defconst byzantine-natural-food-farms 2)
@@ -4816,6 +4800,167 @@
     (set-goal byzantine-resource-camp-ring-n 0)
     (set-goal byzantine-resource-camp-ring-n-y 3)
     (disable-self)
+)
+
+; Native control rule: feudal-transition-bank-initialize
+(defrule
+    (or
+        (goal feudal-transition-bank-state -1)
+        (goal feudal-transition-loom-recovery -1)
+    )
+=>
+    (set-goal feudal-transition-bank-state 0)
+    (set-goal feudal-transition-loom-recovery 0)
+    (disable-self)
+)
+
+; Native control rule: feudal-transition-bank-enter
+(defrule
+    (current-age == dark-age)
+    (not (map-type islands))
+    (or
+        (goal opening-plan 1)
+        (or
+            (goal opening-plan 2)
+            (goal opening-plan 3)
+        )
+    )
+    (unit-type-count-total villager >= 17)
+    (building-type-count-total lumber-camp >= 1)
+    (building-type-count-total mining-camp >= 1)
+    (goal feudal-transition-bank-state 0)
+=>
+    (set-goal feudal-transition-bank-state 1)
+)
+
+; Native control rule: feudal-transition-loom-recovery-eligible
+(defrule
+    (goal feudal-transition-bank-state 1)
+    (current-age == dark-age)
+    (or
+        (goal opening-plan 1)
+        (or
+            (goal opening-plan 2)
+            (goal opening-plan 3)
+        )
+    )
+    (unit-type-count-total villager >= 19)
+    (building-type-count-total lumber-camp >= 1)
+    (building-type-count-total mining-camp >= 1)
+    (food-amount >= 500)
+    (gold-amount >= 200)
+    (can-research-with-escrow feudal-age)
+    (not (research-completed ri-loom))
+    (not (up-research-status c: ri-loom >= research-pending))
+    (not (can-research-with-escrow ri-loom))
+    (goal feudal-transition-loom-recovery 0)
+=>
+    (set-goal feudal-transition-loom-recovery 1)
+)
+
+; Native control rule: feudal-transition-demand-hold-before-bank
+(defrule
+    (current-age == dark-age)
+    (or
+        (goal feudal-transition-bank-state 0)
+        (goal feudal-transition-bank-state 1)
+    )
+    (goal demand-feudal-transition 1)
+=>
+    (set-goal demand-feudal-transition 0)
+)
+
+; Native control rule: feudal-transition-bank-ready
+(defrule
+    (goal feudal-transition-bank-state 1)
+    (current-age == dark-age)
+    (unit-type-count-total villager >= 19)
+    (building-type-count-total lumber-camp >= 1)
+    (building-type-count-total mining-camp >= 1)
+    (food-amount >= 500)
+    (gold-amount >= 200)
+    (can-research-with-escrow feudal-age)
+    (or
+        (research-completed ri-loom)
+        (goal feudal-transition-loom-recovery 1)
+    )
+=>
+    (set-goal feudal-transition-bank-state 2)
+    (set-goal demand-feudal-transition 1)
+)
+
+; Native control rule: feudal-transition-bank-release-on-feudal
+(defrule
+    (current-age >= feudal-age)
+=>
+    (set-goal feudal-transition-bank-state 0)
+    (set-goal feudal-transition-loom-recovery 0)
+    (set-goal demand-feudal-transition 0)
+)
+
+; Native control rule: feudal-transition-loom-recovery-reset-on-complete
+(defrule
+    (goal feudal-transition-loom-recovery 1)
+    (research-completed ri-loom)
+    (current-age == dark-age)
+=>
+    (set-goal feudal-transition-loom-recovery 0)
+)
+
+; Native control rule: economy-controller-feudal-reservation-prioritize-food
+(defrule
+    (goal feudal-transition-bank-state 1)
+    (food-amount < 500)
+    (gold-amount < 200)
+    (up-compare-sn sn-food-gatherer-percentage != 55)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 25)
+    (set-strategic-number sn-percent-civilian-builders 3)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; Native control rule: economy-controller-feudal-reservation-prioritize-gold
+(defrule
+    (goal feudal-transition-bank-state 1)
+    (food-amount >= 500)
+    (gold-amount < 200)
+    (up-compare-sn sn-gold-gatherer-percentage != 30)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 30)
+    (set-strategic-number sn-percent-civilian-builders 3)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; Native control rule: economy-controller-feudal-reservation-prioritize-food-after-gold
+(defrule
+    (goal feudal-transition-bank-state 1)
+    (food-amount < 500)
+    (gold-amount >= 200)
+    (up-compare-sn sn-food-gatherer-percentage != 65)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 65)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 15)
+    (set-strategic-number sn-percent-civilian-builders 3)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; Native control rule: economy-controller-feudal-reservation-hold
+(defrule
+    (goal feudal-transition-bank-state 1)
+    (food-amount >= 500)
+    (gold-amount >= 200)
+    (up-compare-sn sn-food-gatherer-percentage != 60)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-percent-civilian-builders 3)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
 ; Native control rule: strategy-posture-initialize-000
@@ -13158,7 +13303,6 @@
     )
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
-    (research-completed ri-loom)
     (food-amount >= 500)
     (gold-amount >= 200)
     (building-type-count-total lumber-camp >= 1)
@@ -13283,7 +13427,7 @@
     (population-headroom > 0)
     (up-train-site-ready c: villager)
     (can-train villager)
-    (not (goal byzantine-feudal-bank-state 2))
+    (not (goal feudal-transition-bank-state 2))
     (not (goal byzantine-resource-claim 1))
     (not (goal byzantine-resource-claim 2))
     (not (goal byzantine-resource-claim 3))
