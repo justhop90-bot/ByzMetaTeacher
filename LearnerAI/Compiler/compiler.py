@@ -66,9 +66,11 @@ if __package__ in (None, ""):
         AttackExecution,
         NativeAttackLifecyclePlan,
         NativeDucPlan,
+        NativeRoleSeparationPlan,
         NativeEscrowPolicyPlan,
         NativeEscrowReleasePlan,
         CompilerSemanticProgram,
+        validate_native_role_separation_plan,
     )
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -123,7 +125,16 @@ else:
     from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .semantic.operational_domains import merge_operational_plan
     from .emitter import emit
-    from .ir import AttackExecution, CompilerSemanticProgram, NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
+    from .ir import (
+        AttackExecution,
+        CompilerSemanticProgram,
+        NativeAttackLifecyclePlan,
+        NativeDucPlan,
+        NativeRoleSeparationPlan,
+        NativeEscrowPolicyPlan,
+        NativeEscrowReleasePlan,
+        validate_native_role_separation_plan,
+    )
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -165,7 +176,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
     return frozenset(ignored)
 
 
-def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None):
+def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None, role_plan=None):
     requests = []
     seen = set()
     for demand in ir:
@@ -211,6 +222,12 @@ def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None):
                 continue
             seen.add(request.request_id)
             requests.append(request)
+    if role_plan is not None:
+        for request in role_plan.storage_requests:
+            if request.request_id in seen:
+                continue
+            seen.add(request.request_id)
+            requests.append(request)
     return tuple(requests)
 
 def _semantic_compile_failure(
@@ -252,6 +269,7 @@ def _compile_ir_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ):
     reports = []
@@ -344,6 +362,7 @@ def _compile_ir_parts(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        role_separation_plan=role_plan,
         escrow_plan=escrow_plan,
         persistent_controls=tuple(
             control
@@ -357,6 +376,12 @@ def _compile_ir_parts(
             validate_native_control_plan(program.control_plan, registry)
         except (TypeError, ValueError) as exc:
             raise CompileError(f"CONTROL-PLANE-VALIDATION: {exc}") from exc
+
+    if program.role_separation_plan is not None:
+        try:
+            validate_native_role_separation_plan(program.role_separation_plan, registry)
+        except (TypeError, ValueError) as exc:
+            raise CompileError(f"ROLE-PLAN-VALIDATION: {exc}") from exc
 
     context = binding_context or BindingContext()
     if duc_plan is not None and not isinstance(duc_plan, NativeDucPlan):
@@ -373,6 +398,7 @@ def _compile_ir_parts(
         program.control_plan,
         program.duc_plan,
         program.attack_plan,
+        program.role_separation_plan,
     )
     if any(
         isinstance(request, StrategicNumberRequest)
@@ -415,7 +441,8 @@ def _compile_ir_parts(
             control_plan=program.control_plan,
             duc_plan=program.duc_plan,
             attack_plan=program.attack_plan,
-        escrow_plan=program.escrow_plan,
+            role_plan=program.role_separation_plan,
+            escrow_plan=program.escrow_plan,
         ),
         bindings,
         context,
