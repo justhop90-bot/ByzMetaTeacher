@@ -84,6 +84,7 @@ class CapabilityIntentKind(str, Enum):
 
 class StrategicPriority(IntEnum):
     CORE = 100
+    ECONOMIC_MULTIPLIER = 90
     DEFENSE = 80
     SUPPORT = 50
     OPTIONAL = 20

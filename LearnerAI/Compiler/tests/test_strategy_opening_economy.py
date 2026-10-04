@@ -205,7 +205,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         wheelbarrow = tuple(
             profile.demand("research-wheelbarrow").execution.requirements
         )
-        self.assertNotIn(
+        self.assertIn(
             "(not (can-research-with-escrow castle-age))",
             wheelbarrow,
         )
