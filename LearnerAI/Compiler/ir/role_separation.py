@@ -95,6 +95,7 @@ class NativeRoleSeparationPlan:
     siege_size: NativeControlState
     raid_size: NativeControlState
     reserve_size: NativeControlState
+    fortified_latch: NativeControlState
     roles: tuple[RoleMembershipSpec, ...]
     witnesses: tuple[RoleWitnessSpec, ...]
     rules: tuple[NativeRoleRule, ...]
@@ -149,6 +150,7 @@ class NativeRoleSeparationPlan:
             self.siege_size,
             self.raid_size,
             self.reserve_size,
+            self.fortified_latch,
         )
 
     @property
@@ -234,6 +236,7 @@ def default_byzantine_role_separation_plan(
     siege_size_name = "byzantine-army-role-siege-size"
     raid_size_name = "byzantine-army-role-raid-size"
     reserve_size_name = "byzantine-army-role-reserve-size"
+    fortified_latch_name = "byzantine-army-role-fortified-latch"
 
     roles = (
         RoleMembershipSpec(RoleKind.SCREEN, 5, 2, "cheap threat-facing protective layer"),
@@ -337,6 +340,7 @@ def default_byzantine_role_separation_plan(
             (
                 f"(set-goal {state_name} byzantine-army-role-forming)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
             ),
         ),
         _rule(
@@ -567,6 +571,7 @@ def default_byzantine_role_separation_plan(
             (
                 f"(set-goal {state_name} byzantine-army-role-forming)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
                 "(up-reset-group c: 7)",
@@ -718,20 +723,33 @@ def default_byzantine_role_separation_plan(
         ),
         _rule(
             220,
+            "role-fortified-latch-clear",
+            (
+                f"(goal {state_name} byzantine-army-role-committed)",
+                "(goal byzantine-siege-approach byzantine-siege-approach-normal)",
+                f"(goal {fortified_latch_name} 1)",
+            ),
+            (f"(set-goal {fortified_latch_name} 0)",),
+            RoleKind.SIEGE,
+        ),
+        _rule(
+            230,
             "role-fortified-siege-refresh",
             (
                 f"(goal {state_name} byzantine-army-role-committed)",
                 "(goal byzantine-fortification-threat 1)",
                 "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
+                f"(goal {fortified_latch_name} 0)",
             ),
             (
                 f"(up-get-group-size c: 7 {siege_size_name})",
                 f"(set-goal {mask_name} 50)",
+                f"(set-goal {fortified_latch_name} 1)",
             ),
             RoleKind.SIEGE,
         ),
         _rule(
-            230,
+            240,
             "role-fortified-siege-check",
             (
                 f"(goal {state_name} byzantine-army-role-committed)",
@@ -748,11 +766,12 @@ def default_byzantine_role_separation_plan(
                 "(up-reset-group c: 8)",
                 "(up-reset-group c: 9)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
             ),
             RoleKind.SIEGE,
         ),
         _rule(
-            240,
+            250,
             "role-fortified-siege-armed",
             (
                 f"(goal {state_name} byzantine-army-role-committed)",
@@ -826,6 +845,12 @@ def default_byzantine_role_separation_plan(
             reserve_size_name,
             "byzantine-army-role-reserve-size",
             GoalRole.NATIVE_OUTPUT,
+        ),
+        fortified_latch=_state(
+            profile_id,
+            fortified_latch_name,
+            "byzantine-army-role-fortified-latch",
+            GoalRole.EXECUTION_MEMORY,
         ),
         roles=roles,
         witnesses=witnesses,
