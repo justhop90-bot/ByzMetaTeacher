@@ -222,6 +222,22 @@ class ActionIssuanceTests(unittest.TestCase):
         self.assertNotIn("production-retry-barrier-castle", build)
 
 
+
+    def test_research_lifecycle_resolves_site_specific_and_non_ri_symbols(self):
+        from Compiler.semantic.native_tech_catalog import resolve_tech_id, resolve_tech_symbol
+
+        self.assertEqual(resolve_tech_id("ri-logistica"), 61)
+        self.assertEqual(resolve_tech_symbol("ri-logistica"), "ri-logistica")
+        self.assertEqual(resolve_tech_id("ri-elite-varangian-guard"), 1454)
+        self.assertEqual(
+            resolve_tech_symbol("ri-elite-varangian-guard"),
+            "ri-elite-varangian-guard",
+        )
+        self.assertEqual(resolve_tech_id("905"), 905)
+        self.assertEqual(resolve_tech_symbol("905"), "ri-demolition-ship")
+        self.assertEqual(resolve_tech_id("906"), 906)
+        self.assertEqual(resolve_tech_symbol("906"), "ri-fishing-lines")
+
     def test_research_lifecycle_uses_native_in_progress_status(self):
         output = compile_source(
             """
