@@ -121,16 +121,36 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(current-age >= feudal-age)", release)
         self.assertIn("(set-goal feudal-transition-bank-state 0)", release)
 
-    def test_loom_initialization_precedes_its_arabia_activation_block(self):
+    def test_loom_initialization_precedes_its_first_runtime_consumer(self):
         initialization = self.per.index("; Demand initialization")
         loom_init = self.per.index("(set-goal demand-research-loom 1)", initialization)
         barrier_init = self.per.index(
             "(set-goal research-retry-barrier-research-loom 0)",
             initialization,
         )
-        activation = self.per.index("; Arabia Loom demand activation")
-        self.assertLess(loom_init, activation)
-        self.assertLess(barrier_init, activation)
+        self.assertNotIn("; Arabia Loom demand activation", self.per)
+        consumers = [
+            index
+            for index in (
+                self.per.find("(goal demand-research-loom 15008)"),
+                self.per.find("(goal demand-research-loom 15006)"),
+                self.per.find("(goal demand-research-loom 15007)"),
+                self.per.find("(goal demand-research-loom 1)"),
+            )
+            if index >= 0
+        ]
+        self.assertTrue(consumers)
+        self.assertLess(loom_init, min(consumers))
+        barrier_consumers = [
+            index
+            for index in (
+                self.per.find("(goal research-retry-barrier-research-loom 0)"),
+                self.per.find("(set-goal research-retry-barrier-research-loom 1)"),
+            )
+            if index >= 0
+        ]
+        self.assertTrue(barrier_consumers)
+        self.assertLess(barrier_init, min(barrier_consumers))
 
     def test_feudal_liveness_has_an_explicit_loom_recovery_path(self):
         age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
