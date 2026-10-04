@@ -188,6 +188,56 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         ):
             self.assertIn(expected, self.per)
 
+
+    def test_dark_age_base_camp_radius_preserves_known_good_opening_distance(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(set-strategic-number sn-lumber-camp-max-distance 16)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-mining-camp-max-distance 16)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-wood-drop-distance 16)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-gold-drop-distance 16)",
+            controller,
+        )
+
+    def test_arabia_dark_age_first_camps_bypass_candidate_ring_legality_probe(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        opening = self._find_rule(
+            "(goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)",
+            "(goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)",
+            "(goal byzantine-resource-camp-ring-index 0)",
+            "(goal opening-plan 1)",
+            "(map-type arabia)",
+            "(current-age == dark-age)",
+            "(set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)",
+        )
+        self.assertNotIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
+            opening,
+        )
+        self.assertNotIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            opening,
+        )
+        self.assertIn(
+            "(up-set-target-point byzantine-resource-camp-point)",
+            self.per,
+        )
+
     def test_remote_resource_recovery_never_retasks_into_far_or_fortified_resource(self):
         recovery = self._section_from(
             "; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL",
