@@ -306,6 +306,7 @@ def community_strategy_observations(
     effective: EffectiveCivData,
 ) -> tuple[_StrategicObservationSpec, ...]:
     town_center = _building(effective, "town-center")
+    house = _building(effective, "house")
     outpost = _building(effective, "outpost")
     monastery = _building(effective, "monastery")
     siege_workshop = _building(effective, "siege-workshop")
@@ -338,6 +339,17 @@ def community_strategy_observations(
             "strategy-arena-map",
             "(map-type arena)",
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-opening-resource-front-ready",
+            "(and (building-type-count-total house >= 1) (and (building-type-count-total lumber-camp >= 1) (building-type-count-total mining-camp >= 1)))",
+            tuple(
+                dict.fromkeys(
+                    (*house.provenance,
+                     *lumber_camp.provenance,
+                     *mining_camp.provenance)
+                )
+            ),
         ),
         _observation(
             "strategy-opening-pressure",
