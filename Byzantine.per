@@ -4528,7 +4528,7 @@
 (defconst byzantine-army-role-raid-split 3)
 (defconst byzantine-army-role-recovering 4)
 (defconst bt-role-screen-floor 2)
-(defconst bt-role-main-floor 3)
+(defconst bt-role-main-floor 4)
 (defconst bt-role-siege-floor-standard 1)
 (defconst bt-role-siege-floor-fortified 2)
 (defconst bt-role-raid-floor 2)
@@ -4924,7 +4924,6 @@
 (defrule
     (goal byzantine-army-role-recovery-request 1)
 =>
-    (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-role-recovery-request 0)
 )
 
