@@ -2508,7 +2508,14 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                     observation_ref="enemy-mounted-commitment-feudal",
                 ),
             ),
-            admissibility=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Feudal age admits the predicted anti-mounted floor",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
             invalidation=(),
             capability_intent=CapabilityIntent(
                 CapabilityIntentKind.TRAIN,
@@ -2549,7 +2556,14 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                     observation_ref="enemy-ranged-commitment-feudal",
                 ),
             ),
-            admissibility=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Feudal age admits the predicted anti-ranged floor",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
             invalidation=(),
             capability_intent=CapabilityIntent(
                 CapabilityIntentKind.TRAIN,
