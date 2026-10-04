@@ -30,6 +30,10 @@ class RoleSeparationTests(unittest.TestCase):
             tuple(role.group_id for role in plan.roles),
             (5, 6, 7, 8, 9),
         )
+        self.assertEqual(
+            tuple(role.minimum for role in plan.roles),
+            (2, 4, 1, 2, 0),
+        )
 
     def test_role_state_contract(self):
         plan = self.profile.role_separation_plan
