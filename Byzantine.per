@@ -114,6 +114,8 @@
 (defconst byzantine-dark-gold-camp-search-remote-count-4 1034)
 (defconst byzantine-dark-gold-camp-search-state-5 1036)
 (defconst byzantine-dark-gold-camp-search-remote-count-5 1038)
+(defconst byzantine-dark-mill-search-state 1040)
+(defconst byzantine-dark-mill-search-remote-count 1042)
 (defconst byzantine-dark-wood-camp-point-1 15000)
 (defconst byzantine-dark-wood-camp-search-state-1 15001)
 (defconst byzantine-dark-wood-camp-search-remote-count-1 15002)
@@ -15416,13 +15418,10 @@
     (building-type-count-total mining-camp < 5)
 =>
     (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-5 666)
-)
-
-; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
-; Build issuance is explicitly point-bound to forage bushes >=10 tiles from
-; the existing mill, so deer/hunt placement cannot consume the second-mill slot.
+  ; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
+; Search is staged like the repaired gold-camp path: capture DUC search state first,
+; then let the build rule consume the target only when the remote forage search
+; produced a positive witness. This prevents empty-search placement.
 (defrule
     (current-age == dark-age)
     (building-type-count-total mill == 1)
@@ -15442,11 +15441,29 @@
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-find-remote c: byzantine-forage-bush c: 40)
     (up-filter-distance c: 10 c: 40)
+    (up-get-search-state byzantine-dark-mill-search-state)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (current-age == dark-age)
+    (building-type-count-total mill == 1)
+    (building-type-count-total lumber-camp >= 1)
+    (goal action-claim-build-pass-singleton 0)
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+    (resource-found food)
+    (wood-amount >= 50)
+    (up-compare-goal byzantine-dark-mill-search-remote-count > 0)
+    (can-build mill)
+=>
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-dark-berry-point)
     (up-set-target-point byzantine-dark-berry-point)
     (up-build place-point 0 c: mill)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+us-player-number g:= byzantine-scout-focus-player)
     (set-goal action-claim-build-pass-singleton 1)
 )
 
