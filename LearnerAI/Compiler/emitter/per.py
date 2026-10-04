@@ -402,23 +402,7 @@ def emit(
 
     if role_plan is not None:
         out.append("; Native Byzantine role-separation plan")
-        state_bindings = {}
-        for state in role_plan.storage_requests:
-            binding = bindings.binding_for(state.request_id)
-            if not isinstance(binding, GoalSlot):
-                raise CompileError(
-                    f"EMITTER-ROLE-GOAL-BINDING: role state '{state.request_id.purpose}' "
-                    f"resolved to '{type(binding).__name__}', expected GoalSlot"
-                )
-            state_bindings[state.request_id.purpose] = binding
-            out.append(
-                f"(defconst {state_bindings[state.request_id.purpose].id.value if False else state.request_id.purpose} "
-                f"{binding.id.value})"
-            )
-
         emitted_names = _defconst_bindings(out)
-        # Replace the temporary purpose labels above with stable role identifiers.
-        del out[-len(role_plan.storage_requests):]
         for state in (
             role_plan.state,
             role_plan.formation_mask,
