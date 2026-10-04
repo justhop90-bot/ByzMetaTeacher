@@ -648,7 +648,7 @@ def default_byzantine_role_separation_plan(
                 f"(up-compare-goal {reserve_size_name} >= c:bt-role-raid-floor)",
                 "(or (unit-type-count-total knight-line >= bt-role-raid-floor) "
                 "(or (unit-type-count-total camel-line >= bt-role-raid-floor) "
-                "(unit-type-count-total cataphract-line >= bt-role-raid-floor))",
+                "(unit-type-count-total cataphract-line >= bt-role-raid-floor)))",
             ),
             (
                 "(up-reset-group c: 8)",
