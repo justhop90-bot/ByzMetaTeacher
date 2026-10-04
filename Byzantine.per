@@ -19728,73 +19728,6 @@
 ; Unscored plain Bombard Tower issuance is intentionally retired.
 ; The scored resource-point and fortified-front executors above own construction.
 
-; Pending diagnostics: research-wheelbarrow
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 122 and cannot reissue from pending goal 123
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 123 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 124 is reached
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
-; Issuance failure: research-wheelbarrow | RETAIN-ACTIVE
-; An unsatisfied issuance guard leaves demand-research-wheelbarrow in ACTIVE; it is not PENDING.
-; Release: research-wheelbarrow | COMPLETE -> RELEASED
-(defrule
-    (goal demand-research-wheelbarrow 124)
-    (research-completed 213)
-=>
-    (set-goal demand-research-wheelbarrow 0)
-)
-
-; Completion witness: research-wheelbarrow | PENDING/ISSUED -> COMPLETE
-(defrule
-    (or
-        (goal demand-research-wheelbarrow 125)
-        (goal demand-research-wheelbarrow 123)
-    )
-    (research-completed 213)
-=>
-    (set-goal demand-research-wheelbarrow 124)
-)
-
-; Pending admission: research-wheelbarrow | ISSUED/PENDING -> PENDING
-(defrule
-    (or
-        (goal demand-research-wheelbarrow 125)
-        (goal demand-research-wheelbarrow 123)
-    )
-    (not (research-completed 213))
-    (up-research-status c: 213 >= 2)
-=>
-    (set-goal demand-research-wheelbarrow 123)
-)
-
-; RETRY | ISSUED/PENDING -> ACTIVE
-(defrule
-    (or
-        (goal demand-research-wheelbarrow 125)
-        (goal demand-research-wheelbarrow 123)
-    )
-    (not (research-completed 213))
-    (not (up-research-status c: 213 >= 2))
-=>
-    (set-goal demand-research-wheelbarrow 1)
-    (set-goal research-retry-barrier-research-wheelbarrow 1)
-)
-
-; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED
-(defrule
-    (goal demand-research-wheelbarrow 1)
-    (not (research-completed 213))
-    (goal research-retry-barrier-research-wheelbarrow 0)
-    (not (up-research-status c: 213 >= 2))
-    (not (research-completed 213))
-    (current-age >= feudal-age)
-    (can-research-with-escrow wheelbarrow)
-=>
-    (release-escrow food)
-    (research wheelbarrow)
-    (set-goal demand-research-wheelbarrow 125)
-)
-
 ; Pending diagnostics: research-double-bit-axe
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 104 and cannot reissue from pending goal 105
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 105 is active
@@ -19931,6 +19864,74 @@
     (release-escrow wood)
     (research horse-collar)
     (set-goal demand-research-horse-collar 117)
+)
+
+; Pending diagnostics: research-wheelbarrow
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 122 and cannot reissue from pending goal 123
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 123 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 124 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-wheelbarrow | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-wheelbarrow in ACTIVE; it is not PENDING.
+; Release: research-wheelbarrow | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-wheelbarrow 124)
+    (research-completed 213)
+=>
+    (set-goal demand-research-wheelbarrow 0)
+)
+
+; Completion witness: research-wheelbarrow | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-wheelbarrow 125)
+        (goal demand-research-wheelbarrow 123)
+    )
+    (research-completed 213)
+=>
+    (set-goal demand-research-wheelbarrow 124)
+)
+
+; Pending admission: research-wheelbarrow | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-wheelbarrow 125)
+        (goal demand-research-wheelbarrow 123)
+    )
+    (not (research-completed 213))
+    (up-research-status c: 213 >= 2)
+=>
+    (set-goal demand-research-wheelbarrow 123)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-wheelbarrow 125)
+        (goal demand-research-wheelbarrow 123)
+    )
+    (not (research-completed 213))
+    (not (up-research-status c: 213 >= 2))
+=>
+    (set-goal demand-research-wheelbarrow 1)
+    (set-goal research-retry-barrier-research-wheelbarrow 1)
+)
+
+; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-wheelbarrow 1)
+    (not (research-completed 213))
+    (goal research-retry-barrier-research-wheelbarrow 0)
+    (not (up-research-status c: 213 >= 2))
+    (not (research-completed 213))
+    (current-age >= feudal-age)
+    (not (can-research-with-escrow castle-age))
+    (can-research-with-escrow wheelbarrow)
+=>
+    (release-escrow food)
+    (research wheelbarrow)
+    (set-goal demand-research-wheelbarrow 125)
 )
 
 ; Pending diagnostics: research-hand-cart
