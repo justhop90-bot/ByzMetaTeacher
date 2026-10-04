@@ -57,17 +57,13 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertEqual(horse_collar.priority, StrategicPriority.ECONOMIC_MULTIPLIER)
         self.assertEqual(wheelbarrow.priority, StrategicPriority.ECONOMIC_MULTIPLIER)
         self.assertGreater(dba.priority, StrategicPriority.DEFENSE)
-        self.assertTrue(
-            any(
-                requirement.expression == "(not (can-research-with-escrow castle-age))"
-                for requirement in dba.execution.requirements
-            )
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            dba.execution.requirements,
         )
-        self.assertTrue(
-            any(
-                requirement.expression == "(not (can-research-with-escrow castle-age))"
-                for requirement in horse_collar.execution.requirements
-            )
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            horse_collar.execution.requirements,
         )
 
         feudal_research_order = [
