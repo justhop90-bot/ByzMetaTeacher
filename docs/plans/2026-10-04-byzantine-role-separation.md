@@ -321,3 +321,26 @@ The tranche is complete only when:
 ## Unresolved externally observable decisions
 
 None. The user-authorized implementation chooses the conservative native-group model, 5-9 group IDs, edge-triggered formation, group-size membership witnesses, existing 75% fortified commitment policy, and the existing objective controller as the sole attack actuator.
+
+## Cross-reference addendum applied during implementation
+
+### Replay evidence
+The replay makes the role problem concrete: the Byzantine bot produced far more STOP control than the comparison AI and accumulated a pathological repeated-STOP loop on one object. The role layer therefore uses no attack, move, or stop actions and changes membership only at explicit state edges. The replay also showed large premium and siege inventories without reliable concentration or objective completion, so the role layer is an execution partition rather than another production planner.
+
+### Community and engine evidence
+Official DE AI work has continued improving formation, pathfinding, and large-group behavior, while community DUC examples use native control-group flags to partition units and re-find them. The compiler already has executable-safe up-create-group, up-reset-group, up-modify-group-flag, up-group-size, and up-get-group-size semantics. The implementation uses up-get-group-size into width-1 Goal outputs followed by up-compare-goal. Strategic Number 313 is intentionally unused.
+
+### Final role membership policy
+Screen group 5 is formed from the existing cheap anti-threat layer. Siege group 7 is formed from siege weapons only. Reserve group 9 is formed before Main and contains detachable cavalry/mobile capacity plus monks. Main group 6 is every remaining ready combat unit after Screen, Siege, Reserve, and monks are excluded. Raid group 8 is built only from reserve-eligible cavalry and only for production/Town-Center objective classes with no fortified threat. No role may steal another role's protected floor.
+
+### Witness policy
+Formation uses one native group-size snapshot for Screen/Main/Siege/Reserve, then commits only when the required floors pass. Raid gets its own immediate split snapshot and must preserve Screen/Main/Siege floors. Fortified posture has a one-shot latch that refreshes Siege group size on the normal-to-fortified posture edge. Group size is membership evidence, not a combat-success witness. Attack-ready and overmatch remain the authoritative recovery gates.
+
+### Fortified siege policy
+Fortified posture requires the enlarged siege floor of two witnessed siege units, retains the existing 75% committed-attack allocation, and blocks raid splitting. Loss of the live siege floor moves role state to RECOVERING and drops attack-ready to zero. The role controller never issues the breach or assault action; the existing siege/objective controller retains those actuators.
+
+### Compiler/runtime synchronization
+The compiler strategy profile now carries NativeRoleSeparationPlan, allocates nine Goal slots for role state, memory, and outputs, emits the native group rules deterministically, and gates the two Castle attack-now rules and four precise objective action-attack-move issuers on committed/raid-split role state. Byzantine.per has the same role constants and rule sequence using stable runtime Goal IDs 420-427 and 430. The artifact still has exactly four precise objective attack-move issuers.
+
+### Hard constraints preserved
+No second attack scheduler was introduced. No timer is used as role completion evidence. Role formation is not a recurring initializer. Foreign/stale objects are removed from the local search before role flags are rewritten. Recovery clears the five role groups before re-forming. The 25% reserve policy in fortified breach remains owned by the existing siege controller.
