@@ -95,8 +95,10 @@ def build(output_dir: Path) -> tuple[Path, Path]:
         },
     }
 
-    artifact_path.write_text(first, encoding="utf-8")
-    manifest_path.write_text(_canonical_json(manifest) + "\n", encoding="utf-8")
+    with artifact_path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write(first)
+    with manifest_path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write(_canonical_json(manifest) + "\n")
     return artifact_path, manifest_path
 
 
