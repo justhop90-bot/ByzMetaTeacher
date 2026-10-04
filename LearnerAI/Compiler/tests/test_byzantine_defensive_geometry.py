@@ -329,35 +329,45 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             witness_start,
         )
         witness_section = self.per[witness_start:witness_end]
+        rules = [
+            "(defrule" + rule
+            for rule in witness_section.split("(defrule")[1:]
+        ]
 
-        objective_classes = (
-            "siege",
-            "defense",
-            "production",
-            "town-center",
-        )
-        for objective_class in objective_classes:
+        positive_rules = [
+            rule
+            for rule in rules
+            if "(goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-witness)" in rule
+            and "(up-compare-goal byzantine-offensive-objective-search >= 1)"
+            in rule
+        ]
+        self.assertEqual(len(positive_rules), 4)
+
+        expected_states = {
+            "siege": "byzantine-offensive-objective-state-siege",
+            "defense": "byzantine-offensive-objective-state-defense",
+            "production": "byzantine-offensive-objective-state-production",
+            "town-center": "byzantine-offensive-objective-state-town-center",
+        }
+        for objective_class, expected_state in expected_states.items():
             class_marker = (
                 "(goal byzantine-offensive-objective-class "
                 f"byzantine-offensive-objective-class-{objective_class})"
             )
-            state_marker = (
-                "(set-goal byzantine-offensive-objective-state "
-                f"byzantine-offensive-objective-state-{objective_class})"
-            )
-            class_branch_start = witness_section.index(class_marker)
-            class_branch = witness_section[class_branch_start:]
+            matching = [rule for rule in positive_rules if class_marker in rule]
+            self.assertEqual(len(matching), 1)
             self.assertIn(
-                "(up-compare-goal byzantine-offensive-objective-search >= 1)",
-                class_branch,
+                "(set-goal byzantine-offensive-objective-state "
+                f"{expected_state})",
+                matching[0],
             )
-            self.assertIn(state_marker, class_branch)
+            self.assertNotIn(
+                "(set-goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-executing)",
+                matching[0],
+            )
 
-        self.assertNotIn(
-            "(set-goal byzantine-offensive-objective-state "
-            "byzantine-offensive-objective-state-executing)",
-            witness_section,
-        )
         self.assertNotIn(
             "(up-target-objects 1 action-attack-move -1 -1)",
             witness_section,
