@@ -6839,7 +6839,7 @@
 (defrule
     (current-age >= feudal-age)
     (current-age < castle-age)
-    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1))))))
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
     (not (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3)))
     (goal opening-plan 3)
 =>
@@ -6891,7 +6891,7 @@
     (current-age < imperial-age)
     (goal opening-plan 3)
     (map-type arena)
-    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1))))
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
 =>
     (set-goal economy-posture 9)
 )
