@@ -29,7 +29,7 @@ def main() -> int:
         raise SystemExit("research in-progress artifact is non-deterministic")
 
     required = (
-        "(up-research-status c: 213 >= 2)",
+        "(up-research-status c: ri-wheel-barrow >= research-pending)",
         "(defconst ri-wheelbarrow 213)",
         "research-retry-barrier-research-wheelbarrow",
         "(research ri-wheelbarrow)",
@@ -41,7 +41,7 @@ def main() -> int:
 
     retry = first[first.index("; RETRY | ISSUED/PENDING -> ACTIVE"):]
     issuance = first[first.index("; Action issuance: research-wheelbarrow"):]
-    if "(not (up-research-status c: 213 >= 2))" not in retry:
+    if "(not (up-research-status c: ri-wheel-barrow >= research-pending))" not in retry:
         raise SystemExit("research retry rule lacks native in-progress-loss guard")
     if "(goal research-retry-barrier-research-wheelbarrow 0)" not in issuance:
         raise SystemExit("research issuance rule lacks retry barrier guard")
