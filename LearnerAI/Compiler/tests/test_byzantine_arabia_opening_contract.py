@@ -54,16 +54,14 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertLess(loom_init, first_loom_zero_consumer)
         self.assertLess(loom_barrier, first_loom_barrier_consumer)
 
-        self.assertIn(
+        self.assertNotIn(
             "(goal feudal-transition-bank-state 2)",
             " ".join(feudal.execution_demands[0].requirements),
         )
-        self.assertEqual(
-            feudal.execution_demands[0].action_witness_gates,
-            (
-                "(or (research-completed 22) "
-                "(goal feudal-transition-loom-recovery 1))",
-            ),
+        self.assertEqual(feudal.execution_demands[0].action_witness_gates, ())
+        self.assertIn(
+            "feudal-transition-bank-state",
+            compile_strategy_profile(profile, self.effective),
         )
 
     def test_arabia_pressure_contract_detects_real_early_pressure(self):
