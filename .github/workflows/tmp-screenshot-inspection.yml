@@ -1,0 +1,53 @@
+name: temporary screenshot inspection
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract screenshot metadata
+        run: |
+          mkdir -p tmp/screenshot-inspection
+          file "Screenshot 2026-10-04 110042.png" > tmp/screenshot-inspection/file.txt
+          python - <<'PY' > tmp/screenshot-inspection/image-metadata.txt
+          from PIL import Image
+          import os
+          p = "Screenshot 2026-10-04 110042.png"
+          im = Image.open(p)
+          print(f"width={im.width}")
+          print(f"height={im.height}")
+          print(f"format={im.format}")
+          print(f"mode={im.mode}")
+          print(f"bytes={os.path.getsize(p)}")
+          PY
+
+      - name: OCR screenshot
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq tesseract-ocr
+          tesseract "Screenshot 2026-10-04 110042.png" tmp/screenshot-inspection/ocr
+
+      - name: Encode screenshot into text chunks
+        run: |
+          base64 -w0 "Screenshot 2026-10-04 110042.png" > /tmp/screenshot.b64
+          mkdir -p tmp/screenshot-inspection/b64
+          split -b 450000 /tmp/screenshot.b64 tmp/screenshot-inspection/b64/chunk_
+          ls -l tmp/screenshot-inspection/b64 > tmp/screenshot-inspection/chunks.txt
+
+      - name: Commit temporary inspection data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tmp/screenshot-inspection
+          git commit -m "tmp: export screenshot for inspection [skip ci]" || exit 0
+          git push origin HEAD:${{ github.head_ref }}
