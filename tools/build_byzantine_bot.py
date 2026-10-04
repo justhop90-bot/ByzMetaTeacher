@@ -7,7 +7,11 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
@@ -46,7 +50,7 @@ def _canonical_json(value: object) -> str:
 
 
 def build(output_dir: Path) -> tuple[Path, Path]:
-    root = Path(__file__).resolve().parents[1]
+    root = ROOT
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
