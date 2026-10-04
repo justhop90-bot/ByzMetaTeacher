@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from .opening import OpeningSelectorPlan
     from .economic_control import EconomyControllerPlan
     from .camp_control import ByzantineCampControllerPlan
+    from .role_separation import NativeRoleSeparationPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -392,6 +393,7 @@ class StrategyProfile:
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
     camp_controller: "ByzantineCampControllerPlan | None" = None
+    role_separation_plan: "NativeRoleSeparationPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -472,6 +474,7 @@ class StrategyCompilation:
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
     camp_controller: "ByzantineCampControllerPlan | None" = None
+    role_separation_plan: "NativeRoleSeparationPlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1070,6 +1073,7 @@ def lower_strategy_profile(
         opening_selector=profile.opening_selector,
         economy_controller=profile.economy_controller,
         camp_controller=profile.camp_controller,
+        role_separation_plan=profile.role_separation_plan,
     )
 
 
