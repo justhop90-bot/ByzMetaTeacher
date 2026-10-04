@@ -1267,6 +1267,7 @@ def build_byzantine_stock_strategy(
         _default_byzantine_duc_plan,
         build_byzantine_castle_strategy,
     )
+    from .role_separation import default_byzantine_role_separation_plan
 
     base = build_byzantine_castle_strategy(effective)
     stock_profile_id = "byzantine-stock-v1"
@@ -1361,6 +1362,7 @@ def build_byzantine_stock_strategy(
         opening_selector=default_byzantine_opening_selector(),
         economy_controller=default_byzantine_economy_controller(),
         camp_controller=default_byzantine_camp_controller(),
+        role_separation_plan=default_byzantine_role_separation_plan(stock_profile_id),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),

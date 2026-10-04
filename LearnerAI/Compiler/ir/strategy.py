@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from .opening import OpeningSelectorPlan
     from .economic_control import EconomyControllerPlan
     from .camp_control import ByzantineCampControllerPlan
+    from .role_separation import NativeRoleSeparationPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -392,6 +393,7 @@ class StrategyProfile:
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
     camp_controller: "ByzantineCampControllerPlan | None" = None
+    role_separation_plan: "NativeRoleSeparationPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -472,6 +474,7 @@ class StrategyCompilation:
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
     camp_controller: "ByzantineCampControllerPlan | None" = None
+    role_separation_plan: "NativeRoleSeparationPlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1070,6 +1073,7 @@ def lower_strategy_profile(
         opening_selector=profile.opening_selector,
         economy_controller=profile.economy_controller,
         camp_controller=profile.camp_controller,
+        role_separation_plan=profile.role_separation_plan,
     )
 
 
@@ -1619,6 +1623,8 @@ def _strategy_control_plan(profile: StrategyProfile):
             raise ValueError(
                 f"native strategy state '{_STRATEGY_POSTURE_STATE}' conflicts with posture transition storage"
             )
+
+
 
     return _merge_native_control_plans(
         posture_plan,
@@ -2344,6 +2350,10 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
     common_facts = (
         parse_expression("(current-age == castle-age)", SourceLocation(1)),
         parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
+        parse_expression(
+            "(or (goal byzantine-army-role-state byzantine-army-role-committed) (goal byzantine-army-role-state byzantine-army-role-raid-split))",
+            SourceLocation(1),
+        ),
     )
     return NativeAttackLifecyclePlan(
         rules=(
@@ -2387,7 +2397,7 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
                 identity="byzantine-attack-phase-cataphract-input",
                 rule_identity="byzantine-castle-attack-now-cataphract",
                 section="FACT",
-                expression_index=3,
+                expression_index=4,
                 argument_index=0,
                 request=phase_request,
             ),
@@ -2395,7 +2405,7 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
                 identity="byzantine-attack-phase-knight-input",
                 rule_identity="byzantine-castle-attack-now-knight",
                 section="FACT",
-                expression_index=3,
+                expression_index=4,
                 argument_index=0,
                 request=phase_request,
             ),

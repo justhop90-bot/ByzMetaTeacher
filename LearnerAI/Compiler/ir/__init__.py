@@ -16,6 +16,16 @@ from .game_data_dat_snapshot import (
 
 from .game_data_manifest import ByzantineManifest, ByzantineManifestCoverage, ManifestNode, ManifestNodeKind, ManifestNodeStatus, classify_byzantine_manifest_coverage, parse_byzantine_manifest
 from .native_duc import NativeDucGoalInputRequest, NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+from .role_separation import (
+    NativeRoleRule,
+    NativeRoleSeparationPlan,
+    RoleControllerState,
+    RoleKind,
+    RoleMembershipSpec,
+    RoleWitnessSpec,
+    default_byzantine_role_separation_plan,
+    validate_native_role_separation_plan,
+)
 from .attack import (
     AttackCapabilityRef,
     AttackCapabilityRole,

@@ -4495,6 +4495,452 @@
 (defconst byzantine-siege-scale 320)
 (defconst byzantine-siege-scale-standard 1)
 (defconst byzantine-siege-scale-fortified 2)
+
+; ============================================================
+; Byzantine military role separation
+; Role ownership:
+;   screen/main/siege/raid/reserve membership -> this controller
+;   objective class/target -> offensive objective controller
+;   attack/move issuance -> existing objective/siege actuators only
+;
+; Group identities: 5 screen, 6 main, 7 siege, 8 raid, 9 reserve.
+; Formation is edge-triggered. Group size proves membership at the
+; formation/split witness boundary, not combat success.
+(defconst byzantine-army-role-state 420)
+(defconst byzantine-army-role-formation-mask 421)
+(defconst byzantine-army-role-selection-cap 422)
+(defconst byzantine-army-role-screen-size 423)
+(defconst byzantine-army-role-main-size 424)
+(defconst byzantine-army-role-siege-size 425)
+(defconst byzantine-army-role-raid-size 426)
+(defconst byzantine-army-role-reserve-size 427)
+(defconst byzantine-army-role-fortified-latch 430)
+(defconst byzantine-army-role-recovery-request 431)
+
+(defconst byzantine-army-role-id-screen 5)
+(defconst byzantine-army-role-id-main 6)
+(defconst byzantine-army-role-id-siege 7)
+(defconst byzantine-army-role-id-raid 8)
+(defconst byzantine-army-role-id-reserve 9)
+(defconst byzantine-army-role-idle 0)
+(defconst byzantine-army-role-forming 1)
+(defconst byzantine-army-role-committed 2)
+(defconst byzantine-army-role-raid-split 3)
+(defconst byzantine-army-role-recovering 4)
+(defconst bt-role-screen-floor 2)
+(defconst bt-role-main-floor 4)
+(defconst bt-role-siege-floor-standard 1)
+(defconst bt-role-siege-floor-fortified 2)
+(defconst bt-role-raid-floor 2)
+
+; Goal defaults are zero. Do not add recurring initialization, because it would
+; turn persistent state into a per-pass scheduler.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-idle)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-forming)
+    (set-goal byzantine-army-role-formation-mask 0)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 0)
+=>
+    (up-full-reset-search)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-remove-objects search-local 19 != 2)
+    (up-modify-group-flag 0 c: 5)
+    (up-modify-group-flag 0 c: 6)
+    (up-modify-group-flag 0 c: 7)
+    (up-modify-group-flag 0 c: 8)
+    (up-modify-group-flag 0 c: 9)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-selection-cap 4)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (set-goal byzantine-army-role-formation-mask 1)
+)
+
+; Screen first.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: 93 c: 40)
+    (up-find-local c: 358 c: 40)
+    (up-find-local c: 359 c: 40)
+    (up-remove-objects search-local 19 != 2)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 5)
+    (up-modify-group-flag 1 c: 5)
+    (set-goal byzantine-army-role-formation-mask 3)
+)
+
+; Siege second.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 3)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: mangonel-line c: 40)
+    (up-find-local c: bombard-cannon c: 40)
+    (up-find-local c: 36 c: 40)
+    (up-find-local c: battering-ram-line c: 40)
+    (up-remove-objects search-local 19 != 2)
+    (set-goal byzantine-army-role-selection-cap 2)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 7)
+    (up-modify-group-flag 1 c: 7)
+    (set-goal byzantine-army-role-formation-mask 7)
+)
+
+; Reserve BEFORE main so raid capacity is deliberate, not leftover.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 7)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: cavalry-class c: 40)
+    (up-find-local c: monk c: 40)
+    (up-remove-objects search-local 19 != 2)
+    (up-remove-objects search-local 73 == 5)
+    (up-remove-objects search-local 73 == 7)
+    (set-goal byzantine-army-role-selection-cap 4)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 9)
+    (up-modify-group-flag 1 c: 9)
+    (set-goal byzantine-army-role-formation-mask 15)
+)
+
+; Main gets every remaining ready combat unit except screen/siege/reserve/monks.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 15)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-remove-objects search-local 19 != 2)
+    (up-remove-objects search-local 73 == 5)
+    (up-remove-objects search-local 73 == 7)
+    (up-remove-objects search-local 73 == 9)
+    (up-remove-objects search-local 1 == monk)
+    (set-goal byzantine-army-role-selection-cap 40)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 6)
+    (up-modify-group-flag 1 c: 6)
+    (set-goal byzantine-army-role-formation-mask 23)
+)
+
+; Native group-size witness.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 23)
+    (goal byzantine-army-attack-ready 1)
+=>
+    (up-get-group-size c: 5 byzantine-army-role-screen-size)
+    (up-get-group-size c: 6 byzantine-army-role-main-size)
+    (up-get-group-size c: 7 byzantine-army-role-siege-size)
+    (up-get-group-size c: 8 byzantine-army-role-raid-size)
+    (up-get-group-size c: 9 byzantine-army-role-reserve-size)
+    (set-goal byzantine-army-role-formation-mask 31)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 31)
+    (goal byzantine-army-attack-ready 1)
+    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (or
+        (and
+            (goal byzantine-fortification-threat 0)
+            (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+        )
+        (and
+            (goal byzantine-fortification-threat 1)
+            (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
+        )
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-committed)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 31)
+    (goal byzantine-army-attack-ready 1)
+    (or
+        (up-compare-goal byzantine-army-role-screen-size < c:bt-role-screen-floor)
+        (or
+            (up-compare-goal byzantine-army-role-main-size < c:bt-role-main-floor)
+            (or
+                (and
+                    (goal byzantine-fortification-threat 0)
+                    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-standard)
+                )
+                (and
+                    (goal byzantine-fortification-threat 1)
+                    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (set-goal byzantine-army-role-recovery-request 1)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
+    (goal byzantine-army-attack-ready 0)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (set-goal byzantine-army-role-recovery-request 1)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
+    (or
+        (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+        (goal byzantine-offensive-objective-claim 0)
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-idle)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-recovering)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-forming)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-recovering)
+    (or
+        (goal byzantine-army-attack-ready 0)
+        (goal byzantine-offensive-objective-claim 0)
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-idle)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (set-goal byzantine-army-role-recovery-request 0)
+)
+
+; Raid is limited to production/TC objectives and only steals from reserve.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (or
+        (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+        (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    )
+    (goal byzantine-fortification-threat 0)
+    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+    (up-compare-goal byzantine-army-role-reserve-size >= c:bt-role-raid-floor)
+    (or
+        (unit-type-count-total knight-line >= bt-role-raid-floor)
+        (or
+            (unit-type-count-total camel-line >= bt-role-raid-floor)
+            (unit-type-count-total cataphract-line >= bt-role-raid-floor)
+        )
+    )
+=>
+    (up-reset-group c: 8)
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: cavalry-class c: 40)
+    (up-remove-objects search-local 19 != 2)
+    (up-remove-objects search-local 73 != 9)
+    (set-goal byzantine-army-role-selection-cap 4)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 8)
+    (up-modify-group-flag 1 c: 8)
+    (set-goal byzantine-army-role-formation-mask 40)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-army-role-formation-mask 40)
+=>
+    (up-get-group-size c: 5 byzantine-army-role-screen-size)
+    (up-get-group-size c: 6 byzantine-army-role-main-size)
+    (up-get-group-size c: 7 byzantine-army-role-siege-size)
+    (up-get-group-size c: 8 byzantine-army-role-raid-size)
+    (set-goal byzantine-army-role-formation-mask 41)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-army-role-formation-mask 41)
+    (up-compare-goal byzantine-army-role-raid-size >= c:bt-role-raid-floor)
+    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-raid-split)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-army-role-formation-mask 41)
+    (up-compare-goal byzantine-army-role-raid-size < c:bt-role-raid-floor)
+=>
+    (up-reset-group c: 8)
+    (set-goal byzantine-army-role-formation-mask 31)
+)
+
+; Raid returns when its world-state admission disappears.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    (or
+        (goal byzantine-fortification-threat 1)
+        (or
+            (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+            (or
+                (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+                (or
+                    (goal byzantine-offensive-objective-claim 0)
+                    (or
+                        (goal byzantine-army-attack-ready 0)
+                        (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-forming)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+)
+
+; Fortified siege is a posture-edge witness, not a timer.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-army-role-fortified-latch 1)
+=>
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (goal byzantine-army-role-fortified-latch 0)
+=>
+    (up-get-group-size c: 7 byzantine-army-role-siege-size)
+    (set-goal byzantine-army-role-formation-mask 50)
+    (set-goal byzantine-army-role-fortified-latch 1)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-army-role-formation-mask 50)
+    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (set-goal byzantine-army-role-recovery-request 1)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-army-role-formation-mask 50)
+    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
+=>
+    (set-goal byzantine-army-role-formation-mask 31)
+)
+
+
+; Recovery bridge: role controller requests; army recovery owner clears attack-ready.
+; No generic up-reset-attack-now is emitted here because that command is
+; deliberately unsupported by the compiler's generic semantic adapter.
+(defrule
+    (goal byzantine-army-role-recovery-request 1)
+=>
+    (set-goal byzantine-army-role-recovery-request 0)
+)
+
 (defconst bt-imperial-fortified-trebuchet-target 3)
 (defconst bt-imperial-fortified-bombard-target 3)
 (defconst bt-imperial-fortified-ram-target 4)
@@ -4880,7 +5326,7 @@
     (not (players-unit-type-count any-enemy knight >= 1))
     (not (players-unit-type-count any-enemy archer-line >= 3))
     (not (players-unit-type-count any-enemy militia-line >= 5))
-    (not (players-unit-type-count any-enemy spearman-line >= 4))
+    (not (players-unit-type-count any-enemy 93 >= 4))
 =>
     (set-goal byzantine-feudal-army-package byzantine-feudal-package-archer)
 )
@@ -4896,7 +5342,7 @@
     (players-unit-type-count any-enemy archer-line < 3)
     (players-unit-type-count any-enemy scout-cavalry-line < 3)
     (players-unit-type-count any-enemy knight < 1)
-    (players-unit-type-count any-enemy spearman-line < 4)
+    (players-unit-type-count any-enemy 93 < 4)
 =>
     (set-goal byzantine-feudal-army-package byzantine-feudal-package-maa)
 )
@@ -4926,7 +5372,7 @@
 ; Scout -> Archer package available against spear walls.
 (defrule
     (current-age == feudal-age)
-    (players-unit-type-count any-enemy spearman-line >= 4)
+    (players-unit-type-count any-enemy 93 >= 4)
     (players-unit-type-count any-enemy scout-cavalry-line < 3)
     (players-unit-type-count any-enemy knight < 1)
     (players-unit-type-count any-enemy archer-line < 3)
@@ -4955,7 +5401,7 @@
     (players-unit-type-count any-enemy scout-cavalry-line < 3)
     (players-unit-type-count any-enemy archer-line < 3)
     (players-unit-type-count any-enemy militia-line < 5)
-    (players-unit-type-count any-enemy spearman-line < 4)
+    (players-unit-type-count any-enemy 93 < 4)
 =>
     (set-goal byzantine-feudal-army-package byzantine-feudal-package-minimal)
 )
@@ -7397,7 +7843,7 @@
 (defrule
     (current-age == castle-age)
     (goal demand-counter-ranged-skirmishers 0)
-    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
+    (unit-type-count-total 358 < bt-castle-skirmisher-floor)
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
 )
@@ -7490,7 +7936,7 @@
 (defrule
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
-    (unit-type-count-total skirmisher-line >= 4)
+    (unit-type-count-total 358 >= 4)
     (not (research-completed 98))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
@@ -7584,7 +8030,7 @@
     (building-type-count-total blacksmith >= 1)
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (not (research-completed 199))
     (can-research-with-escrow ri-fletching)
@@ -7672,7 +8118,7 @@
     (goal byzantine-late-resource-burn 1)
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (not (research-completed 200))
     (or
@@ -7865,7 +8311,7 @@
     )
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (not (research-completed 199))
     (can-research-with-escrow ri-fletching)
@@ -7888,7 +8334,7 @@
     )
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (research-completed 200)
     (not (research-completed 201))
@@ -7911,7 +8357,7 @@
     )
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (not (research-completed 211))
     (can-research-with-escrow ri-padded-archer-armor)
@@ -7933,7 +8379,7 @@
     )
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (research-completed 211)
     (not (research-completed 212))
@@ -7957,7 +8403,7 @@
     )
     (or
         (unit-type-count-total arbalest >= 4)
-        (unit-type-count-total skirmisher-line >= 4)
+        (unit-type-count-total 358 >= 4)
     )
     (research-completed 212)
     (not (research-completed 219))
@@ -8811,7 +9257,7 @@
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-castle-timing-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)
+    (unit-type-count-total 358 >= bt-castle-timing-skirmisher-floor)
     (unit-type-count-total mangonel-line >= bt-castle-timing-siege-floor)
 =>
     (set-goal byzantine-army-attack-ready 1)
@@ -8825,7 +9271,7 @@
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total camel-rider-line >= bt-castle-timing-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)
+    (unit-type-count-total 358 >= bt-castle-timing-skirmisher-floor)
     (unit-type-count-total battering-ram-line >= bt-castle-timing-siege-floor)
 =>
     (set-goal byzantine-army-attack-ready 1)
@@ -8839,7 +9285,7 @@
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total varangian-guard-line >= bt-castle-timing-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)
+    (unit-type-count-total 358 >= bt-castle-timing-skirmisher-floor)
     (unit-type-count-total battering-ram-line >= bt-castle-timing-siege-floor)
 =>
     (set-goal byzantine-army-attack-ready 1)
@@ -8854,7 +9300,7 @@
     (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+    (unit-type-count-total 358 >= bt-castle-skirmisher-floor)
     (unit-type-count-total mangonel-line >= bt-castle-attack-siege-target)
     (unit-type-count-total monk >= bt-castle-monk-floor)
 =>
@@ -9478,6 +9924,10 @@
     (goal byzantine-siege-approach byzantine-siege-approach-breach)
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
 =>
     (set-strategic-number sn-percent-attack-soldiers 75)
     (attack-now)
@@ -9509,6 +9959,10 @@
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-siege-breach-witness 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
 =>
     (set-strategic-number sn-percent-attack-soldiers 100)
@@ -9552,7 +10006,7 @@
             (or
                 (unit-type-count-total cataphract-line < bt-castle-timing-cataphract-floor)
                 (or
-                    (unit-type-count-total skirmisher-line < bt-castle-timing-skirmisher-floor)
+                    (unit-type-count-total 358 < bt-castle-timing-skirmisher-floor)
                     (unit-type-count-total mangonel-line < bt-castle-timing-siege-floor)
                 )
             )
@@ -9762,6 +10216,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -9814,6 +10272,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -9868,6 +10330,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -9916,6 +10382,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -10139,7 +10609,7 @@
     (or
         (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
         (or
-            (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
+            (unit-type-count-total 358 < bt-castle-skirmisher-floor)
             (or
                 (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
                 (unit-type-count-total monk < bt-castle-monk-floor)
@@ -10188,7 +10658,7 @@
     (goal byzantine-army-reinforcement 1)
     (current-age == castle-age)
     (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
-    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+    (unit-type-count-total 358 >= bt-castle-skirmisher-floor)
     (unit-type-count-total mangonel-line >= bt-castle-mangonel-floor)
     (unit-type-count-total monk >= bt-castle-monk-floor)
 =>
@@ -11113,7 +11583,7 @@
 ; Release: early-defensive-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-early-defensive-spears 65)
-    (unit-type-count spearman-line >= 2)
+    (unit-type-count 93 >= 2)
 =>
     (set-goal demand-early-defensive-spears 0)
 )
@@ -11122,7 +11592,7 @@
 (defrule
     (goal demand-early-defensive-spears 0)
     (current-age == feudal-age)
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
 =>
     (set-goal demand-early-defensive-spears 1)
 )
@@ -11133,7 +11603,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (unit-type-count spearman-line >= 2)
+    (unit-type-count 93 >= 2)
 =>
     (set-goal demand-early-defensive-spears 65)
 )
@@ -11144,7 +11614,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-early-defensive-spears 64)
@@ -11156,7 +11626,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-early-defensive-spears 1)
@@ -11166,17 +11636,17 @@
 ; Action issuance: early-defensive-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-early-defensive-spears 1)
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (goal production-retry-barrier-early-defensive-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
-    (can-train-with-escrow spearman-line)
-    (unit-type-count-total spearman-line < 2)
+    (can-train-with-escrow 93)
+    (unit-type-count-total 93 < 2)
 =>
-    (train spearman-line)
+    (train 93)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-early-defensive-spears 66)
 )
@@ -11393,7 +11863,7 @@
 ; Release: expected-mounted-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-expected-mounted-spears 78)
-    (unit-type-count spearman-line >= 2)
+    (unit-type-count 93 >= 2)
 =>
     (set-goal demand-expected-mounted-spears 0)
 )
@@ -11404,7 +11874,7 @@
         (goal demand-expected-mounted-spears 79)
         (goal demand-expected-mounted-spears 77)
     )
-    (unit-type-count spearman-line >= 2)
+    (unit-type-count 93 >= 2)
 =>
     (set-goal demand-expected-mounted-spears 78)
 )
@@ -11415,7 +11885,7 @@
         (goal demand-expected-mounted-spears 79)
         (goal demand-expected-mounted-spears 77)
     )
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-expected-mounted-spears 77)
@@ -11427,7 +11897,7 @@
         (goal demand-expected-mounted-spears 79)
         (goal demand-expected-mounted-spears 77)
     )
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-expected-mounted-spears 1)
@@ -11437,17 +11907,17 @@
 ; Action issuance: expected-mounted-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-expected-mounted-spears 1)
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (goal production-retry-barrier-expected-mounted-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count spearman-line >= 2))
+    (not (unit-type-count 93 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= feudal-age)
     (and (players-building-type-count any-enemy stable >= 1) (players-unit-type-count any-enemy scout-cavalry-line < 3))
-    (can-train-with-escrow spearman-line)
-    (unit-type-count-total spearman-line < 2)
+    (can-train-with-escrow 93)
+    (unit-type-count-total 93 < 2)
 =>
-    (train spearman-line)
+    (train 93)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-expected-mounted-spears 79)
 )
@@ -11463,7 +11933,7 @@
 ; Release: expected-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-expected-ranged-skirmishers 79)
-    (unit-type-count skirmisher-line >= 2)
+    (unit-type-count 358 >= 2)
 =>
     (set-goal demand-expected-ranged-skirmishers 0)
 )
@@ -11474,7 +11944,7 @@
         (goal demand-expected-ranged-skirmishers 80)
         (goal demand-expected-ranged-skirmishers 78)
     )
-    (unit-type-count skirmisher-line >= 2)
+    (unit-type-count 358 >= 2)
 =>
     (set-goal demand-expected-ranged-skirmishers 79)
 )
@@ -11485,7 +11955,7 @@
         (goal demand-expected-ranged-skirmishers 80)
         (goal demand-expected-ranged-skirmishers 78)
     )
-    (not (unit-type-count skirmisher-line >= 2))
+    (not (unit-type-count 358 >= 2))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-expected-ranged-skirmishers 78)
@@ -11497,7 +11967,7 @@
         (goal demand-expected-ranged-skirmishers 80)
         (goal demand-expected-ranged-skirmishers 78)
     )
-    (not (unit-type-count skirmisher-line >= 2))
+    (not (unit-type-count 358 >= 2))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-expected-ranged-skirmishers 1)
@@ -11507,17 +11977,17 @@
 ; Action issuance: expected-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-expected-ranged-skirmishers 1)
-    (not (unit-type-count skirmisher-line >= 2))
+    (not (unit-type-count 358 >= 2))
     (goal production-retry-barrier-expected-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count skirmisher-line >= 2))
+    (not (unit-type-count 358 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= feudal-age)
     (and (players-building-type-count any-enemy archery-range >= 1) (players-unit-type-count any-enemy archer-line < 3))
-    (can-train-with-escrow skirmisher-line)
-    (unit-type-count-total skirmisher-line < 2)
+    (can-train-with-escrow 358)
+    (unit-type-count-total 358 < 2)
 =>
-    (train skirmisher-line)
+    (train 358)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-expected-ranged-skirmishers 80)
 )
@@ -11533,7 +12003,7 @@
 ; Release: counter-mounted-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-mounted-spears 63)
-    (unit-type-count spearman-line >= 4)
+    (unit-type-count 93 >= 4)
 =>
     (set-goal demand-counter-mounted-spears 0)
 )
@@ -11541,7 +12011,7 @@
 ; Recovery: counter-mounted-spears | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-mounted-spears 0)
-    (not (unit-type-count spearman-line >= 4))
+    (not (unit-type-count 93 >= 4))
     (goal counter-package-mounted_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -11554,7 +12024,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (unit-type-count spearman-line >= 4)
+    (unit-type-count 93 >= 4)
 =>
     (set-goal demand-counter-mounted-spears 63)
 )
@@ -11565,7 +12035,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count spearman-line >= 4))
+    (not (unit-type-count 93 >= 4))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-counter-mounted-spears 62)
@@ -11577,7 +12047,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count spearman-line >= 4))
+    (not (unit-type-count 93 >= 4))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-counter-mounted-spears 1)
@@ -11587,17 +12057,17 @@
 ; Action issuance: counter-mounted-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-mounted-spears 1)
-    (not (unit-type-count spearman-line >= 4))
+    (not (unit-type-count 93 >= 4))
     (goal production-retry-barrier-counter-mounted-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count spearman-line >= 4))
+    (not (unit-type-count 93 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
-    (can-train-with-escrow spearman-line)
-    (unit-type-count-total spearman-line < 4)
+    (can-train-with-escrow 93)
+    (unit-type-count-total 93 < 4)
 =>
-    (train spearman-line)
+    (train 93)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-counter-mounted-spears 64)
 )
@@ -11613,7 +12083,7 @@
 ; Release: counter-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-ranged-skirmishers 64)
-    (unit-type-count skirmisher-line >= 4)
+    (unit-type-count 358 >= 4)
 =>
     (set-goal demand-counter-ranged-skirmishers 0)
 )
@@ -11621,7 +12091,7 @@
 ; Recovery: counter-ranged-skirmishers | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-ranged-skirmishers 0)
-    (not (unit-type-count skirmisher-line >= 4))
+    (not (unit-type-count 358 >= 4))
     (goal counter-package-ranged_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -11634,7 +12104,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (unit-type-count skirmisher-line >= 4)
+    (unit-type-count 358 >= 4)
 =>
     (set-goal demand-counter-ranged-skirmishers 64)
 )
@@ -11645,7 +12115,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count skirmisher-line >= 4))
+    (not (unit-type-count 358 >= 4))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-counter-ranged-skirmishers 63)
@@ -11657,7 +12127,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count skirmisher-line >= 4))
+    (not (unit-type-count 358 >= 4))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
@@ -11667,10 +12137,10 @@
 ; Action issuance: counter-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-ranged-skirmishers 1)
-    (not (unit-type-count skirmisher-line >= 4))
+    (not (unit-type-count 358 >= 4))
     (goal production-retry-barrier-counter-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count skirmisher-line >= 4))
+    (not (unit-type-count 358 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (or
@@ -11678,10 +12148,10 @@
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     )
     (current-age >= feudal-age)
-    (can-train-with-escrow skirmisher-line)
-    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
+    (can-train-with-escrow 358)
+    (unit-type-count-total 358 < bt-castle-skirmisher-floor)
 =>
-    (train skirmisher-line)
+    (train 358)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-counter-ranged-skirmishers 65)
 )
@@ -11776,7 +12246,7 @@
     )
     (current-age == feudal-age)
     (goal byzantine-feudal-army-package byzantine-feudal-package-skirmisher)
-    (not (players-unit-type-count any-enemy spearman-line >= 4))
+    (not (players-unit-type-count any-enemy 93 >= 4))
 =>
     (set-goal demand-feudal-archer-floor 0)
 )
@@ -17385,7 +17855,7 @@
             (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
             (or
                 (unit-type-count-total arbalest >= 16)
-                (unit-type-count-total skirmisher-line >= 16)
+                (unit-type-count-total 358 >= 16)
             )
         )
     )
@@ -21215,7 +21685,7 @@
     (not (research-completed 98))
     (current-age >= imperial-age)
     (research-completed 1454)
-    (unit-type-count skirmisher-line >= 4)
+    (unit-type-count 358 >= 4)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 1)
 )
@@ -21254,7 +21724,7 @@
     (goal research-retry-barrier-imperial-elite-skirmisher-upgrade 0)
     (current-age >= imperial-age)
     (research-completed 1454)
-    (unit-type-count skirmisher-line >= 4)
+    (unit-type-count 358 >= 4)
     (building-type-count-total archery-range >= 1)
     (not (research-completed 98))
     (not (up-research-status c: 98 >= 2))

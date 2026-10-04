@@ -10,6 +10,7 @@ from ..ir import (
     NativeAttackLifecyclePlan,
     NativeControlPlan,
     NativeDucPlan,
+    NativeRoleSeparationPlan,
     NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
     SemanticDemand,
@@ -25,6 +26,7 @@ from ..runtime_binding import (
     TimerSlot,
 )
 from ..semantic.native_control import validate_native_control_plan
+from ..ir.role_separation import validate_native_role_separation_plan
 from ..semantic.construction import construction_transition_rules
 
 MAX_RULES = 10_000
@@ -106,6 +108,7 @@ def emit(
     control_plan: NativeControlPlan | None = None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     registry = registry or default_de_registry()
@@ -120,6 +123,8 @@ def emit(
     )
     if native_attack_plan is not None:
         registry.validate_attack_plan(native_attack_plan)
+    if role_plan is not None:
+        validate_native_role_separation_plan(role_plan, registry)
     if escrow_plan is not None:
         registry.validate_escrow_plan(escrow_plan)
 
@@ -394,6 +399,76 @@ def emit(
         out.append(f"(defconst {_claim_name(conflict_class)} {slot.id.value})")
 
     out.append("")
+
+    if role_plan is not None:
+        out.append("; Native Byzantine role-separation plan")
+        emitted_defconsts = _defconst_bindings(out)
+        role_binding_values = {}
+        for state in sorted(role_plan.states, key=lambda item: item.identifier):
+            binding = bindings.binding_for(state.request.request_id)
+            if not isinstance(binding, GoalSlot):
+                raise CompileError(
+                    f"ROLE-PLAN-BINDING: state '{state.identifier}' resolved to "
+                    f"'{type(binding).__name__}', expected GoalSlot"
+                )
+            value = binding.id.value
+            role_binding_values[state.identifier] = value
+            existing_value = emitted_defconsts.get(state.identifier)
+            if existing_value is not None:
+                if existing_value != str(value):
+                    raise CompileError(
+                        f"ROLE-PLAN-SYMBOL: duplicate emitted defconst '{state.identifier}' "
+                        f"has {existing_value}, expected {value}"
+                    )
+                continue
+            emitted_defconsts[state.identifier] = str(value)
+            out.append(f"(defconst {state.identifier} {value})")
+
+        for name, value in role_plan.constants:
+            existing_value = emitted_defconsts.get(name)
+            if existing_value is not None:
+                if existing_value != str(value):
+                    raise CompileError(
+                        f"ROLE-PLAN-CONSTANT: duplicate emitted defconst '{name}' "
+                        f"has {existing_value}, expected {value}"
+                    )
+                continue
+            emitted_defconsts[name] = str(value)
+            out.append(f"(defconst {name} {value})")
+        for state, value in role_plan.state_values:
+            name = f"byzantine-army-role-{state.value.lower().replace('_', '-')}"
+            existing_value = emitted_defconsts.get(name)
+            if existing_value is not None:
+                if existing_value != str(value):
+                    raise CompileError(
+                        f"ROLE-PLAN-STATE-CONSTANT: duplicate emitted defconst '{name}' "
+                        f"has {existing_value}, expected {value}"
+                    )
+                continue
+            emitted_defconsts[name] = str(value)
+            out.append(f"(defconst {name} {value})")
+
+        def _render_role_expression(expression) -> str:
+            rendered_args = []
+            for argument in expression.args:
+                if isinstance(argument, type(expression)):
+                    rendered_args.append(_render_role_expression(argument))
+                elif isinstance(argument, str) and argument in role_binding_values:
+                    rendered_args.append(str(role_binding_values[argument]))
+                else:
+                    rendered_args.append(str(argument))
+            if rendered_args:
+                return f"({expression.head} {' '.join(rendered_args)})"
+            return f"({expression.head})"
+
+        out.append("")
+        for rule in role_plan.rules:
+            out.append(f"; Native role rule: {rule.identity}")
+            out.append("(defrule")
+            out.extend(f"    {_render_role_expression(fact)}" for fact in rule.facts)
+            out.append("=>")
+            out.extend(f"    {_render_role_expression(action)}" for action in rule.actions)
+            out += [")", ""]
 
     if duc_plan is not None and not duc_plan.empty:
         out.append("; Native DUC execution plan")

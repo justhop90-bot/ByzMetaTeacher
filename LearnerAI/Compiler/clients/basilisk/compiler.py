@@ -38,6 +38,7 @@ def compile_strategy_profile(
         control_plan=compilation.control_plan,
         attack_plan=effective_attack_plan,
         duc_plan=effective_duc_plan,
+        role_plan=compilation.role_separation_plan,
         escrow_plan=compilation.escrow_plan,
     )
 
@@ -110,5 +111,6 @@ def compile_strategy_runtime_profile(
         control_plan=compilation.control_plan,
         attack_plan=effective_attack_plan,
         duc_plan=effective_duc_plan,
+        role_plan=compilation.role_separation_plan,
         escrow_plan=escrow_plan,
     )
