@@ -89,6 +89,7 @@
 (defconst sn-cap-civilian-builders 4)
 (defconst sn-relic-return-distance 23)
 (defconst sn-relic-defend-priority 55)
+(defconst byzantine-dark-gold-camp-point 1017)
 
 (defconst sn-gate-type-for-wall 304)
 (defconst wall-class 927)
@@ -13609,7 +13610,15 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
-    (build mining-camp)
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 1)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-dark-gold-camp-point)
+    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-build place-point 0 c: mining-camp)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-1 621)
 )
@@ -14326,6 +14335,29 @@
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-5 666)
+)
+
+; Narrow Dark Age second-mill rule: prefer a separate forage/berry patch.
+; The placement engine chooses forage with SN 253=0 and rejects a mill
+; placement inside the existing 10-tile dropsite separation zone.
+(defrule
+    (current-age == dark-age)
+    (building-type-count-total mill == 1)
+    (building-type-count-total lumber-camp >= 1)
+    (goal action-claim-build-pass-singleton 0)
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+    (resource-found food)
+    (wood-amount >= 100)
+    (can-build mill)
+=>
+    (set-strategic-number sn-preferred-mill-placement 0)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
+    (set-strategic-number sn-mill-max-distance 17)
+    (build mill)
+    (set-strategic-number sn-preferred-mill-placement 1)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
 ; Pending diagnostics: economy-food-mill-boom
