@@ -473,6 +473,7 @@ def _compile_source_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
     _return_ir: bool = False,
 ):
@@ -487,6 +488,7 @@ def _compile_source_parts(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        role_plan=role_plan,
         escrow_plan=escrow_plan,
     )
     if _return_ir:
@@ -539,6 +541,7 @@ def compile_semantic_demands(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
@@ -645,6 +648,7 @@ def compile_package_with_report(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> CombinedValidationReport:
     if native_backend is None:
