@@ -153,10 +153,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
     def test_feudal_transition_waits_for_first_resource_fronts(self):
         profile = build_byzantine_strategy(self.effective)
         transition = profile.demand("feudal-transition")
-        requirements = tuple(
-            requirement.source
-            for requirement in transition.execution.requirements
-        )
+        requirements = tuple(transition.execution.requirements)
         self.assertEqual(
             requirements,
             (
@@ -184,7 +181,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 for rule in control.rules
                 if rule.identity.startswith(f"economy-controller-write-{mode_name}-")
             }
-            self.assertEqual(len(rules), 4)
+            expected_rule_count = 5 if mode_name == "base" else 4
+            self.assertEqual(len(rules), expected_rule_count)
             written = tuple(
                 next(
                     action.args[1]
