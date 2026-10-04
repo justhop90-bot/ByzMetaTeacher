@@ -526,16 +526,6 @@ def lower_economy_controller(
     feudal_bank = plan.feudal_bank_state_name
     feudal_bank_rules = (
         NativeControlRule(
-            "economy-controller-feudal-bank-initialize",
-            facts=(parse_expression(f"(goal {feudal_bank} -1)", SourceLocation(1)),),
-            actions=(
-                parse_expression(
-                    f"(set-goal {feudal_bank} {int(FeudalBankState.IDLE)})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
             "economy-controller-feudal-bank-release-on-feudal",
             facts=(
                 parse_expression("(current-age >= feudal-age)", SourceLocation(1)),

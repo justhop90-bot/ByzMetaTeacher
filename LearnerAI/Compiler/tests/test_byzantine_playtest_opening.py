@@ -104,6 +104,7 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(research-completed ri-loom)", bank)
         self.assertIn("(food-amount >= 500)", bank)
         self.assertIn("(gold-amount >= 200)", bank)
+        self.assertNotIn("(goal byzantine-feudal-bank-state -1)", self.per)
 
         villager = self._find_rule(
             "(train villager)",

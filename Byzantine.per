@@ -4298,13 +4298,6 @@
     (release-escrow gold)
 )
 
-; Native control rule: economy-controller-feudal-bank-initialize
-(defrule
-    (goal byzantine-feudal-bank-state -1)
-=>
-    (set-goal byzantine-feudal-bank-state 0)
-)
-
 ; Native control rule: economy-controller-feudal-bank-release-on-feudal
 (defrule
     (current-age >= feudal-age)
