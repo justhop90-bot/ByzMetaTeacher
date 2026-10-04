@@ -19,6 +19,8 @@ _INVENTORY = (
 # These are explicitly anchored by the native metadata profile.
 _NATIVE_TECH_SYMBOL_OVERRIDES = {
     61: "ri-logistica",
+    905: "ri-demolition-ship",
+    906: "ri-fishing-lines",
     1454: "ri-elite-varangian-guard",
 }
 
