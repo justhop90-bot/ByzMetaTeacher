@@ -99,7 +99,6 @@ FEUDAL_TRANSITION_LOOM_RECOVERY = "feudal-transition-loom-recovery"
 FEUDAL_BANK_START_VILLAGERS = 17
 FEUDAL_BANK_CLICK_VILLAGERS = 19
 FEUDAL_BANK_FOOD = 500
-FEUDAL_BANK_GOLD = 200
 
 
 @dataclass(frozen=True)
@@ -1642,6 +1641,14 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
         "(or (goal opening-plan 2) (goal opening-plan 3))"
         ")"
     )
+    feudal_click_target = (
+        "(or "
+        f"(and (goal opening-plan 1) (map-type arabia) "
+        f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS})) "
+        f"(and (or (goal opening-plan 2) (goal opening-plan 3)) "
+        f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS + 1}))"
+        ")"
+    )
     rules = (
         NativeControlRule(
             "feudal-transition-bank-initialize",
@@ -1674,8 +1681,6 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                     f"(unit-type-count-total villager >= {FEUDAL_BANK_START_VILLAGERS})",
                     SourceLocation(1),
                 ),
-                parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
-                parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
                 parse_expression(
                     f"(goal {FEUDAL_TRANSITION_BANK_STATE} {int(FeudalTransitionBankState.IDLE)})",
                     SourceLocation(1),
@@ -1697,14 +1702,10 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                 ),
                 parse_expression("(current-age == dark-age)", SourceLocation(1)),
                 parse_expression(opening, SourceLocation(1)),
-                parse_expression(
-                    f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS})",
-                    SourceLocation(1),
-                ),
+                parse_expression(feudal_click_target, SourceLocation(1)),
                 parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
                 parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
                 parse_expression(f"(food-amount >= {FEUDAL_BANK_FOOD})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {FEUDAL_BANK_GOLD})", SourceLocation(1)),
                 parse_expression("(can-research-with-escrow feudal-age)", SourceLocation(1)),
                 parse_expression("(not (research-completed ri-loom))", SourceLocation(1)),
                 parse_expression("(not (up-research-status c: ri-loom >= research-pending))", SourceLocation(1)),
@@ -1744,14 +1745,10 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(current-age == dark-age)", SourceLocation(1)),
-                parse_expression(
-                    f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS})",
-                    SourceLocation(1),
-                ),
+                parse_expression(feudal_click_target, SourceLocation(1)),
                 parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
                 parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
                 parse_expression(f"(food-amount >= {FEUDAL_BANK_FOOD})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {FEUDAL_BANK_GOLD})", SourceLocation(1)),
                 parse_expression("(can-research-with-escrow feudal-age)", SourceLocation(1)),
                 parse_expression(
                     f"(or (research-completed ri-loom) (goal {FEUDAL_TRANSITION_LOOM_RECOVERY} 1))",
@@ -1780,7 +1777,6 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                     f"(set-goal {FEUDAL_TRANSITION_LOOM_RECOVERY} 0)",
                     SourceLocation(1),
                 ),
-                parse_expression("(set-goal demand-feudal-transition 0)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -2956,11 +2952,33 @@ def build_byzantine_castle_strategy(
 
     def annotate_demand(demand: StrategicDemandSpec) -> StrategicDemandSpec:
         execution = demand.execution
+        opportunity_cost = demand.opportunity_cost
+        if demand.identity == "feudal-transition":
+            if execution is None or opportunity_cost is None:
+                raise ValueError(
+                    "Byzantine Feudal transition must have execution and opportunity-cost policies"
+                )
+            execution = replace(
+                execution,
+                requirements=tuple(
+                    requirement
+                    for requirement in execution.requirements
+                    if requirement != "(gold-amount >= 200)"
+                ),
+                escrow_release_resources=(Resource.FOOD,),
+            )
+            opportunity_cost = replace(
+                opportunity_cost,
+                protected_floors=(
+                    ProtectedResourceFloor(Resource.FOOD, FEUDAL_BANK_FOOD),
+                ),
+            )
         return replace(
             demand,
             reason=tuple(annotate_meta(evidence) for evidence in demand.reason),
             admissibility=tuple(annotate_meta(evidence) for evidence in demand.admissibility),
             invalidation=tuple(annotate_meta(evidence) for evidence in demand.invalidation),
+            opportunity_cost=opportunity_cost,
             execution=execution,
         )
 
