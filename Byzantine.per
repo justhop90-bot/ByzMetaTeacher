@@ -18237,10 +18237,41 @@
 (defrule
     (goal byzantine-wall-native-state byzantine-wall-native-gate-armed)
     (gate-count byzantine-wall-native-perimeter >= 1)
+    (wall-completed-percentage byzantine-wall-native-perimeter >= 42)
 =>
     (set-goal byzantine-wall-native-state byzantine-wall-native-idle)
     (set-goal byzantine-wall-gate-policy byzantine-wall-gate-none)
     (set-goal byzantine-wall-material byzantine-wall-material-none)
+)
+
+; Breach witness: a gated perimeter below the build threshold is no longer
+; treated as complete. Re-arm the existing stone-wall demand only when the
+; original pressure/stone admission remains valid. The next pass reuses the
+; same native perimeter builder; no second scheduler is introduced.
+(defrule
+    (goal byzantine-wall-native-state byzantine-wall-native-gate-armed)
+    (gate-count byzantine-wall-native-perimeter >= 1)
+    (wall-completed-percentage byzantine-wall-native-perimeter < 42)
+    (current-age >= castle-age)
+    (stone-amount >= 650)
+    (or
+        (players-unit-type-count any-enemy knight >= 3)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 4)
+            (or
+                (players-unit-type-count any-enemy militia-line >= 5)
+                (or
+                    (players-unit-type-count any-enemy mangonel-line >= 2)
+                    (town-under-attack)
+                )
+            )
+        )
+    )
+=>
+    (set-goal demand-adaptive-stone-wall 1)
+    (set-goal byzantine-wall-material byzantine-wall-material-stone)
+    (set-goal byzantine-wall-gate-policy byzantine-wall-gate-required)
+    (set-goal byzantine-wall-native-state byzantine-wall-native-idle)
 )
 
 ; Native perimeter completion is independent of action issuance. The existing

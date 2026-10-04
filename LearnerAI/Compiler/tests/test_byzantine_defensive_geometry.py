@@ -247,6 +247,38 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_native_perimeter_rearms_after_breach(self):
+        gate_release = self.per.index(
+            "(goal byzantine-wall-native-state byzantine-wall-native-gate-armed)"
+        )
+        gate_release_end = self.per.index(
+            "; Native perimeter completion is independent of action issuance.",
+            gate_release,
+        )
+        gate_release_rule = self.per[gate_release:gate_release_end]
+        self.assertIn(
+            "(wall-completed-percentage byzantine-wall-native-perimeter >= 42)",
+            gate_release_rule,
+        )
+
+        breach_start = self.per.index(
+            "; Breach witness: a gated perimeter below the build threshold is no longer"
+        )
+        breach_end = self.per.index(
+            "; Native perimeter completion is independent of action issuance.",
+            breach_start,
+        )
+        breach_rule = self.per[breach_start:breach_end]
+        self.assertIn(
+            "(wall-completed-percentage byzantine-wall-native-perimeter < 42)",
+            breach_rule,
+        )
+        self.assertIn("(set-goal demand-adaptive-stone-wall 1)", breach_rule)
+        self.assertIn(
+            "(set-goal byzantine-wall-native-state byzantine-wall-native-idle)",
+            breach_rule,
+        )
+
     def test_goal_comparisons_use_up_compare_goal(self):
         # `goal` is exact equality only. Comparator forms belong to
         # `up-compare-goal`; letting `(goal G > 0)` through produces a native
