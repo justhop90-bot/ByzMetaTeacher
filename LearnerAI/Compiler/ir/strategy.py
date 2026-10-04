@@ -1946,11 +1946,22 @@ def build_land_castle_strategy(
             observation_ref="current-feudal-age",
         ),
     )
+    castle_age = effective.age_advance(Age.CASTLE)
+    castle_age_cost = effective.cost_of_age_advance(Age.CASTLE)
 
     castle_policy = OpportunityCostPolicy(
         owner="castle-trajectory",
         protected_floors=(
             ProtectedResourceFloor(Resource.STONE, 650),
+        ),
+        emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+    )
+
+    castle_age_policy = OpportunityCostPolicy(
+        owner="age-transition",
+        protected_floors=(
+            ProtectedResourceFloor(Resource.FOOD, castle_age_cost.food),
+            ProtectedResourceFloor(Resource.GOLD, castle_age_cost.gold),
         ),
         emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
     )
@@ -1998,6 +2009,60 @@ def build_land_castle_strategy(
                 action="(research feudal-age)",
                 witness="(current-age >= feudal-age)",
                 release="(current-age >= feudal-age)",
+                escrow_release_resources=(Resource.FOOD, Resource.GOLD),
+            ),
+        ),
+        StrategicDemandSpec(
+            identity="castle-age-transition",
+            owner="age-transition",
+            posture=StrategyPosture.BOOM,
+            priority=StrategicPriority.CORE,
+            reason=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Reach Castle as the selected Feudal trajectory without allowing optional Feudal purchases to starve the age bank",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle transition remains admissible until Castle Age is witnessed",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle transition is obsolete after Imperial Age",
+                    observation_ref="current-imperial-age",
+                ),
+            ),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.AGE_ADVANCE,
+                "age-advance",
+                "castle-age",
+                castle_age.provider_building,
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.EXACT,
+                "age-advance",
+                "castle-age",
+            ),
+            opportunity_cost=castle_age_policy,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age == feudal-age)",
+                    "(building-type-count-total blacksmith >= 1)",
+                    "(building-type-count-total market >= 1)",
+                    "(can-research-with-escrow castle-age)",
+                ),
+                action="(research castle-age)",
+                witness="(current-age >= castle-age)",
+                release="(current-age >= castle-age)",
                 escrow_release_resources=(Resource.FOOD, Resource.GOLD),
             ),
         ),

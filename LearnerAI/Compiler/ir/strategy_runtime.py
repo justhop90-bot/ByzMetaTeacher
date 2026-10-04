@@ -15,7 +15,7 @@ from .counter_strategy import (
     CounterPackage,
     CounterThreatClass,
 )
-from .game_data import canonical_fingerprint
+from .game_data import Age, canonical_fingerprint
 from .strategy import (
     CapabilityIntentKind,
     StrategicCapabilityObservation,
@@ -601,7 +601,7 @@ def _unit_tokens(effective: EffectiveCivData) -> set[str]:
 
 
 def _tech_tokens(effective: EffectiveCivData) -> set[str]:
-    return {
+    tokens = {
         token
         for item in effective.technologies
         for token in (
@@ -610,6 +610,17 @@ def _tech_tokens(effective: EffectiveCivData) -> set[str]:
             f"ri-{item.name.lower().replace(' ', '-')}",
         )
     }
+    # Age advances are research commands with verified native TechIds but are
+    # represented separately from ordinary technology definitions.
+    for age in (Age.FEUDAL, Age.CASTLE, Age.IMPERIAL):
+        advance = effective.age_advance(age)
+        tokens.update(
+            {
+                str(int(advance.native_tech_id)),
+                str(advance.id),
+            }
+        )
+    return tokens
 
 
 def _validate_native_operand(

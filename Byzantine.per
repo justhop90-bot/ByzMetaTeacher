@@ -11565,6 +11565,14 @@
     (unit-type-count-total villager < 110)
     (population-headroom > 0)
     (can-train villager)
+    (not (and
+        (current-age == dark-age)
+        (can-research-with-escrow feudal-age)
+    ))
+    (not (and
+        (current-age == feudal-age)
+        (can-research-with-escrow castle-age)
+    ))
     (not (goal byzantine-resource-claim 1))
     (not (goal byzantine-resource-claim 2))
     (not (goal byzantine-resource-claim 3))
@@ -19847,6 +19855,7 @@
     (not (up-research-status c: 202 >= 2))
     (not (research-completed 202))
     (current-age >= feudal-age)
+    (not (can-research-with-escrow castle-age))
     (can-research-with-escrow double-bit-axe)
 =>
     (release-escrow food)
@@ -19915,6 +19924,7 @@
     (not (up-research-status c: 14 >= 2))
     (not (research-completed 14))
     (current-age >= feudal-age)
+    (not (can-research-with-escrow castle-age))
     (can-research-with-escrow horse-collar)
 =>
     (release-escrow food)

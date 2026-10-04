@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
@@ -6,6 +7,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     lower_strategy_profile,
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.ir.game_data import Resource
 
 
 class ByzantineStrategyControlSliceTests(unittest.TestCase):
@@ -162,6 +164,85 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "(building-type-count-total mining-camp >= 1)",
                 "(can-research-with-escrow feudal-age)",
             ),
+        )
+
+    def test_castle_age_transition_is_compiler_owned_and_protected(self):
+        profile = build_byzantine_strategy(self.effective)
+        transition = profile.demand("castle-age-transition")
+
+        self.assertEqual(
+            tuple(transition.execution.requirements),
+            (
+                "(current-age == feudal-age)",
+                "(building-type-count-total blacksmith >= 1)",
+                "(building-type-count-total market >= 1)",
+                "(can-research-with-escrow castle-age)",
+            ),
+        )
+        self.assertEqual(transition.execution.action, "(research castle-age)")
+        self.assertEqual(
+            transition.execution.escrow_release_resources,
+            (Resource.FOOD, Resource.GOLD),
+        )
+        self.assertEqual(
+            tuple(
+                (floor.resource, floor.minimum)
+                for floor in transition.opportunity_cost.protected_floors
+            ),
+            ((Resource.FOOD, 800), (Resource.GOLD, 200)),
+        )
+
+    def test_feudal_research_yields_to_castle_feasibility(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        for identity in ("research-double-bit-axe", "research-horse-collar"):
+            requirements = tuple(profile.demand(identity).execution.requirements)
+            self.assertIn(
+                "(not (can-research-with-escrow castle-age))",
+                requirements,
+            )
+
+        wheelbarrow = tuple(
+            profile.demand("research-wheelbarrow").execution.requirements
+        )
+        self.assertNotIn(
+            "(not (can-research-with-escrow castle-age))",
+            wheelbarrow,
+        )
+
+    def test_checked_in_runtime_preserves_age_bank_arbitration(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        villager_start = runtime.index("; Persistent civilian production")
+        villager_end = runtime.index(
+            "; Pending diagnostics: early-defensive-spears",
+            villager_start,
+        )
+        villager_rule = runtime[villager_start:villager_end]
+        self.assertIn(
+            "(not (and\n        (current-age == dark-age)\n        (can-research-with-escrow feudal-age)\n    ))",
+            villager_rule,
+        )
+        self.assertIn(
+            "(not (and\n        (current-age == feudal-age)\n        (can-research-with-escrow castle-age)\n    ))",
+            villager_rule,
+        )
+
+        dba_start = runtime.index("; Action issuance: research-double-bit-axe")
+        dba_end = runtime.index("; Pending diagnostics: research-horse-collar", dba_start)
+        dba_rule = runtime[dba_start:dba_end]
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            dba_rule,
+        )
+
+        horse_start = runtime.index("; Action issuance: research-horse-collar")
+        horse_end = runtime.index("; Pending diagnostics: research-hand-cart", horse_start)
+        horse_rule = runtime[horse_start:horse_end]
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            horse_rule,
         )
 
     def test_opening_selection_materially_changes_native_economy_writers(self):
