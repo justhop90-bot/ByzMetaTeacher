@@ -1606,6 +1606,31 @@ def _strategy_control_plan(profile: StrategyProfile):
         from .camp_control import lower_byzantine_camp_controller
         camp_plan = lower_byzantine_camp_controller(profile.camp_controller, profile)
 
+    role_recovery_bridge_plan = None
+    if profile.role_separation_plan is not None:
+        from ..ast import SourceLocation
+        from ..semantic.analyzer import parse_expression
+        from .native_control import NativeControlPlan, NativeControlRule
+
+        role_recovery_bridge_plan = NativeControlPlan(
+            rules=(
+                NativeControlRule(
+                    "byzantine-role-recovery-bridge",
+                    facts=(
+                        parse_expression(
+                            "(goal byzantine-army-role-recovery-request 1)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    actions=(
+                        parse_expression("(up-reset-attack-now)", SourceLocation(1)),
+                        parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                        parse_expression("(set-goal byzantine-army-role-recovery-request 0)", SourceLocation(1)),
+                    ),
+                ),
+            )
+        )
+
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
         for state in (assertion_plan.states if assertion_plan is not None else ())
