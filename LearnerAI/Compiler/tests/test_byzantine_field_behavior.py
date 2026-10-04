@@ -202,7 +202,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             )[1],
         )
         self.assertIn(
-            "(goal byzantine-resource-camp-gold-handoff 1)",
+            "(goal byzantine-resource-camp-gold-handoff 1)\n        (not\n            (or\n                (goal demand-economy-lumber-camp-floor-1 1)",
             controller,
         )
 
