@@ -118,7 +118,7 @@ Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, an
 - [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
 - [x] Preserve armies under defensive fire where native control permits.
 - [x] Make army-loss recovery change production and attack posture.
-- [ ] Reassess attack continuation after enemy strength changes.
+- [x] Reassess attack continuation after enemy strength changes using coarse community military-population overmatch buckets; exact combat-power parity remains open.
 - [ ] Expire obsolete counter packages.
 
 Acceptance: fewer wasteful engagements, better siege use, coherent retreat/reposition/re-engage behavior, and meaningful recovery.
