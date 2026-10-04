@@ -48,11 +48,11 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "; Native economy rule: byzantine-boar-lure-enable",
         )
         self.assertIn(
-            "(set-strategic-number sn-maximum-wood-drop-distance 14)",
+            "(set-strategic-number sn-maximum-wood-drop-distance 16)",
             init,
         )
         self.assertIn(
-            "(set-strategic-number sn-maximum-gold-drop-distance 14)",
+            "(set-strategic-number sn-maximum-gold-drop-distance 16)",
             init,
         )
 
@@ -90,7 +90,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertIn("(defconst byzantine-resource-camp-radius-wide 24)", self.per)
         self.assertIn("(defconst byzantine-resource-camp-radius-remote 30)", self.per)
 
-        for radius in (14, 18, 20):
+        for radius in (16, 18, 20):
             self.assertIn(
                 f"(set-strategic-number sn-lumber-camp-max-distance {radius})",
                 controller,
@@ -187,6 +187,71 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "(defconst byzantine-resource-camp-search-state-remote-list 794)",
         ):
             self.assertIn(expected, self.per)
+
+
+    def test_dark_age_base_camp_radius_preserves_known_good_opening_distance(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(set-strategic-number sn-lumber-camp-max-distance 16)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-mining-camp-max-distance 16)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-wood-drop-distance 16)",
+            controller,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-gold-drop-distance 16)",
+            controller,
+        )
+
+    def test_arabia_dark_age_first_camps_bypass_candidate_ring_legality_probe(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        opening = self._section_from(
+            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality",
+            "; Standard opening placement prefers the persisted resource point.",
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)",
+            opening,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-target-valid 1)",
+            opening,
+        )
+        self.assertIn(
+            "(goal opening-plan 1)",
+            opening,
+        )
+        self.assertIn(
+            "(map-type arabia)",
+            opening,
+        )
+        self.assertIn(
+            "(current-age == dark-age)",
+            opening,
+        )
+        self.assertNotIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
+            opening,
+        )
+        self.assertNotIn(
+            "(up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)",
+            opening,
+        )
+        self.assertIn(
+            "(up-set-target-point byzantine-resource-camp-point)",
+            self.per,
+        )
 
     def test_remote_resource_recovery_never_retasks_into_far_or_fortified_resource(self):
         recovery = self._section_from(
