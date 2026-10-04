@@ -1635,7 +1635,6 @@ def _strategy_control_plan(profile: StrategyProfile):
         opening_plan,
         economy_plan,
         camp_plan,
-        role_recovery_bridge_plan,
     )
 
 
