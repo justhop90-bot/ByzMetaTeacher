@@ -65,12 +65,12 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         }
         for name, value in expected.items():
             self.assertEqual(
-                len(re.findall(rf"\(defconst {re.escape(name)} \\d+\)", self.source)),
+                len(re.findall(rf"\(defconst {re.escape(name)} \d+\)", self.source)),
                 1,
                 name,
             )
             self.assertEqual(
-                len(re.findall(rf"\(defconst [^\\s()]+ {value}\)", self.source)),
+                len(re.findall(rf"\(defconst [^\s()]+ {value}\)", self.source)),
                 1,
                 f"goal id {value} must be unique",
             )
