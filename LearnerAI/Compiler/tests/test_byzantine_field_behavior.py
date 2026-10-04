@@ -635,7 +635,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         )
         values = []
         for name in names:
-            match = re.search(rf"\\(defconst {re.escape(name)} (\\d+)\\)", self.per)
+            match = re.search(rf"\(defconst {re.escape(name)} (\d+)\)", self.per)
             self.assertIsNotNone(match, f"{name} must be defined")
             values.append(int(match.group(1)))
 
