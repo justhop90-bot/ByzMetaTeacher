@@ -842,7 +842,7 @@ def community_strategy_demands(
             resources=resources,
             additional_requirements=(
                 ("(not (can-research-with-escrow castle-age))",)
-                if tech_name in {"double-bit-axe", "horse-collar"}
+                if tech_name in {"double-bit-axe", "horse-collar", "wheelbarrow"}
                 and age == "feudal-age"
                 else ()
             ),
