@@ -421,7 +421,7 @@ def lower_economy_controller(
                 "(current-age < castle-age)",
                 no_pressure,
                 no_secondary_pressure,
-                f"(or {opening(1)} {opening(2)})",
+                opening(1),
             ),
         ),
         NativeControlRule(
