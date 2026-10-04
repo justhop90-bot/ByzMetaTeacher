@@ -44,6 +44,8 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 CounterThreatClass.MOUNTED,
                 CounterThreatClass.INFANTRY,
                 CounterThreatClass.SIEGE,
+                CounterThreatClass.MOUNTED,
+                CounterThreatClass.RANGED,
             ),
         )
 
@@ -52,6 +54,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age == feudal-age)", True),
+                ("(current-age >= feudal-age)", True),
                 ("(players-building-type-count any-enemy stable >= 1)", True),
                 ("(can-train-with-escrow spearman-line)", True),
                 ("(unit-type-count-total spearman-line < 2)", True),
@@ -78,6 +81,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age == feudal-age)", True),
+                ("(current-age >= feudal-age)", True),
                 ("(players-building-type-count any-enemy stable >= 1)", True),
                 ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
                 ("(can-train-with-escrow spearman-line)", True),
