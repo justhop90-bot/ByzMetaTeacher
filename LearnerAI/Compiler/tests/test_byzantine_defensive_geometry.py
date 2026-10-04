@@ -290,6 +290,38 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             section,
         )
 
+    def test_fortified_siege_commitment_revalidates_before_breach(self):
+        start = self.per.index(
+            "(goal byzantine-siege-approach byzantine-siege-approach-escorted)"
+        )
+        end = self.per.index("; Guarded breach admission.", start)
+        section = self.per[start:end]
+
+        self.assertIn(
+            "(unit-type-count-total mangonel-line < bt-castle-timing-siege-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total battering-ram-line < bt-castle-timing-siege-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total trebuchet < bt-imperial-timing-siege-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total bombard-cannon < bt-imperial-timing-siege-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total battering-ram-line < bt-imperial-timing-siege-floor)",
+            section,
+        )
+        self.assertIn(
+            "(set-goal byzantine-army-attack-ready 0)",
+            section,
+        )
+
     def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
         self.assertIn(
             "(not (goal byzantine-production-castle-target 2))",
