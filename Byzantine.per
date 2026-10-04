@@ -15,10 +15,7 @@
 (defconst 35 35)
 (defconst 429 429)
 (defconst 464 464)
-(defconst 61 61)
 (defconst 65 65)
-(defconst 905 905)
-(defconst 906 906)
 (defconst arbalest 237)
 (defconst atonement 319)
 (defconst redemption 316)
@@ -46,6 +43,11 @@
 (defconst theocracy 438)
 (defconst two-man-saw 221)
 (defconst wheelbarrow 213)
+
+(defconst ri-logistica 61)
+(defconst ri-demolition-ship 905)
+(defconst ri-fishing-lines 906)
+(defconst ri-elite-varangian-guard 1454)
 
 ; Native parser bindings for symbolic unit/building/status/SN identifiers.
 ; These are engine IDs used by command arguments; they do not change runtime policy.
@@ -9629,7 +9631,7 @@
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
     (unit-type-count-total varangian-guard-line >= 3)
-    (not (research-completed 1454))
+    (not (research-completed ri-elite-varangian-guard))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
 )
@@ -9650,7 +9652,7 @@
         (unit-type-count-total cataphract-line >= 2)
         (unit-type-count-total varangian-guard-line >= 2)
     )
-    (not (research-completed 61))
+    (not (research-completed ri-logistica))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
 )
@@ -22991,7 +22993,7 @@
     (goal demand-imperial-elite-cataphract-upgrade 0)
     (not (research-completed ri-elite-cataphract))
     (current-age >= imperial-age)
-    (research-completed 61)
+    (research-completed ri-logistica)
     (unit-type-count cataphract-line >= 4)
 =>
     (set-goal demand-imperial-elite-cataphract-upgrade 1)
@@ -23030,7 +23032,7 @@
     (goal demand-imperial-elite-cataphract-upgrade 1)
     (goal research-retry-barrier-imperial-elite-cataphract-upgrade 0)
     (current-age >= imperial-age)
-    (research-completed 61)
+    (research-completed ri-logistica)
     (unit-type-count cataphract-line >= 4)
     (building-type-count-total castle >= 1)
     (not (research-completed ri-elite-cataphract))
@@ -23046,13 +23048,13 @@
 ; Elite Varangian Guard: use the shock-infantry branch when the unit is actually fielded.
 (defrule
     (goal demand-imperial-elite-varangian-upgrade complete-imperial-elite-varangian-upgrade)
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade 0)
 )
 (defrule
     (goal demand-imperial-elite-varangian-upgrade 0)
-    (not (research-completed 1454))
+    (not (research-completed ri-elite-varangian-guard))
     (current-age >= imperial-age)
     (research-completed ri-elite-cataphract)
     (unit-type-count varangian-guard-line >= 3)
@@ -23064,7 +23066,7 @@
         (goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
         (goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
     )
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade complete-imperial-elite-varangian-upgrade)
 )
@@ -23073,8 +23075,8 @@
         (goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
         (goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
     )
-    (not (research-completed 1454))
-    (up-research-status c: 1454 >= 2)
+    (not (research-completed ri-elite-varangian-guard))
+    (up-research-status c: ri-elite-varangian-guard >= research-pending)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
 )
@@ -23083,8 +23085,8 @@
         (goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
         (goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
     )
-    (not (research-completed 1454))
-    (not (up-research-status c: 1454 >= 2))
+    (not (research-completed ri-elite-varangian-guard))
+    (not (up-research-status c: ri-elite-varangian-guard >= research-pending))
 =>
     (set-goal demand-imperial-elite-varangian-upgrade 1)
     (set-goal research-retry-barrier-imperial-elite-varangian-upgrade 1)
@@ -23096,13 +23098,13 @@
     (research-completed ri-elite-cataphract)
     (unit-type-count varangian-guard-line >= 3)
     (building-type-count-total barracks >= 1)
-    (not (research-completed 1454))
-    (not (up-research-status c: 1454 >= 2))
-    (can-research-with-escrow 1454)
+    (not (research-completed ri-elite-varangian-guard))
+    (not (up-research-status c: ri-elite-varangian-guard >= research-pending))
+    (can-research-with-escrow ri-elite-varangian-guard)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 1454)
+    (research ri-elite-varangian-guard)
     (set-goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
 )
 
@@ -23118,7 +23120,7 @@
     (goal demand-imperial-elite-skirmisher-upgrade 0)
     (not (research-completed ri-elite-skirmisher))
     (current-age >= imperial-age)
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
     (unit-type-count skirmisher-line >= 4)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 1)
@@ -23157,7 +23159,7 @@
     (goal demand-imperial-elite-skirmisher-upgrade 1)
     (goal research-retry-barrier-imperial-elite-skirmisher-upgrade 0)
     (current-age >= imperial-age)
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
     (unit-type-count skirmisher-line >= 4)
     (building-type-count-total archery-range >= 1)
     (not (research-completed ri-elite-skirmisher))
@@ -23181,7 +23183,7 @@
 ; Release: research-logistica | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-logistica 118)
-    (research-completed 61)
+    (research-completed ri-logistica)
 =>
     (set-goal demand-research-logistica 0)
 )
@@ -23192,7 +23194,7 @@
         (goal demand-research-logistica 119)
         (goal demand-research-logistica 117)
     )
-    (research-completed 61)
+    (research-completed ri-logistica)
 =>
     (set-goal demand-research-logistica 118)
 )
@@ -23203,8 +23205,8 @@
         (goal demand-research-logistica 119)
         (goal demand-research-logistica 117)
     )
-    (not (research-completed 61))
-    (up-research-status c: 61 >= 2)
+    (not (research-completed ri-logistica))
+    (up-research-status c: ri-logistica >= research-pending)
 =>
     (set-goal demand-research-logistica 117)
 )
@@ -23215,8 +23217,8 @@
         (goal demand-research-logistica 119)
         (goal demand-research-logistica 117)
     )
-    (not (research-completed 61))
-    (not (up-research-status c: 61 >= 2))
+    (not (research-completed ri-logistica))
+    (not (up-research-status c: ri-logistica >= research-pending))
 =>
     (set-goal demand-research-logistica 1)
     (set-goal research-retry-barrier-research-logistica 1)
@@ -23225,20 +23227,20 @@
 ; Action issuance: research-logistica | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-logistica 1)
-    (not (research-completed 61))
+    (not (research-completed ri-logistica))
     (goal research-retry-barrier-research-logistica 0)
-    (not (up-research-status c: 61 >= 2))
-    (not (research-completed 61))
+    (not (up-research-status c: ri-logistica >= research-pending))
+    (not (research-completed ri-logistica))
     (or
         (unit-type-count cataphract-line >= 2)
         (unit-type-count varangian-guard-line >= 2)
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow 61)
+    (can-research-with-escrow ri-logistica)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 61)
+    (research ri-logistica)
     (set-goal demand-research-logistica 119)
 )
 
@@ -25131,7 +25133,7 @@
 ; Release: water-fishing-lines | COMPLETE -> RELEASED
 (defrule
     (goal demand-water-fishing-lines 130)
-    (research-completed 906)
+    (research-completed ri-fishing-lines)
 =>
     (set-goal demand-water-fishing-lines 0)
 )
@@ -25139,10 +25141,10 @@
 ; Recovery: water-fishing-lines | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-water-fishing-lines 0)
-    (not (research-completed 906))
+    (not (research-completed ri-fishing-lines))
     (goal strategic-primary-intent 1)
     (map-type islands)
-    (not (research-completed 906))
+    (not (research-completed ri-fishing-lines))
 =>
     (set-goal demand-water-fishing-lines 1)
 )
@@ -25153,7 +25155,7 @@
         (goal demand-water-fishing-lines 131)
         (goal demand-water-fishing-lines 129)
     )
-    (research-completed 906)
+    (research-completed ri-fishing-lines)
 =>
     (set-goal demand-water-fishing-lines 130)
 )
@@ -25164,8 +25166,8 @@
         (goal demand-water-fishing-lines 131)
         (goal demand-water-fishing-lines 129)
     )
-    (not (research-completed 906))
-    (up-research-status c: 906 >= 2)
+    (not (research-completed ri-fishing-lines))
+    (up-research-status c: ri-fishing-lines >= research-pending)
 =>
     (set-goal demand-water-fishing-lines 129)
 )
@@ -25176,8 +25178,8 @@
         (goal demand-water-fishing-lines 131)
         (goal demand-water-fishing-lines 129)
     )
-    (not (research-completed 906))
-    (not (up-research-status c: 906 >= 2))
+    (not (research-completed ri-fishing-lines))
+    (not (up-research-status c: ri-fishing-lines >= research-pending))
 =>
     (set-goal demand-water-fishing-lines 1)
     (set-goal research-retry-barrier-water-fishing-lines 1)
@@ -25186,17 +25188,17 @@
 ; Action issuance: water-fishing-lines | ACTIVE -> ISSUED
 (defrule
     (goal demand-water-fishing-lines 1)
-    (not (research-completed 906))
+    (not (research-completed ri-fishing-lines))
     (goal research-retry-barrier-water-fishing-lines 0)
-    (not (up-research-status c: 906 >= 2))
-    (not (research-completed 906))
+    (not (up-research-status c: ri-fishing-lines >= research-pending))
+    (not (research-completed ri-fishing-lines))
     (current-age >= feudal-age)
     (map-type islands)
-    (can-research-with-escrow 906)
+    (can-research-with-escrow ri-fishing-lines)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 906)
+    (research ri-fishing-lines)
     (set-goal demand-water-fishing-lines 131)
 )
 
@@ -25550,7 +25552,7 @@
 ; Release: research-demolition-ship | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-demolition-ship 105)
-    (research-completed 905)
+    (research-completed ri-demolition-ship)
 =>
     (set-goal demand-research-demolition-ship 0)
 )
@@ -25558,10 +25560,10 @@
 ; Recovery: research-demolition-ship | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-research-demolition-ship 0)
-    (not (research-completed 905))
+    (not (research-completed ri-demolition-ship))
     (goal strategic-primary-intent 1)
     (current-age >= castle-age)
-    (not (research-completed 905))
+    (not (research-completed ri-demolition-ship))
 =>
     (set-goal demand-research-demolition-ship 1)
 )
@@ -25572,7 +25574,7 @@
         (goal demand-research-demolition-ship 106)
         (goal demand-research-demolition-ship 104)
     )
-    (research-completed 905)
+    (research-completed ri-demolition-ship)
 =>
     (set-goal demand-research-demolition-ship 105)
 )
@@ -25583,8 +25585,8 @@
         (goal demand-research-demolition-ship 106)
         (goal demand-research-demolition-ship 104)
     )
-    (not (research-completed 905))
-    (up-research-status c: 905 >= 2)
+    (not (research-completed ri-demolition-ship))
+    (up-research-status c: ri-demolition-ship >= research-pending)
 =>
     (set-goal demand-research-demolition-ship 104)
 )
@@ -25595,8 +25597,8 @@
         (goal demand-research-demolition-ship 106)
         (goal demand-research-demolition-ship 104)
     )
-    (not (research-completed 905))
-    (not (up-research-status c: 905 >= 2))
+    (not (research-completed ri-demolition-ship))
+    (not (up-research-status c: ri-demolition-ship >= research-pending))
 =>
     (set-goal demand-research-demolition-ship 1)
     (set-goal research-retry-barrier-research-demolition-ship 1)
@@ -25605,16 +25607,16 @@
 ; Action issuance: research-demolition-ship | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-demolition-ship 1)
-    (not (research-completed 905))
+    (not (research-completed ri-demolition-ship))
     (goal research-retry-barrier-research-demolition-ship 0)
-    (not (up-research-status c: 905 >= 2))
-    (not (research-completed 905))
+    (not (up-research-status c: ri-demolition-ship >= research-pending))
+    (not (research-completed ri-demolition-ship))
     (current-age >= castle-age)
-    (can-research-with-escrow 905)
+    (can-research-with-escrow ri-demolition-ship)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research 905)
+    (research ri-demolition-ship)
     (set-goal demand-research-demolition-ship 106)
 )
 
