@@ -81,19 +81,52 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             rule for rule in control.rules
             if rule.identity == "opening-selector-counter-feudal"
         )
-        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
-        self.assertIn(
-            "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(or (players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5)))",
-            fast_castle.facts[0].source,
-        )
-        self.assertIn(
-            "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(or (players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5)))",
-            counter_feudal.facts[0].source,
-        )
+        expected_opening_facts = {
+            "opening-selector-water-control": (
+                "(goal opening-plan -1)",
+                "(map-type islands)",
+                "(or (players-unit-type-count any-enemy galley-line >= 2) "
+                "(players-unit-type-count any-enemy fire-galley-line >= 2))",
+            ),
+            "opening-selector-water-economy": (
+                "(goal opening-plan -1)",
+                "(map-type islands)",
+                "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
+                "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
+            ),
+            "opening-selector-fast-castle": (
+                "(goal opening-plan -1)",
+                "(map-type arena)",
+                "(not (or (players-unit-type-count any-enemy knight >= 3) "
+                "(or (players-unit-type-count any-enemy archer-line >= 4) "
+                "(players-unit-type-count any-enemy militia-line >= 5))))",
+            ),
+            "opening-selector-counter-feudal": (
+                "(goal opening-plan -1)",
+                "(not (map-type islands))",
+                "(not (map-type arena))",
+                "(or (players-unit-type-count any-enemy knight >= 3) "
+                "(or (players-unit-type-count any-enemy archer-line >= 4) "
+                "(players-unit-type-count any-enemy militia-line >= 5)))",
+            ),
+            "opening-selector-defensive-standard": (
+                "(goal opening-plan -1)",
+                "(not (map-type islands))",
+                "(not (map-type arena))",
+                "(not (or (players-unit-type-count any-enemy knight >= 3) "
+                "(or (players-unit-type-count any-enemy archer-line >= 4) "
+                "(players-unit-type-count any-enemy militia-line >= 5))))",
+            ),
+        }
+        for rule in (fast_castle, counter_feudal):
+            self.assertEqual(
+                tuple(fact.source for fact in rule.facts),
+                expected_opening_facts[rule.identity],
+            )
+        for rule_id, expected_facts in expected_opening_facts.items():
+            rule = next(rule for rule in control.rules if rule.identity == rule_id)
+            self.assertEqual(tuple(fact.source for fact in rule.facts), expected_facts)
+            self.assertTrue(all(len(fact.source) <= 255 for fact in rule.facts))
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
