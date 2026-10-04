@@ -107,6 +107,55 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_minimum_viable_attack_admission_does_not_require_monks_or_ideal_mass(self):
+        start = self.per.index("; MINIMUM-VIABLE CASTLE ATTACK ADMISSION")
+        end = self.per.index("; FULL CASTLE ATTACK PACKAGE", start)
+        section = self.per[start:end]
+
+        self.assertIn("(defconst bt-castle-timing-cataphract-floor 3)", self.per)
+        self.assertIn("(defconst bt-castle-timing-skirmisher-floor 2)", self.per)
+        self.assertIn("(defconst bt-castle-timing-siege-floor 1)", self.per)
+        self.assertIn("(defconst bt-imperial-timing-backbone-floor 4)", self.per)
+        self.assertIn("(defconst bt-imperial-timing-halberdier-floor 4)", self.per)
+        self.assertIn("(defconst bt-imperial-timing-siege-floor 1)", self.per)
+
+        self.assertIn(
+            "(unit-type-count-total cataphract-line >= bt-castle-timing-cataphract-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total mangonel-line >= bt-castle-timing-siege-floor)",
+            section,
+        )
+        self.assertIn(
+            "(unit-type-count-total battering-ram-line >= bt-castle-timing-siege-floor)",
+            section,
+        )
+        self.assertNotIn("(unit-type-count-total monk", section)
+
+        imperial_start = self.per.index("; MINIMUM-VIABLE IMPERIAL ATTACK ADMISSION")
+        imperial_section = self.per[imperial_start:self.per.index("; FULL IMPERIAL ATTACK PACKAGE", imperial_start)]
+        self.assertIn(
+            "(unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)",
+            imperial_section,
+        )
+        self.assertIn(
+            "(unit-type-count-total 359 >= bt-imperial-timing-halberdier-floor)",
+            imperial_section,
+        )
+        self.assertIn(
+            "(unit-type-count-total trebuchet >= bt-imperial-timing-siege-floor)",
+            imperial_section,
+        )
+        self.assertIn(
+            "(unit-type-count-total bombard-cannon >= bt-imperial-timing-siege-floor)",
+            imperial_section,
+        )
+
     def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
         self.assertIn(
             "(not (goal byzantine-production-castle-target 2))",
