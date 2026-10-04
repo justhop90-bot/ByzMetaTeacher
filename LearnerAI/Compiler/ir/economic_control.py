@@ -553,7 +553,6 @@ def lower_economy_controller(
             facts=(
                 parse_expression("(current-age == dark-age)", SourceLocation(1)),
                 parse_expression("(not (map-type islands))", SourceLocation(1)),
-                parse_expression("(goal demand-feudal-transition 1)", SourceLocation(1)),
                 parse_expression(
                     f"(or (goal {plan.opening_state} 1) (or (goal {plan.opening_state} 2) (goal {plan.opening_state} 3)))",
                     SourceLocation(1),
