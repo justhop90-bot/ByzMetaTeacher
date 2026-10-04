@@ -495,9 +495,147 @@ def lower_economy_controller(
         )
     )
 
+    feudal_bank = plan.feudal_bank_state_name
+    feudal_bank_rules = (
+        NativeControlRule(
+            "economy-controller-feudal-bank-initialize",
+            facts=(parse_expression(f"(goal {feudal_bank} -1)", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {feudal_bank} {int(FeudalBankState.IDLE)})",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-release-on-feudal",
+            facts=(
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+                parse_expression(f"(goal {feudal_bank} != {int(FeudalBankState.IDLE)})", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {feudal_bank} {int(FeudalBankState.IDLE)})",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-enter",
+            facts=(
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+                parse_expression("(not (map-type islands))", SourceLocation(1)),
+                parse_expression("(goal demand-feudal-transition 1)", SourceLocation(1)),
+                parse_expression(
+                    f"(or (goal {plan.opening_state} 1) (or (goal {plan.opening_state} 2) (goal {plan.opening_state} 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(unit-type-count-total villager >= {plan.feudal_bank_start_villagers})",
+                    SourceLocation(1),
+                ),
+                parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
+                parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
+                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.IDLE)})", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {feudal_bank} {int(FeudalBankState.BUILDING)})",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-ready",
+            facts=(
+                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+                parse_expression(
+                    f"(unit-type-count-total villager >= {plan.feudal_bank_click_villagers})",
+                    SourceLocation(1),
+                ),
+                parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
+                parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
+                parse_expression("(research-completed ri-loom)", SourceLocation(1)),
+                parse_expression(f"(food-amount >= {plan.feudal_bank_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount >= {plan.feudal_bank_gold})", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {feudal_bank} {int(FeudalBankState.READY)})",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-prioritize-food",
+            facts=(
+                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
+                parse_expression(f"(food-amount < {plan.feudal_bank_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount < {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression("(up-compare-sn sn-food-gatherer-percentage != 55)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-strategic-number sn-food-gatherer-percentage 55)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-wood-gatherer-percentage 20)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-gold-gatherer-percentage 25)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-civilian-builders 3)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-stone-gatherer-percentage 0)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-prioritize-gold",
+            facts=(
+                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
+                parse_expression(f"(food-amount >= {plan.feudal_bank_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount < {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression("(up-compare-sn sn-gold-gatherer-percentage != 30)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-strategic-number sn-food-gatherer-percentage 50)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-wood-gatherer-percentage 20)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-gold-gatherer-percentage 30)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-civilian-builders 3)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-stone-gatherer-percentage 0)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-prioritize-food-after-gold",
+            facts=(
+                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
+                parse_expression(f"(food-amount < {plan.feudal_bank_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount >= {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression("(up-compare-sn sn-food-gatherer-percentage != 65)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-strategic-number sn-food-gatherer-percentage 65)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-wood-gatherer-percentage 20)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-gold-gatherer-percentage 15)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-civilian-builders 3)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-stone-gatherer-percentage 0)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "economy-controller-feudal-bank-hold",
+            facts=(
+                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
+                parse_expression(f"(food-amount >= {plan.feudal_bank_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount >= {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression("(up-compare-sn sn-food-gatherer-percentage != 60)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-strategic-number sn-food-gatherer-percentage 60)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-wood-gatherer-percentage 20)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-gold-gatherer-percentage 20)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-civilian-builders 3)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-stone-gatherer-percentage 0)", SourceLocation(1)),
+            ),
+        ),
+    )
+
     return NativeControlPlan(
         states=tuple(states),
-        rules=bank_rules + selection_rules + tuple(writer_rules),
+        rules=bank_rules + selection_rules + tuple(writer_rules) + feudal_bank_rules,
     )
 
 
