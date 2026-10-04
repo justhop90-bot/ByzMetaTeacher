@@ -4463,6 +4463,12 @@
 (defconst bt-imperial-late-trebuchet-target 8)
 (defconst bt-imperial-late-ram-target 8)
 (defconst bt-imperial-bombard-floor 2)
+(defconst bt-castle-timing-cataphract-floor 3)
+(defconst bt-castle-timing-skirmisher-floor 2)
+(defconst bt-castle-timing-siege-floor 1)
+(defconst bt-imperial-timing-backbone-floor 4)
+(defconst bt-imperial-timing-halberdier-floor 4)
+(defconst bt-imperial-timing-siege-floor 1)
 (defconst bt-imperial-trebuchet-target 2)
 (defconst bt-castle-attack-siege-target 2)
 (defconst bt-imperial-attack-siege-target 2)
@@ -8806,6 +8812,72 @@
 =>
     (set-goal byzantine-army-attack-ready 1)
 )
+
+; MINIMUM-VIABLE IMPERIAL ATTACK ADMISSION
+; Early Imperial pressure can begin from a smaller role-balanced backbone plus
+; one offensive siege piece. Fortified targets still use the larger package.
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)
+    (unit-type-count-total 359 >= bt-imperial-timing-halberdier-floor)
+    (or
+        (unit-type-count-total trebuchet >= bt-imperial-timing-siege-floor)
+        (or
+            (unit-type-count-total bombard-cannon >= bt-imperial-timing-siege-floor)
+            (unit-type-count-total battering-ram-line >= bt-imperial-timing-siege-floor)
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total 2703 >= bt-imperial-timing-backbone-floor)
+    (unit-type-count-total 359 >= bt-imperial-timing-halberdier-floor)
+    (or
+        (unit-type-count-total trebuchet >= bt-imperial-timing-siege-floor)
+        (or
+            (unit-type-count-total bombard-cannon >= bt-imperial-timing-siege-floor)
+            (unit-type-count-total battering-ram-line >= bt-imperial-timing-siege-floor)
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total arbalester-line >= bt-imperial-timing-backbone-floor)
+    (unit-type-count-total 359 >= bt-imperial-timing-halberdier-floor)
+    (or
+        (unit-type-count-total trebuchet >= bt-imperial-timing-siege-floor)
+        (or
+            (unit-type-count-total bombard-cannon >= bt-imperial-timing-siege-floor)
+            (unit-type-count-total battering-ram-line >= bt-imperial-timing-siege-floor)
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+; FULL IMPERIAL ATTACK PACKAGE
 
 (defrule
     (current-age >= imperial-age)
