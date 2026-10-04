@@ -16390,6 +16390,74 @@
     (set-goal byzantine-production-castle-target 0)
 )
 
+; REINFORCEMENT CAPACITY OVERRIDE
+; A real army-loss/reinforcement state can justify another production lane before
+; the normal villager-count milestones. This is intentionally narrow: the
+; selected role must still have a live counter/composition reason, population
+; headroom must exist, and the wood bank must be able to absorb the provider.
+;
+; Queue-capacity semantics remain OPEN. Reinforcement is therefore policy evidence
+; for additional capacity, not a fabricated queue-depth witness.
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-reinforcement 1)
+    (population-headroom > 8)
+    (wood-amount > 400)
+    (not (town-under-attack))
+    (or
+        (goal demand-counter-mounted-spears 1)
+        (players-unit-type-count any-enemy knight >= 3)
+    )
+=>
+    (set-goal byzantine-production-barracks-target 2)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-reinforcement 1)
+    (population-headroom > 8)
+    (wood-amount > 400)
+    (not (town-under-attack))
+    (or
+        (goal demand-counter-ranged-skirmishers 1)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 3)
+            (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+        )
+    )
+=>
+    (set-goal byzantine-production-archery-target 2)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-reinforcement 1)
+    (population-headroom > 8)
+    (wood-amount > 400)
+    (not (town-under-attack))
+    (or
+        (goal demand-castle-cataphract-floor 1)
+        (unit-type-count-total cataphract-line >= 4)
+    )
+=>
+    (set-goal byzantine-production-stable-target 2)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-reinforcement 1)
+    (population-headroom > 8)
+    (wood-amount > 400)
+    (not (town-under-attack))
+    (or
+        (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+        (goal byzantine-fortification-threat 1)
+    )
+=>
+    (set-goal byzantine-production-siege-target 2)
+)
+
 ; CASTLE-AGE CAPACITY EXPANSION
 ; The first Barracks/Range/Stable remain owned by their existing capability
 ; lifecycles. These rules only raise shared capacity targets when the existing
