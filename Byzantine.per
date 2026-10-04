@@ -4308,7 +4308,7 @@
 ; Native control rule: economy-controller-feudal-bank-release-on-feudal
 (defrule
     (current-age >= feudal-age)
-    (goal byzantine-feudal-bank-state != 0)
+    (not (goal byzantine-feudal-bank-state 0))
 =>
     (set-goal byzantine-feudal-bank-state 0)
 )
