@@ -424,7 +424,7 @@ def community_strategy_observations(
             "(and (players-unit-type-count any-enemy militia-line < 3) "
             "(players-unit-type-count any-enemy scout-cavalry-line < 3) "
             "(players-unit-type-count any-enemy archer-line < 3) "
-            "(players-unit-type-count any-enemy knight < 1)))))",
+            "(players-unit-type-count any-enemy knight < 1))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
