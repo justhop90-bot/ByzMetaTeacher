@@ -221,6 +221,17 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertIn("(goal byzantine-resource-camp-gold-handoff 0)", failure)
         self.assertIn("(set-goal byzantine-resource-camp-gold-handoff 1)", failure)
 
+        gold_failure = controller[
+            controller.index(
+                "(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)\n"
+                "    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)"
+            ):
+        ]
+        gold_failure_end = gold_failure.index("(defrule", 1)
+        gold_failure = gold_failure[:gold_failure_end]
+        self.assertIn("(goal byzantine-resource-camp-gold-handoff 1)", gold_failure)
+        self.assertIn("(set-goal byzantine-resource-camp-gold-handoff 0)", gold_failure)
+
         gold_complete = self._section_from(
             "; economy-gold-camp-floor-1",
             "; economy-gold-camp-floor-2",
