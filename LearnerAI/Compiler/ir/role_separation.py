@@ -199,11 +199,16 @@ def _rule(
     actions: Iterable[str],
     role: RoleKind | None = None,
 ) -> NativeRoleRule:
+    try:
+        parsed_facts = tuple(_expr(item) for item in facts)
+        parsed_actions = tuple(_expr(item) for item in actions)
+    except Exception as exc:
+        raise ValueError(f"invalid native role rule '{identity}': {exc}") from exc
     return NativeRoleRule(
         identity=identity,
         order=order,
-        facts=tuple(_expr(item) for item in facts),
-        actions=tuple(_expr(item) for item in actions),
+        facts=parsed_facts,
+        actions=parsed_actions,
         role=role,
     )
 
