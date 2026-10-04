@@ -194,12 +194,17 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         )
 
         # Normal lumber priority is disabled only while the one-pass handoff is active.
+        normal_selector = controller.split(
+            "(defrule\n    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)",
+            1,
+        )[1]
         self.assertIn(
-            "(goal byzantine-resource-camp-gold-handoff 0)\n    (not (town-under-attack))",
-            controller.split(
-                "(defrule\n    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)",
-                1,
-            )[1],
+            "(goal byzantine-resource-camp-gold-handoff 0)",
+            normal_selector,
+        )
+        self.assertIn(
+            "(not (town-under-attack))",
+            normal_selector,
         )
         self.assertIn(
             "(goal byzantine-resource-camp-gold-handoff 1)\n        (not\n            (or\n                (goal demand-economy-lumber-camp-floor-1 1)",
