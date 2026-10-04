@@ -211,6 +211,7 @@ class StrategicBinding:
     capability_intent: CapabilityIntent
     opportunity_cost: OpportunityCostPolicy | None
     production_arbitration_group: str | None = None
+    initially_active: bool = True
 
     @property
     def persistent_intent(self) -> bool:
@@ -896,6 +897,16 @@ def lower_strategy_profile(
         nodes,
         default_de_registry(),
         source_unit=profile.profile_id,
+    )
+
+    semantic_demands = tuple(
+        replace(
+            demand,
+            initially_active=profile.demand(
+                execution_owner[demand.name]
+            ).initially_active,
+        )
+        for demand in semantic_demands
     )
 
     bindings: dict[str, StrategicBinding] = {}
