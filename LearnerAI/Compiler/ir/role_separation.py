@@ -390,12 +390,11 @@ def default_byzantine_role_separation_plan(
                 "(up-set-target-point byzantine-offensive-objective-point)",
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
-                "(up-find-local c: 93 c: 40)
-                (up-find-local c: 358 c: 40)
-                (up-find-local c: 359 c: 40)",
-                "(up-find-local c: 7 c: 40)
-                (up-find-local c: 6 c: 40)",
+                "(up-find-local c: 93 c: 40)",
+                "(up-find-local c: 358 c: 40)",
                 "(up-find-local c: 359 c: 40)",
+                "(up-find-local c: 7 c: 40)",
+                "(up-find-local c: 6 c: 40)",
                 "(up-remove-objects search-local 19 != 2)",
                 f"(up-create-group 0 {cap_name} c: 5)",
                 "(up-modify-group-flag 1 c: 5)",
@@ -415,13 +414,13 @@ def default_byzantine_role_separation_plan(
                 "(up-set-target-point byzantine-offensive-objective-point)",
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
-                "(up-find-local c: 280 c: 40)
-                (up-find-local c: 550 c: 40)",
+                "(up-find-local c: 280 c: 40)",
+                "(up-find-local c: 550 c: 40)",
                 "(up-find-local c: 36 c: 40)",
                 "(up-find-local c: 331 c: 40)",
-                "(up-find-local c: 1258 c: 40)
-                (up-find-local c: 422 c: 40)
-                (up-find-local c: 548 c: 40)",
+                "(up-find-local c: 1258 c: 40)",
+                "(up-find-local c: 422 c: 40)",
+                "(up-find-local c: 548 c: 40)",
                 "(up-remove-objects search-local 19 != 2)",
                 f"(set-goal {cap_name} 2)",
                 f"(up-create-group 0 {cap_name} c: 7)",
