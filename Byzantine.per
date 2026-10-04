@@ -4495,6 +4495,426 @@
 (defconst byzantine-siege-scale 320)
 (defconst byzantine-siege-scale-standard 1)
 (defconst byzantine-siege-scale-fortified 2)
+
+; ============================================================
+; Byzantine military role separation
+; Role ownership:
+;   screen/main/siege/raid/reserve membership -> this controller
+;   objective class/target -> offensive objective controller
+;   attack/move issuance -> existing objective/siege actuators only
+;
+; Group identities: 5 screen, 6 main, 7 siege, 8 raid, 9 reserve.
+; Formation is edge-triggered. Group size proves membership at the
+; formation/split witness boundary, not combat success.
+(defconst byzantine-army-role-state 420)
+(defconst byzantine-army-role-formation-mask 421)
+(defconst byzantine-army-role-selection-cap 422)
+(defconst byzantine-army-role-screen-size 423)
+(defconst byzantine-army-role-main-size 424)
+(defconst byzantine-army-role-siege-size 425)
+(defconst byzantine-army-role-raid-size 426)
+(defconst byzantine-army-role-reserve-size 427)
+(defconst byzantine-army-role-fortified-latch 430)
+
+(defconst byzantine-army-role-id-screen 5)
+(defconst byzantine-army-role-id-main 6)
+(defconst byzantine-army-role-id-siege 7)
+(defconst byzantine-army-role-id-raid 8)
+(defconst byzantine-army-role-id-reserve 9)
+(defconst byzantine-army-role-idle 0)
+(defconst byzantine-army-role-forming 1)
+(defconst byzantine-army-role-committed 2)
+(defconst byzantine-army-role-raid-split 3)
+(defconst byzantine-army-role-recovering 4)
+(defconst bt-role-screen-floor 2)
+(defconst bt-role-main-floor 3)
+(defconst bt-role-siege-floor-standard 1)
+(defconst bt-role-siege-floor-fortified 2)
+(defconst bt-role-raid-floor 2)
+
+; Goal defaults are zero. Do not add recurring initialization, because it would
+; turn persistent state into a per-pass scheduler.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-idle)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-forming)
+    (set-goal byzantine-army-role-formation-mask 0)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 0)
+=>
+    (up-full-reset-search)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-remove-objects search-local object-data-status != 2)
+    (up-modify-group-flag 0 c: 5)
+    (up-modify-group-flag 0 c: 6)
+    (up-modify-group-flag 0 c: 7)
+    (up-modify-group-flag 0 c: 8)
+    (up-modify-group-flag 0 c: 9)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-selection-cap 4)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (set-goal byzantine-army-role-formation-mask 1)
+)
+
+; Screen first.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: spearman-line c: 40)
+    (up-find-local c: skirmisher-line c: 40)
+    (up-find-local c: 359 c: 40)
+    (up-remove-objects search-local object-data-status != 2)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 5)
+    (up-modify-group-flag 1 c: 5)
+    (set-goal byzantine-army-role-formation-mask 3)
+)
+
+; Siege second.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 3)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: mangonel-line c: 40)
+    (up-find-local c: bombard-cannon c: 40)
+    (up-find-local c: trebuchet-set c: 40)
+    (up-find-local c: battering-ram-line c: 40)
+    (up-remove-objects search-local object-data-status != 2)
+    (set-goal byzantine-army-role-selection-cap 2)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 7)
+    (up-modify-group-flag 1 c: 7)
+    (set-goal byzantine-army-role-formation-mask 7)
+)
+
+; Reserve BEFORE main so raid capacity is deliberate, not leftover.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 7)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: cavalry-class c: 40)
+    (up-find-local c: monk c: 40)
+    (up-remove-objects search-local object-data-status != 2)
+    (up-remove-objects search-local object-data-group-flag == 5)
+    (up-remove-objects search-local object-data-group-flag == 7)
+    (set-goal byzantine-army-role-selection-cap 4)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 9)
+    (up-modify-group-flag 1 c: 9)
+    (set-goal byzantine-army-role-formation-mask 15)
+)
+
+; Main gets every remaining ready combat unit except screen/siege/reserve/monks.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 15)
+=>
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-remove-objects search-local object-data-status != 2)
+    (up-remove-objects search-local object-data-group-flag == 5)
+    (up-remove-objects search-local object-data-group-flag == 7)
+    (up-remove-objects search-local object-data-group-flag == 9)
+    (up-remove-objects search-local object-data-type == monk)
+    (set-goal byzantine-army-role-selection-cap 40)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 6)
+    (up-modify-group-flag 1 c: 6)
+    (set-goal byzantine-army-role-formation-mask 23)
+)
+
+; Native group-size witness.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 23)
+    (goal byzantine-army-attack-ready 1)
+=>
+    (up-get-group-size c: 5 byzantine-army-role-screen-size)
+    (up-get-group-size c: 6 byzantine-army-role-main-size)
+    (up-get-group-size c: 7 byzantine-army-role-siege-size)
+    (up-get-group-size c: 8 byzantine-army-role-raid-size)
+    (up-get-group-size c: 9 byzantine-army-role-reserve-size)
+    (set-goal byzantine-army-role-formation-mask 31)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 31)
+    (goal byzantine-army-attack-ready 1)
+    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (or
+        (and
+            (goal byzantine-fortification-threat 0)
+            (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+        )
+        (and
+            (goal byzantine-fortification-threat 1)
+            (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
+        )
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-committed)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-forming)
+    (goal byzantine-army-role-formation-mask 31)
+    (goal byzantine-army-attack-ready 1)
+    (or
+        (up-compare-goal byzantine-army-role-screen-size < c:bt-role-screen-floor)
+        (up-compare-goal byzantine-army-role-main-size < c:bt-role-main-floor)
+        (and
+            (goal byzantine-fortification-threat 0)
+            (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-standard)
+        )
+        (and
+            (goal byzantine-fortification-threat 1)
+            (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
+        )
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (set-goal byzantine-army-attack-ready 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
+    (goal byzantine-army-attack-ready 0)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
+    (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (set-goal byzantine-army-attack-ready 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
+    (or
+        (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+        (goal byzantine-offensive-objective-claim 0)
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-idle)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-recovering)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-forming)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-recovering)
+    (or
+        (goal byzantine-army-attack-ready 0)
+        (goal byzantine-offensive-objective-claim 0)
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-idle)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+; Raid is limited to production/TC objectives and only steals from reserve.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (or
+        (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
+        (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
+    )
+    (goal byzantine-fortification-threat 0)
+    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+    (up-compare-goal byzantine-army-role-reserve-size >= c:bt-role-raid-floor)
+    (or
+        (unit-type-count-total knight-line >= bt-role-raid-floor)
+        (unit-type-count-total camel-line >= bt-role-raid-floor)
+        (unit-type-count-total cataphract-line >= bt-role-raid-floor)
+    )
+=>
+    (up-reset-group c: 8)
+    (up-full-reset-search)
+    (up-set-target-point byzantine-offensive-objective-point)
+    (up-filter-distance c: -1 c: 60)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: cavalry-class c: 40)
+    (up-remove-objects search-local object-data-status != 2)
+    (up-remove-objects search-local object-data-group-flag != 9)
+    (set-goal byzantine-army-role-selection-cap 4)
+    (up-create-group 0 byzantine-army-role-selection-cap c: 8)
+    (up-modify-group-flag 1 c: 8)
+    (set-goal byzantine-army-role-formation-mask 40)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-army-role-formation-mask 40)
+=>
+    (up-get-group-size c: 5 byzantine-army-role-screen-size)
+    (up-get-group-size c: 6 byzantine-army-role-main-size)
+    (up-get-group-size c: 7 byzantine-army-role-siege-size)
+    (up-get-group-size c: 8 byzantine-army-role-raid-size)
+    (set-goal byzantine-army-role-formation-mask 41)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-army-role-formation-mask 41)
+    (up-compare-goal byzantine-army-role-raid-size >= c:bt-role-raid-floor)
+    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-raid-split)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-army-role-formation-mask 41)
+    (up-compare-goal byzantine-army-role-raid-size < c:bt-role-raid-floor)
+=>
+    (up-reset-group c: 8)
+    (set-goal byzantine-army-role-formation-mask 31)
+)
+
+; Raid returns when its world-state admission disappears.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    (or
+        (goal byzantine-fortification-threat 1)
+        (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
+        (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
+        (goal byzantine-offensive-objective-claim 0)
+        (goal byzantine-army-attack-ready 0)
+        (goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)
+    )
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-forming)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+)
+
+; Fortified siege is a posture-edge witness, not a timer.
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-army-role-fortified-latch 1)
+=>
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (goal byzantine-army-role-fortified-latch 0)
+=>
+    (up-get-group-size c: 7 byzantine-army-role-siege-size)
+    (set-goal byzantine-army-role-formation-mask 50)
+    (set-goal byzantine-army-role-fortified-latch 1)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-army-role-formation-mask 50)
+    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
+=>
+    (set-goal byzantine-army-role-state byzantine-army-role-recovering)
+    (set-goal byzantine-army-attack-ready 0)
+    (up-reset-group c: 5)
+    (up-reset-group c: 6)
+    (up-reset-group c: 7)
+    (up-reset-group c: 8)
+    (up-reset-group c: 9)
+    (set-goal byzantine-army-role-formation-mask 0)
+    (set-goal byzantine-army-role-fortified-latch 0)
+)
+
+(defrule
+    (goal byzantine-army-role-state byzantine-army-role-committed)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-army-role-formation-mask 50)
+    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
+=>
+    (set-goal byzantine-army-role-formation-mask 31)
+)
+
 (defconst bt-imperial-fortified-trebuchet-target 3)
 (defconst bt-imperial-fortified-bombard-target 3)
 (defconst bt-imperial-fortified-ram-target 4)
@@ -9478,6 +9898,10 @@
     (goal byzantine-siege-approach byzantine-siege-approach-breach)
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
 =>
     (set-strategic-number sn-percent-attack-soldiers 75)
     (attack-now)
@@ -9509,6 +9933,10 @@
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-siege-breach-witness 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
 =>
     (set-strategic-number sn-percent-attack-soldiers 100)
@@ -9762,6 +10190,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -9814,6 +10246,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -9868,6 +10304,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
@@ -9916,6 +10356,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
     (goal byzantine-offensive-objective-claim 1)
     (goal byzantine-army-attack-ready 1)
+    (or
+        (goal byzantine-army-role-state byzantine-army-role-committed)
+        (goal byzantine-army-role-state byzantine-army-role-raid-split)
+    )
     (up-compare-goal byzantine-offensive-objective-search >= 1)
 =>
     (up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)
