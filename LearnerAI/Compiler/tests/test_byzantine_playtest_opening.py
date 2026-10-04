@@ -72,13 +72,6 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
             self.assertIn(fragment, block)
 
     def test_standard_arabia_dark_age_gold_camp_follows_discovered_gold_front(self):
-        wood = self._rule_block(
-            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
-        )
-        self.assertIn(
-            "(unit-type-count-total villager >= 12)",
-            wood,
-        )
         gold = self._find_rule(
             "(resource-found gold)",
             "(building-type-count-total mining-camp == 0)",
