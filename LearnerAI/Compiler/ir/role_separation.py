@@ -247,14 +247,18 @@ def default_byzantine_role_separation_plan(
         RoleWitnessSpec(
             "role-screen-membership",
             RoleKind.SCREEN,
-            (_expr("(up-group-size c: 5 >= bt-role-screen-floor)"),),
-            "Screen membership is proven by native group size.",
+            (_expr(
+                "(up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)"
+            ),),
+            "Screen membership is proven by native group-size output.",
         ),
         RoleWitnessSpec(
             "role-main-membership",
             RoleKind.MAIN,
-            (_expr("(up-group-size c: 6 >= bt-role-main-floor)"),),
-            "Main membership is proven by native group size.",
+            (_expr(
+                "(up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)"
+            ),),
+            "Main membership is proven by native group-size output.",
         ),
         RoleWitnessSpec(
             "role-siege-membership",
@@ -262,9 +266,9 @@ def default_byzantine_role_separation_plan(
             (
                 _expr(
                     "(or (and (goal byzantine-fortification-threat 0) "
-                    "(up-group-size c: 7 >= bt-role-siege-floor-standard)) "
+                    "(up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)) "
                     "(and (goal byzantine-fortification-threat 1) "
-                    "(up-group-size c: 7 >= bt-role-siege-floor-fortified)))"
+                    "(up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)))"
                 ),
             ),
             "Siege membership is proven against the active standard/fortified floor.",
@@ -272,20 +276,26 @@ def default_byzantine_role_separation_plan(
         RoleWitnessSpec(
             "role-raid-membership",
             RoleKind.RAID,
-            (_expr("(up-group-size c: 8 >= bt-role-raid-floor)"),),
+            (_expr(
+                "(up-compare-goal byzantine-army-role-raid-size >= c:bt-role-raid-floor)"
+            ),),
             "Raid membership is proven only by native raid-group size.",
         ),
         RoleWitnessSpec(
             "role-committed-package",
             RoleKind.MAIN,
             (
-                _expr("(up-group-size c: 5 >= bt-role-screen-floor)"),
-                _expr("(up-group-size c: 6 >= bt-role-main-floor)"),
+                _expr(
+                    "(up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)"
+                ),
+                _expr(
+                    "(up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)"
+                ),
                 _expr(
                     "(or (and (goal byzantine-fortification-threat 0) "
-                    "(up-group-size c: 7 >= bt-role-siege-floor-standard)) "
+                    "(up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)) "
                     "(and (goal byzantine-fortification-threat 1) "
-                    "(up-group-size c: 7 >= bt-role-siege-floor-fortified)))"
+                    "(up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)))"
                 ),
             ),
             "A committed package has the screen, main, and live siege floors.",
@@ -296,7 +306,9 @@ def default_byzantine_role_separation_plan(
             (
                 _expr("(goal byzantine-fortification-threat 1)"),
                 _expr("(goal byzantine-siege-scale byzantine-siege-scale-fortified)"),
-                _expr("(up-group-size c: 7 >= bt-role-siege-floor-fortified)"),
+                _expr(
+                    "(up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)"
+                ),
             ),
             "Fortified posture requires live siege membership at the enlarged floor.",
         ),
@@ -316,13 +328,14 @@ def default_byzantine_role_separation_plan(
             RoleKind.RAID,
             (
                 _expr("(goal byzantine-fortification-threat 1)"),
-                _expr("(or (goal byzantine-offensive-objective-class 3) "
-                      "(goal byzantine-offensive-objective-class 4))"),
+                _expr(
+                    "(or (goal byzantine-offensive-objective-class 3) "
+                    "(goal byzantine-offensive-objective-class 4))"
+                ),
             ),
             "A fortified-position threat makes raid splitting inadmissible.",
         ),
     )
-
     rules = (
         _rule(
             20,
