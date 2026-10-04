@@ -720,7 +720,7 @@ def emit(
             for demand in chunk:
                 out.append(
                     f"    (set-goal demand-{demand.name} "
-                    f"{encoded[demand.name].active.value})"
+                    f"{encoded[demand.name].active.value if demand.initially_active else 0})"
                 )
             out.append("    (disable-self)")
             out += [")", ""]
