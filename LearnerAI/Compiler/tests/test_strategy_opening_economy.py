@@ -251,7 +251,13 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             rule for rule in control.rules
             if rule.identity.startswith("economy-controller-feudal-reservation-")
         ]
-        self.assertGreaterEqual(len(readers), 3)
+        self.assertEqual(
+            {rule.identity for rule in readers},
+            {
+                "economy-controller-feudal-reservation-prioritize-food",
+                "economy-controller-feudal-reservation-hold",
+            },
+        )
         for rule in readers:
             self.assertTrue(any(
                 "(goal feudal-transition-bank-state 1)" in fact.source
