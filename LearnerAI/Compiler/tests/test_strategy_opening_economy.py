@@ -275,19 +275,19 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         rules = {
             rule.identity: rule
             for rule in control.rules
-            if rule.identity.startswith("economy-controller-feudal-bank-")
+            if rule.identity.startswith("economy-controller-feudal-reservation-")
         }
         self.assertIn(
             "(food-amount < 500)",
-            " ".join(f.source for f in rules["economy-controller-feudal-bank-prioritize-food"].facts),
+            " ".join(f.source for f in rules["economy-controller-feudal-reservation-prioritize-food"].facts),
         )
         self.assertIn(
             "(gold-amount < 200)",
-            " ".join(f.source for f in rules["economy-controller-feudal-bank-prioritize-gold"].facts),
+            " ".join(f.source for f in rules["economy-controller-feudal-reservation-prioritize-gold"].facts),
         )
         output = compile_strategy_profile(profile, self.effective)
-        self.assertIn("economy-controller-feudal-bank-prioritize-food", output)
-        self.assertIn("economy-controller-feudal-bank-prioritize-gold", output)
+        self.assertIn("economy-controller-feudal-reservation-prioritize-food", output)
+        self.assertIn("economy-controller-feudal-reservation-prioritize-gold", output)
 
     def test_feudal_transition_declares_a_protected_500_food_200_gold_floor(self):
         profile = build_byzantine_strategy(self.effective)
