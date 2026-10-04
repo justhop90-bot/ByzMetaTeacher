@@ -84,7 +84,8 @@ def lower_opening_selector(
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
-    # Goal slots default to 0 in the native engine; use UNKNOWN as the unopened sentinel.\n    unselected = f"(goal {plan.state_name} {int(OpeningPlanValue.UNKNOWN)})"
+    # Native Goal slots default to -1; keep -1 as the unopened selector sentinel.
+    unselected = f"(goal {plan.state_name} -1)"
     guard = lambda body: f"(and {unselected} {body})"
 
     rules = [
