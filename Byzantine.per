@@ -8753,6 +8753,51 @@
     (current-age == castle-age)
     (goal byzantine-army-plan-phase 1)
     (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total cataphract-line >= bt-castle-timing-cataphract-floor)
+    (unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)
+    (unit-type-count-total mangonel-line >= bt-castle-timing-siege-floor)
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total camel-rider-line >= bt-castle-timing-cataphract-floor)
+    (unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)
+    (unit-type-count-total battering-ram-line >= bt-castle-timing-siege-floor)
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total varangian-guard-line >= bt-castle-timing-cataphract-floor)
+    (unit-type-count-total skirmisher-line >= bt-castle-timing-skirmisher-floor)
+    (unit-type-count-total battering-ram-line >= bt-castle-timing-siege-floor)
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+; FULL CASTLE ATTACK PACKAGE
+; Castle: 4 Cataphracts + 4 Skirmishers + 2 Mangonels + 1 Monk.
+
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal byzantine-army-attack-ready 0)
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
     (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
