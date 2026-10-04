@@ -63,7 +63,8 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         rules = {rule.identity: rule for rule in control.rules}
         base = rules["economy-controller-select-base"]
         self.assertIn("(or (goal opening-plan 1) (goal opening-plan 2))", " ".join(f.source for f in base.facts))
-        self.assertNotIn("economy-controller-select-counter-feudal", rules)
+        counter = rules["economy-controller-select-counter-pressure"]
+        self.assertIn("(current-age >= feudal-age)", " ".join(f.source for f in counter.facts))
 
     def test_castle_bank_is_persistent_and_releases_at_castle(self):
         profile = build_byzantine_strategy(self.effective)
