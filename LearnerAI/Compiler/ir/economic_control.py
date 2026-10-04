@@ -569,7 +569,7 @@ def lower_economy_controller(
 
     return NativeControlPlan(
         states=tuple(states),
-        rules=selection_rules + tuple(writer_rules) + feudal_reservation_rules,
+        rules=bank_rules + selection_rules + tuple(writer_rules) + feudal_reservation_rules,
     )
 
 
