@@ -9675,7 +9675,8 @@
     (up-find-remote c: archery-range c: 1)
     (up-find-remote c: stable c: 1)
     (up-find-remote c: monastery c: 1)
-    (up-get-search-state byzantine-offensive-objective-search)
+    ; Exposed-economy fallback inside the production tier.
+    (up-find-remote c: villager c: 1)    (up-get-search-state byzantine-offensive-objective-search)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
 
@@ -9832,7 +9833,7 @@
     (up-find-remote c: archery-range c: 1)
     (up-find-remote c: stable c: 1)
     (up-find-remote c: monastery c: 1)
-    (up-get-search-state byzantine-offensive-objective-search)
+    (up-find-remote c: villager c: 1)    (up-get-search-state byzantine-offensive-objective-search)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
 
