@@ -2034,7 +2034,6 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
-                    "(and (players-building-type-count any-enemy stable >= 1) (players-unit-type-count any-enemy scout-cavalry-line < 3))",
                     "(can-train-with-escrow spearman-line)",
                     "(unit-type-count-total spearman-line < 2)",
                 ),
@@ -2527,6 +2526,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
+                    "(and (players-building-type-count any-enemy stable >= 1) (players-unit-type-count any-enemy scout-cavalry-line < 3))",
                     "(can-train-with-escrow spearman-line)",
                     "(unit-type-count-total spearman-line < 2)",
                 ),
