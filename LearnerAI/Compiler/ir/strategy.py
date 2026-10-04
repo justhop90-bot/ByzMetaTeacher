@@ -1879,8 +1879,8 @@ def _land_castle_observations(
         StrategicObservationSpec(
             "enemy-mounted-commitment-feudal",
             "(and (current-age == feudal-age) "
-            "(players-building-type-count any-enemy stable >= 1) "
-            "(players-unit-type-count any-enemy scout-cavalry-line < 3))",
+            "(and (players-building-type-count any-enemy stable >= 1) "
+            "(players-unit-type-count any-enemy scout-cavalry-line < 3)))",
             provenance=tuple(
                 dict.fromkeys(
                     (
@@ -1893,8 +1893,8 @@ def _land_castle_observations(
         StrategicObservationSpec(
             "enemy-ranged-commitment-feudal",
             "(and (current-age == feudal-age) "
-            "(players-building-type-count any-enemy archery-range >= 1) "
-            "(players-unit-type-count any-enemy archer-line < 3))",
+            "(and (players-building-type-count any-enemy archery-range >= 1) "
+            "(players-unit-type-count any-enemy archer-line < 3)))",
             provenance=tuple(
                 dict.fromkeys(
                     (
