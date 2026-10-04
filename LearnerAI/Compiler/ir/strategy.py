@@ -1878,9 +1878,9 @@ def _land_castle_observations(
         ),
         StrategicObservationSpec(
             "enemy-mounted-commitment-feudal",
-            "(and (current-age == feudal-age) (or "
+            "(and (current-age == feudal-age) "
             "(players-building-type-count any-enemy stable >= 1) "
-            "(players-unit-type-count any-enemy scout-cavalry-line >= 3)))",
+            "(players-unit-type-count any-enemy scout-cavalry-line < 3))",
             provenance=tuple(
                 dict.fromkeys(
                     (
@@ -1892,9 +1892,9 @@ def _land_castle_observations(
         ),
         StrategicObservationSpec(
             "enemy-ranged-commitment-feudal",
-            "(and (current-age == feudal-age) (or "
+            "(and (current-age == feudal-age) "
             "(players-building-type-count any-enemy archery-range >= 1) "
-            "(players-unit-type-count any-enemy archer-line >= 3)))",
+            "(players-unit-type-count any-enemy archer-line < 3))",
             provenance=tuple(
                 dict.fromkeys(
                     (
@@ -2034,6 +2034,7 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
+                    "(and (players-building-type-count any-enemy stable >= 1) (players-unit-type-count any-enemy scout-cavalry-line < 3))",
                     "(can-train-with-escrow spearman-line)",
                     "(unit-type-count-total spearman-line < 2)",
                 ),
@@ -2500,15 +2501,15 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.SUPPORT,
-            reason=(),
-            admissibility=(
+            reason=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
                     None,
-                    "Feudal predictive anti-mounted response is admissible while the enemy commitment remains observed",
+                    "Enemy stable commitment without confirmed scout mass justifies a small predicted anti-mounted floor",
                     observation_ref="enemy-mounted-commitment-feudal",
                 ),
             ),
+            admissibility=(),
             invalidation=(),
             capability_intent=CapabilityIntent(
                 CapabilityIntentKind.TRAIN,
@@ -2540,15 +2541,15 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.SUPPORT,
-            reason=(),
-            admissibility=(
+            reason=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
                     None,
-                    "Feudal predictive anti-ranged response is admissible while the enemy commitment remains observed",
+                    "Enemy archery commitment without confirmed archer mass justifies a small predicted anti-ranged floor",
                     observation_ref="enemy-ranged-commitment-feudal",
                 ),
             ),
+            admissibility=(),
             invalidation=(),
             capability_intent=CapabilityIntent(
                 CapabilityIntentKind.TRAIN,
@@ -2566,6 +2567,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
+                    "(and (players-building-type-count any-enemy archery-range >= 1) (players-unit-type-count any-enemy archer-line < 3))",
                     "(can-train-with-escrow skirmisher-line)",
                     "(unit-type-count-total skirmisher-line < 2)",
                 ),
