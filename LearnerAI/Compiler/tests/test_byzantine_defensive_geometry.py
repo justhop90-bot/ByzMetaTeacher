@@ -13,6 +13,100 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
     def setUpClass(cls):
         cls.per = PER_PATH.read_text(encoding="utf-8")
 
+    def test_parse_repository_replay_for_analysis(self):
+        import json
+        import os
+        import subprocess
+        import sys
+
+        replay = REPO_ROOT / "rec.aoe2record"
+        out_dir = Path("/tmp/native-reports")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        analysis_path = out_dir / "replay-mgz-fast-analysis.json"
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "mgz-fast==1.0.0"],
+            check=True,
+        )
+
+        def scrub(value, depth=0):
+            if depth > 5:
+                return repr(value)
+            if value is None or isinstance(value, (str, int, float, bool)):
+                return value
+            if isinstance(value, dict):
+                return {str(k): scrub(v, depth + 1) for k, v in value.items()}
+            if isinstance(value, (list, tuple)):
+                return [scrub(v, depth + 1) for v in value]
+            if hasattr(value, "name"):
+                return getattr(value, "name")
+            return repr(value)
+
+        import mgz.fast.header as header_mod
+        from mgz.fast import meta, operation
+        from mgz.fast.enums import Operation
+
+        with replay.open("rb") as handle:
+            eof = os.fstat(handle.fileno()).st_size
+            header = header_mod.parse(handle)
+            meta(handle)
+            elapsed_ms = 0
+            operation_counts = {}
+            action_counts = {}
+            selected_events = []
+            chat = []
+
+            while handle.tell() < eof:
+                try:
+                    op_type, payload = operation(handle)
+                except EOFError:
+                    break
+
+                op_name = getattr(op_type, "name", str(op_type))
+                operation_counts[op_name] = operation_counts.get(op_name, 0) + 1
+
+                if op_type == Operation.SYNC:
+                    increment, checksum, data = payload
+                    elapsed_ms += int(increment)
+                    continue
+
+                if op_type == Operation.CHAT:
+                    chat.append({
+                        "time_s": elapsed_ms / 1000.0,
+                        "text": (
+                            payload.decode("utf-8", errors="replace")
+                            if isinstance(payload, bytes)
+                            else scrub(payload)
+                        ),
+                    })
+                    continue
+
+                if op_type == Operation.ACTION:
+                    action_type, action_data = payload
+                    action_name = getattr(action_type, "name", str(action_type))
+                    action_counts[action_name] = action_counts.get(action_name, 0) + 1
+                    data = scrub(action_data)
+                    selected_events.append({
+                        "time_s": round(elapsed_ms / 1000.0, 3),
+                        "action": action_name,
+                        "data": data,
+                    })
+
+        report = {
+            "file": {
+                "size_bytes": replay.stat().st_size,
+            },
+            "header": scrub(header),
+            "duration_seconds_from_sync": elapsed_ms / 1000.0,
+            "operation_counts": operation_counts,
+            "action_counts": action_counts,
+            "chat": chat,
+            "events": selected_events,
+        }
+        analysis_path.write_text(
+            json.dumps(report, indent=2, sort_keys=True, default=str),
+            encoding="utf-8",
+        )
+
     def test_export_repository_replay_for_analysis(self):
         replay = REPO_ROOT / "rec.aoe2record"
         evidence_dir = Path("/tmp/native-reports")
