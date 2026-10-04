@@ -124,7 +124,7 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
 
         self.assertIn("(up-remove-objects search-local 19 != 2)", role_block)
         self.assertIn("(up-remove-objects search-local 73 != 9)", role_block)
-        self.assertIn("(up-remove-objects search-local 1 == 125)", role_block)
+        self.assertIn("(up-remove-objects search-local 1 == monk)", role_block)
         self.assertIn("(up-find-local c: 93 c: 40)", role_block)
         self.assertIn("(up-find-local c: 358 c: 40)", role_block)
         self.assertIn("(up-find-local c: 36 c: 40)", role_block)
