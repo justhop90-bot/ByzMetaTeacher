@@ -624,6 +624,24 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             )
             self.assertIn(f"(set-goal {demand} 1)", lifecycle)
 
+    def test_castle_muster_search_groups_stay_inside_native_group_range(self):
+        names = (
+            "byzantine-siege-muster-mangonel-group",
+            "byzantine-siege-muster-army-group",
+            "byzantine-siege-muster-trebuchet-group",
+            "byzantine-siege-muster-bombard-group",
+            "byzantine-siege-muster-ram-group",
+        )
+        values = []
+        for name in names:
+            match = re.search(rf"\\(defconst {re.escape(name)} (\\d+)\\)", self.per)
+            self.assertIsNotNone(match, f"{name} must be defined")
+            values.append(int(match.group(1)))
+
+        self.assertEqual(values, [5, 6, 7, 8, 9])
+        self.assertEqual(len(values), len(set(values)))
+        self.assertTrue(all(0 <= value <= 9 for value in values))
+
     def test_fortified_castle_transitions_into_witnessed_siege_muster(self):
         self.assertIn(
             "(up-get-point position-object byzantine-offensive-castle-point)",
