@@ -122,10 +122,58 @@ def default_byzantine_counter_packages(
 
     scout_provenance = effective.unit_line("scout-cavalry-line").provenance
     archer_provenance = effective.unit_line("archer-line").provenance
+    stable_provenance = effective.building(101).provenance
+    archery_range_provenance = effective.building(87).provenance
     knight_provenance = effective.unit_line("knight-line").provenance
     militia_provenance = effective.unit_line("militia-line").provenance
 
     return (
+        CounterPackage(
+            identity="MOUNTED_COMMITMENT_FEUDAL",
+            threat_class=CounterThreatClass.MOUNTED,
+            priority=60,
+            trigger=StrategicEvidence(
+                StrategicEvidenceKind.PERSISTENT,
+                None,
+                "Feudal mounted production commitment detected before full unit contact",
+                source=StrategicEvidenceSource.AUTHORING,
+                provenance=tuple(
+                    dict.fromkeys(
+                        (
+                            *stable_provenance,
+                            *scout_provenance,
+                        )
+                    )
+                ),
+                observation_ref="enemy-mounted-commitment-feudal",
+            ),
+            demand_identities=("expected-mounted-spears",),
+            policy_recipe_identity=None,
+            rationale="Pre-position a small spear screen from stable/scout commitment without treating the prediction as confirmed mass.",
+        ),
+        CounterPackage(
+            identity="RANGED_COMMITMENT_FEUDAL",
+            threat_class=CounterThreatClass.RANGED,
+            priority=55,
+            trigger=StrategicEvidence(
+                StrategicEvidenceKind.PERSISTENT,
+                None,
+                "Feudal ranged production commitment detected before full unit contact",
+                source=StrategicEvidenceSource.AUTHORING,
+                provenance=tuple(
+                    dict.fromkeys(
+                        (
+                            *archery_range_provenance,
+                            *archer_provenance,
+                        )
+                    )
+                ),
+                observation_ref="enemy-ranged-commitment-feudal",
+            ),
+            demand_identities=("expected-ranged-skirmishers",),
+            policy_recipe_identity="RANGED_HOLD",
+            rationale="Pre-position a small skirmisher screen from an archery-range commitment without treating the prediction as confirmed mass.",
+        ),
         CounterPackage(
             identity="MOUNTED_PRESSURE_FEUDAL",
             threat_class=CounterThreatClass.MOUNTED,

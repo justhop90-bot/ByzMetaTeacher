@@ -27,6 +27,8 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
         self.assertEqual(
             tuple(package.identity for package in self.profile.counter_packages),
             (
+                "MOUNTED_COMMITMENT_FEUDAL",
+                "RANGED_COMMITMENT_FEUDAL",
                 "MOUNTED_PRESSURE_FEUDAL",
                 "RANGED_PRESSURE_FEUDAL",
                 "MOUNTED_PRESSURE_CASTLE",
@@ -40,9 +42,63 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 CounterThreatClass.MOUNTED,
                 CounterThreatClass.RANGED,
                 CounterThreatClass.MOUNTED,
+                CounterThreatClass.RANGED,
+                CounterThreatClass.MOUNTED,
                 CounterThreatClass.INFANTRY,
                 CounterThreatClass.SIEGE,
             ),
+        )
+
+    def test_production_commitment_prepositions_small_counter_floor(self):
+        snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
+            fact_results=(
+                ("(current-age == feudal-age)", True),
+                ("(current-age >= feudal-age)", True),
+                ("(players-building-type-count any-enemy stable >= 1)", True),
+                ("(can-train-with-escrow spearman-line)", True),
+                ("(unit-type-count-total spearman-line < 2)", True),
+                ("(players-building-type-count any-enemy archery-range >= 1)", True),
+                ("(can-train-with-escrow skirmisher-line)", True),
+                ("(unit-type-count-total skirmisher-line < 2)", True),
+            ),
+        )
+        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
+
+        self.assertIn("MOUNTED_COMMITMENT_FEUDAL", state.active_counter_packages)
+        self.assertIn("RANGED_COMMITMENT_FEUDAL", state.active_counter_packages)
+        self.assertEqual(
+            state.demand_state("expected-mounted-spears"),
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
+        )
+        self.assertEqual(
+            state.demand_state("expected-ranged-skirmishers"),
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
+        )
+
+    def test_confirmed_unit_pressure_suppresses_prediction_for_same_role(self):
+        snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
+            fact_results=(
+                ("(current-age == feudal-age)", True),
+                ("(current-age >= feudal-age)", True),
+                ("(players-building-type-count any-enemy stable >= 1)", True),
+                ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
+                ("(can-train-with-escrow spearman-line)", True),
+                ("(unit-type-count-total spearman-line < 4)", True),
+            ),
+        )
+        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
+
+        self.assertIn("MOUNTED_PRESSURE_FEUDAL", state.active_counter_packages)
+        self.assertNotIn("MOUNTED_COMMITMENT_FEUDAL", state.active_counter_packages)
+        self.assertEqual(
+            state.demand_state("counter-mounted-spears"),
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
+        )
+        self.assertEqual(
+            state.demand_state("expected-mounted-spears"),
+            StrategicDemandRuntimeState.STRATEGIC_INACTIVE,
         )
 
     def test_ranged_threat_activates_persistent_skirmisher_demand(self):

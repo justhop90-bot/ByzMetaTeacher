@@ -1877,6 +1877,34 @@ def _land_castle_observations(
             provenance=effective.unit_line("archer-line").provenance,
         ),
         StrategicObservationSpec(
+            "enemy-mounted-commitment-feudal",
+            "(and (current-age == feudal-age) (or "
+            "(players-building-type-count any-enemy stable >= 1) "
+            "(players-unit-type-count any-enemy scout-cavalry-line >= 3)))",
+            provenance=tuple(
+                dict.fromkeys(
+                    (
+                        *effective.building(101).provenance,
+                        *effective.unit_line("scout-cavalry-line").provenance,
+                    )
+                )
+            ),
+        ),
+        StrategicObservationSpec(
+            "enemy-ranged-commitment-feudal",
+            "(and (current-age == feudal-age) (or "
+            "(players-building-type-count any-enemy archery-range >= 1) "
+            "(players-unit-type-count any-enemy archer-line >= 3)))",
+            provenance=tuple(
+                dict.fromkeys(
+                    (
+                        *effective.building(87).provenance,
+                        *effective.unit_line("archer-line").provenance,
+                    )
+                )
+            ),
+        ),
+        StrategicObservationSpec(
             "enemy-infantry-pressure",
             "(and (current-age >= castle-age) (players-unit-type-count any-enemy militia-line >= 5))",
             provenance=effective.unit_line("militia-line").provenance,
@@ -2466,6 +2494,86 @@ def _byzantine_capability_observations(
 
 def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
     return (
+        StrategicDemandSpec(
+            identity="expected-mounted-spears",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.FLUSH,
+            priority=StrategicPriority.SUPPORT,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Feudal predictive anti-mounted response is admissible while the enemy commitment remains observed",
+                    observation_ref="enemy-mounted-commitment-feudal",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "spearman-line",
+                BuildingId(12),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "spearman-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(can-train-with-escrow spearman-line)",
+                    "(unit-type-count-total spearman-line < 2)",
+                ),
+                action="(train spearman-line)",
+                witness="(unit-type-count spearman-line >= 2)",
+                release="(unit-type-count spearman-line >= 2)",
+            ),
+        ),
+        StrategicDemandSpec(
+            identity="expected-ranged-skirmishers",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.FLUSH,
+            priority=StrategicPriority.SUPPORT,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Feudal predictive anti-ranged response is admissible while the enemy commitment remains observed",
+                    observation_ref="enemy-ranged-commitment-feudal",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "skirmisher-line",
+                BuildingId(87),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "skirmisher-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(can-train-with-escrow skirmisher-line)",
+                    "(unit-type-count-total skirmisher-line < 2)",
+                ),
+                action="(train skirmisher-line)",
+                witness="(unit-type-count skirmisher-line >= 2)",
+                release="(unit-type-count skirmisher-line >= 2)",
+            ),
+        ),
         StrategicDemandSpec(
             identity="counter-mounted-spears",
             owner="defense",
