@@ -843,10 +843,7 @@ def community_strategy_demands(
                 if tech_name in {"double-bit-axe", "horse-collar"}
                 and age == "feudal-age"
                 else ()
-            )[0:] if (
-                tech_name in {"double-bit-axe", "horse-collar"}
-                and age == "feudal-age"
-            ) else (),
+            ),
         )
         demands.append(demand)
 
