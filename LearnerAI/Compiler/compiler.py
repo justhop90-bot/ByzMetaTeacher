@@ -524,6 +524,7 @@ def _compile_package_parts(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        role_plan=role_plan,
         escrow_plan=escrow_plan,
     )
     if _return_ir:
@@ -555,6 +556,7 @@ def compile_semantic_demands(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        role_plan=role_plan,
         escrow_plan=escrow_plan,
     )
     return result
@@ -793,6 +795,7 @@ def compile_source_with_report(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
