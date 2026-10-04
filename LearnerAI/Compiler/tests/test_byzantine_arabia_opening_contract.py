@@ -44,6 +44,28 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         self.assertIn("(research-completed 22)", issuance_block)
         self.assertIn("(research ri-loom)", output)
 
+        output_init = output.index("; Demand initialization")
+        loom_init = output.index("(set-goal demand-research-loom 1)", output_init)
+        loom_barrier = output.index("(set-goal research-retry-barrier-research-loom 0)", output_init)
+        first_loom_zero_consumer = output.find("(goal demand-research-loom 0)")
+        first_loom_barrier_consumer = output.find("(goal research-retry-barrier-research-loom 0)")
+        self.assertGreaterEqual(first_loom_zero_consumer, 0)
+        self.assertGreaterEqual(first_loom_barrier_consumer, 0)
+        self.assertLess(loom_init, first_loom_zero_consumer)
+        self.assertLess(loom_barrier, first_loom_barrier_consumer)
+
+        self.assertIn(
+            "(goal feudal-transition-bank-state 2)",
+            " ".join(feudal.execution_demands[0].requirements),
+        )
+        self.assertEqual(
+            feudal.execution_demands[0].action_witness_gates,
+            (
+                "(or (research-completed 22) "
+                "(goal feudal-transition-loom-recovery 1))",
+            ),
+        )
+
     def test_arabia_pressure_contract_detects_real_early_pressure(self):
         profile = build_byzantine_strategy(self.effective)
         pressure = profile.observation("strategy-arabia-early-pressure")
