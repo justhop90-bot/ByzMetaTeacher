@@ -180,6 +180,37 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
                 block.rindex(target_radius),
             )
 
+    def test_active_attack_reassesses_when_enemy_military_overmatches_coarsely(self):
+        self.assertIn("(defconst byzantine-army-overmatch-state 357)", self.per)
+        self.assertIn("(defconst byzantine-army-overmatch-none 0)", self.per)
+        self.assertIn("(defconst byzantine-army-overmatch-triggered 1)", self.per)
+
+        reassess_start = self.per.index("; COMMUNITY MILITARY-OVERMATCH REASSESSMENT")
+        reposition_start = self.per.index("; ARMY REPOSITION / WITHDRAWAL CONTROLLER", reassess_start)
+        section = self.per[reassess_start:reposition_start]
+
+        buckets = (
+            ("(players-military-population any-enemy > 5)", "(military-population < 2)"),
+            ("(players-military-population any-enemy > 10)", "(military-population < 6)"),
+            ("(players-military-population any-enemy > 15)", "(military-population < 10)"),
+            ("(players-military-population any-enemy > 20)", "(military-population < 15)"),
+            ("(players-military-population any-enemy > 25)", "(military-population < 20)"),
+        )
+        for enemy_fact, own_fact in buckets:
+            self.assertIn(enemy_fact, section)
+            self.assertIn(own_fact, section)
+
+        self.assertIn("(up-reset-attack-now)", section)
+        self.assertIn("(set-goal byzantine-army-reinforcement 1)", section)
+        self.assertIn(
+            "(set-goal byzantine-army-reposition-state byzantine-army-reposition-withdraw)",
+            section,
+        )
+        self.assertIn(
+            "(set-goal byzantine-siege-approach byzantine-siege-approach-normal)",
+            section,
+        )
+
     def test_minimum_viable_attack_admission_does_not_require_monks_or_ideal_mass(self):
         start = self.per.index("; MINIMUM-VIABLE CASTLE ATTACK ADMISSION")
         end = self.per.index("; FULL CASTLE ATTACK PACKAGE", start)
