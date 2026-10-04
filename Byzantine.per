@@ -6896,6 +6896,16 @@
     (set-goal byzantine-army-attack-ready 0)
 )
 
+; Runtime-only attack-group control remains evidence-backed native policy.
+; The compiler deliberately does not emit SN 36/227 attack-group control.
+(defrule
+    (goal byzantine-army-attack-ready 0)
+    (up-compare-sn 36 > 0)
+=>
+    (set-strategic-number sn-number-attack-groups 0)
+    (set-strategic-number sn-percent-attack-soldiers 75)
+)
+
 (defrule
     (goal byzantine-army-reinforcement -1)
 =>
@@ -9264,6 +9274,18 @@
 
 (defrule
     (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-strategic-number sn-number-attack-groups 0)
+    (set-strategic-number sn-percent-attack-soldiers 75)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-ready)
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age >= castle-age)
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-siege-approach byzantine-siege-approach-normal)
     (goal byzantine-fortification-threat 1)
@@ -9322,6 +9344,7 @@
     (goal byzantine-siege-approach-claim 1)
     (goal byzantine-army-attack-ready 1)
 =>
+    (set-strategic-number sn-percent-attack-soldiers 100)
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
@@ -9353,6 +9376,7 @@
     (goal byzantine-army-attack-ready 1)
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
 =>
+    (set-strategic-number sn-percent-attack-soldiers 100)
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
@@ -9438,6 +9462,27 @@
     (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
     (set-goal byzantine-siege-approach-claim 0)
     (set-goal byzantine-siege-breach-witness 0)
+)
+
+; Grouped open-ground pulse expires into reassessment when the attack group
+; remained materially active. This is cadence control, not a completion witness.
+(defrule
+    (timer-triggered byzantine-army-stale-timer)
+    (goal byzantine-army-stale-state byzantine-army-stale-armed)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-army-reinforcement 0)
+    (or
+        (goal byzantine-siege-approach byzantine-siege-approach-normal)
+        (goal byzantine-siege-approach byzantine-siege-approach-assault)
+    )
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (attack-soldier-count > 3)
+=>
+    (set-strategic-number sn-number-attack-groups 0)
+    (set-strategic-number sn-percent-attack-soldiers 75)
+    (disable-timer byzantine-army-stale-timer)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-ready)
+    (set-goal byzantine-army-attack-ready 1)
 )
 
 ; Bounded stale-army recovery. The attack-now group gets one 90-second
@@ -9894,9 +9939,10 @@
 )
 
 
-; Ordinary open-ground attack remains exactly where it belonged: behind the
-; tactical admission gate. The objective controller must have released the
-; package before this fallback primitive is allowed to fire.
+; Ordinary open-ground attack remains behind the tactical admission gate.
+; When no DUC objective owns the package, this path uses the native attack-group
+; control surface for a bounded grouped pulse. Precise DUC objectives remain
+; responsible for siege/structure targeting.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-army-attack-ready 1)
@@ -9905,7 +9951,10 @@
     (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
     (goal byzantine-offensive-objective-claim 0)
 =>
-    (attack-now)
+    (set-strategic-number sn-number-attack-groups 200)
+    (set-strategic-number sn-percent-attack-soldiers 100)
+    (set-strategic-number sn-minimum-attack-group-size 6)
+    (set-strategic-number sn-maximum-attack-group-size 40)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
     (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
