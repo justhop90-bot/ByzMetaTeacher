@@ -7853,19 +7853,25 @@
     (or
         (and
             (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
-            (can-build lumber-camp)
-            (up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)
+            (and
+                (can-build lumber-camp)
+                (up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)
+            )
         )
         (or
             (and
                 (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
-                (can-build mining-camp)
-                (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                (and
+                    (can-build mining-camp)
+                    (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                )
             )
             (and
                 (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
-                (can-build mining-camp)
-                (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                (and
+                    (can-build mining-camp)
+                    (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                )
             )
         )
     )
