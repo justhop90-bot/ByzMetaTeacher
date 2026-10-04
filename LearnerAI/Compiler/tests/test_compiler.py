@@ -438,12 +438,34 @@ class CompilerTests(unittest.TestCase):
         self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(train spearman)", witness_block)
 
+    def test_research_runtime_alias_is_used_for_escrow_and_action(self):
+        source = """
+        demand wheelbarrow {
+            require (can-research-with-escrow ri-wheelbarrow)
+            action (research ri-wheelbarrow)
+            witness (research-completed ri-wheelbarrow)
+            release (research-completed ri-wheelbarrow)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(defconst ri-wheelbarrow 213)", output)
+        self.assertIn("(defconst ri-wheel-barrow 213)", output)
+        self.assertIn(
+            "(can-research-with-escrow ri-wheel-barrow)",
+            output,
+        )
+        self.assertIn("(research ri-wheel-barrow)", output)
+        self.assertIn("(research-completed ri-wheel-barrow)", output)
+        self.assertNotIn("(can-research-with-escrow ri-wheelbarrow)", output)
+        self.assertNotIn("(research ri-wheelbarrow)", output)
+        self.assertNotIn("(research-completed ri-wheelbarrow)", output)
+
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
         output = compile_source(EXAMPLES)
         action_start = output.find("; Action issuance: wheelbarrow | ACTIVE -> ISSUED")
         action_end = len(output)
         action_block = output[action_start:action_end]
-        self.assertIn("(research ri-wheelbarrow)", action_block)
+        self.assertIn("(research ri-wheel-barrow)", action_block)
         active_match = re.search(r"\(set-goal demand-wheelbarrow (\d+)\)", action_block)
         self.assertIsNotNone(active_match)
         self.assertTrue(41 <= int(active_match.group(1)) <= 512)
@@ -451,7 +473,7 @@ class CompilerTests(unittest.TestCase):
         witness_match = re.search(r"\(goal demand-wheelbarrow (\d+)\)", witness_block)
         self.assertIsNotNone(witness_match)
         self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
-        self.assertNotIn("(research ri-wheelbarrow)", witness_block)
+        self.assertNotIn("(research ri-wheel-barrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
         output = compile_source(EXAMPLES)
