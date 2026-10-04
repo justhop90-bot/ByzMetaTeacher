@@ -6,11 +6,13 @@
 
 **Architecture:** Keep the existing ByzMetaTeacher compiler and native .per model. Use Naga and other community AIs as behavioral evidence, not templates. Use Sandy Petersen's documented test-driven design philosophy as a process reference: explicit rules, strong faction identity, observed play, rapid correction, repeated playtesting.
 
-**Roadmap status as of 2026-10-04**
+**Roadmap status as of 2026-10-04, synchronized with `main` and current PR work**
 
-- **Completed/merged:** resource-front lumber placement lifecycle (PR #363); unified opening pressure + five-selector multi-fact emission and Feudal resource-front gating (PR #365); reinforcement-driven second production capacity (PR #366); production-commitment prediction with lower-priority Feudal counter floors, confirmed-pressure suppression, native fail-closed parity, and synchronized `Byzantine.per` lifecycle (PR #367 + corrective PR #370).
-- **Still open:** the broader Phase 0 baseline freeze, continuous late-game spending envelope, exposed-economy/production-target prediction, stale-intel expiry, wall/geometry implementation, attack admission/force preservation/recovery, Byzantine breadth audit, and standardized runtime scenario verification.
-- **Roadmap correction:** the static late-game objective ladder already implements the intended `siege -> defensive structures -> production -> Town Centers` sequence with reassessment. The next Phase 4 work should therefore focus on attack admission, force preservation, siege commitment, and recovery rather than reordering the target ladder without replay evidence.
+- **Current main:** `96f09bb42fb7f045856b0a0c554345b56284f6fd`. Workflow #4174 is green across compiler tests, native zero-findings, verification, and cross-platform determinism. PR #388, the Byzantine Castle age-bank repair, is merged.
+- **Completed/merged:** resource-front lumber placement lifecycle (PR #363); unified opening pressure + five-selector multi-fact emission and Feudal resource-front gating (PR #365); reinforcement-driven second production capacity (PR #366); production-commitment prediction with synchronized `Byzantine.per` lifecycle (PR #367 + corrective PR #370); late-game objective ladder (PR #358); exposed-villager raid extension (PR #372); native military role separation (green workflow #4160); Castle age-bank ownership/priority repair (PR #388).
+- **Current P0:** late-objective witness reissuance was a lifecycle defect. The witness previously returned to the objective class and re-emitted `action-attack-move` against a still-present target. PR #390 changes this to a live-execution witness plus an explicit package-loss release into reinforcement/recovery. Runtime acceptance is still separate from CI.
+- **Still open:** the broader behavioral baseline, continuous late-game spending envelope, stale-intel expiry, route-bypass/defensive geometry, the role-recovery consumer, production-depth management, executable map/water posture, economy arbitration, Byzantine breadth, and standardized runtime scenario verification.
+- **Architecture correction:** the late objective controller is currently a hand-authored root `Byzantine.per` subsystem. It should not become a permanent second source of truth. The next compiler tranche should extract its durable invariant into typed objective/DUC IR with explicit owner, witness, release, and recovery semantics.
 - **Evidence boundary:** queue-capacity semantics remain `OPEN`; production-capacity repairs may use verified reinforcement/pressure policy, but must not fabricate queue-depth witnesses. Runtime replay validation remains a separate claim from parser/native/compiler CI.
 
 **Global constraints**
@@ -38,15 +40,11 @@
 Acceptance: a deterministic baseline report exists and no strategic logic is changed in Phase 0.
 
 ## Phase 1: Native grammar and rule-shape hardening
-- [ ] Remove the current 16-way logical expression without changing scouting semantics.
-- [ ] Split or structurally reduce the 3-way Imperial farm arbitration.
-- [ ] Normalize the 3-way siege-approach expression.
-- [ ] Split the 34-element late-resource rule into independently meaningful decisions.
-- [ ] Reduce all 32-element cliff-edge rules where practical.
-- [ ] Add compiler fixtures for binary logical emission and rule-size budgeting.
-- [ ] Re-run parser, semantic, native, determinism, and CI gates.
+**Status: closed at the compiler/native gate.** Current `main` workflow #4174 reports native zero-findings and passes the compiler verification gate and all nine native-support determinism variants. Runtime behavior remains a separate acceptance layer.
 
-Acceptance: zero logical arity defects and zero rules above 32 elements.
+The historical rule-shape repairs are retained as regression evidence rather than open implementation work.
+
+Acceptance: maintained by the native zero-findings and compiler verification gates.
 
 ## Phase 2: Strategic executive and continuous resource spending
 - [ ] Deep-audit every current late-game spending rule before threshold changes.
@@ -65,7 +63,7 @@ Acceptance: persistent late-game surplus is converted into relevant military/eco
 - [x] Distinguish expected composition from confirmed composition.
 - [x] Pre-position small counters before full contact while keeping prediction fail-closed.
 - [x] Add exposed-economy and production-target decisions.
-- [ ] Add intelligent wall/fortification handling and stale-intel expiry.
+- [ ] Add stale-intel expiry; fortification handling is now represented by the defensive-geometry and attack objective machinery, but route-bypass reassessment remains open.
 
 Acceptance: the bot changes counters because of meaningful enemy evidence and can turn information into a target or timing advantage.
 
@@ -114,16 +112,24 @@ Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, an
 - [x] Repair one verified attack-admission/execution mismatch: own military acquisition now scans 60 tiles while enemy-objective discovery remains bounded to 40; the attack-move actuator is unchanged.
 - [x] Complete the broader attack admission versus execution audit across staging, siege commitment, and objective reassessment.
 - [x] Use bounded native attack-group pulses for ordinary open-ground pressure, with a fresh reassessment before another pulse.
-- [ ] Establish screen/main/siege/raid/reserve roles.
-- [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
+- [x] Establish screen/main/siege/raid/reserve roles in the native role-separation controller.
+- [x] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
 - [x] Preserve armies under defensive fire where native control permits.
 - [x] Make army-loss recovery change production and attack posture.
 - [x] Reassess attack continuation after enemy strength changes using coarse community military-population overmatch buckets; exact combat-power parity remains open.
+- [ ] Consume the role-recovery request at the army recovery owner instead of merely clearing the request.
 - [ ] Expire obsolete counter packages.
+- [ ] Validate the PR #390 late-objective witness/release fix in an actual replay.
 
 Acceptance: fewer wasteful engagements, better siege use, coherent retreat/reposition/re-engage behavior, and meaningful recovery.
 
 ## Phase 5: Economy, construction, and technology coherence
+
+**Priority correction:** production capacity and economy arbitration outrank additional premium-unit rules. The target model is `desired standing army -> current army -> queued army -> provider capacity -> affordability -> expansion -> reinforcement -> reassess`, with queue-depth facts remaining evidence-bounded.
+
+**Compiler ownership correction:** map/water posture, economy arbitration, and late objective state should eventually be emitted from typed compiler plans rather than accumulating as root-only `.per` controllers.
+
+
 - [ ] Treat houses, farms, dropsites, camps, mills, markets, starvation recovery, and defensive construction as one economy.
 - [ ] Make wall/building placement preserve villager access, army exits, production paths, and resource routes.
 - [ ] Align villager allocation with current strategic demand rather than only fixed percentages.
