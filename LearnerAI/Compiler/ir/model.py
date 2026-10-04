@@ -259,7 +259,6 @@ class SemanticDemand:
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
-    initially_active: bool = True
     strategic_binding: StrategicBinding | None = None
     strategic_number_states: tuple["StrategicNumberState", ...] = ()
     timer_states: tuple["TimerState", ...] = ()
