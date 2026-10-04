@@ -96,6 +96,27 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(map-type arabia)", blacksmith)
         self.assertIn("(building-type-count archery-range >= 1)", blacksmith)
 
+    def test_standard_arabia_feudal_bank_preempts_dark_age_villager_spending(self):
+        bank = self._rule_block("; Native control rule: economy-controller-feudal-bank-ready")
+        self.assertIn("(unit-type-count-total villager >= 19)", bank)
+        self.assertIn("(building-type-count-total lumber-camp >= 1)", bank)
+        self.assertIn("(building-type-count-total mining-camp >= 1)", bank)
+        self.assertIn("(research-completed ri-loom)", bank)
+        self.assertIn("(food-amount >= 500)", bank)
+        self.assertIn("(gold-amount >= 200)", bank)
+
+        villager = self._find_rule(
+            "(train villager)",
+            "(can-train villager)",
+        )
+        self.assertIn("(not (goal byzantine-feudal-bank-state 2))", villager)
+
+    def test_standard_arabia_feudal_action_has_explicit_resource_floor(self):
+        age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
+        self.assertIn("(food-amount >= 500)", age)
+        self.assertIn("(gold-amount >= 200)", age)
+        self.assertIn("(can-research-with-escrow feudal-age)", age)
+
     def test_standard_arabia_does_not_build_first_mill_in_dark_age(self):
         mill = self._find_rule(
             "(goal demand-economy-food-mill-boom 1)",
