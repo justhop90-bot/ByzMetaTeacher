@@ -75,7 +75,6 @@ from ...ir.economic_control import (
     EconomyControllerPlan,
     EconomyMode,
     EconomyModePolicy,
-    FeudalBankState,
     default_byzantine_economy_controller,
     lower_economy_controller,
 )
