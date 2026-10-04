@@ -38,8 +38,17 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         issuance_start = output.index("; Action issuance: feudal-transition")
         issuance_end = output.index("=>", issuance_start)
         issuance_block = output[issuance_start:issuance_end]
-        self.assertIn("(research-completed 22)", issuance_block)
+        self.assertNotIn("(research-completed 22)", issuance_block)
         self.assertIn("(research ri-loom)", output)
+        control = lower_strategy_profile(profile, self.effective).control_plan
+        assert control is not None
+        bank_ready = next(
+            rule for rule in control.rules
+            if rule.identity == "feudal-transition-bank-ready"
+        )
+        bank_ready_facts = " ".join(f.source for f in bank_ready.facts)
+        self.assertIn("(research-completed ri-loom)", bank_ready_facts)
+        self.assertIn("(goal feudal-transition-loom-recovery 1)", bank_ready_facts)
 
         output_init = output.index("; Demand initialization")
         loom_init = output.index("(set-goal demand-research-loom 1)", output_init)
