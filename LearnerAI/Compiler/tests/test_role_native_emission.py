@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
@@ -91,6 +92,16 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
             "(stop)",
         ):
             self.assertNotIn(forbidden, role_block)
+
+    def test_checked_in_runtime_artifact_matches_canonical_emission(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        checked_in = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+        canonical = compile_strategy_profile(self.profile, self.effective)
+        self.assertEqual(
+            checked_in,
+            canonical,
+            "checked-in Byzantine.per has diverged from the canonical compiler output",
+        )
 
 
 if __name__ == "__main__":
