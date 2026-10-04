@@ -232,7 +232,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             for rule in control.rules
             if rule.identity.startswith("economy-controller-feudal-bank-")
         }
-        self.assertIn("economy-controller-feudal-bank-initialize", rule_ids)
+        self.assertNotIn("economy-controller-feudal-bank-initialize", rule_ids)
         self.assertIn("economy-controller-feudal-bank-enter", rule_ids)
         self.assertIn("economy-controller-feudal-bank-ready", rule_ids)
         self.assertIn("economy-controller-feudal-bank-release-on-feudal", rule_ids)
