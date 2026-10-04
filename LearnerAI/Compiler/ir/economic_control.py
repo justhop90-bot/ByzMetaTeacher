@@ -645,6 +645,7 @@ __all__ = (
     "EconomyMode",
     "EconomyModePolicy",
     "CastleBankState",
+    "FeudalBankState",
     "default_byzantine_economy_controller",
     "lower_economy_controller",
 )
