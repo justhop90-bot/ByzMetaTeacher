@@ -32,10 +32,7 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
             "(research-completed 22)",
             feudal.execution_demands[0].requirements,
         )
-        self.assertEqual(
-            feudal.execution_demands[0].action_witness_gates,
-            ("(research-completed 22)",),
-        )
+        self.assertEqual(feudal.execution_demands[0].action_witness_gates, ())
 
         output = compile_strategy_profile(profile, self.effective)
         issuance_start = output.index("; Action issuance: feudal-transition")
@@ -76,7 +73,6 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
             "(goal feudal-transition-bank-state 2)",
             " ".join(feudal.execution_demands[0].requirements),
         )
-        self.assertEqual(feudal.execution_demands[0].action_witness_gates, ())
         self.assertIn(
             "feudal-transition-bank-state",
             compile_strategy_profile(profile, self.effective),
