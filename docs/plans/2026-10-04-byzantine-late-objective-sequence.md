@@ -10,7 +10,7 @@ Implement a narrow late-game offensive objective controller in `Byzantine.per` o
 Objective priority is strict and restarts at the top after every completed or lost objective:
 1. enemy siege
 2. defensive structures
-3. military production
+3. military production, with exposed villagers as an economy fallback
 4. Town Centers
 5. reassess
 
@@ -37,6 +37,7 @@ Castle, Keep, Bombard Tower, tower class, then wall class.
 
 Production candidates:
 Siege Workshop, Barracks, Archery Range, Stable, Monastery.
+If no production target remains in the bounded area, search for an exposed enemy villager and raid that target before advancing to the Town Center class.
 
 Final candidate:
 Town Center.
