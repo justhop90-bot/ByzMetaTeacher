@@ -46,13 +46,17 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
 
         output_init = output.index("; Demand initialization")
         loom_init = output.index("(set-goal demand-research-loom 1)", output_init)
-        loom_barrier = output.index("(set-goal research-retry-barrier-research-loom 0)", output_init)
+        barrier_init = output.index(
+            "(set-goal research-retry-barrier-research-loom 0)"
+        )
         first_loom_zero_consumer = output.find("(goal demand-research-loom 0)")
-        first_loom_barrier_consumer = output.find("(goal research-retry-barrier-research-loom 0)")
+        first_loom_barrier_consumer = output.find(
+            "(goal research-retry-barrier-research-loom 0)"
+        )
         self.assertGreaterEqual(first_loom_zero_consumer, 0)
         self.assertGreaterEqual(first_loom_barrier_consumer, 0)
         self.assertLess(loom_init, first_loom_zero_consumer)
-        self.assertLess(loom_barrier, first_loom_barrier_consumer)
+        self.assertLess(barrier_init, first_loom_barrier_consumer)
 
         self.assertNotIn(
             "(goal feudal-transition-bank-state 2)",
