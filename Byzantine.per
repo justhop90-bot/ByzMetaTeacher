@@ -4919,10 +4919,11 @@
 
 
 ; Recovery bridge: role controller requests; army recovery owner clears attack-ready.
+; No generic up-reset-attack-now is emitted here because that command is
+; deliberately unsupported by the compiler's generic semantic adapter.
 (defrule
     (goal byzantine-army-role-recovery-request 1)
 =>
-    (up-reset-attack-now)
     (set-goal byzantine-army-attack-ready 0)
     (set-goal byzantine-army-role-recovery-request 0)
 )
