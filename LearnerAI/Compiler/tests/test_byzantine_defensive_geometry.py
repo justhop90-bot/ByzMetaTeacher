@@ -107,6 +107,35 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_offensive_production_tier_has_exposed_villager_fallback(self):
+        production_start = self.per.index(
+            "; production objective search, with candidate order preserved by the retained DUC list."
+        )
+        town_center_start = self.per.index(
+            "; town-center objective search, with candidate order preserved by the retained DUC list."
+        )
+        production_section = self.per[production_start:town_center_start]
+        self.assertIn("(up-find-remote c: monastery c: 1)", production_section)
+        self.assertIn("(up-find-remote c: villager c: 1)", production_section)
+
+        witness_start = self.per.index(
+            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)"
+        )
+        witness_production_start = self.per.index(
+            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+"
+            "    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)",
+            witness_start,
+        )
+        witness_town_start = self.per.index(
+            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+"
+            "    (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)",
+            witness_production_start,
+        )
+        witness_production = self.per[witness_production_start:witness_town_start]
+        self.assertIn("(up-find-remote c: villager c: 1)", witness_production)
+
     def test_minimum_viable_attack_admission_does_not_require_monks_or_ideal_mass(self):
         start = self.per.index("; MINIMUM-VIABLE CASTLE ATTACK ADMISSION")
         end = self.per.index("; FULL CASTLE ATTACK PACKAGE", start)
