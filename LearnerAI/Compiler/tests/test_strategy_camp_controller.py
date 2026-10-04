@@ -20,6 +20,11 @@ class ByzantineCampControllerTests(unittest.TestCase):
         from LearnerAI.Compiler.semantic.analyzer import parse_expression
 
         profile = build_byzantine_strategy(self.effective)
+        for observation in profile.observations:
+            try:
+                parse_expression(observation.expression, SourceLocation(1))
+            except Exception as exc:
+                self.fail("malformed observation %s: %r: %s" % (observation.identity, observation.expression, exc))
         for demand in profile.demands:
             for requirement in demand.execution_demands[0].requirements:
                 try:
