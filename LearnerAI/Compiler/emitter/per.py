@@ -287,6 +287,20 @@ def emit(
                 f"(defconst {state.technology} {state.native_tech_id})"
             )
 
+            pending_args = getattr(state.pending_fact, "args", ())
+            if (
+                len(pending_args) >= 2
+                and pending_args[0] == "c:"
+                and isinstance(pending_args[1], str)
+                and pending_args[1] != state.technology
+            ):
+                runtime_symbol = pending_args[1]
+                if runtime_symbol not in seen_tech_symbols:
+                    out.append(
+                        f"(defconst {runtime_symbol} {state.native_tech_id})"
+                    )
+                    seen_tech_symbols.add(runtime_symbol)
+
     for state, binding in sorted(
         strategic_number_states,
         key=lambda item: (
