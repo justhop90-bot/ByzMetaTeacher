@@ -217,25 +217,54 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
 
 
-    def test_feudal_bank_state_and_control_rules_are_compiler_owned(self):
+    def test_feudal_reservation_is_age_transition_owned(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
         control = compilation.control_plan
         assert control is not None
 
-        self.assertIn(
-            "byzantine-feudal-bank-state",
-            {state.identifier for state in control.states},
-        )
-        rule_ids = {
+        state_names = {state.identifier for state in control.states}
+        self.assertIn("feudal-transition-bank-state", state_names)
+        self.assertIn("feudal-transition-loom-recovery", state_names)
+
+        age_transition_rules = {
             rule.identity
             for rule in control.rules
-            if rule.identity.startswith("economy-controller-feudal-bank-")
+            if rule.identity.startswith("feudal-transition-bank-")
         }
-        self.assertNotIn("economy-controller-feudal-bank-initialize", rule_ids)
-        self.assertIn("economy-controller-feudal-bank-enter", rule_ids)
-        self.assertIn("economy-controller-feudal-bank-ready", rule_ids)
-        self.assertIn("economy-controller-feudal-bank-release-on-feudal", rule_ids)
+        self.assertIn("feudal-transition-bank-initialize", age_transition_rules)
+        self.assertIn("feudal-transition-bank-enter", age_transition_rules)
+        self.assertIn("feudal-transition-bank-ready", age_transition_rules)
+        self.assertIn("feudal-transition-bank-release-on-feudal", age_transition_rules)
+
+        control_output = compile_strategy_profile(profile, self.effective)
+        self.assertNotIn("economy-controller-feudal-bank-", control_output)
+
+    def test_economy_controller_only_reads_feudal_reservation_for_civilian_allocation(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        readers = [
+            rule for rule in control.rules
+            if rule.identity.startswith("economy-controller-feudal-reservation-")
+        ]
+        self.assertGreaterEqual(len(readers), 3)
+        for rule in readers:
+            self.assertTrue(any(
+                "(goal feudal-transition-bank-state 1)" in fact.source
+                for fact in rule.facts
+            ))
+            self.assertTrue(all(
+                "set-goal feudal-transition-bank-state" not in action.source
+                for action in rule.actions
+            ))
+
+        import LearnerAI.Compiler.ir.economic_control as economic_control
+        self.assertFalse(hasattr(economic_control, "FeudalBankState"))
+        self.assertNotIn("feudal_bank_", control_output := compile_strategy_profile(profile, self.effective))
+        self.assertIn("economy-controller-feudal-reservation-", control_output)
 
     def test_feudal_bank_uses_resource_deficit_writers_not_a_static_age_allocation(self):
         profile = build_byzantine_strategy(self.effective)
