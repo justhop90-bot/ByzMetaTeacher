@@ -1731,7 +1731,8 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
             facts=(
                 parse_expression("(current-age == dark-age)", SourceLocation(1)),
                 parse_expression(
-                    f"(goal {FEUDAL_TRANSITION_BANK_STATE} {int(FeudalTransitionBankState.READY) - 1})",
+                    f"(or (goal {FEUDAL_TRANSITION_BANK_STATE} {int(FeudalTransitionBankState.IDLE)}) "
+                    f"(goal {FEUDAL_TRANSITION_BANK_STATE} {int(FeudalTransitionBankState.BANKING)}))",
                     SourceLocation(1),
                 ),
                 parse_expression("(goal demand-feudal-transition 1)", SourceLocation(1)),
