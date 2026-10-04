@@ -91,7 +91,8 @@ Implementation contract:
 - [ ] Under enemy pressure, prefer a short emergency segment that changes the path to a vulnerable resource over a complete perimeter that arrives too late.
 - [ ] Make the wall cooperate with army defense: route enemy units into a controllable approach, keep siege/repair/building access meaningful, and avoid creating a sealed base that delays reinforcements.
 - [ ] Add **choke ownership**: when a narrow approach matters, assign a persistent defensive objective to the approach rather than repeatedly requesting disconnected wall segments.
-- [ ] Add **wall breach / route failure recovery**: detect a destroyed or bypassed segment, reassess the enemy route, close the new gap or reposition the defensive army, and retire obsolete wall demand.
+- [x] Add native **wall-breach recovery** for a witnessed loss of native-perimeter integrity: a gated perimeter below the 42% completion witness reopens the existing stone-wall demand and reuses the native perimeter builder.
+- [ ] Extend this into **route-bypass reassessment**: detect a bypassed but still-existing segment, reassess the enemy route, and close/reposition the defense without rebuilding obsolete geometry.
 - [ ] Add **attack-side wall reasoning**: when an enemy is fortified, recognize the protected approach, stop feeding ordinary units into the same route, and choose another route or escalate to siege.
 - [ ] Keep wall construction subordinate to age-up, essential production, starvation prevention, and active military defense. A wall that preserves a Castle timing is strategic infrastructure; a wall that delays it for no meaningful protection is just expensive landscaping.
 
@@ -101,7 +102,8 @@ Focused acceptance scenarios:
 - [ ] Closed map: suppress unnecessary walling investment and spend the saved resources elsewhere.
 - [ ] Feudal mounted pressure: create or repair the shortest useful closure before the raid arrives; demonstrate that the army still has an exit.
 - [ ] Enemy attack through a different route: retire stale wall demand, reassess geometry, and defend the new approach rather than rebuilding the old one.
-- [ ] Wall breach: witness the breach, close/reposition, and change the defensive posture.
+- [x] Wall breach: witness native-perimeter integrity loss, reopen the stone-wall demand, and re-enter the existing builder lifecycle.
+- [ ] Wall bypass: distinguish a route bypass from simple wall damage and change the defensive route instead of repeatedly rebuilding the same segment.
 - [ ] Enemy fortified position: route army and siege around the defended approach where possible, or explicitly scale siege instead of repeatedly attacking the same funnel.
 - [ ] Builder/army pathing: demonstrate that completed walls do not trap builders, block reinforcement routes, or create an avoidable internal choke.
 - [ ] Late-game expansion: wall only strategically exposed new economy/production and do not reproduce the entire starting perimeter.
