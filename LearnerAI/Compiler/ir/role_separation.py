@@ -306,16 +306,6 @@ def default_byzantine_role_separation_plan(
 
     rules = (
         _rule(
-            10,
-            "role-state-init",
-            (f"(goal {state_name} -1)",),
-            (
-                f"(set-goal {state_name} byzantine-army-role-idle)",
-                f"(set-goal {mask_name} 0)",
-                f"(set-goal {cap_name} 4)",
-            ),
-        ),
-        _rule(
             20,
             "role-enter-forming",
             (
@@ -402,7 +392,7 @@ def default_byzantine_role_separation_plan(
         ),
         _rule(
             60,
-            "role-forming-main",
+            "role-forming-reserve",
             (
                 f"(goal {state_name} byzantine-army-role-forming)",
                 f"(goal {mask_name} 7)",
@@ -412,21 +402,22 @@ def default_byzantine_role_separation_plan(
                 "(up-set-target-point byzantine-offensive-objective-point)",
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
-                "(up-find-local c: all-units-class c: 240)",
+                "(up-filter-include cmdid-monk -1 -1 -1)",
+                "(up-find-local c: cavalry-class c: 40)",
+                "(up-find-local c: monk c: 40)",
                 "(up-remove-objects search-local object-data-status != 2)",
                 "(up-remove-objects search-local object-data-group-flag == 5)",
                 "(up-remove-objects search-local object-data-group-flag == 7)",
-                "(up-remove-objects search-local object-data-type == monk)",
-                f"(set-goal {cap_name} 40)",
-                f"(up-create-group 0 {cap_name} c: 6)",
-                "(up-modify-group-flag 1 c: 6)",
+                f"(set-goal {cap_name} 4)",
+                f"(up-create-group 0 {cap_name} c: 9)",
+                "(up-modify-group-flag 1 c: 9)",
                 f"(set-goal {mask_name} 15)",
             ),
-            RoleKind.MAIN,
+            RoleKind.RESERVE,
         ),
         _rule(
             70,
-            "role-forming-reserve",
+            "role-forming-main",
             (
                 f"(goal {state_name} byzantine-army-role-forming)",
                 f"(goal {mask_name} 15)",
@@ -436,18 +427,18 @@ def default_byzantine_role_separation_plan(
                 "(up-set-target-point byzantine-offensive-objective-point)",
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
-                "(up-filter-include cmdid-monk -1 -1 -1)",
                 "(up-find-local c: all-units-class c: 240)",
                 "(up-remove-objects search-local object-data-status != 2)",
                 "(up-remove-objects search-local object-data-group-flag == 5)",
-                "(up-remove-objects search-local object-data-group-flag == 6)",
                 "(up-remove-objects search-local object-data-group-flag == 7)",
+                "(up-remove-objects search-local object-data-group-flag == 9)",
+                "(up-remove-objects search-local object-data-type == monk)",
                 f"(set-goal {cap_name} 40)",
-                f"(up-create-group 0 {cap_name} c: 9)",
-                "(up-modify-group-flag 1 c: 9)",
+                f"(up-create-group 0 {cap_name} c: 6)",
+                "(up-modify-group-flag 1 c: 6)",
                 f"(set-goal {mask_name} 23)",
             ),
-            RoleKind.RESERVE,
+            RoleKind.MAIN,
         ),
         _rule(
             80,
@@ -481,6 +472,7 @@ def default_byzantine_role_separation_plan(
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
+                "(set-goal byzantine-army-attack-ready 0)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
                 "(up-reset-group c: 7)",
@@ -536,6 +528,7 @@ def default_byzantine_role_separation_plan(
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
+                "(set-goal byzantine-army-attack-ready 0)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
                 "(up-reset-group c: 7)",
