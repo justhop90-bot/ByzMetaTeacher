@@ -306,6 +306,7 @@ def community_strategy_observations(
     effective: EffectiveCivData,
 ) -> tuple[_StrategicObservationSpec, ...]:
     town_center = _building(effective, "town-center")
+    house = _building(effective, "house")
     outpost = _building(effective, "outpost")
     monastery = _building(effective, "monastery")
     siege_workshop = _building(effective, "siege-workshop")
@@ -318,6 +319,11 @@ def community_strategy_observations(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
+    opening_pressure = (
+        "(or (players-unit-type-count any-enemy knight >= 3) "
+        "(or (players-unit-type-count any-enemy archer-line >= 4) "
+        "(players-unit-type-count any-enemy militia-line >= 5)))"
+    )
     observations = [
         _observation(
             "strategy-castle-age",
@@ -335,15 +341,30 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
+            "strategy-opening-resource-front-ready",
+            "(and (building-type-count-total house >= 1) (and (building-type-count-total lumber-camp >= 1) (building-type-count-total mining-camp >= 1)))",
+            tuple(
+                dict.fromkeys(
+                    (*house.provenance,
+                     *lumber_camp.provenance,
+                     *mining_camp.provenance)
+                )
+            ),
+        ),
+        _observation(
             "strategy-opening-pressure",
-            "(players-unit-type-count any-enemy militia-line >= 5)",
-            effective.unit_line("militia-line").provenance,
+            opening_pressure,
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("archer-line").provenance,
+                     *effective.unit_line("militia-line").provenance)
+                )
+            ),
         ),
         _observation(
             "strategy-enemy-pressure",
-            "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(or (players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5)))",
+            opening_pressure,
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
@@ -1257,6 +1278,27 @@ def build_byzantine_stock_strategy(
 
     demands = []
     for base_demand in base.demands:
+        if base_demand.identity == "feudal-transition":
+            execution = replace(
+                base_demand.execution,
+                requirements=(
+                    "(current-age == dark-age)",
+                    "(building-type-count-total lumber-camp >= 1)",
+                    "(building-type-count-total mining-camp >= 1)",
+                    "(can-research-with-escrow feudal-age)",
+                ),
+            )
+            base_demand = replace(
+                base_demand,
+                execution=execution,
+                admissibility=(
+                    *base_demand.admissibility,
+                    _persistent(
+                        "Feudal transition waits for the opening resource front to be established",
+                        "strategy-opening-resource-front-ready",
+                    ),
+                ),
+            )
         if (
             base_demand.execution is not None
             and base_demand.execution.action.startswith("(train ")
