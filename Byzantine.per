@@ -7740,43 +7740,22 @@
 (defrule
     (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
     (goal action-claim-build-pass-singleton 0)
-    (goal byzantine-resource-camp-gold-handoff 1)
     (not (town-under-attack))
     (or
-        (goal demand-economy-gold-camp-floor-1 1)
-        (or
-            (goal demand-economy-gold-camp-floor-2 1)
+        (goal byzantine-resource-camp-gold-handoff 1)
+        (not
             (or
-                (goal demand-economy-gold-camp-floor-3 1)
+                (goal demand-economy-lumber-camp-floor-1 1)
                 (or
-                    (goal demand-economy-gold-camp-floor-4 1)
-                    (goal demand-economy-gold-camp-floor-5 1)
-                )
-            )
-        )
-    )
-=>
-    (set-goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
-    (set-goal byzantine-resource-camp-building-kind byzantine-resource-camp-building-mining)
-    (set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)
-)
-
-(defrule
-    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)
-    (goal action-claim-build-pass-singleton 0)
-    (not (town-under-attack))
-    (not
-        (or
-            (goal demand-economy-lumber-camp-floor-1 1)
-            (or
-                (goal demand-economy-lumber-camp-floor-2 1)
-                (or
-                    (goal demand-economy-wood-camp-floor-3 1)
+                    (goal demand-economy-lumber-camp-floor-2 1)
                     (or
-                        (goal demand-economy-wood-camp-floor-4 1)
+                        (goal demand-economy-wood-camp-floor-3 1)
                         (or
-                            (goal demand-economy-wood-camp-floor-5 1)
-                            (goal demand-economy-wood-camp-floor-6 1)
+                            (goal demand-economy-wood-camp-floor-4 1)
+                            (or
+                                (goal demand-economy-wood-camp-floor-5 1)
+                                (goal demand-economy-wood-camp-floor-6 1)
+                            )
                         )
                     )
                 )
