@@ -624,47 +624,21 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             )
             self.assertIn(f"(set-goal {demand} 1)", lifecycle)
 
-    def test_fortified_castle_transitions_into_witnessed_siege_muster(self):
+    def test_fortified_castle_uses_proven_target_object_attack_path(self):
         self.assertIn(
-            "(up-get-point position-object byzantine-offensive-castle-point)",
+            "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
             self.per,
         )
-        self.assertIn(
-            "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
-            self.per,
-        )
-        self.assertIn(
-            "(defconst byzantine-siege-muster-state 15000)",
-            self.per,
-        )
-        self.assertIn(
-            "(up-lerp-tiles byzantine-siege-muster-point position-self c: bt-byzantine-muster-objective-distance)",
-            self.per,
-        )
-        self.assertIn(
-            "(up-create-group 0 40 c: byzantine-siege-muster-army-group)",
-            self.per,
-        )
-        self.assertIn(
-            "(up-group-size c: byzantine-siege-muster-army-group >= bt-byzantine-muster-imperial-army)",
-            self.per,
-        )
-        self.assertIn(
-            "(set-strategic-number sn-number-attack-groups 1)",
-            self.per,
-        )
-        self.assertIn(
-            "(up-target-point 0 action-attack-move -1 stance-aggressive)",
-            self.per,
-        )
-        self.assertIn(
-            "(set-goal byzantine-siege-approach byzantine-siege-approach-escorted)",
-            self.per,
-        )
-        self.assertIn(
-            "(goal byzantine-offensive-castle-valid 1)",
-            self.per,
-        )
+        block_start = self.per.index("; Fortified Castle repair: the probe now owns an exact Castle point.")
+        block_end = self.per.index("; Package loss during a fortified approach returns through the existing army", block_start)
+        block = self.per[block_start:block_end]
+        self.assertIn("(set-goal byzantine-siege-approach byzantine-siege-approach-staging)", block)
+        self.assertIn("(up-set-target-point byzantine-offensive-castle-point)", block)
+        self.assertIn("(up-find-remote c: 82 c: 1)", block)
+        self.assertIn("(up-find-local c: all-units-class c: 240)", block)
+        self.assertIn("(up-target-objects 0 action-attack-move -1 stance-aggressive)", block)
+        self.assertIn("(attack-now)", block)
+        self.assertNotIn("byzantine-siege-muster", block)
 
     def test_imperial_siege_ram_upgrade_is_reasserted_when_rams_exist(self):
         self.assertIn(
