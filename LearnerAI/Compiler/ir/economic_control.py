@@ -26,12 +26,6 @@ class CastleBankState(IntEnum):
     HARD_RESERVED = 1
     BUFFER_RESERVED = 2
 
-class FeudalBankState(IntEnum):
-    IDLE = 0
-    BUILDING = 1
-    READY = 2
-
-
 @dataclass(frozen=True)
 class EconomyAllocation:
     food: int
@@ -74,11 +68,6 @@ class EconomyControllerPlan:
     castle_bank_hard_gold: int = 200
     castle_bank_buffer_food: int = 950
     castle_bank_buffer_gold: int = 300
-    feudal_bank_state_name: str = "byzantine-feudal-bank-state"
-    feudal_bank_start_villagers: int = 17
-    feudal_bank_click_villagers: int = 19
-    feudal_bank_food: int = 500
-    feudal_bank_gold: int = 200
     policies: tuple[EconomyModePolicy, ...] = ()
 
     def __post_init__(self) -> None:
@@ -95,12 +84,6 @@ class EconomyControllerPlan:
             raise ValueError("Castle bank food buffer must cover the hard reserve")
         if self.castle_bank_buffer_gold < self.castle_bank_hard_gold:
             raise ValueError("Castle bank gold buffer must cover the hard reserve")
-        if self.feudal_bank_start_villagers <= 0:
-            raise ValueError("Feudal bank start-villager threshold must be positive")
-        if self.feudal_bank_click_villagers < self.feudal_bank_start_villagers:
-            raise ValueError("Feudal bank click threshold must cover bank activation")
-        if self.feudal_bank_food <= 0 or self.feudal_bank_gold <= 0:
-            raise ValueError("Feudal bank resource floors must be positive")
 
 
 def default_byzantine_economy_controller() -> EconomyControllerPlan:
@@ -173,18 +156,6 @@ def lower_economy_controller(
                 StorageRequestId(
                     SemanticId(plan.controller_id, "castle-bank-state"),
                     "castle-bank-selection",
-                ),
-                role=GoalRole.PERSISTENT_STATE,
-            ),
-        )
-    )
-    states.append(
-        NativeControlState(
-            plan.feudal_bank_state_name,
-            GoalSlotRequest(
-                StorageRequestId(
-                    SemanticId(plan.controller_id, "feudal-bank-state"),
-                    "feudal-bank-selection",
                 ),
                 role=GoalRole.PERSISTENT_STATE,
             ),
@@ -523,73 +494,19 @@ def lower_economy_controller(
         )
     )
 
-    feudal_bank = plan.feudal_bank_state_name
-    feudal_bank_rules = (
+    # The age-transition controller owns the Feudal reservation state. The
+    # economy controller only reacts to that state by writing civilian-allocation
+    # Strategic Numbers.
+    feudal_state = "feudal-transition-bank-state"
+    feudal_food = 500
+    feudal_gold = 200
+    feudal_reservation_rules = (
         NativeControlRule(
-            "economy-controller-feudal-bank-release-on-feudal",
+            "economy-controller-feudal-reservation-prioritize-food",
             facts=(
-                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
-                parse_expression(f"(not (goal {feudal_bank} {int(FeudalBankState.IDLE)}))", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {feudal_bank} {int(FeudalBankState.IDLE)})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
-            "economy-controller-feudal-bank-enter",
-            facts=(
-                parse_expression("(current-age == dark-age)", SourceLocation(1)),
-                parse_expression("(not (map-type islands))", SourceLocation(1)),
-                parse_expression(
-                    f"(or (goal {plan.opening_state} 1) (or (goal {plan.opening_state} 2) (goal {plan.opening_state} 3)))",
-                    SourceLocation(1),
-                ),
-                parse_expression(
-                    f"(unit-type-count-total villager >= {plan.feudal_bank_start_villagers})",
-                    SourceLocation(1),
-                ),
-                parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
-                parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
-                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.IDLE)})", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {feudal_bank} {int(FeudalBankState.BUILDING)})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
-            "economy-controller-feudal-bank-ready",
-            facts=(
-                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
-                parse_expression("(current-age == dark-age)", SourceLocation(1)),
-                parse_expression(
-                    f"(unit-type-count-total villager >= {plan.feudal_bank_click_villagers})",
-                    SourceLocation(1),
-                ),
-                parse_expression("(building-type-count-total lumber-camp >= 1)", SourceLocation(1)),
-                parse_expression("(building-type-count-total mining-camp >= 1)", SourceLocation(1)),
-                parse_expression("(research-completed ri-loom)", SourceLocation(1)),
-                parse_expression(f"(food-amount >= {plan.feudal_bank_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {plan.feudal_bank_gold})", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {feudal_bank} {int(FeudalBankState.READY)})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
-            "economy-controller-feudal-bank-prioritize-food",
-            facts=(
-                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
-                parse_expression(f"(food-amount < {plan.feudal_bank_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount < {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
+                parse_expression(f"(food-amount < {feudal_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount < {feudal_gold})", SourceLocation(1)),
                 parse_expression("(up-compare-sn sn-food-gatherer-percentage != 55)", SourceLocation(1)),
             ),
             actions=(
@@ -601,11 +518,11 @@ def lower_economy_controller(
             ),
         ),
         NativeControlRule(
-            "economy-controller-feudal-bank-prioritize-gold",
+            "economy-controller-feudal-reservation-prioritize-gold",
             facts=(
-                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
-                parse_expression(f"(food-amount >= {plan.feudal_bank_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount < {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
+                parse_expression(f"(food-amount >= {feudal_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount < {feudal_gold})", SourceLocation(1)),
                 parse_expression("(up-compare-sn sn-gold-gatherer-percentage != 30)", SourceLocation(1)),
             ),
             actions=(
@@ -617,11 +534,11 @@ def lower_economy_controller(
             ),
         ),
         NativeControlRule(
-            "economy-controller-feudal-bank-prioritize-food-after-gold",
+            "economy-controller-feudal-reservation-prioritize-food-after-gold",
             facts=(
-                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
-                parse_expression(f"(food-amount < {plan.feudal_bank_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
+                parse_expression(f"(food-amount < {feudal_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount >= {feudal_gold})", SourceLocation(1)),
                 parse_expression("(up-compare-sn sn-food-gatherer-percentage != 65)", SourceLocation(1)),
             ),
             actions=(
@@ -633,11 +550,11 @@ def lower_economy_controller(
             ),
         ),
         NativeControlRule(
-            "economy-controller-feudal-bank-hold",
+            "economy-controller-feudal-reservation-hold",
             facts=(
-                parse_expression(f"(goal {feudal_bank} {int(FeudalBankState.BUILDING)})", SourceLocation(1)),
-                parse_expression(f"(food-amount >= {plan.feudal_bank_food})", SourceLocation(1)),
-                parse_expression(f"(gold-amount >= {plan.feudal_bank_gold})", SourceLocation(1)),
+                parse_expression(f"(goal {feudal_state} 1)", SourceLocation(1)),
+                parse_expression(f"(food-amount >= {feudal_food})", SourceLocation(1)),
+                parse_expression(f"(gold-amount >= {feudal_gold})", SourceLocation(1)),
                 parse_expression("(up-compare-sn sn-food-gatherer-percentage != 60)", SourceLocation(1)),
             ),
             actions=(
@@ -652,7 +569,7 @@ def lower_economy_controller(
 
     return NativeControlPlan(
         states=tuple(states),
-        rules=bank_rules + selection_rules + tuple(writer_rules) + feudal_bank_rules,
+        rules=selection_rules + tuple(writer_rules) + feudal_reservation_rules,
     )
 
 
@@ -662,7 +579,6 @@ __all__ = (
     "EconomyMode",
     "EconomyModePolicy",
     "CastleBankState",
-    "FeudalBankState",
     "default_byzantine_economy_controller",
     "lower_economy_controller",
 )
