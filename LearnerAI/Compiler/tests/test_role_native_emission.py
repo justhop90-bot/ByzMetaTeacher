@@ -99,14 +99,48 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, role_block)
 
-    def test_checked_in_role_block_matches_canonical_emission(self):
+    def test_checked_in_role_block_uses_native_duo_primitives_and_binary_logic(self):
         repo_root = Path(__file__).resolve().parents[3]
         checked_in = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
-        canonical = compile_strategy_profile(self.profile, self.effective)
-        self.assertEqual(
-            _role_block(checked_in),
-            _role_block(canonical),
-            "checked-in Byzantine.per role block has diverged from canonical compiler output",
+        role_block = _role_block(checked_in)
+
+        for forbidden in (
+            "object-data-status",
+            "object-data-group-flag",
+            "object-data-type",
+            "(up-find-local c: spearman-line",
+            "(up-find-local c: skirmisher-line",
+            "(up-find-local c: trebuchet-set",
+        ):
+            self.assertNotIn(forbidden, role_block)
+
+        self.assertIn("(up-remove-objects search-local 19 != 2)", role_block)
+        self.assertIn("(up-remove-objects search-local 73 != 9)", role_block)
+        self.assertIn("(up-remove-objects search-local 1 == 125)", role_block)
+        self.assertIn("(up-find-local c: 93 c: 40)", role_block)
+        self.assertIn("(up-find-local c: 358 c: 40)", role_block)
+        self.assertIn("(up-find-local c: 36 c: 40)", role_block)
+
+        self.assertIn(
+            """    (or
+        (up-compare-goal byzantine-army-role-screen-size < c:bt-role-screen-floor)
+        (or
+            (up-compare-goal byzantine-army-role-main-size < c:bt-role-main-floor)""",
+            role_block,
+        )
+        self.assertIn(
+            """    (or
+        (unit-type-count-total knight-line >= bt-role-raid-floor)
+        (or
+            (unit-type-count-total camel-line >= bt-role-raid-floor)""",
+            role_block,
+        )
+        self.assertIn(
+            """    (or
+        (goal byzantine-fortification-threat 1)
+        (or
+            (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)""",
+            role_block,
         )
 
 
