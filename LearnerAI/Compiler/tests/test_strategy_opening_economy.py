@@ -167,7 +167,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 for rule in control.rules
                 if rule.identity.startswith(f"economy-controller-write-{mode_name}-")
             }
-            self.assertEqual(len(rules), 4)
+            self.assertEqual(len(rules), 5)
             written = tuple(
                 next(
                     action.args[1]
