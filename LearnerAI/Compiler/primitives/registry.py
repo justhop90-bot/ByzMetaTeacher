@@ -318,18 +318,54 @@ class PrimitiveRegistry:
         )
         bindings = binder.bind_attack_plan(plan)
         binding_by_command = {binding.command: binding for binding in bindings}
+        logical_arity = {
+            "and": 2,
+            "or": 2,
+            "nand": 2,
+            "nor": 2,
+            "xor": 2,
+            "xnor": 2,
+            "not": 1,
+        }
+
+        def validate_fact_expression(expression, *, rule_identity: str) -> None:
+            if expression.head in logical_arity:
+                expected = logical_arity[expression.head]
+                if len(expression.args) != expected:
+                    raise ValueError(
+                        f"attack lifecycle rule '{rule_identity}' logical operator "
+                        f"'{expression.head}' expects {expected} operands, got {len(expression.args)}"
+                    )
+                for argument in expression.args:
+                    if hasattr(argument, "head") and hasattr(argument, "args"):
+                        validate_fact_expression(
+                            argument,
+                            rule_identity=rule_identity,
+                        )
+                return
+            native = self.require_native(expression.head)
+            if len(expression.args) != native.parameter_count:
+                raise ValueError(
+                    f"attack lifecycle fact '{expression.head}' expects exactly "
+                    f"{native.parameter_count} argument(s), got {len(expression.args)}"
+                )
+            if native.command_type not in {"Fact", "Fact/Action"}:
+                raise ValueError(
+                    f"attack lifecycle command '{expression.head}' is an Action and cannot be emitted as a Fact"
+                )
+            for argument in expression.args:
+                if hasattr(argument, "head") and hasattr(argument, "args"):
+                    validate_fact_expression(
+                        argument,
+                        rule_identity=rule_identity,
+                    )
+
         for rule in plan.rules:
             for expression in rule.facts:
-                native = self.require_native(expression.head)
-                if len(expression.args) != native.parameter_count:
-                    raise ValueError(
-                        f"attack lifecycle fact '{expression.head}' expects exactly "
-                        f"{native.parameter_count} argument(s), got {len(expression.args)}"
-                    )
-                if native.command_type not in {"Fact", "Fact/Action"}:
-                    raise ValueError(
-                        f"attack lifecycle command '{expression.head}' is an Action and cannot be emitted as a Fact"
-                    )
+                validate_fact_expression(
+                    expression,
+                    rule_identity=rule.identity,
+                )
             for expression in rule.actions:
                 binding = binding_by_command.get(expression.head)
                 if binding is None:
