@@ -171,6 +171,7 @@ def _research_demand(
     reason_label: str,
     resources: tuple[Resource, ...],
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
+    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
     token = _slug(tech.name)
@@ -213,6 +214,7 @@ def _research_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
+                *additional_requirements,
                 f"(can-research-with-escrow {token})",
             ),
             action=f"(research {token})",
@@ -836,6 +838,12 @@ def community_strategy_demands(
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
+            additional_requirements=(
+                ("(not (can-research-with-escrow castle-age))",)
+                if tech_name in {"double-bit-axe", "horse-collar"}
+                and age == "feudal-age"
+                else ()
+            ),
         )
         demands.append(demand)
 
