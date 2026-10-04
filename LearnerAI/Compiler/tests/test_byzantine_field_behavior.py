@@ -639,6 +639,8 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertIn("(up-target-objects 0 action-attack-move -1 stance-aggressive)", block)
         self.assertIn("(attack-now)", block)
         self.assertNotIn("byzantine-siege-muster", block)
+        self.assertNotIn("byzantine-siege-muster", self.per)
+        self.assertNotIn("(defconst sn-number-attack-groups 36)", self.per)
 
     def test_imperial_siege_ram_upgrade_is_reasserted_when_rams_exist(self):
         self.assertIn(
