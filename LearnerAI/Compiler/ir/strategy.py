@@ -211,7 +211,6 @@ class StrategicBinding:
     capability_intent: CapabilityIntent
     opportunity_cost: OpportunityCostPolicy | None
     production_arbitration_group: str | None = None
-    initially_active: bool = True
 
     @property
     def persistent_intent(self) -> bool:
@@ -287,6 +286,7 @@ class StrategicDemandSpec:
     provenance: tuple[EvidenceRef, ...] = ()
     recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
     production_arbitration_group: str | None = None
+    initially_active: bool = True
 
     @property
     def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
