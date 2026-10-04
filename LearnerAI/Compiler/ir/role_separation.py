@@ -557,7 +557,7 @@ def default_byzantine_role_separation_plan(
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
-                "(set-goal byzantine-army-attack-ready 0)",
+                f"(set-goal {recovery_request_name} 1)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
                 "(up-reset-group c: 7)",
@@ -766,7 +766,7 @@ def default_byzantine_role_separation_plan(
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
-                "(set-goal byzantine-army-attack-ready 0)",
+                f"(set-goal {recovery_request_name} 1)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
                 "(up-reset-group c: 7)",
