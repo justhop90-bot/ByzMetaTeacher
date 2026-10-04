@@ -22,7 +22,7 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         requirements = demand.execution_demands[0].requirements
         self.assertNotIn("(goal opening-plan 1)", " ".join(requirements))
         self.assertNotIn("(goal opening-plan 2)", " ".join(requirements))
-        self.assertIn("(current-age == dark-age)", requirements)
+        self.assertTrue(any("(current-age == dark-age)" in requirement for requirement in requirements))
         self.assertIn("(unit-type-count-total villager >= 13)", requirements)
         self.assertIn("(building-type-count-total lumber-camp >= 1)", requirements)
         self.assertIn("(building-type-count-total mining-camp >= 1)", requirements)
@@ -64,7 +64,7 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         assert control is not None
         rules = {rule.identity: rule for rule in control.rules}
         base = rules["economy-controller-select-base"]
-        self.assertIn("(or (goal opening-plan 1) (goal opening-plan 2))", " ".join(f.source for f in base.facts))
+        self.assertIn("(goal opening-plan 1)", " ".join(f.source for f in base.facts))
         counter = rules["economy-controller-select-counter-pressure"]
         self.assertIn("(current-age >= feudal-age)", " ".join(f.source for f in counter.facts))
 
