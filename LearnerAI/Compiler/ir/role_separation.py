@@ -169,17 +169,9 @@ class NativeRoleSeparationPlan:
 
 
 def _expr(source: str) -> Expression:
-    source = source.strip()
-    body = source[1:-1].strip()
-    if not body:
-        raise ValueError("empty role expression")
-    fields = body.split()
-    return Expression(
-        source=source,
-        head=fields[0],
-        args=tuple(fields[1:]),
-        location=SourceLocation(1),
-    )
+    from ..semantic.analyzer import parse_expression
+
+    return parse_expression(source.strip(), SourceLocation(1))
 
 
 def _rule(
@@ -300,6 +292,16 @@ def default_byzantine_role_separation_plan(
             ),
             "Loss of attack readiness or an overmatch trigger forces recovery.",
         ),
+        RoleWitnessSpec(
+            "role-raid-fortified-ineligible",
+            RoleKind.RAID,
+            (
+                _expr("(goal byzantine-fortification-threat 1)"),
+                _expr("(or (goal byzantine-offensive-objective-class 3) "
+                      "(goal byzantine-offensive-objective-class 4))"),
+            ),
+            "A fortified-position threat makes raid splitting inadmissible.",
+        ),
     )
 
     rules = (
@@ -365,6 +367,7 @@ def default_byzantine_role_separation_plan(
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
                 "(up-find-local c: spearman-line c: 40)",
+                "(up-remove-objects search-local object-data-status != 2)",
                 "(up-find-local c: skirmisher-line c: 40)",
                 "(up-find-local c: 359 c: 40)",
                 f"(up-create-group 0 {cap_name} c: 5)",
@@ -387,6 +390,7 @@ def default_byzantine_role_separation_plan(
                 "(up-filter-include cmdid-military -1 -1 -1)",
                 "(up-find-local c: mangonel-line c: 40)",
                 "(up-find-local c: bombard-cannon c: 40)",
+                "(up-remove-objects search-local object-data-status != 2)",
                 "(up-find-local c: trebuchet-set c: 40)",
                 "(up-find-local c: battering-ram-line c: 40)",
                 f"(set-goal {cap_name} 2)",
@@ -409,6 +413,7 @@ def default_byzantine_role_separation_plan(
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
                 "(up-find-local c: all-units-class c: 240)",
+                "(up-remove-objects search-local object-data-status != 2)",
                 "(up-remove-objects search-local object-data-group-flag == 5)",
                 "(up-remove-objects search-local object-data-group-flag == 7)",
                 "(up-remove-objects search-local object-data-type == monk)",
@@ -433,6 +438,7 @@ def default_byzantine_role_separation_plan(
                 "(up-filter-include cmdid-military -1 -1 -1)",
                 "(up-filter-include cmdid-monk -1 -1 -1)",
                 "(up-find-local c: all-units-class c: 240)",
+                "(up-remove-objects search-local object-data-status != 2)",
                 "(up-remove-objects search-local object-data-group-flag == 5)",
                 "(up-remove-objects search-local object-data-group-flag == 6)",
                 "(up-remove-objects search-local object-data-group-flag == 7)",
@@ -604,24 +610,13 @@ def default_byzantine_role_separation_plan(
                 "(up-filter-distance c: -1 c: 60)",
                 "(up-filter-include cmdid-military -1 -1 -1)",
                 "(up-find-local c: cavalry-class c: 40)",
-                "(up-remove-objects search-local object-data-group-flag != 9)",
+                "(up-remove-objects search-local object-data-status != 2)",
+                "(up-remove-objects search-local object-data-group-flag == 9)",
                 f"(set-goal {cap_name} 4)",
                 f"(up-create-group 0 {cap_name} c: 8)",
                 "(up-modify-group-flag 1 c: 8)",
                 f"(set-goal {state_name} byzantine-army-role-raid-split)",
             ),
-            RoleKind.RAID,
-        ),
-        _rule(
-            170,
-            "role-raid-admission-fortified-block",
-            (
-                f"(goal {state_name} byzantine-army-role-committed)",
-                "(goal byzantine-fortification-threat 1)",
-                "(or (goal byzantine-offensive-objective-class 3) "
-                "(goal byzantine-offensive-objective-class 4))",
-            ),
-            (f"(set-goal {state_name} byzantine-army-role-committed)",),
             RoleKind.RAID,
         ),
         _rule(
@@ -659,8 +654,6 @@ def default_byzantine_role_separation_plan(
         ("bt-role-siege-floor-standard", 1),
         ("bt-role-siege-floor-fortified", 2),
         ("bt-role-raid-floor", 2),
-        ("byzantine-siege-scale-standard", 1),
-        ("byzantine-siege-scale-fortified", 2),
     )
 
     return NativeRoleSeparationPlan(
@@ -687,6 +680,74 @@ def default_byzantine_role_separation_plan(
         rules=rules,
         constants=constants,
     )
+
+
+def validate_native_role_separation_plan(plan, registry) -> None:
+    if not isinstance(plan, NativeRoleSeparationPlan):
+        raise TypeError("role_separation_plan must be a NativeRoleSeparationPlan")
+
+    forbidden_actions = {
+        "attack-now",
+        "attack-groups",
+        "action-attack-move",
+        "up-target-objects",
+        "up-target-point",
+        "action-move",
+        "stop",
+    }
+    allowed_actions = {
+        "set-goal",
+        "up-reset-group",
+        "up-create-group",
+        "up-modify-group-flag",
+        "up-reset-search",
+        "up-full-reset-search",
+        "up-filter-include",
+        "up-filter-distance",
+        "up-find-local",
+        "up-remove-objects",
+    }
+
+    request_ids = {request.request_id for request in plan.storage_requests}
+    if len(request_ids) != len(plan.storage_requests):
+        raise ValueError("role separation storage requests must be unique")
+
+    for rule in plan.rules:
+        for expression in rule.facts:
+            registry.validate_native_signature(expression.head, len(expression.args))
+            native = registry.require_native(expression.head)
+            if native.command_type not in {"Fact", "Fact/Action"}:
+                raise ValueError(
+                    f"role rule fact '{expression.head}' is not a native fact"
+                )
+        for expression in rule.actions:
+            if expression.head in forbidden_actions:
+                raise ValueError(
+                    f"role rule '{rule.identity}' illegally owns objective/movement action "
+                    f"'{expression.head}'"
+                )
+            if expression.head not in allowed_actions:
+                raise ValueError(
+                    f"role rule '{rule.identity}' uses unsupported action '{expression.head}'"
+                )
+            registry.validate_native_signature(expression.head, len(expression.args))
+            native = registry.require_native(expression.head)
+            if native.command_type not in {"Action", "Fact/Action"}:
+                raise ValueError(
+                    f"role rule action '{expression.head}' is not a native action"
+                )
+
+    for role in plan.roles:
+        if role.group_id < 0 or role.group_id > 9:
+            raise ValueError(
+                f"role '{role.role.value}' group id {role.group_id} is outside native range 0..9"
+            )
+
+    if any(
+        name in {"byzantine-siege-scale-standard", "byzantine-siege-scale-fortified"}
+        for name, _value in plan.constants
+    ):
+        raise ValueError("role plan must not redeclare existing siege-scale constants")
 
 
 __all__ = [
