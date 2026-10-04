@@ -21427,16 +21427,7 @@
 ; Unscored plain Bombard Tower issuance is intentionally retired.
 ; The scored resource-point and fortified-front executors above own construction.
 
-; Arabia Loom demand activation
-(defrule
-    (goal demand-research-loom 0)
-    (map-type arabia)
-    (current-age == dark-age)
-    (not (research-completed ri-loom))
-=>
-    (set-goal demand-research-loom 1)
-)
-
+; Research lifecycle: research-loom
 ; Pending diagnostics: research-loom
 ; Issuance failure: research-loom | RETAIN-ACTIVE
 ; Release: research-loom | COMPLETE -> RELEASED
