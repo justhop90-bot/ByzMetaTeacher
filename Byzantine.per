@@ -7911,13 +7911,17 @@
     (or
         (and
             (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
-            (building-type-count-total lumber-camp == 0)
-            (can-build lumber-camp)
+            (and
+                (building-type-count-total lumber-camp == 0)
+                (can-build lumber-camp)
+            )
         )
         (and
             (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
-            (building-type-count-total mining-camp == 0)
-            (can-build mining-camp)
+            (and
+                (building-type-count-total mining-camp == 0)
+                (can-build mining-camp)
+            )
         )
     )
 =>
