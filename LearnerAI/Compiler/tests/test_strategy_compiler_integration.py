@@ -312,6 +312,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         self.assertIn("; Native Byzantine role-separation plan", output)
         self.assertIn("; Native role rule: role-forming-screen", output)
+        self.assertIn("; Native control rule: byzantine-role-recovery-bridge", output)
         self.assertIn(
             "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
             "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
