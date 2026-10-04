@@ -2348,6 +2348,11 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
     common_facts = (
         parse_expression("(current-age == castle-age)", SourceLocation(1)),
         parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
+        parse_expression(
+            "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
+            "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
+            SourceLocation(1),
+        ),
     )
     return NativeAttackLifecyclePlan(
         rules=(
@@ -2391,7 +2396,7 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
                 identity="byzantine-attack-phase-cataphract-input",
                 rule_identity="byzantine-castle-attack-now-cataphract",
                 section="FACT",
-                expression_index=3,
+                expression_index=4,
                 argument_index=0,
                 request=phase_request,
             ),
