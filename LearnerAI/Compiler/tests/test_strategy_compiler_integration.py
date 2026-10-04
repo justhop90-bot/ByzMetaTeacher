@@ -17,6 +17,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_castle_strategy,
     lower_strategy_profile,
+    build_byzantine_strategy,
 )
 
 
@@ -24,6 +25,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
     def setUp(self):
         self.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
         self.profile = build_byzantine_castle_strategy(self.effective)
+        self.stock_profile = build_byzantine_strategy(self.effective)
 
     def test_protected_research_declares_explicit_escrow_resources(self):
         demand = self.profile.demand("feudal-transition")
@@ -301,6 +303,20 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native attack rule: byzantine-castle-attack-now-knight", output)
         self.assertIn("(current-age == castle-age)", output)
         self.assertIn("(attack-now)", output)
+
+    def test_stock_strategy_compiles_role_separation_and_role_gated_attack_plan(self):
+        output = compile_strategy_profile(
+            self.stock_profile,
+            self.effective,
+        )
+
+        self.assertIn("; Native Byzantine role-separation plan", output)
+        self.assertIn("; Native role rule: role-forming-screen", output)
+        self.assertIn(
+            "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
+            "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
+            output,
+        )
 
     def test_strategy_profile_compiles_through_existing_semantic_pipeline(self):
         output = compile_strategy_profile(
