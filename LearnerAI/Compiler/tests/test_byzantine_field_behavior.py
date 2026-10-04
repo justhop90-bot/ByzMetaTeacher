@@ -48,11 +48,11 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "; Native economy rule: byzantine-boar-lure-enable",
         )
         self.assertIn(
-            "(set-strategic-number sn-maximum-wood-drop-distance 14)",
+            "(set-strategic-number sn-maximum-wood-drop-distance 16)",
             init,
         )
         self.assertIn(
-            "(set-strategic-number sn-maximum-gold-drop-distance 14)",
+            "(set-strategic-number sn-maximum-gold-drop-distance 16)",
             init,
         )
 
@@ -90,7 +90,7 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertIn("(defconst byzantine-resource-camp-radius-wide 24)", self.per)
         self.assertIn("(defconst byzantine-resource-camp-radius-remote 30)", self.per)
 
-        for radius in (14, 18, 20):
+        for radius in (16, 18, 20):
             self.assertIn(
                 f"(set-strategic-number sn-lumber-camp-max-distance {radius})",
                 controller,
@@ -216,14 +216,29 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
             "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
         )
-        opening = self._find_rule(
+        opening = self._section_from(
+            "; Standard Arabia opening first-camp placement bypasses the strict candidate-ring legality",
+            "; Standard opening placement prefers the persisted resource point.",
+        )
+        self.assertIn(
             "(goal byzantine-resource-camp-state byzantine-resource-camp-state-ready)",
-            "(goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-candidate)",
-            "(goal byzantine-resource-camp-ring-index 0)",
+            opening,
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-target-valid 1)",
+            opening,
+        )
+        self.assertIn(
             "(goal opening-plan 1)",
+            opening,
+        )
+        self.assertIn(
             "(map-type arabia)",
+            opening,
+        )
+        self.assertIn(
             "(current-age == dark-age)",
-            "(set-goal byzantine-resource-camp-placement-state byzantine-resource-camp-placement-state-idle)",
+            opening,
         )
         self.assertNotIn(
             "(up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)",
