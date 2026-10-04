@@ -2500,14 +2500,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.SUPPORT,
-            reason=(
-                StrategicEvidence(
-                    StrategicEvidenceKind.PERSISTENT,
-                    None,
-                    "Enemy stable production or early scouts justify pre-positioning a small anti-mounted screen",
-                    observation_ref="enemy-mounted-commitment-feudal",
-                ),
-            ),
+            reason=(),
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
@@ -2547,14 +2540,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.SUPPORT,
-            reason=(
-                StrategicEvidence(
-                    StrategicEvidenceKind.PERSISTENT,
-                    None,
-                    "Enemy archery production or early archers justify pre-positioning a small ranged counter",
-                    observation_ref="enemy-ranged-commitment-feudal",
-                ),
-            ),
+            reason=(),
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
