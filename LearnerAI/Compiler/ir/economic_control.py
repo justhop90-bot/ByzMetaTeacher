@@ -539,7 +539,7 @@ def lower_economy_controller(
             "economy-controller-feudal-bank-release-on-feudal",
             facts=(
                 parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
-                parse_expression(f"(goal {feudal_bank} != {int(FeudalBankState.IDLE)})", SourceLocation(1)),
+                parse_expression(f"(not (goal {feudal_bank} {int(FeudalBankState.IDLE)}))", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(
