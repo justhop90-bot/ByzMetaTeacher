@@ -824,18 +824,88 @@ def default_byzantine_role_separation_plan(
 
         _rule(
             210,
-            "role-raid-objective-release",
+            "role-raid-release-fortified",
             (
                 f"(goal {state_name} byzantine-army-role-raid-split)",
-                "(or (goal byzantine-fortification-threat 1) "
-                "(or (goal byzantine-offensive-objective-class 1) "
-                "(or (goal byzantine-offensive-objective-class 2) "
-                "(or (goal byzantine-offensive-objective-claim 0) "
-                "(or (goal byzantine-army-attack-ready 0) "
-                "(goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered))))))",
+                "(goal byzantine-fortification-threat 1)",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-forming)",
+                f"(set-goal {mask_name} 0)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
+                "(up-reset-group c: 8)",
+                "(up-reset-group c: 9)",
+            ),
+            RoleKind.RAID,
+        ),
+        _rule(
+            211,
+            "role-raid-release-siege-objective",
+            (
+                f"(goal {state_name} byzantine-army-role-raid-split)",
+                "(or (goal byzantine-offensive-objective-class 1) "
+                "(goal byzantine-offensive-objective-class 2))",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-forming)",
+                f"(set-goal {mask_name} 0)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
+                "(up-reset-group c: 8)",
+                "(up-reset-group c: 9)",
+            ),
+            RoleKind.RAID,
+        ),
+        _rule(
+            212,
+            "role-raid-release-unclaimed-objective",
+            (
+                f"(goal {state_name} byzantine-army-role-raid-split)",
+                "(goal byzantine-offensive-objective-claim 0)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-idle)",
+                f"(set-goal {mask_name} 0)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
+                "(up-reset-group c: 8)",
+                "(up-reset-group c: 9)",
+            ),
+            RoleKind.RAID,
+        ),
+        _rule(
+            213,
+            "role-raid-release-attack-loss",
+            (
+                f"(goal {state_name} byzantine-army-role-raid-split)",
+                "(goal byzantine-army-attack-ready 0)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {recovery_request_name} 1)",
+                f"(set-goal {mask_name} 0)",
+                "(up-reset-group c: 5)",
+                "(up-reset-group c: 6)",
+                "(up-reset-group c: 7)",
+                "(up-reset-group c: 8)",
+                "(up-reset-group c: 9)",
+            ),
+            RoleKind.RAID,
+        ),
+        _rule(
+            214,
+            "role-raid-release-overmatch",
+            (
+                f"(goal {state_name} byzantine-army-role-raid-split)",
+                "(goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)",
+            ),
+            (
+                f"(set-goal {state_name} byzantine-army-role-recovering)",
+                f"(set-goal {recovery_request_name} 1)",
                 f"(set-goal {mask_name} 0)",
                 "(up-reset-group c: 5)",
                 "(up-reset-group c: 6)",
