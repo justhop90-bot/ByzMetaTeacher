@@ -42,10 +42,10 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 CounterThreatClass.MOUNTED,
                 CounterThreatClass.RANGED,
                 CounterThreatClass.MOUNTED,
+                CounterThreatClass.RANGED,
+                CounterThreatClass.MOUNTED,
                 CounterThreatClass.INFANTRY,
                 CounterThreatClass.SIEGE,
-                CounterThreatClass.MOUNTED,
-                CounterThreatClass.RANGED,
             ),
         )
 
