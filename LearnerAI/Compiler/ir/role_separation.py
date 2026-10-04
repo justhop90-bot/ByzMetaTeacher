@@ -522,6 +522,7 @@ def default_byzantine_role_separation_plan(
                 "(up-reset-group c: 8)",
                 "(up-reset-group c: 9)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
             ),
         ),
         _rule(
@@ -540,6 +541,7 @@ def default_byzantine_role_separation_plan(
                 "(up-reset-group c: 8)",
                 "(up-reset-group c: 9)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
             ),
         ),
         _rule(
@@ -559,6 +561,7 @@ def default_byzantine_role_separation_plan(
                 "(up-reset-group c: 8)",
                 "(up-reset-group c: 9)",
                 f"(set-goal {mask_name} 0)",
+                f"(set-goal {fortified_latch_name} 0)",
             ),
         ),
         _rule(
