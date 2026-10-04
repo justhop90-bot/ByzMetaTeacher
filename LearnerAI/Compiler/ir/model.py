@@ -264,6 +264,7 @@ class SemanticDemand:
     timer_states: tuple["TimerState", ...] = ()
     persistent_controls: tuple["PersistentControlRef", ...] = ()
     location: SourceLocation | None = None
+    action_witness_gates: tuple[Expression, ...] = ()
 
     @property
     def name(self) -> str:

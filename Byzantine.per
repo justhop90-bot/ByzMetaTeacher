@@ -246,6 +246,12 @@
 (defconst pending-castle-third-town-center 324)
 (defconst complete-castle-third-town-center 325)
 (defconst construction-retry-barrier-castle-third-town-center 326)
+(defconst demand-research-loom 15005)
+(defconst issued-research-loom 15006)
+(defconst pending-research-loom 15007)
+(defconst complete-research-loom 15008)
+(defconst research-retry-barrier-research-loom 15009)
+(defconst byzantine-castle-bank-state 15010)
 
 ; Persistent Feudal military package.
 ; 0 = minimal defensive Feudal (baseline Spearmen only)
@@ -6754,60 +6760,141 @@
     (set-goal counter-package-siege_pressure_castle 1)
 )
 
+; Native control rule: economy-controller-castle-bank-initialize
+(defrule
+    (goal byzantine-castle-bank-state -1)
+=>
+    (set-goal byzantine-castle-bank-state 0)
+)
+
+; Native control rule: economy-controller-castle-bank-release-on-castle
+(defrule
+    (current-age >= castle-age)
+=>
+    (set-goal byzantine-castle-bank-state 0)
+)
+
+; Native control rule: economy-controller-castle-bank-break-hard-reserve
+(defrule
+    (current-age == feudal-age)
+    (map-type arabia)
+    (or (food-amount < 800) (gold-amount < 200))
+=>
+    (set-goal byzantine-castle-bank-state 0)
+)
+
+; Native control rule: economy-controller-castle-bank-protect-hard
+(defrule
+    (current-age == feudal-age)
+    (map-type arabia)
+    (or (goal opening-plan 1) (goal opening-plan 2))
+    (food-amount >= 800)
+    (gold-amount >= 200)
+    (goal byzantine-castle-bank-state 0)
+=>
+    (set-goal byzantine-castle-bank-state 1)
+)
+
+; Native control rule: economy-controller-castle-bank-protect-buffer
+(defrule
+    (current-age == feudal-age)
+    (map-type arabia)
+    (or (goal opening-plan 1) (goal opening-plan 2))
+    (food-amount >= 950)
+    (gold-amount >= 300)
+=>
+    (set-goal byzantine-castle-bank-state 2)
+)
+
+; Native control rule: economy-controller-castle-bank-relax-buffer
+(defrule
+    (goal byzantine-castle-bank-state 2)
+    (current-age == feudal-age)
+    (map-type arabia)
+    (food-amount >= 800)
+    (gold-amount >= 200)
+    (or (food-amount < 950) (gold-amount < 300))
+=>
+    (set-goal byzantine-castle-bank-state 1)
+)
+
 ; Native control rule: economy-controller-select-counter-pressure
 (defrule
-    (and (and (current-age >= feudal-age) (current-age < castle-age)) (players-unit-type-count any-enemy militia-line >= 5))
+    (current-age >= feudal-age)
+    (current-age < castle-age)
+    (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1))))
+=>
+    (set-goal economy-posture 2)
+)
+; Native control rule: economy-controller-select-counter-army-presence
+(defrule
+    (current-age >= feudal-age)
+    (current-age < castle-age)
+    (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3))
 =>
     (set-goal economy-posture 2)
 )
 
 ; Native control rule: economy-controller-select-fast-castle
 (defrule
-    (and (and (current-age >= feudal-age) (current-age < castle-age)) (and (not (players-unit-type-count any-enemy militia-line >= 5)) (goal opening-plan 3)))
+    (current-age >= feudal-age)
+    (current-age < castle-age)
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
+    (not (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3)))
+    (goal opening-plan 3)
 =>
     (set-goal economy-posture 3)
 )
-
 ; Native control rule: economy-controller-select-counter-feudal
 (defrule
-    (and (and (current-age >= feudal-age) (current-age < castle-age)) (and (not (players-unit-type-count any-enemy militia-line >= 5)) (goal opening-plan 2)))
+    (current-age >= feudal-age)
+    (current-age < castle-age)
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
+    (not (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3)))
+    (goal opening-plan 2)
 =>
     (set-goal economy-posture 2)
 )
-
 ; Native control rule: economy-controller-select-water-economy
 (defrule
-    (and (and (current-age >= feudal-age) (current-age < castle-age)) (and (not (players-unit-type-count any-enemy militia-line >= 5)) (goal opening-plan 4)))
+    (current-age >= feudal-age)
+    (current-age < castle-age)
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
+    (not (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3)))
+    (goal opening-plan 4)
 =>
     (set-goal economy-posture 4)
 )
-
 ; Native control rule: economy-controller-select-water-control
 (defrule
-    (and (and (current-age >= feudal-age) (current-age < castle-age)) (and (not (players-unit-type-count any-enemy militia-line >= 5)) (goal opening-plan 5)))
+    (current-age >= feudal-age)
+    (current-age < castle-age)
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
+    (not (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3)))
+    (goal opening-plan 5)
 =>
     (set-goal economy-posture 5)
 )
-
 ; Native control rule: economy-controller-select-base
 (defrule
-    (and (current-age < castle-age) (and (not (players-unit-type-count any-enemy militia-line >= 5)) (goal opening-plan 1)))
+    (current-age < castle-age)
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
+    (not (and (players-building-type-count any-enemy barracks >= 1) (players-military-population any-enemy >= 3)))
+    (goal opening-plan 1)
 =>
     (set-goal economy-posture 1)
 )
-
 ; Native control rule: economy-controller-select-castle-conversion
 ; Native control rule: economy-controller-select-fast-imperial
 (defrule
-    (and (current-age >= castle-age)
-         (and (current-age < imperial-age)
-              (and (map-type arena)
-                   (and (goal opening-plan 3)
-                        (not (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5))))))))
+    (current-age >= castle-age)
+    (current-age < imperial-age)
+    (goal opening-plan 3)
+    (map-type arena)
+    (not (or (players-unit-type-count any-enemy militia-line >= 3) (or (players-unit-type-count any-enemy scout-cavalry-line >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy knight >= 1)))))
 =>
     (set-goal economy-posture 9)
 )
-
 ; Native control rule: economy-controller-select-castle-conversion
 (defrule
     (and (current-age >= castle-age)
@@ -7766,19 +7853,25 @@
     (or
         (and
             (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)
-            (can-build lumber-camp)
-            (up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)
+            (and
+                (can-build lumber-camp)
+                (up-can-build-line 0 byzantine-resource-camp-point c: lumber-camp)
+            )
         )
         (or
             (and
                 (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)
-                (can-build mining-camp)
-                (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                (and
+                    (can-build mining-camp)
+                    (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                )
             )
             (and
                 (goal byzantine-resource-camp-kind byzantine-resource-camp-kind-stone)
-                (can-build mining-camp)
-                (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                (and
+                    (can-build mining-camp)
+                    (up-can-build-line 0 byzantine-resource-camp-point c: mining-camp)
+                )
             )
         )
     )
@@ -12828,6 +12921,7 @@
     )
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
+    (research-completed 22)
 =>
     (set-goal byzantine-resource-claim 1)
     (release-escrow food)
@@ -20969,6 +21063,77 @@
 ; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED
 ; Unscored plain Bombard Tower issuance is intentionally retired.
 ; The scored resource-point and fortified-front executors above own construction.
+
+; Arabia Loom demand activation
+(defrule
+    (goal demand-research-loom 0)
+    (map-type arabia)
+    (current-age == dark-age)
+    (not (research-completed 22))
+=>
+    (set-goal demand-research-loom 1)
+)
+
+; Pending diagnostics: research-loom
+; Issuance failure: research-loom | RETAIN-ACTIVE
+; Release: research-loom | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-loom 15008)
+    (research-completed 22)
+=>
+    (set-goal demand-research-loom 0)
+)
+
+; Completion witness: research-loom | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-loom 15006)
+        (goal demand-research-loom 15007)
+    )
+    (research-completed 22)
+=>
+    (set-goal demand-research-loom 15008)
+)
+
+; Pending admission: research-loom | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-loom 15006)
+        (goal demand-research-loom 15007)
+    )
+    (not (research-completed 22))
+    (up-research-status c: 22 >= 2)
+=>
+    (set-goal demand-research-loom 15007)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-loom 15006)
+        (goal demand-research-loom 15007)
+    )
+    (not (research-completed 22))
+    (not (up-research-status c: 22 >= 2))
+=>
+    (set-goal demand-research-loom 1)
+    (set-goal research-retry-barrier-research-loom 1)
+)
+
+; Action issuance: research-loom | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-loom 1)
+    (not (research-completed 22))
+    (goal research-retry-barrier-research-loom 0)
+    (not (up-research-status c: 22 >= 2))
+    (not (research-completed 22))
+    (and (current-age == dark-age) (and (unit-type-count-total villager >= 13) (and (building-type-count-total lumber-camp >= 1) (and (building-type-count-total mining-camp >= 1) (food-amount >= 50)))))
+    (can-research-with-escrow loom)
+=>
+    (release-escrow food)
+    (research loom)
+    (set-goal demand-research-loom 15006)
+)
 
 ; Pending diagnostics: research-wheelbarrow
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 122 and cannot reissue from pending goal 123

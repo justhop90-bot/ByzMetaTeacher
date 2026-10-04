@@ -198,6 +198,7 @@ class ExecutionDemandTemplate:
     local_id: str = "primary"
     capability_intent: CapabilityIntent | None = None
     escrow_release_resources: tuple[Resource, ...] = ()
+    action_witness_gates: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -887,6 +888,7 @@ def lower_strategy_profile(
                     requirements=execution.requirements,
                     action=execution.action,
                     witness=execution.witness,
+                    action_witness_gates=execution.action_witness_gates,
                     release=execution.release,
                     location=SourceLocation(1),
                     invalidate=execution.invalidate,
@@ -2711,15 +2713,22 @@ def build_byzantine_castle_strategy(
             )
         return evidence
 
-    demands = tuple(
-        replace(
+    def annotate_demand(demand: StrategicDemandSpec) -> StrategicDemandSpec:
+        execution = demand.execution
+        if demand.identity == "feudal-transition":
+            execution = replace(
+                execution,
+                action_witness_gates=("(research-completed 22)",),
+            )
+        return replace(
             demand,
             reason=tuple(annotate_meta(evidence) for evidence in demand.reason),
             admissibility=tuple(annotate_meta(evidence) for evidence in demand.admissibility),
             invalidation=tuple(annotate_meta(evidence) for evidence in demand.invalidation),
+            execution=execution,
         )
-        for demand in profile.demands
-    )
+
+    demands = tuple(annotate_demand(demand) for demand in profile.demands)
     transitions = tuple(
         replace(
             transition,

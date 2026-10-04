@@ -71,30 +71,15 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         ):
             self.assertIn(fragment, block)
 
-    def test_standard_arabia_dark_age_prefers_gold_over_second_wood_after_12_villagers(self):
-        wood = self._rule_block(
-            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
+    def test_standard_arabia_dark_age_gold_camp_follows_discovered_gold_front(self):
+        gold = self._find_rule(
+            "(resource-found gold)",
+            "(building-type-count-total mining-camp == 0)",
+            "(set-goal demand-economy-gold-camp-floor-1 1)",
         )
-        self.assertIn(
-            "(unit-type-count-total villager >= 12)",
-            wood,
-        )
-        gold_start = self.per.index(
-            "; Prepare a nearest-real-resource placement plan. Existing action-claim singleton"
-        )
-        gold = self.per[gold_start:self.per.index(
-            "(defrule\n    (goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)",
-            gold_start,
-        )]
-        self.assertIn(
-            "(goal opening-plan 1)", gold
-        )
-        self.assertIn(
-            "(current-age == dark-age)", gold
-        )
-        self.assertIn(
-            "(unit-type-count-total villager >= 12)", gold
-        )
+        self.assertIn("(not (town-under-attack))", gold)
+        self.assertIn("(not (goal byzantine-fortification-threat 1))", gold)
+        self.assertNotIn("(unit-type-count-total villager >= 12)", gold)
 
     def test_standard_arabia_feudal_sequence_uses_19_villagers_and_range_before_blacksmith(self):
         age = self._rule_block("; Action issuance: feudal-transition | ACTIVE -> ISSUED")
