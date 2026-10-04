@@ -81,6 +81,32 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.per,
         )
 
+    def test_castle_reinforcement_can_raise_second_production_lane_without_villager_gate(self):
+        expected = (
+            "(goal byzantine-army-reinforcement 1)",
+            "(population-headroom > 8)",
+            "(wood-amount > 400)",
+        )
+        for fact in expected:
+            self.assertIn(fact, self.per)
+
+        self.assertIn(
+            "(set-goal byzantine-production-barracks-target 2)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-production-archery-target 2)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-production-stable-target 2)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-production-siege-target 2)",
+            self.per,
+        )
+
     def test_keep_respects_castle_stone_commitment_and_uses_frontier_fallback(self):
         self.assertIn(
             "(not (goal byzantine-production-castle-target 2))",
