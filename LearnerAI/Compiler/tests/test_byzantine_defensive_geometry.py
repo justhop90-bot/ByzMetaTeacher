@@ -318,6 +318,51 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.assertIn(class_marker, section)
             self.assertIn("(goal byzantine-army-attack-ready 1)", section)
 
+    def test_objective_witness_reassessment_preserves_class_state(self):
+        witness_start = self.per.index(
+            "(defrule\n    (goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-witness)"
+        )
+        witness_end = self.per.index(
+            "(defrule\n    (goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-executing)",
+            witness_start,
+        )
+        witness_section = self.per[witness_start:witness_end]
+
+        objective_classes = (
+            "siege",
+            "defense",
+            "production",
+            "town-center",
+        )
+        for objective_class in objective_classes:
+            class_marker = (
+                "(goal byzantine-offensive-objective-class "
+                f"byzantine-offensive-objective-class-{objective_class})"
+            )
+            state_marker = (
+                "(set-goal byzantine-offensive-objective-state "
+                f"byzantine-offensive-objective-state-{objective_class})"
+            )
+            class_branch_start = witness_section.index(class_marker)
+            class_branch = witness_section[class_branch_start:]
+            self.assertIn(
+                "(up-compare-goal byzantine-offensive-objective-search >= 1)",
+                class_branch,
+            )
+            self.assertIn(state_marker, class_branch)
+
+        self.assertNotIn(
+            "(set-goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-executing)",
+            witness_section,
+        )
+        self.assertNotIn(
+            "(up-target-objects 1 action-attack-move -1 -1)",
+            witness_section,
+        )
+
     def test_fortified_breach_preserves_attack_reserve(self):
         start = self.per.index(
             "(goal byzantine-siege-approach byzantine-siege-approach-breach)"
