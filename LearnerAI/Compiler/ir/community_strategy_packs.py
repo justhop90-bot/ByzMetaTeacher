@@ -407,15 +407,23 @@ def community_strategy_observations(
             "(or (players-unit-type-count any-enemy militia-line >= 3) "
             "(or (players-unit-type-count any-enemy scout-cavalry-line >= 3) "
             "(or (players-unit-type-count any-enemy archer-line >= 3) "
-            "(or (players-unit-type-count any-enemy knight >= 1) "
-            "(and (players-building-type-count any-enemy barracks >= 1) "
-            "(players-military-population any-enemy >= 3))))))",
+            "(players-unit-type-count any-enemy knight >= 1)))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
                      *effective.unit_line("scout-cavalry-line").provenance,
                      *effective.unit_line("archer-line").provenance,
                      *effective.unit_line("militia-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-arabia-early-army-presence",
+            "(and (players-building-type-count any-enemy barracks >= 1) "
+            "(players-military-population any-enemy >= 3))",
+            tuple(
+                dict.fromKeys(
+                    (*effective.unit_line("militia-line").provenance,)
                 )
             ),
         ),
@@ -557,7 +565,7 @@ def community_strategy_observations(
             "(and (unit-type-count-total villager >= 13) "
             "(and (building-type-count-total lumber-camp >= 1) "
             "(and (building-type-count-total mining-camp >= 1) "
-            "(food-amount >= 50))))",
+            "(food-amount >= 50)))))",
             tuple(
                 dict.fromkeys(
                     (*lumber_camp.provenance,
