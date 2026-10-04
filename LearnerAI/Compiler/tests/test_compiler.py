@@ -465,7 +465,7 @@ class CompilerTests(unittest.TestCase):
         action_start = output.find("; Action issuance: wheelbarrow | ACTIVE -> ISSUED")
         action_end = len(output)
         action_block = output[action_start:action_end]
-        self.assertIn("(research ri-wheelbarrow)", action_block)
+        self.assertIn("(research ri-wheel-barrow)", action_block)
         active_match = re.search(r"\(set-goal demand-wheelbarrow (\d+)\)", action_block)
         self.assertIsNotNone(active_match)
         self.assertTrue(41 <= int(active_match.group(1)) <= 512)
@@ -473,7 +473,7 @@ class CompilerTests(unittest.TestCase):
         witness_match = re.search(r"\(goal demand-wheelbarrow (\d+)\)", witness_block)
         self.assertIsNotNone(witness_match)
         self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
-        self.assertNotIn("(research ri-wheelbarrow)", witness_block)
+        self.assertNotIn("(research ri-wheel-barrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
         output = compile_source(EXAMPLES)
