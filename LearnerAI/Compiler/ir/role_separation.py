@@ -614,8 +614,8 @@ def default_byzantine_role_separation_plan(
                 f"(or (goal {state_name} byzantine-army-role-committed) "
                 f"(goal {state_name} byzantine-army-role-raid-split))",
                 f"(or (and (goal byzantine-fortification-threat 1) "
-                f"(goal byzantine-siege-scale byzantine-siege-scale-fortified) "
-                f"(up-group-size c: 7 < 2)) "
+                f"(and (goal byzantine-siege-scale byzantine-siege-scale-fortified) "
+                f"(up-group-size c: 7 < 2))) "
                 f"(and (goal byzantine-fortification-threat 0) "
                 f"(up-group-size c: 7 < 1)))",
             ),
