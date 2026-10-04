@@ -45,7 +45,12 @@ class ResearchLifecycle:
         type_op, tech_id, comparator, state_value = self.pending_fact.args
         if type_op != "c:":
             raise ValueError("research pending fact must use c: for TechId")
-        if not isinstance(tech_id, str) or not tech_id.startswith("ri-"):
+        if (
+            not isinstance(tech_id, str)
+            or not tech_id
+            or tech_id.isdigit()
+            or " " in tech_id
+        ):
             raise ValueError(
                 "research pending fact must use a runtime-native TechId symbol"
             )
