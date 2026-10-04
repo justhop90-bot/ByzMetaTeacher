@@ -25274,11 +25274,11 @@
     (not (research-completed ri-gillnets))
     (current-age >= castle-age)
     (map-type islands)
-    (can-research-with-escrow 65)
+    (can-research-with-escrow ri-gillnets)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 65)
+    (research ri-gillnets)
     (set-goal demand-water-gillnets 133)
 )
 
@@ -25354,11 +25354,11 @@
     (not (research-completed ri-war-galley))
     (current-age >= castle-age)
     (map-type islands)
-    (can-research-with-escrow 34)
+    (can-research-with-escrow ri-war-galley)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 34)
+    (research ri-war-galley)
     (set-goal demand-water-warships 143)
 )
 
@@ -25434,11 +25434,11 @@
     (not (research-completed ri-galleon))
     (current-age >= imperial-age)
     (map-type islands)
-    (can-research-with-escrow 35)
+    (can-research-with-escrow ri-galleon)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 35)
+    (research ri-galleon)
     (set-goal demand-water-heavy-warships 136)
 )
 
@@ -25533,11 +25533,11 @@
             (building-type-count castle >= 1)
         )
     )
-    (can-research-with-escrow 464)
+    (can-research-with-escrow ri-greek-fire)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 464)
+    (research ri-greek-fire)
     (set-goal demand-water-greek-fire 134)
 )
 
@@ -25691,11 +25691,11 @@
     (not (up-research-status c: ri-heavy-demolition-ship >= research-pending))
     (not (research-completed ri-heavy-demolition-ship))
     (current-age >= imperial-age)
-    (can-research-with-escrow 244)
+    (can-research-with-escrow ri-heavy-demolition-ship)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research 244)
+    (research ri-heavy-demolition-ship)
     (set-goal demand-research-heavy-demolition-ship 115)
 )
 
