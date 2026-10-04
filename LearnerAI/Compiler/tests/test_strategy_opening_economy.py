@@ -150,6 +150,23 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             profile.observation("strategy-enemy-pressure").expression,
         )
 
+    def test_feudal_transition_waits_for_first_resource_fronts(self):
+        profile = build_byzantine_strategy(self.effective)
+        transition = profile.demand("feudal-transition")
+        requirements = tuple(
+            requirement.source
+            for requirement in transition.execution.requirements
+        )
+        self.assertEqual(
+            requirements,
+            (
+                "(current-age == dark-age)",
+                "(building-type-count-total lumber-camp >= 1)",
+                "(building-type-count-total mining-camp >= 1)",
+                "(can-research-with-escrow feudal-age)",
+            ),
+        )
+
     def test_opening_selection_materially_changes_native_economy_writers(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
