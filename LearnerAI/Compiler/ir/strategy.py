@@ -1643,8 +1643,9 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
     )
     feudal_click_target = (
         "(or "
-        f"(and (goal opening-plan 1) (map-type arabia) "
-        f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS})) "
+        f"(and (goal opening-plan 1) "
+        f"(and (map-type arabia) "
+        f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS}))) "
         f"(and (or (goal opening-plan 2) (goal opening-plan 3)) "
         f"(unit-type-count-total villager >= {FEUDAL_BANK_CLICK_VILLAGERS + 1}))"
         ")"
