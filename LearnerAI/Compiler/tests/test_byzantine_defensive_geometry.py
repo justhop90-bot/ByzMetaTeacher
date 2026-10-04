@@ -142,6 +142,42 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         witness_production = self.per[witness_production_start:witness_town_start]
         self.assertIn("(up-find-remote c: 83 c: 1)", witness_production)
 
+    def test_offensive_actor_radius_exceeds_target_locality(self):
+        self.assertIn("(defconst bt-offensive-objective-radius 40)", self.per)
+        self.assertIn("(defconst bt-offensive-objective-actor-radius 60)", self.per)
+
+        objective_start = self.per.index("; LATE-GAME OBJECTIVE SEQUENCE")
+        objective_end = self.per.index(
+            "; A newly observed fortification supersedes an unfinished open-ground objective.",
+            objective_start,
+        )
+        objective = self.per[objective_start:objective_end]
+
+        for marker in (
+            "; siege objective search,",
+            "; defense objective search,",
+            "; production objective search,",
+            "; town-center objective search,",
+        ):
+            start = objective.index(marker)
+            block_end = objective.index(
+                "(up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)",
+                start,
+            )
+            block = objective[start:block_end]
+            actor_radius = "(up-filter-distance c: 0 c: bt-offensive-objective-actor-radius)"
+            target_radius = "(up-filter-distance c: 0 c: bt-offensive-objective-radius)"
+            self.assertIn(actor_radius, block)
+            self.assertIn(target_radius, block)
+            self.assertLess(
+                block.index(actor_radius),
+                block.index("(up-find-remote"),
+            )
+            self.assertLess(
+                block.index("(up-find-local c: trebuchet c: 1)"),
+                block.rindex(target_radius),
+            )
+
     def test_minimum_viable_attack_admission_does_not_require_monks_or_ideal_mass(self):
         start = self.per.index("; MINIMUM-VIABLE CASTLE ATTACK ADMISSION")
         end = self.per.index("; FULL CASTLE ATTACK PACKAGE", start)
