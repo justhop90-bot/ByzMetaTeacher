@@ -1624,7 +1624,6 @@ def _strategy_control_plan(profile: StrategyProfile):
                         ),
                     ),
                     actions=(
-                        parse_expression("(up-reset-attack-now)", SourceLocation(1)),
                         parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
                         parse_expression("(set-goal byzantine-army-role-recovery-request 0)", SourceLocation(1)),
                     ),
