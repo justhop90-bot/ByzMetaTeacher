@@ -26,6 +26,11 @@ class CastleBankState(IntEnum):
     HARD_RESERVED = 1
     BUFFER_RESERVED = 2
 
+class FeudalBankState(IntEnum):
+    IDLE = 0
+    BUILDING = 1
+    READY = 2
+
 
 @dataclass(frozen=True)
 class EconomyAllocation:
