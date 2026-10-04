@@ -15,6 +15,7 @@ from .model import SemanticDemand
 from .military_composition import MilitaryCompositionProofPath
 from .native_attack import NativeAttackLifecyclePlan
 from .native_control import NativeControlPlan
+from .role_separation import NativeRoleSeparationPlan
 from .operational import OperationalSemanticsPlan
 from .persistent_control import PersistentControlRef
 from .resource_control import NativeEscrowPolicyPlan, NativeEscrowReleasePlan
@@ -30,6 +31,7 @@ class CompilerSemanticProgram:
     control_plan: NativeControlPlan | None = None
     duc_plan: NativeDucPlan | None = None
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None
+    role_separation_plan: NativeRoleSeparationPlan | None = None
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None
     military_proof_path: MilitaryCompositionProofPath | None = None
     persistent_controls: tuple[PersistentControlRef, ...] = ()
@@ -66,6 +68,7 @@ class CompilerSemanticProgram:
             or self.control_plan is not None
             or self.duc_plan is not None
             or self.attack_plan is not None
+            or self.role_separation_plan is not None
             or self.escrow_plan is not None
             or self.military_proof_path is not None
             or self.persistent_controls
