@@ -10,6 +10,7 @@ from ..ir import (
     NativeAttackLifecyclePlan,
     NativeControlPlan,
     NativeDucPlan,
+    NativeRoleSeparationPlan,
     NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
     SemanticDemand,
@@ -25,6 +26,7 @@ from ..runtime_binding import (
     TimerSlot,
 )
 from ..semantic.native_control import validate_native_control_plan
+from ..ir.role_separation import validate_native_role_separation_plan
 from ..semantic.construction import construction_transition_rules
 
 MAX_RULES = 10_000
@@ -106,6 +108,7 @@ def emit(
     control_plan: NativeControlPlan | None = None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
+    role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     registry = registry or default_de_registry()
@@ -120,6 +123,8 @@ def emit(
     )
     if native_attack_plan is not None:
         registry.validate_attack_plan(native_attack_plan)
+    if role_plan is not None:
+        validate_native_role_separation_plan(role_plan, registry)
     if escrow_plan is not None:
         registry.validate_escrow_plan(escrow_plan)
 
@@ -394,6 +399,65 @@ def emit(
         out.append(f"(defconst {_claim_name(conflict_class)} {slot.id.value})")
 
     out.append("")
+
+    if role_plan is not None:
+        out.append("; Native Byzantine role-separation plan")
+        state_bindings = {}
+        for state in role_plan.storage_requests:
+            binding = bindings.binding_for(state.request_id)
+            if not isinstance(binding, GoalSlot):
+                raise CompileError(
+                    f"EMITTER-ROLE-GOAL-BINDING: role state '{state.request_id.purpose}' "
+                    f"resolved to '{type(binding).__name__}', expected GoalSlot"
+                )
+            state_bindings[state.request_id.purpose] = binding
+            out.append(
+                f"(defconst {state_bindings[state.request_id.purpose].id.value if False else state.request_id.purpose} "
+                f"{binding.id.value})"
+            )
+
+        emitted_names = _defconst_bindings(out)
+        # Replace the temporary purpose labels above with stable role identifiers.
+        del out[-len(role_plan.storage_requests):]
+        for state in (
+            role_plan.state,
+            role_plan.formation_mask,
+            role_plan.selection_cap,
+        ):
+            binding = bindings.binding_for(state.request_id)
+            if not isinstance(binding, GoalSlot):
+                raise CompileError(
+                    f"EMITTER-ROLE-GOAL-BINDING: role state '{state.identifier}' "
+                    f"resolved to '{type(binding).__name__}', expected GoalSlot"
+                )
+            existing = emitted_names.get(state.identifier)
+            if existing is not None and existing != str(binding.id.value):
+                raise CompileError(
+                    f"EMITTER-ROLE-CONST-CONFLICT: '{state.identifier}' is already bound to {existing}"
+                )
+            if existing is None:
+                out.append(f"(defconst {state.identifier} {binding.id.value})")
+                emitted_names[state.identifier] = str(binding.id.value)
+
+        for name, value in role_plan.constant_map.items():
+            existing = emitted_names.get(name)
+            if existing is not None:
+                if existing != str(value):
+                    raise CompileError(
+                        f"EMITTER-ROLE-CONST-CONFLICT: '{name}' is already bound to {existing}, expected {value}"
+                    )
+                continue
+            out.append(f"(defconst {name} {value})")
+            emitted_names[name] = str(value)
+        out.append("")
+
+        for rule in role_plan.rules:
+            out.append(f"; Native role rule: {rule.identity}")
+            out.append("(defrule")
+            out.extend(f"    {fact.source}" for fact in rule.facts)
+            out.append("=>")
+            out.extend(f"    {action.source}" for action in rule.actions)
+            out.extend([")", ""])
 
     if duc_plan is not None and not duc_plan.empty:
         out.append("; Native DUC execution plan")
