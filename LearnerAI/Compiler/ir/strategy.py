@@ -1637,15 +1637,6 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
         "(or (goal opening-plan 2) (goal opening-plan 3))"
         ")"
     )
-    loom_attempted = (
-        "(or "
-        "(goal demand-research-loom 1) "
-        "(or "
-        "(goal demand-research-loom 15006) "
-        "(goal demand-research-loom 15007)"
-        ")"
-        ")"
-    )
     rules = (
         NativeControlRule(
             "feudal-transition-bank-initialize",
@@ -1713,7 +1704,6 @@ def _byzantine_feudal_transition_control_plan(profile: StrategyProfile):
                 parse_expression("(not (research-completed ri-loom))", SourceLocation(1)),
                 parse_expression("(not (up-research-status c: ri-loom >= research-pending))", SourceLocation(1)),
                 parse_expression("(not (can-research-with-escrow ri-loom))", SourceLocation(1)),
-                parse_expression(loom_attempted, SourceLocation(1)),
                 parse_expression(
                     f"(goal {FEUDAL_TRANSITION_LOOM_RECOVERY} 0)",
                     SourceLocation(1),
