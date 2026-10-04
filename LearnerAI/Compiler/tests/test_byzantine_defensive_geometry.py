@@ -116,7 +116,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
         production_section = self.per[production_start:town_center_start]
         self.assertIn("(up-find-remote c: monastery c: 1)", production_section)
-        self.assertIn("(up-find-remote c: villager c: 1)", production_section)
+        self.assertIn("(up-find-remote c: 83 c: 1)", production_section)
 
         witness_start = self.per.index(
             "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)"
@@ -140,7 +140,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             witness_town_class,
         )
         witness_production = self.per[witness_production_start:witness_town_start]
-        self.assertIn("(up-find-remote c: villager c: 1)", witness_production)
+        self.assertIn("(up-find-remote c: 83 c: 1)", witness_production)
 
     def test_minimum_viable_attack_admission_does_not_require_monks_or_ideal_mass(self):
         start = self.per.index("; MINIMUM-VIABLE CASTLE ATTACK ADMISSION")
