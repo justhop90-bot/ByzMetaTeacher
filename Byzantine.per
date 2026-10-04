@@ -10513,9 +10513,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege)
     (goal byzantine-offensive-objective-claim 1)
     (up-compare-goal byzantine-offensive-objective-search >= 1)
+    (attack-soldier-count > 0)
 =>
     (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
-    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-siege)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
 )
 
 (defrule
@@ -10523,9 +10524,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-defense)
     (goal byzantine-offensive-objective-claim 1)
     (up-compare-goal byzantine-offensive-objective-search >= 1)
+    (attack-soldier-count > 0)
 =>
     (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
-    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-defense)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
 )
 
 (defrule
@@ -10533,9 +10535,10 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-production)
     (goal byzantine-offensive-objective-claim 1)
     (up-compare-goal byzantine-offensive-objective-search >= 1)
+    (attack-soldier-count > 0)
 =>
     (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
-    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-production)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
 )
 
 (defrule
@@ -10543,9 +10546,30 @@
     (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
     (goal byzantine-offensive-objective-claim 1)
     (up-compare-goal byzantine-offensive-objective-search >= 1)
+    (attack-soldier-count > 0)
 =>
     (enable-timer byzantine-offensive-objective-timer bt-offensive-objective-witness-seconds)
-    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-town-center)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-executing)
+)
+
+(defrule
+    ; Live target without an attacking package is a failed execution, not
+    ; permission to reissue the same attack command.
+    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
+    (goal byzantine-offensive-objective-claim 1)
+    (up-compare-goal byzantine-offensive-objective-search >= 1)
+    (attack-soldier-count <= 0)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+    (disable-timer byzantine-offensive-objective-timer)
+    (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-army-reinforcement 1)
+    (set-goal byzantine-offensive-objective-class byzantine-offensive-objective-class-none)
+    (set-goal byzantine-offensive-objective-claim 0)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
 )
 
 (defrule
