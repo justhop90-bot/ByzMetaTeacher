@@ -54,6 +54,29 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             all(operation.command == "release-escrow" for operation in plan.operations)
         )
 
+    def test_strategy_compiler_emits_castle_age_transition_and_priority_guards(self):
+        output = compile_strategy_profile(self.profile, self.effective)
+
+        self.assertIn("demand-castle-age-transition", output)
+        self.assertIn("(research castle-age)", output)
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            output,
+        )
+
+        dba_start = output.index("; Action issuance: research-double-bit-axe")
+        horse_start = output.index("; Action issuance: research-horse-collar")
+        castle_start = output.index("(goal demand-castle-age-transition 1)")
+        dba_block = output[dba_start:horse_start]
+        self.assertIn(
+            "(not (can-research-with-escrow castle-age))",
+            dba_block,
+        )
+        self.assertLess(
+            output.rfind("(can-research-with-escrow castle-age)", 0, castle_start + 1),
+            castle_start,
+        )
+
     def test_strategy_compiler_emits_protected_research_release_before_research(self):
         output = compile_strategy_profile(
             self.profile,
