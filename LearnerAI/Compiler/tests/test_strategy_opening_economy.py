@@ -82,7 +82,18 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity == "opening-selector-counter-feudal"
         )
         self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5)", fast_castle.facts[0].source)
-        self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
+        self.assertIn(
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
+            fast_castle.facts[0].source,
+        )
+        self.assertIn(
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
+            counter_feudal.facts[0].source,
+        )
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(goal opening-plan -1)", output)
@@ -91,6 +102,56 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(set-goal opening-plan 3)", output)
         self.assertIn("(set-goal opening-plan 2)", output)
         self.assertIn("(set-goal opening-plan 1)", output)
+
+    def test_opening_pressure_uses_the_broader_early_threat_signal(self):
+        profile = build_byzantine_strategy(self.effective)
+        pressure = profile.observation("strategy-opening-pressure").expression
+        self.assertEqual(
+            pressure,
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
+        )
+        self.assertEqual(
+            pressure,
+            profile.observation("strategy-enemy-pressure").expression,
+        )
+
+    def test_opening_selection_materially_changes_native_economy_writers(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        expected = {
+            "base": (55, 30, 15, 5),
+            "counter_feudal": (42, 38, 20, 8),
+            "fast_castle": (55, 15, 30, 3),
+        }
+        for mode_name, values in expected.items():
+            rules = {
+                rule.identity: rule
+                for rule in control.rules
+                if rule.identity.startswith(f"economy-controller-write-{mode_name}-")
+            }
+            self.assertEqual(len(rules), 4)
+            written = tuple(
+                next(
+                    action.args[1]
+                    for action in rule.actions
+                    if action.head == "set-strategic-number"
+                )
+                for rule in (
+                    rules[f"economy-controller-write-{mode_name}-sn-food-gatherer-percentage"],
+                    rules[f"economy-controller-write-{mode_name}-sn-wood-gatherer-percentage"],
+                    rules[f"economy-controller-write-{mode_name}-sn-gold-gatherer-percentage"],
+                    rules[f"economy-controller-write-{mode_name}-sn-percent-civilian-builders"],
+                )
+            )
+            self.assertEqual(tuple(map(int, written)), values)
+
+        self.assertNotEqual(expected["base"][:3], expected["fast_castle"][:3])
+        self.assertNotEqual(expected["base"][:3], expected["counter_feudal"][:3])
 
     def test_economy_controller_uses_only_documented_civilian_allocation_sns(self):
         profile = build_byzantine_strategy(self.effective)
