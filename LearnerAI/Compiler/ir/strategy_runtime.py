@@ -617,7 +617,7 @@ def _tech_tokens(effective: EffectiveCivData) -> set[str]:
         tokens.update(
             {
                 str(int(advance.native_tech_id)),
-                advance.id.value,
+                str(advance.id),
             }
         )
     return tokens
