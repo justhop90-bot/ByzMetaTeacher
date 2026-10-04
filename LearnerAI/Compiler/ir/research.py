@@ -45,29 +45,22 @@ class ResearchLifecycle:
         type_op, tech_id, comparator, state_value = self.pending_fact.args
         if type_op != "c:":
             raise ValueError("research pending fact must use c: for TechId")
-        try:
-            numeric_tech_id = int(str(tech_id), 10)
-        except (TypeError, ValueError) as exc:
+        if (
+            not isinstance(tech_id, str)
+            or not tech_id
+            or tech_id.isdigit()
+            or " " in tech_id
+        ):
             raise ValueError(
-                "research pending fact must use numeric native TechId"
-            ) from exc
-        if numeric_tech_id != self.native_tech_id:
-            raise ValueError(
-                "research pending fact TechId must match native_tech_id"
+                "research pending fact must use a runtime-native TechId symbol"
             )
         if comparator != ">=":
             raise ValueError(
                 "research pending fact must compare ResearchState with >="
             )
-        try:
-            numeric_state = int(str(state_value), 10)
-        except (TypeError, ValueError) as exc:
+        if state_value != "research-pending":
             raise ValueError(
-                "research pending fact must use numeric ResearchState"
-            ) from exc
-        if numeric_state != int(self.pending_state):
-            raise ValueError(
-                "research pending fact ResearchState must match pending_state"
+                "research pending fact must use runtime-native research-pending state"
             )
 
 

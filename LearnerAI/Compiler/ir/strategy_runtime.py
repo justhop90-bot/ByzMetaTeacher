@@ -653,6 +653,8 @@ def _validate_native_operand(
     if family == "techid":
         if not _lookup_token(token, _tech_tokens(effective)) and token not in {
             "ri-logistica",
+            "ri-demolition-ship",
+            "ri-fishing-lines",
             "ri-elite-varangian-guard",
         }:
             raise ValueError(f"unresolved TechId '{token}'")

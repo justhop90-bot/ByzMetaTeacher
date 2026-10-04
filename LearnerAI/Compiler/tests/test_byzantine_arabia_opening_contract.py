@@ -42,7 +42,7 @@ class ByzantineArabiaOpeningContractTests(unittest.TestCase):
         issuance_end = output.index("=>", issuance_start)
         issuance_block = output[issuance_start:issuance_end]
         self.assertIn("(research-completed 22)", issuance_block)
-        self.assertIn("(research loom)", output)
+        self.assertIn("(research ri-loom)", output)
 
     def test_arabia_pressure_contract_detects_real_early_pressure(self):
         profile = build_byzantine_strategy(self.effective)

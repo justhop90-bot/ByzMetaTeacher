@@ -15,10 +15,7 @@
 (defconst 35 35)
 (defconst 429 429)
 (defconst 464 464)
-(defconst 61 61)
 (defconst 65 65)
-(defconst 905 905)
-(defconst 906 906)
 (defconst arbalest 237)
 (defconst atonement 319)
 (defconst redemption 316)
@@ -46,6 +43,64 @@
 (defconst theocracy 438)
 (defconst two-man-saw 221)
 (defconst wheelbarrow 213)
+
+(defconst ri-logistica 61)
+(defconst ri-siege-engineers 377)
+(defconst ri-forging 67)
+(defconst ri-iron-casting 68)
+(defconst ri-scale-barding 81)
+(defconst ri-chain-barding 82)
+(defconst ri-plate-barding 80)
+(defconst ri-scale-mail 74)
+(defconst ri-chain-mail 76)
+(defconst ri-plate-mail 77)
+(defconst ri-fletching 199)
+(defconst ri-bracer 201)
+(defconst ri-padded-archer-armor 211)
+(defconst ri-leather-archer-armor 212)
+(defconst ri-ring-archer-armor 219)
+(defconst castle-age 102)
+(defconst ri-loom 22)
+(defconst ri-wheel-barrow 213)
+(defconst ri-double-bit-axe 202)
+(defconst ri-horse-collar 14)
+(defconst ri-hand-cart 249)
+(defconst ri-bow-saw 203)
+(defconst ri-two-man-saw 221)
+(defconst ri-bodkin-arrow 200)
+(defconst ri-conscription 315)
+(defconst ri-fortified-wall 194)
+(defconst ri-guard-tower 140)
+(defconst ri-ballistics 93)
+(defconst ri-murder-holes 322)
+(defconst ri-stonecutting 54)
+(defconst ri-arrowslits 608)
+(defconst ri-chemistry 47)
+(defconst ri-gold-mining 55)
+(defconst ri-gold-shaft-mining 182)
+(defconst ri-heavy-plow 13)
+(defconst ri-cavalier 209)
+(defconst ri-hussar 428)
+(defconst ri-onager 257)
+(defconst ri-siege-ram 255)
+(defconst ri-arbalest 237)
+(defconst ri-halberdier 429)
+(defconst ri-heavy-camel 236)
+(defconst ri-elite-cataphract 361)
+(defconst ri-elite-skirmisher 98)
+(defconst ri-sanctity 231)
+(defconst ri-fervor 252)
+(defconst ri-atonement 319)
+(defconst ri-block-printing 230)
+(defconst ri-theocracy 438)
+(defconst ri-gillnets 65)
+(defconst ri-war-galley 34)
+(defconst ri-galleon 35)
+(defconst ri-greek-fire 464)
+(defconst ri-heavy-demolition-ship 244)
+(defconst ri-demolition-ship 905)
+(defconst ri-fishing-lines 906)
+(defconst ri-elite-varangian-guard 1454)
 
 ; Native parser bindings for symbolic unit/building/status/SN identifiers.
 ; These are engine IDs used by command arguments; they do not change runtime policy.
@@ -9620,7 +9675,7 @@
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
     (unit-type-count-total cataphract-line >= 4)
-    (not (research-completed 361))
+    (not (research-completed ri-elite-cataphract))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
 )
@@ -9629,7 +9684,7 @@
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
     (unit-type-count-total varangian-guard-line >= 3)
-    (not (research-completed 1454))
+    (not (research-completed ri-elite-varangian-guard))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
 )
@@ -9638,7 +9693,7 @@
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
     (unit-type-count-total skirmisher-line >= 4)
-    (not (research-completed 98))
+    (not (research-completed ri-elite-skirmisher))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
 )
@@ -9650,7 +9705,7 @@
         (unit-type-count-total cataphract-line >= 2)
         (unit-type-count-total varangian-guard-line >= 2)
     )
-    (not (research-completed 61))
+    (not (research-completed ri-logistica))
 =>
     (set-goal byzantine-late-upgrade-priority 1)
 )
@@ -9666,7 +9721,7 @@
     )
     (building-type-count-total blacksmith >= 1)
     (unit-type-count-total cataphract-line >= 2)
-    (not (research-completed 67))
+    (not (research-completed ri-forging))
     (can-research-with-escrow ri-forging)
 =>
     (set-goal byzantine-late-upgrade-priority 1)
@@ -9681,8 +9736,8 @@
     )
     (building-type-count-total blacksmith >= 1)
     (unit-type-count-total cataphract-line >= 2)
-    (research-completed 67)
-    (not (research-completed 68))
+    (research-completed ri-forging)
+    (not (research-completed ri-iron-casting))
     (can-research-with-escrow ri-iron-casting)
 =>
     (set-goal byzantine-late-upgrade-priority 1)
@@ -9697,7 +9752,7 @@
     )
     (building-type-count-total blacksmith >= 1)
     (unit-type-count-total cataphract-line >= 2)
-    (not (research-completed 81))
+    (not (research-completed ri-scale-barding))
     (can-research-with-escrow ri-scale-barding)
 =>
     (set-goal byzantine-late-upgrade-priority 1)
@@ -9715,7 +9770,7 @@
         (unit-type-count-total 359 >= 4)
         (unit-type-count-total varangian-guard-line >= 3)
     )
-    (not (research-completed 74))
+    (not (research-completed ri-scale-mail))
     (can-research-with-escrow ri-scale-mail)
 =>
     (set-goal byzantine-late-upgrade-priority 1)
@@ -9733,7 +9788,7 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (not (research-completed 199))
+    (not (research-completed ri-fletching))
     (can-research-with-escrow ri-fletching)
 =>
     (set-goal byzantine-late-upgrade-priority 1)
@@ -9744,32 +9799,32 @@
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
     (or
-        (up-research-status c: 377 >= 2)
+        (up-research-status c: ri-siege-engineers >= research-pending)
         (or
-            (up-research-status c: 67 >= 2)
+            (up-research-status c: ri-forging >= research-pending)
             (or
-                (up-research-status c: 68 >= 2)
+                (up-research-status c: ri-iron-casting >= research-pending)
                 (or
-                    (up-research-status c: 81 >= 2)
+                    (up-research-status c: ri-scale-barding >= research-pending)
                     (or
-                        (up-research-status c: 82 >= 2)
+                        (up-research-status c: ri-chain-barding >= research-pending)
                         (or
-                            (up-research-status c: 80 >= 2)
+                            (up-research-status c: ri-plate-barding >= research-pending)
                             (or
-                                (up-research-status c: 74 >= 2)
+                                (up-research-status c: ri-scale-mail >= research-pending)
                                 (or
-                                    (up-research-status c: 76 >= 2)
+                                    (up-research-status c: ri-chain-mail >= research-pending)
                                     (or
-                                        (up-research-status c: 77 >= 2)
+                                        (up-research-status c: ri-plate-mail >= research-pending)
                                         (or
-                                            (up-research-status c: 199 >= 2)
+                                            (up-research-status c: ri-fletching >= research-pending)
                                             (or
-                                                (up-research-status c: 201 >= 2)
+                                                (up-research-status c: ri-bracer >= research-pending)
                                                 (or
-                                                    (up-research-status c: 211 >= 2)
+                                                    (up-research-status c: ri-padded-archer-armor >= research-pending)
                                                     (or
-                                                        (up-research-status c: 212 >= 2)
-                                                        (up-research-status c: 219 >= 2)
+                                                        (up-research-status c: ri-leather-archer-armor >= research-pending)
+                                                        (up-research-status c: ri-ring-archer-armor >= research-pending)
                                                     )
                                                 )
                                             )
@@ -9792,7 +9847,7 @@
 (defrule
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
-    (not (research-completed 315))
+    (not (research-completed ri-conscription))
     (or
         (gold-amount > 2500)
         (wood-amount > 3000)
@@ -9805,7 +9860,7 @@
     (current-age >= imperial-age)
     (goal byzantine-late-resource-burn 1)
     (building-type-count-total university >= 1)
-    (not (research-completed 47))
+    (not (research-completed ri-chemistry))
     (or
         (gold-amount > 2500)
         (wood-amount > 3000)
@@ -9821,7 +9876,7 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (not (research-completed 200))
+    (not (research-completed ri-bodkin-arrow))
     (or
         (gold-amount > 2500)
         (wood-amount > 3000)
@@ -9841,7 +9896,7 @@
         (gold-amount > 2500)
     )
     (unit-type-count-total cataphract-line >= 2)
-    (not (research-completed 67))
+    (not (research-completed ri-forging))
     (can-research-with-escrow ri-forging)
 =>
     (release-escrow food)
@@ -9860,8 +9915,8 @@
         (gold-amount > 2500)
     )
     (unit-type-count-total cataphract-line >= 2)
-    (research-completed 67)
-    (not (research-completed 68))
+    (research-completed ri-forging)
+    (not (research-completed ri-iron-casting))
     (can-research-with-escrow ri-iron-casting)
 =>
     (release-escrow food)
@@ -9881,7 +9936,7 @@
         (gold-amount > 2500)
     )
     (unit-type-count-total cataphract-line >= 2)
-    (not (research-completed 81))
+    (not (research-completed ri-scale-barding))
     (can-research-with-escrow ri-scale-barding)
 =>
     (release-escrow food)
@@ -9900,8 +9955,8 @@
         (gold-amount > 2500)
     )
     (unit-type-count-total cataphract-line >= 2)
-    (research-completed 81)
-    (not (research-completed 82))
+    (research-completed ri-scale-barding)
+    (not (research-completed ri-chain-barding))
     (can-research-with-escrow ri-chain-barding)
 =>
     (release-escrow food)
@@ -9921,8 +9976,8 @@
         (gold-amount > 2500)
     )
     (unit-type-count-total cataphract-line >= 2)
-    (research-completed 82)
-    (not (research-completed 80))
+    (research-completed ri-chain-barding)
+    (not (research-completed ri-plate-barding))
     (can-research-with-escrow ri-plate-barding)
 =>
     (release-escrow gold)
@@ -9944,7 +9999,7 @@
         (unit-type-count-total 359 >= 4)
         (unit-type-count-total varangian-guard-line >= 3)
     )
-    (not (research-completed 74))
+    (not (research-completed ri-scale-mail))
     (can-research-with-escrow ri-scale-mail)
 =>
     (release-escrow food)
@@ -9966,8 +10021,8 @@
         (unit-type-count-total 359 >= 4)
         (unit-type-count-total varangian-guard-line >= 3)
     )
-    (research-completed 74)
-    (not (research-completed 76))
+    (research-completed ri-scale-mail)
+    (not (research-completed ri-chain-mail))
     (can-research-with-escrow ri-chain-mail)
 =>
     (release-escrow food)
@@ -9990,8 +10045,8 @@
         (unit-type-count-total 359 >= 4)
         (unit-type-count-total varangian-guard-line >= 3)
     )
-    (research-completed 76)
-    (not (research-completed 77))
+    (research-completed ri-chain-mail)
+    (not (research-completed ri-plate-mail))
     (can-research-with-escrow ri-plate-mail)
 =>
     (release-escrow gold)
@@ -10014,7 +10069,7 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (not (research-completed 199))
+    (not (research-completed ri-fletching))
     (can-research-with-escrow ri-fletching)
 =>
     (release-escrow food)
@@ -10037,8 +10092,8 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (research-completed 200)
-    (not (research-completed 201))
+    (research-completed ri-bodkin-arrow)
+    (not (research-completed ri-bracer))
     (can-research-with-escrow ri-bracer)
 =>
     (release-escrow gold)
@@ -10060,7 +10115,7 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (not (research-completed 211))
+    (not (research-completed ri-padded-archer-armor))
     (can-research-with-escrow ri-padded-archer-armor)
 =>
     (release-escrow food)
@@ -10082,8 +10137,8 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (research-completed 211)
-    (not (research-completed 212))
+    (research-completed ri-padded-archer-armor)
+    (not (research-completed ri-leather-archer-armor))
     (can-research-with-escrow ri-leather-archer-armor)
 =>
     (release-escrow food)
@@ -10106,8 +10161,8 @@
         (unit-type-count-total arbalest >= 4)
         (unit-type-count-total skirmisher-line >= 4)
     )
-    (research-completed 212)
-    (not (research-completed 219))
+    (research-completed ri-leather-archer-armor)
+    (not (research-completed ri-ring-archer-armor))
     (can-research-with-escrow ri-ring-archer-armor)
 =>
     (release-escrow gold)
@@ -12883,7 +12938,7 @@
         (goal demand-feudal-transition 81)
     )
     (not (current-age >= feudal-age))
-    (up-research-status c: 101 >= 2)
+    (up-research-status c: feudal-age >= research-pending)
 =>
     (set-goal demand-feudal-transition 81)
 )
@@ -12895,7 +12950,7 @@
         (goal demand-feudal-transition 81)
     )
     (not (current-age >= feudal-age))
-    (not (up-research-status c: 101 >= 2))
+    (not (up-research-status c: feudal-age >= research-pending))
 =>
     (set-goal demand-feudal-transition 1)
     (set-goal research-retry-barrier-feudal-transition 1)
@@ -12906,7 +12961,7 @@
     (goal demand-feudal-transition 1)
     (not (current-age >= feudal-age))
     (goal research-retry-barrier-feudal-transition 0)
-    (not (up-research-status c: 101 >= 2))
+    (not (up-research-status c: feudal-age >= research-pending))
     (not (current-age >= feudal-age))
     (current-age == dark-age)
     (or
@@ -12921,7 +12976,7 @@
     )
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
-    (research-completed 22)
+    (research-completed ri-loom)
 =>
     (set-goal byzantine-resource-claim 1)
     (release-escrow food)
@@ -12985,7 +13040,7 @@
         (goal demand-castle-age-transition 276)
     )
     (not (current-age >= castle-age))
-    (up-research-status c: 102 >= 2)
+    (up-research-status c: castle-age >= research-pending)
 =>
     (set-goal demand-castle-age-transition 276)
 )
@@ -12997,7 +13052,7 @@
         (goal demand-castle-age-transition 276)
     )
     (not (current-age >= castle-age))
-    (not (up-research-status c: 102 >= 2))
+    (not (up-research-status c: castle-age >= research-pending))
 =>
     (set-goal demand-castle-age-transition 1)
     (set-goal research-retry-barrier-castle-age-transition 1)
@@ -14322,7 +14377,7 @@
         (goal demand-imperial-conversion 86)
     )
     (not (current-age >= imperial-age))
-    (up-research-status c: 103 >= 2)
+    (up-research-status c: imperial-age >= research-pending)
 =>
     (set-goal demand-imperial-conversion 86)
 )
@@ -14334,7 +14389,7 @@
         (goal demand-imperial-conversion 86)
     )
     (not (current-age >= imperial-age))
-    (not (up-research-status c: 103 >= 2))
+    (not (up-research-status c: imperial-age >= research-pending))
 =>
     (set-goal demand-imperial-conversion 1)
     (set-goal research-retry-barrier-imperial-conversion 1)
@@ -14353,7 +14408,7 @@
     (goal demand-imperial-conversion 1)
     (not (current-age >= imperial-age))
     (goal research-retry-barrier-imperial-conversion 0)
-    (not (up-research-status c: 103 >= 2))
+    (not (up-research-status c: imperial-age >= research-pending))
     (not (current-age >= imperial-age))
     (current-age == castle-age)
     (unit-type-count-total villager >= bt-imperial-age-villager-maturity)
@@ -19661,7 +19716,7 @@
         (goal byzantine-university-state byzantine-university-state-tower-network)
     )
     (goal demand-byzantine-university-fortified-wall 0)
-    (not (research-completed 194))
+    (not (research-completed ri-fortified-wall))
     (building-type-count 117 >= 1)
 =>
     (set-goal demand-byzantine-university-fortified-wall 1)
@@ -19676,7 +19731,7 @@
             )
     )
     (goal demand-byzantine-university-guard-tower 0)
-    (not (research-completed 140))
+    (not (research-completed ri-guard-tower))
     (goal demand-adaptive-guard-tower 1)
 =>
     (set-goal demand-byzantine-university-guard-tower 1)
@@ -19691,7 +19746,7 @@
             )
     )
     (goal demand-byzantine-university-ballistics 0)
-    (not (research-completed 93))
+    (not (research-completed ri-ballistics))
     (or
         (building-type-count guard-tower >= 1)
         (or
@@ -19712,7 +19767,7 @@
         (goal byzantine-university-state byzantine-university-state-tower-network)
     )
     (goal demand-byzantine-university-murder-holes 0)
-    (not (research-completed 322))
+    (not (research-completed ri-murder-holes))
     (or
         (town-under-attack)
         (town-under-attack)
@@ -19731,7 +19786,7 @@
         (goal byzantine-university-state byzantine-university-state-tower-network)
     )
     (goal demand-byzantine-university-treadmill-crane 0)
-    (not (research-completed 54))
+    (not (research-completed ri-stonecutting))
     (or
         (up-pending-objects c: 117 >= 1)
         (or
@@ -19749,7 +19804,7 @@
 (defrule
     (goal byzantine-university-state byzantine-university-state-imperial-gunline)
     (goal demand-byzantine-university-arrowslits 0)
-    (not (research-completed 608))
+    (not (research-completed ri-arrowslits))
     (or
         (building-type-count guard-tower >= 2)
         (or
@@ -19765,7 +19820,7 @@
 ; execution so naval and land-defensive demands can never issue the same tech twice.
 (defrule
     (goal demand-water-greek-fire 0)
-    (not (research-completed 464))
+    (not (research-completed ri-greek-fire))
     (building-type-count castle >= 1)
     (or
         (building-type-count-total bombard-tower >= 1)
@@ -21069,7 +21124,7 @@
     (goal demand-research-loom 0)
     (map-type arabia)
     (current-age == dark-age)
-    (not (research-completed 22))
+    (not (research-completed ri-loom))
 =>
     (set-goal demand-research-loom 1)
 )
@@ -21079,7 +21134,7 @@
 ; Release: research-loom | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-loom 15008)
-    (research-completed 22)
+    (research-completed ri-loom)
 =>
     (set-goal demand-research-loom 0)
 )
@@ -21090,7 +21145,7 @@
         (goal demand-research-loom 15006)
         (goal demand-research-loom 15007)
     )
-    (research-completed 22)
+    (research-completed ri-loom)
 =>
     (set-goal demand-research-loom 15008)
 )
@@ -21101,8 +21156,8 @@
         (goal demand-research-loom 15006)
         (goal demand-research-loom 15007)
     )
-    (not (research-completed 22))
-    (up-research-status c: 22 >= 2)
+    (not (research-completed ri-loom))
+    (up-research-status c: ri-loom >= research-pending)
 =>
     (set-goal demand-research-loom 15007)
 )
@@ -21113,8 +21168,8 @@
         (goal demand-research-loom 15006)
         (goal demand-research-loom 15007)
     )
-    (not (research-completed 22))
-    (not (up-research-status c: 22 >= 2))
+    (not (research-completed ri-loom))
+    (not (up-research-status c: ri-loom >= research-pending))
 =>
     (set-goal demand-research-loom 1)
     (set-goal research-retry-barrier-research-loom 1)
@@ -21123,15 +21178,15 @@
 ; Action issuance: research-loom | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-loom 1)
-    (not (research-completed 22))
+    (not (research-completed ri-loom))
     (goal research-retry-barrier-research-loom 0)
-    (not (up-research-status c: 22 >= 2))
-    (not (research-completed 22))
+    (not (up-research-status c: ri-loom >= research-pending))
+    (not (research-completed ri-loom))
     (and (current-age == dark-age) (and (unit-type-count-total villager >= 13) (and (building-type-count-total lumber-camp >= 1) (and (building-type-count-total mining-camp >= 1) (food-amount >= 50)))))
-    (can-research-with-escrow loom)
+    (can-research-with-escrow ri-loom)
 =>
     (release-escrow food)
-    (research loom)
+    (research ri-loom)
     (set-goal demand-research-loom 15006)
 )
 
@@ -21146,7 +21201,7 @@
 ; Release: research-wheelbarrow | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-wheelbarrow 124)
-    (research-completed 213)
+    (research-completed ri-wheel-barrow)
 =>
     (set-goal demand-research-wheelbarrow 0)
 )
@@ -21157,7 +21212,7 @@
         (goal demand-research-wheelbarrow 125)
         (goal demand-research-wheelbarrow 123)
     )
-    (research-completed 213)
+    (research-completed ri-wheel-barrow)
 =>
     (set-goal demand-research-wheelbarrow 124)
 )
@@ -21168,8 +21223,8 @@
         (goal demand-research-wheelbarrow 125)
         (goal demand-research-wheelbarrow 123)
     )
-    (not (research-completed 213))
-    (up-research-status c: 213 >= 2)
+    (not (research-completed ri-wheel-barrow))
+    (up-research-status c: ri-wheel-barrow >= research-pending)
 =>
     (set-goal demand-research-wheelbarrow 123)
 )
@@ -21180,8 +21235,8 @@
         (goal demand-research-wheelbarrow 125)
         (goal demand-research-wheelbarrow 123)
     )
-    (not (research-completed 213))
-    (not (up-research-status c: 213 >= 2))
+    (not (research-completed ri-wheel-barrow))
+    (not (up-research-status c: ri-wheel-barrow >= research-pending))
 =>
     (set-goal demand-research-wheelbarrow 1)
     (set-goal research-retry-barrier-research-wheelbarrow 1)
@@ -21190,17 +21245,17 @@
 ; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-wheelbarrow 1)
-    (not (research-completed 213))
+    (not (research-completed ri-wheel-barrow))
     (goal research-retry-barrier-research-wheelbarrow 0)
-    (not (up-research-status c: 213 >= 2))
-    (not (research-completed 213))
+    (not (up-research-status c: ri-wheel-barrow >= research-pending))
+    (not (research-completed ri-wheel-barrow))
     (current-age >= feudal-age)
     (food-amount >= 1000)
     (gold-amount >= 250)
-    (can-research-with-escrow wheelbarrow)
+    (can-research-with-escrow ri-wheelbarrow)
 =>
     (release-escrow food)
-    (research wheelbarrow)
+    (research ri-wheelbarrow)
     (set-goal demand-research-wheelbarrow 125)
 )
 
@@ -21215,7 +21270,7 @@
 ; Release: research-double-bit-axe | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-double-bit-axe 106)
-    (research-completed 202)
+    (research-completed ri-double-bit-axe)
 =>
     (set-goal demand-research-double-bit-axe 0)
 )
@@ -21226,7 +21281,7 @@
         (goal demand-research-double-bit-axe 107)
         (goal demand-research-double-bit-axe 105)
     )
-    (research-completed 202)
+    (research-completed ri-double-bit-axe)
 =>
     (set-goal demand-research-double-bit-axe 106)
 )
@@ -21237,8 +21292,8 @@
         (goal demand-research-double-bit-axe 107)
         (goal demand-research-double-bit-axe 105)
     )
-    (not (research-completed 202))
-    (up-research-status c: 202 >= 2)
+    (not (research-completed ri-double-bit-axe))
+    (up-research-status c: ri-double-bit-axe >= research-pending)
 =>
     (set-goal demand-research-double-bit-axe 105)
 )
@@ -21249,8 +21304,8 @@
         (goal demand-research-double-bit-axe 107)
         (goal demand-research-double-bit-axe 105)
     )
-    (not (research-completed 202))
-    (not (up-research-status c: 202 >= 2))
+    (not (research-completed ri-double-bit-axe))
+    (not (up-research-status c: ri-double-bit-axe >= research-pending))
 =>
     (set-goal demand-research-double-bit-axe 1)
     (set-goal research-retry-barrier-research-double-bit-axe 1)
@@ -21259,18 +21314,18 @@
 ; Action issuance: research-double-bit-axe | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-double-bit-axe 1)
-    (not (research-completed 202))
+    (not (research-completed ri-double-bit-axe))
     (goal research-retry-barrier-research-double-bit-axe 0)
-    (not (up-research-status c: 202 >= 2))
-    (not (research-completed 202))
+    (not (up-research-status c: ri-double-bit-axe >= research-pending))
+    (not (research-completed ri-double-bit-axe))
     (current-age >= feudal-age)
     (food-amount >= 900)
     (gold-amount >= 250)
-    (can-research-with-escrow double-bit-axe)
+    (can-research-with-escrow ri-double-bit-axe)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research double-bit-axe)
+    (research ri-double-bit-axe)
     (set-goal demand-research-double-bit-axe 107)
 )
 
@@ -21285,7 +21340,7 @@
 ; Release: research-horse-collar | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-horse-collar 116)
-    (research-completed 14)
+    (research-completed ri-horse-collar)
 =>
     (set-goal demand-research-horse-collar 0)
 )
@@ -21296,7 +21351,7 @@
         (goal demand-research-horse-collar 117)
         (goal demand-research-horse-collar 115)
     )
-    (research-completed 14)
+    (research-completed ri-horse-collar)
 =>
     (set-goal demand-research-horse-collar 116)
 )
@@ -21307,8 +21362,8 @@
         (goal demand-research-horse-collar 117)
         (goal demand-research-horse-collar 115)
     )
-    (not (research-completed 14))
-    (up-research-status c: 14 >= 2)
+    (not (research-completed ri-horse-collar))
+    (up-research-status c: ri-horse-collar >= research-pending)
 =>
     (set-goal demand-research-horse-collar 115)
 )
@@ -21319,8 +21374,8 @@
         (goal demand-research-horse-collar 117)
         (goal demand-research-horse-collar 115)
     )
-    (not (research-completed 14))
-    (not (up-research-status c: 14 >= 2))
+    (not (research-completed ri-horse-collar))
+    (not (up-research-status c: ri-horse-collar >= research-pending))
 =>
     (set-goal demand-research-horse-collar 1)
     (set-goal research-retry-barrier-research-horse-collar 1)
@@ -21329,18 +21384,18 @@
 ; Action issuance: research-horse-collar | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-horse-collar 1)
-    (not (research-completed 14))
+    (not (research-completed ri-horse-collar))
     (goal research-retry-barrier-research-horse-collar 0)
-    (not (up-research-status c: 14 >= 2))
-    (not (research-completed 14))
+    (not (up-research-status c: ri-horse-collar >= research-pending))
+    (not (research-completed ri-horse-collar))
     (current-age >= feudal-age)
     (food-amount >= 900)
     (gold-amount >= 250)
-    (can-research-with-escrow horse-collar)
+    (can-research-with-escrow ri-horse-collar)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research horse-collar)
+    (research ri-horse-collar)
     (set-goal demand-research-horse-collar 117)
 )
 
@@ -21355,7 +21410,7 @@
 ; Release: research-hand-cart | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-hand-cart 112)
-    (research-completed 249)
+    (research-completed ri-hand-cart)
 =>
     (set-goal demand-research-hand-cart 0)
 )
@@ -21366,7 +21421,7 @@
         (goal demand-research-hand-cart 113)
         (goal demand-research-hand-cart 111)
     )
-    (research-completed 249)
+    (research-completed ri-hand-cart)
 =>
     (set-goal demand-research-hand-cart 112)
 )
@@ -21377,8 +21432,8 @@
         (goal demand-research-hand-cart 113)
         (goal demand-research-hand-cart 111)
     )
-    (not (research-completed 249))
-    (up-research-status c: 249 >= 2)
+    (not (research-completed ri-hand-cart))
+    (up-research-status c: ri-hand-cart >= research-pending)
 =>
     (set-goal demand-research-hand-cart 111)
 )
@@ -21389,8 +21444,8 @@
         (goal demand-research-hand-cart 113)
         (goal demand-research-hand-cart 111)
     )
-    (not (research-completed 249))
-    (not (up-research-status c: 249 >= 2))
+    (not (research-completed ri-hand-cart))
+    (not (up-research-status c: ri-hand-cart >= research-pending))
 =>
     (set-goal demand-research-hand-cart 1)
     (set-goal research-retry-barrier-research-hand-cart 1)
@@ -21399,16 +21454,16 @@
 ; Action issuance: research-hand-cart | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-hand-cart 1)
-    (not (research-completed 249))
+    (not (research-completed ri-hand-cart))
     (goal research-retry-barrier-research-hand-cart 0)
-    (not (up-research-status c: 249 >= 2))
-    (not (research-completed 249))
+    (not (up-research-status c: ri-hand-cart >= research-pending))
+    (not (research-completed ri-hand-cart))
     (current-age >= castle-age)
-    (can-research-with-escrow hand-cart)
+    (can-research-with-escrow ri-hand-cart)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research hand-cart)
+    (research ri-hand-cart)
     (set-goal demand-research-hand-cart 113)
 )
 
@@ -21423,7 +21478,7 @@
 ; Release: research-bow-saw | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-bow-saw 101)
-    (research-completed 203)
+    (research-completed ri-bow-saw)
 =>
     (set-goal demand-research-bow-saw 0)
 )
@@ -21434,7 +21489,7 @@
         (goal demand-research-bow-saw 102)
         (goal demand-research-bow-saw 100)
     )
-    (research-completed 203)
+    (research-completed ri-bow-saw)
 =>
     (set-goal demand-research-bow-saw 101)
 )
@@ -21445,8 +21500,8 @@
         (goal demand-research-bow-saw 102)
         (goal demand-research-bow-saw 100)
     )
-    (not (research-completed 203))
-    (up-research-status c: 203 >= 2)
+    (not (research-completed ri-bow-saw))
+    (up-research-status c: ri-bow-saw >= research-pending)
 =>
     (set-goal demand-research-bow-saw 100)
 )
@@ -21457,8 +21512,8 @@
         (goal demand-research-bow-saw 102)
         (goal demand-research-bow-saw 100)
     )
-    (not (research-completed 203))
-    (not (up-research-status c: 203 >= 2))
+    (not (research-completed ri-bow-saw))
+    (not (up-research-status c: ri-bow-saw >= research-pending))
 =>
     (set-goal demand-research-bow-saw 1)
     (set-goal research-retry-barrier-research-bow-saw 1)
@@ -21467,16 +21522,16 @@
 ; Action issuance: research-bow-saw | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-bow-saw 1)
-    (not (research-completed 203))
+    (not (research-completed ri-bow-saw))
     (goal research-retry-barrier-research-bow-saw 0)
-    (not (up-research-status c: 203 >= 2))
-    (not (research-completed 203))
+    (not (up-research-status c: ri-bow-saw >= research-pending))
+    (not (research-completed ri-bow-saw))
     (current-age >= castle-age)
-    (can-research-with-escrow bow-saw)
+    (can-research-with-escrow ri-bow-saw)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research bow-saw)
+    (research ri-bow-saw)
     (set-goal demand-research-bow-saw 102)
 )
 
@@ -21491,7 +21546,7 @@
 ; Release: research-two-man-saw | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-two-man-saw 123)
-    (research-completed 221)
+    (research-completed ri-two-man-saw)
 =>
     (set-goal demand-research-two-man-saw 0)
 )
@@ -21502,7 +21557,7 @@
         (goal demand-research-two-man-saw 124)
         (goal demand-research-two-man-saw 122)
     )
-    (research-completed 221)
+    (research-completed ri-two-man-saw)
 =>
     (set-goal demand-research-two-man-saw 123)
 )
@@ -21513,8 +21568,8 @@
         (goal demand-research-two-man-saw 124)
         (goal demand-research-two-man-saw 122)
     )
-    (not (research-completed 221))
-    (up-research-status c: 221 >= 2)
+    (not (research-completed ri-two-man-saw))
+    (up-research-status c: ri-two-man-saw >= research-pending)
 =>
     (set-goal demand-research-two-man-saw 122)
 )
@@ -21525,8 +21580,8 @@
         (goal demand-research-two-man-saw 124)
         (goal demand-research-two-man-saw 122)
     )
-    (not (research-completed 221))
-    (not (up-research-status c: 221 >= 2))
+    (not (research-completed ri-two-man-saw))
+    (not (up-research-status c: ri-two-man-saw >= research-pending))
 =>
     (set-goal demand-research-two-man-saw 1)
     (set-goal research-retry-barrier-research-two-man-saw 1)
@@ -21535,16 +21590,16 @@
 ; Action issuance: research-two-man-saw | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-two-man-saw 1)
-    (not (research-completed 221))
+    (not (research-completed ri-two-man-saw))
     (goal research-retry-barrier-research-two-man-saw 0)
-    (not (up-research-status c: 221 >= 2))
-    (not (research-completed 221))
+    (not (up-research-status c: ri-two-man-saw >= research-pending))
+    (not (research-completed ri-two-man-saw))
     (current-age >= imperial-age)
-    (can-research-with-escrow two-man-saw)
+    (can-research-with-escrow ri-two-man-saw)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research two-man-saw)
+    (research ri-two-man-saw)
     (set-goal demand-research-two-man-saw 124)
 )
 
@@ -21559,7 +21614,7 @@
 ; Release: research-bodkin-arrow | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-bodkin-arrow 100)
-    (research-completed 200)
+    (research-completed ri-bodkin-arrow)
 =>
     (set-goal demand-research-bodkin-arrow 0)
 )
@@ -21570,7 +21625,7 @@
         (goal demand-research-bodkin-arrow 101)
         (goal demand-research-bodkin-arrow 99)
     )
-    (research-completed 200)
+    (research-completed ri-bodkin-arrow)
 =>
     (set-goal demand-research-bodkin-arrow 100)
 )
@@ -21581,8 +21636,8 @@
         (goal demand-research-bodkin-arrow 101)
         (goal demand-research-bodkin-arrow 99)
     )
-    (not (research-completed 200))
-    (up-research-status c: 200 >= 2)
+    (not (research-completed ri-bodkin-arrow))
+    (up-research-status c: ri-bodkin-arrow >= research-pending)
 =>
     (set-goal demand-research-bodkin-arrow 99)
 )
@@ -21593,8 +21648,8 @@
         (goal demand-research-bodkin-arrow 101)
         (goal demand-research-bodkin-arrow 99)
     )
-    (not (research-completed 200))
-    (not (up-research-status c: 200 >= 2))
+    (not (research-completed ri-bodkin-arrow))
+    (not (up-research-status c: ri-bodkin-arrow >= research-pending))
 =>
     (set-goal demand-research-bodkin-arrow 1)
     (set-goal research-retry-barrier-research-bodkin-arrow 1)
@@ -21603,16 +21658,16 @@
 ; Action issuance: research-bodkin-arrow | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-bodkin-arrow 1)
-    (not (research-completed 200))
+    (not (research-completed ri-bodkin-arrow))
     (goal research-retry-barrier-research-bodkin-arrow 0)
-    (not (up-research-status c: 200 >= 2))
-    (not (research-completed 200))
+    (not (up-research-status c: ri-bodkin-arrow >= research-pending))
+    (not (research-completed ri-bodkin-arrow))
     (current-age >= castle-age)
-    (can-research-with-escrow bodkin-arrow)
+    (can-research-with-escrow ri-bodkin-arrow)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research bodkin-arrow)
+    (research ri-bodkin-arrow)
     (set-goal demand-research-bodkin-arrow 101)
 )
 
@@ -21627,7 +21682,7 @@
 ; Release: research-conscription | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-conscription 104)
-    (research-completed 315)
+    (research-completed ri-conscription)
 =>
     (set-goal demand-research-conscription 0)
 )
@@ -21638,7 +21693,7 @@
         (goal demand-research-conscription 105)
         (goal demand-research-conscription 103)
     )
-    (research-completed 315)
+    (research-completed ri-conscription)
 =>
     (set-goal demand-research-conscription 104)
 )
@@ -21649,8 +21704,8 @@
         (goal demand-research-conscription 105)
         (goal demand-research-conscription 103)
     )
-    (not (research-completed 315))
-    (up-research-status c: 315 >= 2)
+    (not (research-completed ri-conscription))
+    (up-research-status c: ri-conscription >= research-pending)
 =>
     (set-goal demand-research-conscription 103)
 )
@@ -21661,8 +21716,8 @@
         (goal demand-research-conscription 105)
         (goal demand-research-conscription 103)
     )
-    (not (research-completed 315))
-    (not (up-research-status c: 315 >= 2))
+    (not (research-completed ri-conscription))
+    (not (up-research-status c: ri-conscription >= research-pending))
 =>
     (set-goal demand-research-conscription 1)
     (set-goal research-retry-barrier-research-conscription 1)
@@ -21671,16 +21726,16 @@
 ; Action issuance: research-conscription | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-conscription 1)
-    (not (research-completed 315))
+    (not (research-completed ri-conscription))
     (goal research-retry-barrier-research-conscription 0)
-    (not (up-research-status c: 315 >= 2))
-    (not (research-completed 315))
+    (not (up-research-status c: ri-conscription >= research-pending))
+    (not (research-completed ri-conscription))
     (current-age >= imperial-age)
-    (can-research-with-escrow conscription)
+    (can-research-with-escrow ri-conscription)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research conscription)
+    (research ri-conscription)
     (set-goal demand-research-conscription 105)
 )
 
@@ -21698,7 +21753,7 @@
 ; Fortified Wall: harden an actual stone perimeter.
 (defrule
     (goal demand-byzantine-university-fortified-wall 523)
-    (research-completed 194)
+    (research-completed ri-fortified-wall)
 =>
     (set-goal demand-byzantine-university-fortified-wall 0)
 )
@@ -21707,7 +21762,7 @@
         (goal demand-byzantine-university-fortified-wall 521)
         (goal demand-byzantine-university-fortified-wall 522)
     )
-    (research-completed 194)
+    (research-completed ri-fortified-wall)
 =>
     (set-goal demand-byzantine-university-fortified-wall 523)
 )
@@ -21716,8 +21771,8 @@
         (goal demand-byzantine-university-fortified-wall 521)
         (goal demand-byzantine-university-fortified-wall 522)
     )
-    (not (research-completed 194))
-    (up-research-status c: 194 >= 2)
+    (not (research-completed ri-fortified-wall))
+    (up-research-status c: ri-fortified-wall >= research-pending)
 =>
     (set-goal demand-byzantine-university-fortified-wall 522)
 )
@@ -21726,18 +21781,18 @@
         (goal demand-byzantine-university-fortified-wall 521)
         (goal demand-byzantine-university-fortified-wall 522)
     )
-    (not (research-completed 194))
-    (not (up-research-status c: 194 >= 2))
+    (not (research-completed ri-fortified-wall))
+    (not (up-research-status c: ri-fortified-wall >= research-pending))
 =>
     (set-goal demand-byzantine-university-fortified-wall 520)
     (set-goal research-retry-barrier-byzantine-university-fortified-wall 524)
 )
 (defrule
     (goal demand-byzantine-university-fortified-wall 520)
-    (not (research-completed 194))
+    (not (research-completed ri-fortified-wall))
     (goal research-retry-barrier-byzantine-university-fortified-wall 0)
     (goal byzantine-university-research-claim 0)
-    (not (up-research-status c: 194 >= 2))
+    (not (up-research-status c: ri-fortified-wall >= research-pending))
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
@@ -21768,7 +21823,7 @@
 ; Guard Tower: unlock the actual Castle-age tower network.
 (defrule
     (goal demand-byzantine-university-guard-tower 528)
-    (research-completed 140)
+    (research-completed ri-guard-tower)
 =>
     (set-goal demand-byzantine-university-guard-tower 0)
 )
@@ -21777,7 +21832,7 @@
         (goal demand-byzantine-university-guard-tower 526)
         (goal demand-byzantine-university-guard-tower 527)
     )
-    (research-completed 140)
+    (research-completed ri-guard-tower)
 =>
     (set-goal demand-byzantine-university-guard-tower 528)
 )
@@ -21786,8 +21841,8 @@
         (goal demand-byzantine-university-guard-tower 526)
         (goal demand-byzantine-university-guard-tower 527)
     )
-    (not (research-completed 140))
-    (up-research-status c: 140 >= 2)
+    (not (research-completed ri-guard-tower))
+    (up-research-status c: ri-guard-tower >= research-pending)
 =>
     (set-goal demand-byzantine-university-guard-tower 527)
 )
@@ -21796,18 +21851,18 @@
         (goal demand-byzantine-university-guard-tower 526)
         (goal demand-byzantine-university-guard-tower 527)
     )
-    (not (research-completed 140))
-    (not (up-research-status c: 140 >= 2))
+    (not (research-completed ri-guard-tower))
+    (not (up-research-status c: ri-guard-tower >= research-pending))
 =>
     (set-goal demand-byzantine-university-guard-tower 525)
     (set-goal research-retry-barrier-byzantine-university-guard-tower 529)
 )
 (defrule
     (goal demand-byzantine-university-guard-tower 525)
-    (not (research-completed 140))
+    (not (research-completed ri-guard-tower))
     (goal research-retry-barrier-byzantine-university-guard-tower 0)
     (goal byzantine-university-research-claim 0)
-    (not (up-research-status c: 140 >= 2))
+    (not (up-research-status c: ri-guard-tower >= research-pending))
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-castle)
@@ -21829,7 +21884,7 @@
 ; Ballistics: make the defensive firing network punish moving targets.
 (defrule
     (goal demand-byzantine-university-ballistics 533)
-    (research-completed 93)
+    (research-completed ri-ballistics)
 =>
     (set-goal demand-byzantine-university-ballistics 0)
 )
@@ -21838,7 +21893,7 @@
         (goal demand-byzantine-university-ballistics 531)
         (goal demand-byzantine-university-ballistics 532)
     )
-    (research-completed 93)
+    (research-completed ri-ballistics)
 =>
     (set-goal demand-byzantine-university-ballistics 533)
 )
@@ -21847,8 +21902,8 @@
         (goal demand-byzantine-university-ballistics 531)
         (goal demand-byzantine-university-ballistics 532)
     )
-    (not (research-completed 93))
-    (up-research-status c: 93 >= 2)
+    (not (research-completed ri-ballistics))
+    (up-research-status c: ri-ballistics >= research-pending)
 =>
     (set-goal demand-byzantine-university-ballistics 532)
 )
@@ -21857,18 +21912,18 @@
         (goal demand-byzantine-university-ballistics 531)
         (goal demand-byzantine-university-ballistics 532)
     )
-    (not (research-completed 93))
-    (not (up-research-status c: 93 >= 2))
+    (not (research-completed ri-ballistics))
+    (not (up-research-status c: ri-ballistics >= research-pending))
 =>
     (set-goal demand-byzantine-university-ballistics 530)
     (set-goal research-retry-barrier-byzantine-university-ballistics 534)
 )
 (defrule
     (goal demand-byzantine-university-ballistics 530)
-    (not (research-completed 93))
+    (not (research-completed ri-ballistics))
     (goal research-retry-barrier-byzantine-university-ballistics 0)
     (goal byzantine-university-research-claim 0)
-    (not (up-research-status c: 93 >= 2))
+    (not (up-research-status c: ri-ballistics >= research-pending))
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-tower-network)
@@ -21897,7 +21952,7 @@
 ; Murder Holes: spend it when attackers are actually reaching the defense.
 (defrule
     (goal demand-byzantine-university-murder-holes 538)
-    (research-completed 322)
+    (research-completed ri-murder-holes)
 =>
     (set-goal demand-byzantine-university-murder-holes 0)
 )
@@ -21906,7 +21961,7 @@
         (goal demand-byzantine-university-murder-holes 536)
         (goal demand-byzantine-university-murder-holes 537)
     )
-    (research-completed 322)
+    (research-completed ri-murder-holes)
 =>
     (set-goal demand-byzantine-university-murder-holes 538)
 )
@@ -21915,8 +21970,8 @@
         (goal demand-byzantine-university-murder-holes 536)
         (goal demand-byzantine-university-murder-holes 537)
     )
-    (not (research-completed 322))
-    (up-research-status c: 322 >= 2)
+    (not (research-completed ri-murder-holes))
+    (up-research-status c: ri-murder-holes >= research-pending)
 =>
     (set-goal demand-byzantine-university-murder-holes 537)
 )
@@ -21925,18 +21980,18 @@
         (goal demand-byzantine-university-murder-holes 536)
         (goal demand-byzantine-university-murder-holes 537)
     )
-    (not (research-completed 322))
-    (not (up-research-status c: 322 >= 2))
+    (not (research-completed ri-murder-holes))
+    (not (up-research-status c: ri-murder-holes >= research-pending))
 =>
     (set-goal demand-byzantine-university-murder-holes 535)
     (set-goal research-retry-barrier-byzantine-university-murder-holes 539)
 )
 (defrule
     (goal demand-byzantine-university-murder-holes 535)
-    (not (research-completed 322))
+    (not (research-completed ri-murder-holes))
     (goal research-retry-barrier-byzantine-university-murder-holes 0)
     (goal byzantine-university-research-claim 0)
-    (not (up-research-status c: 322 >= 2))
+    (not (up-research-status c: ri-murder-holes >= research-pending))
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
@@ -21962,7 +22017,7 @@
 ; Treadmill Crane: research it when the defensive construction queue is real.
 (defrule
     (goal demand-byzantine-university-treadmill-crane 543)
-    (research-completed 54)
+    (research-completed ri-stonecutting)
 =>
     (set-goal demand-byzantine-university-treadmill-crane 0)
 )
@@ -21971,7 +22026,7 @@
         (goal demand-byzantine-university-treadmill-crane 541)
         (goal demand-byzantine-university-treadmill-crane 542)
     )
-    (research-completed 54)
+    (research-completed ri-stonecutting)
 =>
     (set-goal demand-byzantine-university-treadmill-crane 543)
 )
@@ -21980,8 +22035,8 @@
         (goal demand-byzantine-university-treadmill-crane 541)
         (goal demand-byzantine-university-treadmill-crane 542)
     )
-    (not (research-completed 54))
-    (up-research-status c: 54 >= 2)
+    (not (research-completed ri-stonecutting))
+    (up-research-status c: ri-stonecutting >= research-pending)
 =>
     (set-goal demand-byzantine-university-treadmill-crane 542)
 )
@@ -21990,18 +22045,18 @@
         (goal demand-byzantine-university-treadmill-crane 541)
         (goal demand-byzantine-university-treadmill-crane 542)
     )
-    (not (research-completed 54))
-    (not (up-research-status c: 54 >= 2))
+    (not (research-completed ri-stonecutting))
+    (not (up-research-status c: ri-stonecutting >= research-pending))
 =>
     (set-goal demand-byzantine-university-treadmill-crane 540)
     (set-goal research-retry-barrier-byzantine-university-treadmill-crane 544)
 )
 (defrule
     (goal demand-byzantine-university-treadmill-crane 540)
-    (not (research-completed 54))
+    (not (research-completed ri-stonecutting))
     (goal research-retry-barrier-byzantine-university-treadmill-crane 0)
     (goal byzantine-university-research-claim 0)
-    (not (up-research-status c: 54 >= 2))
+    (not (up-research-status c: ri-stonecutting >= research-pending))
     (building-type-count university >= 1)
     (or
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
@@ -22031,7 +22086,7 @@
 ; Arrowslits: an Imperial tower network gets the final static attack layer.
 (defrule
     (goal demand-byzantine-university-arrowslits 548)
-    (research-completed 608)
+    (research-completed ri-arrowslits)
 =>
     (set-goal demand-byzantine-university-arrowslits 0)
 )
@@ -22040,7 +22095,7 @@
         (goal demand-byzantine-university-arrowslits 546)
         (goal demand-byzantine-university-arrowslits 547)
     )
-    (research-completed 608)
+    (research-completed ri-arrowslits)
 =>
     (set-goal demand-byzantine-university-arrowslits 548)
 )
@@ -22049,8 +22104,8 @@
         (goal demand-byzantine-university-arrowslits 546)
         (goal demand-byzantine-university-arrowslits 547)
     )
-    (not (research-completed 608))
-    (up-research-status c: 608 >= 2)
+    (not (research-completed ri-arrowslits))
+    (up-research-status c: ri-arrowslits >= research-pending)
 =>
     (set-goal demand-byzantine-university-arrowslits 547)
 )
@@ -22059,18 +22114,18 @@
         (goal demand-byzantine-university-arrowslits 546)
         (goal demand-byzantine-university-arrowslits 547)
     )
-    (not (research-completed 608))
-    (not (up-research-status c: 608 >= 2))
+    (not (research-completed ri-arrowslits))
+    (not (up-research-status c: ri-arrowslits >= research-pending))
 =>
     (set-goal demand-byzantine-university-arrowslits 545)
     (set-goal research-retry-barrier-byzantine-university-arrowslits 549)
 )
 (defrule
     (goal demand-byzantine-university-arrowslits 545)
-    (not (research-completed 608))
+    (not (research-completed ri-arrowslits))
     (goal research-retry-barrier-byzantine-university-arrowslits 0)
     (goal byzantine-university-research-claim 0)
-    (not (up-research-status c: 608 >= 2))
+    (not (up-research-status c: ri-arrowslits >= research-pending))
     (building-type-count university >= 1)
     (goal byzantine-university-state byzantine-university-state-imperial-gunline)
     (up-compare-goal byzantine-wall-anchor-pair > 0)
@@ -22108,7 +22163,7 @@
 ; Release: research-chemistry | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-chemistry 103)
-    (research-completed 47)
+    (research-completed ri-chemistry)
 =>
     (set-goal demand-research-chemistry 0)
 )
@@ -22119,7 +22174,7 @@
         (goal demand-research-chemistry 104)
         (goal demand-research-chemistry 102)
     )
-    (research-completed 47)
+    (research-completed ri-chemistry)
 =>
     (set-goal demand-research-chemistry 103)
 )
@@ -22130,8 +22185,8 @@
         (goal demand-research-chemistry 104)
         (goal demand-research-chemistry 102)
     )
-    (not (research-completed 47))
-    (up-research-status c: 47 >= 2)
+    (not (research-completed ri-chemistry))
+    (up-research-status c: ri-chemistry >= research-pending)
 =>
     (set-goal demand-research-chemistry 102)
 )
@@ -22142,8 +22197,8 @@
         (goal demand-research-chemistry 104)
         (goal demand-research-chemistry 102)
     )
-    (not (research-completed 47))
-    (not (up-research-status c: 47 >= 2))
+    (not (research-completed ri-chemistry))
+    (not (up-research-status c: ri-chemistry >= research-pending))
 =>
     (set-goal demand-research-chemistry 1)
     (set-goal research-retry-barrier-research-chemistry 1)
@@ -22152,15 +22207,15 @@
 ; Action issuance: research-chemistry | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-chemistry 1)
-    (not (research-completed 47))
+    (not (research-completed ri-chemistry))
     (goal research-retry-barrier-research-chemistry 0)
-    (not (up-research-status c: 47 >= 2))
-    (not (research-completed 47))
+    (not (up-research-status c: ri-chemistry >= research-pending))
+    (not (research-completed ri-chemistry))
     (current-age >= imperial-age)
-    (can-research-with-escrow chemistry)
+    (can-research-with-escrow ri-chemistry)
 =>
     (release-escrow gold)
-    (research chemistry)
+    (research ri-chemistry)
     (set-goal demand-research-chemistry 104)
 )
 
@@ -22175,7 +22230,7 @@
 ; Release: research-gold-mining | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-gold-mining 109)
-    (research-completed 55)
+    (research-completed ri-gold-mining)
 =>
     (set-goal demand-research-gold-mining 0)
 )
@@ -22186,7 +22241,7 @@
         (goal demand-research-gold-mining 110)
         (goal demand-research-gold-mining 108)
     )
-    (research-completed 55)
+    (research-completed ri-gold-mining)
 =>
     (set-goal demand-research-gold-mining 109)
 )
@@ -22197,8 +22252,8 @@
         (goal demand-research-gold-mining 110)
         (goal demand-research-gold-mining 108)
     )
-    (not (research-completed 55))
-    (up-research-status c: 55 >= 2)
+    (not (research-completed ri-gold-mining))
+    (up-research-status c: ri-gold-mining >= research-pending)
 =>
     (set-goal demand-research-gold-mining 108)
 )
@@ -22209,8 +22264,8 @@
         (goal demand-research-gold-mining 110)
         (goal demand-research-gold-mining 108)
     )
-    (not (research-completed 55))
-    (not (up-research-status c: 55 >= 2))
+    (not (research-completed ri-gold-mining))
+    (not (up-research-status c: ri-gold-mining >= research-pending))
 =>
     (set-goal demand-research-gold-mining 1)
     (set-goal research-retry-barrier-research-gold-mining 1)
@@ -22219,17 +22274,17 @@
 ; Action issuance: research-gold-mining | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-gold-mining 1)
-    (not (research-completed 55))
+    (not (research-completed ri-gold-mining))
     (goal research-retry-barrier-research-gold-mining 0)
-    (not (up-research-status c: 55 >= 2))
-    (not (research-completed 55))
+    (not (up-research-status c: ri-gold-mining >= research-pending))
+    (not (research-completed ri-gold-mining))
     (current-age >= feudal-age)
     (food-amount >= 900)
     (gold-amount >= 250)
-    (can-research-with-escrow gold-mining)
+    (can-research-with-escrow ri-gold-mining)
 =>
     (release-escrow food)
-    (research gold-mining)
+    (research ri-gold-mining)
     (set-goal demand-research-gold-mining 110)
 )
 
@@ -22244,7 +22299,7 @@
 ; Release: research-gold-shaft-mining | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-gold-shaft-mining 110)
-    (research-completed 182)
+    (research-completed ri-gold-shaft-mining)
 =>
     (set-goal demand-research-gold-shaft-mining 0)
 )
@@ -22255,7 +22310,7 @@
         (goal demand-research-gold-shaft-mining 111)
         (goal demand-research-gold-shaft-mining 109)
     )
-    (research-completed 182)
+    (research-completed ri-gold-shaft-mining)
 =>
     (set-goal demand-research-gold-shaft-mining 110)
 )
@@ -22266,8 +22321,8 @@
         (goal demand-research-gold-shaft-mining 111)
         (goal demand-research-gold-shaft-mining 109)
     )
-    (not (research-completed 182))
-    (up-research-status c: 182 >= 2)
+    (not (research-completed ri-gold-shaft-mining))
+    (up-research-status c: ri-gold-shaft-mining >= research-pending)
 =>
     (set-goal demand-research-gold-shaft-mining 109)
 )
@@ -22278,8 +22333,8 @@
         (goal demand-research-gold-shaft-mining 111)
         (goal demand-research-gold-shaft-mining 109)
     )
-    (not (research-completed 182))
-    (not (up-research-status c: 182 >= 2))
+    (not (research-completed ri-gold-shaft-mining))
+    (not (up-research-status c: ri-gold-shaft-mining >= research-pending))
 =>
     (set-goal demand-research-gold-shaft-mining 1)
     (set-goal research-retry-barrier-research-gold-shaft-mining 1)
@@ -22288,16 +22343,16 @@
 ; Action issuance: research-gold-shaft-mining | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-gold-shaft-mining 1)
-    (not (research-completed 182))
+    (not (research-completed ri-gold-shaft-mining))
     (goal research-retry-barrier-research-gold-shaft-mining 0)
-    (not (up-research-status c: 182 >= 2))
-    (not (research-completed 182))
+    (not (up-research-status c: ri-gold-shaft-mining >= research-pending))
+    (not (research-completed ri-gold-shaft-mining))
     (current-age >= castle-age)
-    (can-research-with-escrow gold-shaft-mining)
+    (can-research-with-escrow ri-gold-shaft-mining)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research gold-shaft-mining)
+    (research ri-gold-shaft-mining)
     (set-goal demand-research-gold-shaft-mining 111)
 )
 
@@ -22312,7 +22367,7 @@
 ; Release: research-heavy-plow | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-heavy-plow 115)
-    (research-completed 13)
+    (research-completed ri-heavy-plow)
 =>
     (set-goal demand-research-heavy-plow 0)
 )
@@ -22323,7 +22378,7 @@
         (goal demand-research-heavy-plow 116)
         (goal demand-research-heavy-plow 114)
     )
-    (research-completed 13)
+    (research-completed ri-heavy-plow)
 =>
     (set-goal demand-research-heavy-plow 115)
 )
@@ -22334,8 +22389,8 @@
         (goal demand-research-heavy-plow 116)
         (goal demand-research-heavy-plow 114)
     )
-    (not (research-completed 13))
-    (up-research-status c: 13 >= 2)
+    (not (research-completed ri-heavy-plow))
+    (up-research-status c: ri-heavy-plow >= research-pending)
 =>
     (set-goal demand-research-heavy-plow 114)
 )
@@ -22346,8 +22401,8 @@
         (goal demand-research-heavy-plow 116)
         (goal demand-research-heavy-plow 114)
     )
-    (not (research-completed 13))
-    (not (up-research-status c: 13 >= 2))
+    (not (research-completed ri-heavy-plow))
+    (not (up-research-status c: ri-heavy-plow >= research-pending))
 =>
     (set-goal demand-research-heavy-plow 1)
     (set-goal research-retry-barrier-research-heavy-plow 1)
@@ -22356,16 +22411,16 @@
 ; Action issuance: research-heavy-plow | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-heavy-plow 1)
-    (not (research-completed 13))
+    (not (research-completed ri-heavy-plow))
     (goal research-retry-barrier-research-heavy-plow 0)
-    (not (up-research-status c: 13 >= 2))
-    (not (research-completed 13))
+    (not (up-research-status c: ri-heavy-plow >= research-pending))
+    (not (research-completed ri-heavy-plow))
     (current-age >= castle-age)
-    (can-research-with-escrow heavy-plow)
+    (can-research-with-escrow ri-heavy-plow)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research heavy-plow)
+    (research ri-heavy-plow)
     (set-goal demand-research-heavy-plow 116)
 )
 
@@ -22380,7 +22435,7 @@
 ; Release: research-fletching | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-fletching 108)
-    (research-completed 199)
+    (research-completed ri-fletching)
 =>
     (set-goal demand-research-fletching 0)
 )
@@ -22391,7 +22446,7 @@
         (goal demand-research-fletching 109)
         (goal demand-research-fletching 107)
     )
-    (research-completed 199)
+    (research-completed ri-fletching)
 =>
     (set-goal demand-research-fletching 108)
 )
@@ -22402,8 +22457,8 @@
         (goal demand-research-fletching 109)
         (goal demand-research-fletching 107)
     )
-    (not (research-completed 199))
-    (up-research-status c: 199 >= 2)
+    (not (research-completed ri-fletching))
+    (up-research-status c: ri-fletching >= research-pending)
 =>
     (set-goal demand-research-fletching 107)
 )
@@ -22414,8 +22469,8 @@
         (goal demand-research-fletching 109)
         (goal demand-research-fletching 107)
     )
-    (not (research-completed 199))
-    (not (up-research-status c: 199 >= 2))
+    (not (research-completed ri-fletching))
+    (not (up-research-status c: ri-fletching >= research-pending))
 =>
     (set-goal demand-research-fletching 1)
     (set-goal research-retry-barrier-research-fletching 1)
@@ -22424,10 +22479,10 @@
 ; Action issuance: research-fletching | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-fletching 1)
-    (not (research-completed 199))
+    (not (research-completed ri-fletching))
     (goal research-retry-barrier-research-fletching 0)
-    (not (up-research-status c: 199 >= 2))
-    (not (research-completed 199))
+    (not (up-research-status c: ri-fletching >= research-pending))
+    (not (research-completed ri-fletching))
     (or
         (current-age >= castle-age)
         (and
@@ -22444,11 +22499,11 @@
             )
         )
     )
-    (can-research-with-escrow fletching)
+    (can-research-with-escrow ri-fletching)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research fletching)
+    (research ri-fletching)
     (set-goal demand-research-fletching 109)
 )
 
@@ -22463,7 +22518,7 @@
 ; Release: research-cavalier | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-cavalier 102)
-    (research-completed 209)
+    (research-completed ri-cavalier)
 =>
     (set-goal demand-research-cavalier 0)
 )
@@ -22474,7 +22529,7 @@
         (goal demand-research-cavalier 103)
         (goal demand-research-cavalier 101)
     )
-    (research-completed 209)
+    (research-completed ri-cavalier)
 =>
     (set-goal demand-research-cavalier 102)
 )
@@ -22485,8 +22540,8 @@
         (goal demand-research-cavalier 103)
         (goal demand-research-cavalier 101)
     )
-    (not (research-completed 209))
-    (up-research-status c: 209 >= 2)
+    (not (research-completed ri-cavalier))
+    (up-research-status c: ri-cavalier >= research-pending)
 =>
     (set-goal demand-research-cavalier 101)
 )
@@ -22497,8 +22552,8 @@
         (goal demand-research-cavalier 103)
         (goal demand-research-cavalier 101)
     )
-    (not (research-completed 209))
-    (not (up-research-status c: 209 >= 2))
+    (not (research-completed ri-cavalier))
+    (not (up-research-status c: ri-cavalier >= research-pending))
 =>
     (set-goal demand-research-cavalier 1)
     (set-goal research-retry-barrier-research-cavalier 1)
@@ -22507,17 +22562,17 @@
 ; Action issuance: research-cavalier | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-cavalier 1)
-    (not (research-completed 209))
+    (not (research-completed ri-cavalier))
     (goal research-retry-barrier-research-cavalier 0)
-    (not (up-research-status c: 209 >= 2))
-    (not (research-completed 209))
+    (not (up-research-status c: ri-cavalier >= research-pending))
+    (not (research-completed ri-cavalier))
     (unit-type-count cavalier >= 1)
     (current-age >= imperial-age)
-    (can-research-with-escrow cavalier)
+    (can-research-with-escrow ri-cavalier)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research cavalier)
+    (research ri-cavalier)
     (set-goal demand-research-cavalier 103)
 )
 
@@ -22532,7 +22587,7 @@
 ; Release: research-hussar | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-hussar 117)
-    (research-completed 428)
+    (research-completed ri-hussar)
 =>
     (set-goal demand-research-hussar 0)
 )
@@ -22543,7 +22598,7 @@
         (goal demand-research-hussar 118)
         (goal demand-research-hussar 116)
     )
-    (research-completed 428)
+    (research-completed ri-hussar)
 =>
     (set-goal demand-research-hussar 117)
 )
@@ -22554,8 +22609,8 @@
         (goal demand-research-hussar 118)
         (goal demand-research-hussar 116)
     )
-    (not (research-completed 428))
-    (up-research-status c: 428 >= 2)
+    (not (research-completed ri-hussar))
+    (up-research-status c: ri-hussar >= research-pending)
 =>
     (set-goal demand-research-hussar 116)
 )
@@ -22566,8 +22621,8 @@
         (goal demand-research-hussar 118)
         (goal demand-research-hussar 116)
     )
-    (not (research-completed 428))
-    (not (up-research-status c: 428 >= 2))
+    (not (research-completed ri-hussar))
+    (not (up-research-status c: ri-hussar >= research-pending))
 =>
     (set-goal demand-research-hussar 1)
     (set-goal research-retry-barrier-research-hussar 1)
@@ -22576,10 +22631,10 @@
 ; Action issuance: research-hussar | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-hussar 1)
-    (not (research-completed 428))
+    (not (research-completed ri-hussar))
     (goal research-retry-barrier-research-hussar 0)
-    (not (up-research-status c: 428 >= 2))
-    (not (research-completed 428))
+    (not (up-research-status c: ri-hussar >= research-pending))
+    (not (research-completed ri-hussar))
     (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
         (or
@@ -22588,10 +22643,10 @@
         )
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow hussar)
+    (can-research-with-escrow ri-hussar)
 =>
     (release-escrow food)
-    (research hussar)
+    (research ri-hussar)
     (set-goal demand-research-hussar 118)
 )
 
@@ -22606,7 +22661,7 @@
 ; Release: research-onager | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-onager 119)
-    (research-completed 257)
+    (research-completed ri-onager)
 =>
     (set-goal demand-research-onager 0)
 )
@@ -22617,7 +22672,7 @@
         (goal demand-research-onager 120)
         (goal demand-research-onager 118)
     )
-    (research-completed 257)
+    (research-completed ri-onager)
 =>
     (set-goal demand-research-onager 119)
 )
@@ -22628,8 +22683,8 @@
         (goal demand-research-onager 120)
         (goal demand-research-onager 118)
     )
-    (not (research-completed 257))
-    (up-research-status c: 257 >= 2)
+    (not (research-completed ri-onager))
+    (up-research-status c: ri-onager >= research-pending)
 =>
     (set-goal demand-research-onager 118)
 )
@@ -22640,8 +22695,8 @@
         (goal demand-research-onager 120)
         (goal demand-research-onager 118)
     )
-    (not (research-completed 257))
-    (not (up-research-status c: 257 >= 2))
+    (not (research-completed ri-onager))
+    (not (up-research-status c: ri-onager >= research-pending))
 =>
     (set-goal demand-research-onager 1)
     (set-goal research-retry-barrier-research-onager 1)
@@ -22650,10 +22705,10 @@
 ; Action issuance: research-onager | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-onager 1)
-    (not (research-completed 257))
+    (not (research-completed ri-onager))
     (goal research-retry-barrier-research-onager 0)
-    (not (up-research-status c: 257 >= 2))
-    (not (research-completed 257))
+    (not (up-research-status c: ri-onager >= research-pending))
+    (not (research-completed ri-onager))
     (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
         (or
@@ -22662,11 +22717,11 @@
         )
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow onager)
+    (can-research-with-escrow ri-onager)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research onager)
+    (research ri-onager)
     (set-goal demand-research-onager 120)
 )
 
@@ -22675,7 +22730,7 @@
 (defrule
     (current-age >= imperial-age)
     (unit-type-count-total battering-ram-line >= 1)
-    (not (research-completed 255))
+    (not (research-completed ri-siege-ram))
     (goal demand-research-siege-ram 0)
 =>
     (set-goal demand-research-siege-ram 1)
@@ -22692,7 +22747,7 @@
 ; Release: research-siege-ram | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-siege-ram 121)
-    (research-completed 255)
+    (research-completed ri-siege-ram)
 =>
     (set-goal demand-research-siege-ram 0)
 )
@@ -22703,7 +22758,7 @@
         (goal demand-research-siege-ram 122)
         (goal demand-research-siege-ram 120)
     )
-    (research-completed 255)
+    (research-completed ri-siege-ram)
 =>
     (set-goal demand-research-siege-ram 121)
 )
@@ -22714,8 +22769,8 @@
         (goal demand-research-siege-ram 122)
         (goal demand-research-siege-ram 120)
     )
-    (not (research-completed 255))
-    (up-research-status c: 255 >= 2)
+    (not (research-completed ri-siege-ram))
+    (up-research-status c: ri-siege-ram >= research-pending)
 =>
     (set-goal demand-research-siege-ram 120)
 )
@@ -22726,8 +22781,8 @@
         (goal demand-research-siege-ram 122)
         (goal demand-research-siege-ram 120)
     )
-    (not (research-completed 255))
-    (not (up-research-status c: 255 >= 2))
+    (not (research-completed ri-siege-ram))
+    (not (up-research-status c: ri-siege-ram >= research-pending))
 =>
     (set-goal demand-research-siege-ram 1)
     (set-goal research-retry-barrier-research-siege-ram 1)
@@ -22736,20 +22791,20 @@
 ; Action issuance: research-siege-ram | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-siege-ram 1)
-    (not (research-completed 255))
+    (not (research-completed ri-siege-ram))
     (goal research-retry-barrier-research-siege-ram 0)
-    (not (up-research-status c: 255 >= 2))
-    (not (research-completed 255))
+    (not (up-research-status c: ri-siege-ram >= research-pending))
+    (not (research-completed ri-siege-ram))
     (or
         (goal byzantine-siege-scale byzantine-siege-scale-standard)
         (goal byzantine-siege-scale byzantine-siege-scale-fortified)
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow siege-ram)
+    (can-research-with-escrow ri-siege-ram)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research siege-ram)
+    (research ri-siege-ram)
     (set-goal demand-research-siege-ram 122)
 )
 
@@ -22764,7 +22819,7 @@
 ; Release: research-arbalester | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-arbalester 97)
-    (research-completed 237)
+    (research-completed ri-arbalest)
 =>
     (set-goal demand-research-arbalester 0)
 )
@@ -22775,7 +22830,7 @@
         (goal demand-research-arbalester 98)
         (goal demand-research-arbalester 96)
     )
-    (research-completed 237)
+    (research-completed ri-arbalest)
 =>
     (set-goal demand-research-arbalester 97)
 )
@@ -22786,8 +22841,8 @@
         (goal demand-research-arbalester 98)
         (goal demand-research-arbalester 96)
     )
-    (not (research-completed 237))
-    (up-research-status c: 237 >= 2)
+    (not (research-completed ri-arbalest))
+    (up-research-status c: ri-arbalest >= research-pending)
 =>
     (set-goal demand-research-arbalester 96)
 )
@@ -22798,8 +22853,8 @@
         (goal demand-research-arbalester 98)
         (goal demand-research-arbalester 96)
     )
-    (not (research-completed 237))
-    (not (up-research-status c: 237 >= 2))
+    (not (research-completed ri-arbalest))
+    (not (up-research-status c: ri-arbalest >= research-pending))
 =>
     (set-goal demand-research-arbalester 1)
     (set-goal research-retry-barrier-research-arbalester 1)
@@ -22808,10 +22863,10 @@
 ; Action issuance: research-arbalester | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-arbalester 1)
-    (not (research-completed 237))
+    (not (research-completed ri-arbalest))
     (goal research-retry-barrier-research-arbalester 0)
-    (not (up-research-status c: 237 >= 2))
-    (not (research-completed 237))
+    (not (up-research-status c: ri-arbalest >= research-pending))
+    (not (research-completed ri-arbalest))
     (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
         (or
@@ -22823,11 +22878,11 @@
         )
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow arbalest)
+    (can-research-with-escrow ri-arbalest)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research arbalest)
+    (research ri-arbalest)
     (set-goal demand-research-arbalester 98)
 )
 
@@ -22842,7 +22897,7 @@
 ; Release: research-halberdier | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-halberdier 111)
-    (research-completed 429)
+    (research-completed ri-halberdier)
 =>
     (set-goal demand-research-halberdier 0)
 )
@@ -22853,7 +22908,7 @@
         (goal demand-research-halberdier 112)
         (goal demand-research-halberdier 110)
     )
-    (research-completed 429)
+    (research-completed ri-halberdier)
 =>
     (set-goal demand-research-halberdier 111)
 )
@@ -22864,8 +22919,8 @@
         (goal demand-research-halberdier 112)
         (goal demand-research-halberdier 110)
     )
-    (not (research-completed 429))
-    (up-research-status c: 429 >= 2)
+    (not (research-completed ri-halberdier))
+    (up-research-status c: ri-halberdier >= research-pending)
 =>
     (set-goal demand-research-halberdier 110)
 )
@@ -22876,8 +22931,8 @@
         (goal demand-research-halberdier 112)
         (goal demand-research-halberdier 110)
     )
-    (not (research-completed 429))
-    (not (up-research-status c: 429 >= 2))
+    (not (research-completed ri-halberdier))
+    (not (up-research-status c: ri-halberdier >= research-pending))
 =>
     (set-goal demand-research-halberdier 1)
     (set-goal research-retry-barrier-research-halberdier 1)
@@ -22886,20 +22941,20 @@
 ; Action issuance: research-halberdier | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-halberdier 1)
-    (not (research-completed 429))
+    (not (research-completed ri-halberdier))
     (goal research-retry-barrier-research-halberdier 0)
-    (not (up-research-status c: 429 >= 2))
-    (not (research-completed 429))
+    (not (up-research-status c: ri-halberdier >= research-pending))
+    (not (research-completed ri-halberdier))
     (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
         (unit-type-count 359 >= 1)
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow 429)
+    (can-research-with-escrow ri-halberdier)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 429)
+    (research ri-halberdier)
     (set-goal demand-research-halberdier 112)
 )
 
@@ -22914,7 +22969,7 @@
 ; Release: research-heavy-camel | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-heavy-camel 113)
-    (research-completed 236)
+    (research-completed ri-heavy-camel)
 =>
     (set-goal demand-research-heavy-camel 0)
 )
@@ -22925,7 +22980,7 @@
         (goal demand-research-heavy-camel 114)
         (goal demand-research-heavy-camel 112)
     )
-    (research-completed 236)
+    (research-completed ri-heavy-camel)
 =>
     (set-goal demand-research-heavy-camel 113)
 )
@@ -22936,8 +22991,8 @@
         (goal demand-research-heavy-camel 114)
         (goal demand-research-heavy-camel 112)
     )
-    (not (research-completed 236))
-    (up-research-status c: 236 >= 2)
+    (not (research-completed ri-heavy-camel))
+    (up-research-status c: ri-heavy-camel >= research-pending)
 =>
     (set-goal demand-research-heavy-camel 112)
 )
@@ -22948,8 +23003,8 @@
         (goal demand-research-heavy-camel 114)
         (goal demand-research-heavy-camel 112)
     )
-    (not (research-completed 236))
-    (not (up-research-status c: 236 >= 2))
+    (not (research-completed ri-heavy-camel))
+    (not (up-research-status c: ri-heavy-camel >= research-pending))
 =>
     (set-goal demand-research-heavy-camel 1)
     (set-goal research-retry-barrier-research-heavy-camel 1)
@@ -22958,20 +23013,20 @@
 ; Action issuance: research-heavy-camel | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-heavy-camel 1)
-    (not (research-completed 236))
+    (not (research-completed ri-heavy-camel))
     (goal research-retry-barrier-research-heavy-camel 0)
-    (not (up-research-status c: 236 >= 2))
-    (not (research-completed 236))
+    (not (up-research-status c: ri-heavy-camel >= research-pending))
+    (not (research-completed ri-heavy-camel))
     (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
         (unit-type-count 330 >= 1)
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow 236)
+    (can-research-with-escrow ri-heavy-camel)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 236)
+    (research ri-heavy-camel)
     (set-goal demand-research-heavy-camel 114)
 )
 
@@ -22983,15 +23038,15 @@
 ; Elite Cataphract: only bank for it when the Cataphract branch is actually selected.
 (defrule
     (goal demand-imperial-elite-cataphract-upgrade complete-imperial-elite-cataphract-upgrade)
-    (research-completed 361)
+    (research-completed ri-elite-cataphract)
 =>
     (set-goal demand-imperial-elite-cataphract-upgrade 0)
 )
 (defrule
     (goal demand-imperial-elite-cataphract-upgrade 0)
-    (not (research-completed 361))
+    (not (research-completed ri-elite-cataphract))
     (current-age >= imperial-age)
-    (research-completed 61)
+    (research-completed ri-logistica)
     (unit-type-count cataphract-line >= 4)
 =>
     (set-goal demand-imperial-elite-cataphract-upgrade 1)
@@ -23001,7 +23056,7 @@
         (goal demand-imperial-elite-cataphract-upgrade issued-imperial-elite-cataphract-upgrade)
         (goal demand-imperial-elite-cataphract-upgrade pending-imperial-elite-cataphract-upgrade)
     )
-    (research-completed 361)
+    (research-completed ri-elite-cataphract)
 =>
     (set-goal demand-imperial-elite-cataphract-upgrade complete-imperial-elite-cataphract-upgrade)
 )
@@ -23010,8 +23065,8 @@
         (goal demand-imperial-elite-cataphract-upgrade issued-imperial-elite-cataphract-upgrade)
         (goal demand-imperial-elite-cataphract-upgrade pending-imperial-elite-cataphract-upgrade)
     )
-    (not (research-completed 361))
-    (up-research-status c: 361 >= 2)
+    (not (research-completed ri-elite-cataphract))
+    (up-research-status c: ri-elite-cataphract >= research-pending)
 =>
     (set-goal demand-imperial-elite-cataphract-upgrade pending-imperial-elite-cataphract-upgrade)
 )
@@ -23020,8 +23075,8 @@
         (goal demand-imperial-elite-cataphract-upgrade issued-imperial-elite-cataphract-upgrade)
         (goal demand-imperial-elite-cataphract-upgrade pending-imperial-elite-cataphract-upgrade)
     )
-    (not (research-completed 361))
-    (not (up-research-status c: 361 >= 2))
+    (not (research-completed ri-elite-cataphract))
+    (not (up-research-status c: ri-elite-cataphract >= research-pending))
 =>
     (set-goal demand-imperial-elite-cataphract-upgrade 1)
     (set-goal research-retry-barrier-imperial-elite-cataphract-upgrade 1)
@@ -23030,31 +23085,31 @@
     (goal demand-imperial-elite-cataphract-upgrade 1)
     (goal research-retry-barrier-imperial-elite-cataphract-upgrade 0)
     (current-age >= imperial-age)
-    (research-completed 61)
+    (research-completed ri-logistica)
     (unit-type-count cataphract-line >= 4)
     (building-type-count-total castle >= 1)
-    (not (research-completed 361))
-    (not (up-research-status c: 361 >= 2))
-    (can-research-with-escrow 361)
+    (not (research-completed ri-elite-cataphract))
+    (not (up-research-status c: ri-elite-cataphract >= research-pending))
+    (can-research-with-escrow ri-elite-cataphract)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 361)
+    (research ri-elite-cataphract)
     (set-goal demand-imperial-elite-cataphract-upgrade issued-imperial-elite-cataphract-upgrade)
 )
 
 ; Elite Varangian Guard: use the shock-infantry branch when the unit is actually fielded.
 (defrule
     (goal demand-imperial-elite-varangian-upgrade complete-imperial-elite-varangian-upgrade)
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade 0)
 )
 (defrule
     (goal demand-imperial-elite-varangian-upgrade 0)
-    (not (research-completed 1454))
+    (not (research-completed ri-elite-varangian-guard))
     (current-age >= imperial-age)
-    (research-completed 361)
+    (research-completed ri-elite-cataphract)
     (unit-type-count varangian-guard-line >= 3)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade 1)
@@ -23064,7 +23119,7 @@
         (goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
         (goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
     )
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade complete-imperial-elite-varangian-upgrade)
 )
@@ -23073,8 +23128,8 @@
         (goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
         (goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
     )
-    (not (research-completed 1454))
-    (up-research-status c: 1454 >= 2)
+    (not (research-completed ri-elite-varangian-guard))
+    (up-research-status c: ri-elite-varangian-guard >= research-pending)
 =>
     (set-goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
 )
@@ -23083,8 +23138,8 @@
         (goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
         (goal demand-imperial-elite-varangian-upgrade pending-imperial-elite-varangian-upgrade)
     )
-    (not (research-completed 1454))
-    (not (up-research-status c: 1454 >= 2))
+    (not (research-completed ri-elite-varangian-guard))
+    (not (up-research-status c: ri-elite-varangian-guard >= research-pending))
 =>
     (set-goal demand-imperial-elite-varangian-upgrade 1)
     (set-goal research-retry-barrier-imperial-elite-varangian-upgrade 1)
@@ -23093,16 +23148,16 @@
     (goal demand-imperial-elite-varangian-upgrade 1)
     (goal research-retry-barrier-imperial-elite-varangian-upgrade 0)
     (current-age >= imperial-age)
-    (research-completed 361)
+    (research-completed ri-elite-cataphract)
     (unit-type-count varangian-guard-line >= 3)
     (building-type-count-total barracks >= 1)
-    (not (research-completed 1454))
-    (not (up-research-status c: 1454 >= 2))
-    (can-research-with-escrow 1454)
+    (not (research-completed ri-elite-varangian-guard))
+    (not (up-research-status c: ri-elite-varangian-guard >= research-pending))
+    (can-research-with-escrow ri-elite-varangian-guard)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 1454)
+    (research ri-elite-varangian-guard)
     (set-goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
 )
 
@@ -23110,15 +23165,15 @@
 ; only when the ranged-counter posture is actually selected.
 (defrule
     (goal demand-imperial-elite-skirmisher-upgrade complete-imperial-elite-skirmisher-upgrade)
-    (research-completed 98)
+    (research-completed ri-elite-skirmisher)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 0)
 )
 (defrule
     (goal demand-imperial-elite-skirmisher-upgrade 0)
-    (not (research-completed 98))
+    (not (research-completed ri-elite-skirmisher))
     (current-age >= imperial-age)
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
     (unit-type-count skirmisher-line >= 4)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 1)
@@ -23128,7 +23183,7 @@
         (goal demand-imperial-elite-skirmisher-upgrade issued-imperial-elite-skirmisher-upgrade)
         (goal demand-imperial-elite-skirmisher-upgrade pending-imperial-elite-skirmisher-upgrade)
     )
-    (research-completed 98)
+    (research-completed ri-elite-skirmisher)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade complete-imperial-elite-skirmisher-upgrade)
 )
@@ -23137,8 +23192,8 @@
         (goal demand-imperial-elite-skirmisher-upgrade issued-imperial-elite-skirmisher-upgrade)
         (goal demand-imperial-elite-skirmisher-upgrade pending-imperial-elite-skirmisher-upgrade)
     )
-    (not (research-completed 98))
-    (up-research-status c: 98 >= 2)
+    (not (research-completed ri-elite-skirmisher))
+    (up-research-status c: ri-elite-skirmisher >= research-pending)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade pending-imperial-elite-skirmisher-upgrade)
 )
@@ -23147,8 +23202,8 @@
         (goal demand-imperial-elite-skirmisher-upgrade issued-imperial-elite-skirmisher-upgrade)
         (goal demand-imperial-elite-skirmisher-upgrade pending-imperial-elite-skirmisher-upgrade)
     )
-    (not (research-completed 98))
-    (not (up-research-status c: 98 >= 2))
+    (not (research-completed ri-elite-skirmisher))
+    (not (up-research-status c: ri-elite-skirmisher >= research-pending))
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 1)
     (set-goal research-retry-barrier-imperial-elite-skirmisher-upgrade 1)
@@ -23157,16 +23212,16 @@
     (goal demand-imperial-elite-skirmisher-upgrade 1)
     (goal research-retry-barrier-imperial-elite-skirmisher-upgrade 0)
     (current-age >= imperial-age)
-    (research-completed 1454)
+    (research-completed ri-elite-varangian-guard)
     (unit-type-count skirmisher-line >= 4)
     (building-type-count-total archery-range >= 1)
-    (not (research-completed 98))
-    (not (up-research-status c: 98 >= 2))
-    (can-research-with-escrow 98)
+    (not (research-completed ri-elite-skirmisher))
+    (not (up-research-status c: ri-elite-skirmisher >= research-pending))
+    (can-research-with-escrow ri-elite-skirmisher)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research 98)
+    (research ri-elite-skirmisher)
     (set-goal demand-imperial-elite-skirmisher-upgrade issued-imperial-elite-skirmisher-upgrade)
 )
 
@@ -23181,7 +23236,7 @@
 ; Release: research-logistica | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-logistica 118)
-    (research-completed 61)
+    (research-completed ri-logistica)
 =>
     (set-goal demand-research-logistica 0)
 )
@@ -23192,7 +23247,7 @@
         (goal demand-research-logistica 119)
         (goal demand-research-logistica 117)
     )
-    (research-completed 61)
+    (research-completed ri-logistica)
 =>
     (set-goal demand-research-logistica 118)
 )
@@ -23203,8 +23258,8 @@
         (goal demand-research-logistica 119)
         (goal demand-research-logistica 117)
     )
-    (not (research-completed 61))
-    (up-research-status c: 61 >= 2)
+    (not (research-completed ri-logistica))
+    (up-research-status c: ri-logistica >= research-pending)
 =>
     (set-goal demand-research-logistica 117)
 )
@@ -23215,8 +23270,8 @@
         (goal demand-research-logistica 119)
         (goal demand-research-logistica 117)
     )
-    (not (research-completed 61))
-    (not (up-research-status c: 61 >= 2))
+    (not (research-completed ri-logistica))
+    (not (up-research-status c: ri-logistica >= research-pending))
 =>
     (set-goal demand-research-logistica 1)
     (set-goal research-retry-barrier-research-logistica 1)
@@ -23225,20 +23280,20 @@
 ; Action issuance: research-logistica | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-logistica 1)
-    (not (research-completed 61))
+    (not (research-completed ri-logistica))
     (goal research-retry-barrier-research-logistica 0)
-    (not (up-research-status c: 61 >= 2))
-    (not (research-completed 61))
+    (not (up-research-status c: ri-logistica >= research-pending))
+    (not (research-completed ri-logistica))
     (or
         (unit-type-count cataphract-line >= 2)
         (unit-type-count varangian-guard-line >= 2)
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow 61)
+    (can-research-with-escrow ri-logistica)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 61)
+    (research ri-logistica)
     (set-goal demand-research-logistica 119)
 )
 
@@ -23253,7 +23308,7 @@
 ; Release: research-sanctity | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-sanctity 120)
-    (research-completed 231)
+    (research-completed ri-sanctity)
 =>
     (set-goal demand-research-sanctity 0)
 )
@@ -23264,7 +23319,7 @@
         (goal demand-research-sanctity 121)
         (goal demand-research-sanctity 119)
     )
-    (research-completed 231)
+    (research-completed ri-sanctity)
 =>
     (set-goal demand-research-sanctity 120)
 )
@@ -23275,8 +23330,8 @@
         (goal demand-research-sanctity 121)
         (goal demand-research-sanctity 119)
     )
-    (not (research-completed 231))
-    (up-research-status c: 231 >= 2)
+    (not (research-completed ri-sanctity))
+    (up-research-status c: ri-sanctity >= research-pending)
 =>
     (set-goal demand-research-sanctity 119)
 )
@@ -23287,8 +23342,8 @@
         (goal demand-research-sanctity 121)
         (goal demand-research-sanctity 119)
     )
-    (not (research-completed 231))
-    (not (up-research-status c: 231 >= 2))
+    (not (research-completed ri-sanctity))
+    (not (up-research-status c: ri-sanctity >= research-pending))
 =>
     (set-goal demand-research-sanctity 1)
     (set-goal research-retry-barrier-research-sanctity 1)
@@ -23297,16 +23352,16 @@
 ; Action issuance: research-sanctity | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-sanctity 1)
-    (not (research-completed 231))
+    (not (research-completed ri-sanctity))
     (goal research-retry-barrier-research-sanctity 0)
-    (not (up-research-status c: 231 >= 2))
-    (not (research-completed 231))
+    (not (up-research-status c: ri-sanctity >= research-pending))
+    (not (research-completed ri-sanctity))
     (current-age >= castle-age)
-    (can-research-with-escrow sanctity)
+    (can-research-with-escrow ri-sanctity)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research sanctity)
+    (research ri-sanctity)
     (set-goal demand-research-sanctity 121)
 )
 
@@ -23321,7 +23376,7 @@
 ; Release: research-fervor | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-fervor 107)
-    (research-completed 252)
+    (research-completed ri-fervor)
 =>
     (set-goal demand-research-fervor 0)
 )
@@ -23332,7 +23387,7 @@
         (goal demand-research-fervor 108)
         (goal demand-research-fervor 106)
     )
-    (research-completed 252)
+    (research-completed ri-fervor)
 =>
     (set-goal demand-research-fervor 107)
 )
@@ -23343,8 +23398,8 @@
         (goal demand-research-fervor 108)
         (goal demand-research-fervor 106)
     )
-    (not (research-completed 252))
-    (up-research-status c: 252 >= 2)
+    (not (research-completed ri-fervor))
+    (up-research-status c: ri-fervor >= research-pending)
 =>
     (set-goal demand-research-fervor 106)
 )
@@ -23355,8 +23410,8 @@
         (goal demand-research-fervor 108)
         (goal demand-research-fervor 106)
     )
-    (not (research-completed 252))
-    (not (up-research-status c: 252 >= 2))
+    (not (research-completed ri-fervor))
+    (not (up-research-status c: ri-fervor >= research-pending))
 =>
     (set-goal demand-research-fervor 1)
     (set-goal research-retry-barrier-research-fervor 1)
@@ -23365,16 +23420,16 @@
 ; Action issuance: research-fervor | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-fervor 1)
-    (not (research-completed 252))
+    (not (research-completed ri-fervor))
     (goal research-retry-barrier-research-fervor 0)
-    (not (up-research-status c: 252 >= 2))
-    (not (research-completed 252))
+    (not (up-research-status c: ri-fervor >= research-pending))
+    (not (research-completed ri-fervor))
     (current-age >= castle-age)
-    (can-research-with-escrow fervor)
+    (can-research-with-escrow ri-fervor)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research fervor)
+    (research ri-fervor)
     (set-goal demand-research-fervor 108)
 )
 
@@ -23389,7 +23444,7 @@
 ; Release: research-atonement | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-atonement 98)
-    (research-completed 319)
+    (research-completed ri-atonement)
 =>
     (set-goal demand-research-atonement 0)
 )
@@ -23400,7 +23455,7 @@
         (goal demand-research-atonement 99)
         (goal demand-research-atonement 97)
     )
-    (research-completed 319)
+    (research-completed ri-atonement)
 =>
     (set-goal demand-research-atonement 98)
 )
@@ -23411,8 +23466,8 @@
         (goal demand-research-atonement 99)
         (goal demand-research-atonement 97)
     )
-    (not (research-completed 319))
-    (up-research-status c: 319 >= 2)
+    (not (research-completed ri-atonement))
+    (up-research-status c: ri-atonement >= research-pending)
 =>
     (set-goal demand-research-atonement 97)
 )
@@ -23423,8 +23478,8 @@
         (goal demand-research-atonement 99)
         (goal demand-research-atonement 97)
     )
-    (not (research-completed 319))
-    (not (up-research-status c: 319 >= 2))
+    (not (research-completed ri-atonement))
+    (not (up-research-status c: ri-atonement >= research-pending))
 =>
     (set-goal demand-research-atonement 1)
     (set-goal research-retry-barrier-research-atonement 1)
@@ -23433,16 +23488,16 @@
 ; Action issuance: research-atonement | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-atonement 1)
-    (not (research-completed 319))
+    (not (research-completed ri-atonement))
     (goal research-retry-barrier-research-atonement 0)
-    (not (up-research-status c: 319 >= 2))
-    (not (research-completed 319))
+    (not (up-research-status c: ri-atonement >= research-pending))
+    (not (research-completed ri-atonement))
     (current-age >= castle-age)
-    (can-research-with-escrow atonement)
+    (can-research-with-escrow ri-atonement)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research atonement)
+    (research ri-atonement)
     (set-goal demand-research-atonement 99)
 )
 
@@ -23457,7 +23512,7 @@
 ; Release: research-block-printing | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-block-printing 99)
-    (research-completed 230)
+    (research-completed ri-block-printing)
 =>
     (set-goal demand-research-block-printing 0)
 )
@@ -23468,7 +23523,7 @@
         (goal demand-research-block-printing 100)
         (goal demand-research-block-printing 98)
     )
-    (research-completed 230)
+    (research-completed ri-block-printing)
 =>
     (set-goal demand-research-block-printing 99)
 )
@@ -23479,8 +23534,8 @@
         (goal demand-research-block-printing 100)
         (goal demand-research-block-printing 98)
     )
-    (not (research-completed 230))
-    (up-research-status c: 230 >= 2)
+    (not (research-completed ri-block-printing))
+    (up-research-status c: ri-block-printing >= research-pending)
 =>
     (set-goal demand-research-block-printing 98)
 )
@@ -23491,8 +23546,8 @@
         (goal demand-research-block-printing 100)
         (goal demand-research-block-printing 98)
     )
-    (not (research-completed 230))
-    (not (up-research-status c: 230 >= 2))
+    (not (research-completed ri-block-printing))
+    (not (up-research-status c: ri-block-printing >= research-pending))
 =>
     (set-goal demand-research-block-printing 1)
     (set-goal research-retry-barrier-research-block-printing 1)
@@ -23501,16 +23556,16 @@
 ; Action issuance: research-block-printing | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-block-printing 1)
-    (not (research-completed 230))
+    (not (research-completed ri-block-printing))
     (goal research-retry-barrier-research-block-printing 0)
-    (not (up-research-status c: 230 >= 2))
-    (not (research-completed 230))
+    (not (up-research-status c: ri-block-printing >= research-pending))
+    (not (research-completed ri-block-printing))
     (current-age >= imperial-age)
-    (can-research-with-escrow block-printing)
+    (can-research-with-escrow ri-block-printing)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research block-printing)
+    (research ri-block-printing)
     (set-goal demand-research-block-printing 100)
 )
 
@@ -23525,7 +23580,7 @@
 ; Release: research-theocracy | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-theocracy 122)
-    (research-completed 438)
+    (research-completed ri-theocracy)
 =>
     (set-goal demand-research-theocracy 0)
 )
@@ -23536,7 +23591,7 @@
         (goal demand-research-theocracy 123)
         (goal demand-research-theocracy 121)
     )
-    (research-completed 438)
+    (research-completed ri-theocracy)
 =>
     (set-goal demand-research-theocracy 122)
 )
@@ -23547,8 +23602,8 @@
         (goal demand-research-theocracy 123)
         (goal demand-research-theocracy 121)
     )
-    (not (research-completed 438))
-    (up-research-status c: 438 >= 2)
+    (not (research-completed ri-theocracy))
+    (up-research-status c: ri-theocracy >= research-pending)
 =>
     (set-goal demand-research-theocracy 121)
 )
@@ -23559,8 +23614,8 @@
         (goal demand-research-theocracy 123)
         (goal demand-research-theocracy 121)
     )
-    (not (research-completed 438))
-    (not (up-research-status c: 438 >= 2))
+    (not (research-completed ri-theocracy))
+    (not (up-research-status c: ri-theocracy >= research-pending))
 =>
     (set-goal demand-research-theocracy 1)
     (set-goal research-retry-barrier-research-theocracy 1)
@@ -23569,16 +23624,16 @@
 ; Action issuance: research-theocracy | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-theocracy 1)
-    (not (research-completed 438))
+    (not (research-completed ri-theocracy))
     (goal research-retry-barrier-research-theocracy 0)
-    (not (up-research-status c: 438 >= 2))
-    (not (research-completed 438))
+    (not (up-research-status c: ri-theocracy >= research-pending))
+    (not (research-completed ri-theocracy))
     (current-age >= imperial-age)
-    (can-research-with-escrow theocracy)
+    (can-research-with-escrow ri-theocracy)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research theocracy)
+    (research ri-theocracy)
     (set-goal demand-research-theocracy 123)
 )
 
@@ -24129,7 +24184,7 @@
     (not (up-pending-objects c: 36 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
-    (research-completed 47)
+    (research-completed ri-chemistry)
     (up-train-site-ready c: bombard-cannon)
     (can-train-with-escrow bombard-cannon)
 =>
@@ -25131,7 +25186,7 @@
 ; Release: water-fishing-lines | COMPLETE -> RELEASED
 (defrule
     (goal demand-water-fishing-lines 130)
-    (research-completed 906)
+    (research-completed ri-fishing-lines)
 =>
     (set-goal demand-water-fishing-lines 0)
 )
@@ -25139,10 +25194,10 @@
 ; Recovery: water-fishing-lines | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-water-fishing-lines 0)
-    (not (research-completed 906))
+    (not (research-completed ri-fishing-lines))
     (goal strategic-primary-intent 1)
     (map-type islands)
-    (not (research-completed 906))
+    (not (research-completed ri-fishing-lines))
 =>
     (set-goal demand-water-fishing-lines 1)
 )
@@ -25153,7 +25208,7 @@
         (goal demand-water-fishing-lines 131)
         (goal demand-water-fishing-lines 129)
     )
-    (research-completed 906)
+    (research-completed ri-fishing-lines)
 =>
     (set-goal demand-water-fishing-lines 130)
 )
@@ -25164,8 +25219,8 @@
         (goal demand-water-fishing-lines 131)
         (goal demand-water-fishing-lines 129)
     )
-    (not (research-completed 906))
-    (up-research-status c: 906 >= 2)
+    (not (research-completed ri-fishing-lines))
+    (up-research-status c: ri-fishing-lines >= research-pending)
 =>
     (set-goal demand-water-fishing-lines 129)
 )
@@ -25176,8 +25231,8 @@
         (goal demand-water-fishing-lines 131)
         (goal demand-water-fishing-lines 129)
     )
-    (not (research-completed 906))
-    (not (up-research-status c: 906 >= 2))
+    (not (research-completed ri-fishing-lines))
+    (not (up-research-status c: ri-fishing-lines >= research-pending))
 =>
     (set-goal demand-water-fishing-lines 1)
     (set-goal research-retry-barrier-water-fishing-lines 1)
@@ -25186,17 +25241,17 @@
 ; Action issuance: water-fishing-lines | ACTIVE -> ISSUED
 (defrule
     (goal demand-water-fishing-lines 1)
-    (not (research-completed 906))
+    (not (research-completed ri-fishing-lines))
     (goal research-retry-barrier-water-fishing-lines 0)
-    (not (up-research-status c: 906 >= 2))
-    (not (research-completed 906))
+    (not (up-research-status c: ri-fishing-lines >= research-pending))
+    (not (research-completed ri-fishing-lines))
     (current-age >= feudal-age)
     (map-type islands)
-    (can-research-with-escrow 906)
+    (can-research-with-escrow ri-fishing-lines)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 906)
+    (research ri-fishing-lines)
     (set-goal demand-water-fishing-lines 131)
 )
 
@@ -25211,7 +25266,7 @@
 ; Release: water-gillnets | COMPLETE -> RELEASED
 (defrule
     (goal demand-water-gillnets 132)
-    (research-completed 65)
+    (research-completed ri-gillnets)
 =>
     (set-goal demand-water-gillnets 0)
 )
@@ -25219,10 +25274,10 @@
 ; Recovery: water-gillnets | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-water-gillnets 0)
-    (not (research-completed 65))
+    (not (research-completed ri-gillnets))
     (goal strategic-primary-intent 1)
     (map-type islands)
-    (not (research-completed 65))
+    (not (research-completed ri-gillnets))
 =>
     (set-goal demand-water-gillnets 1)
 )
@@ -25233,7 +25288,7 @@
         (goal demand-water-gillnets 133)
         (goal demand-water-gillnets 131)
     )
-    (research-completed 65)
+    (research-completed ri-gillnets)
 =>
     (set-goal demand-water-gillnets 132)
 )
@@ -25244,8 +25299,8 @@
         (goal demand-water-gillnets 133)
         (goal demand-water-gillnets 131)
     )
-    (not (research-completed 65))
-    (up-research-status c: 65 >= 2)
+    (not (research-completed ri-gillnets))
+    (up-research-status c: ri-gillnets >= research-pending)
 =>
     (set-goal demand-water-gillnets 131)
 )
@@ -25256,8 +25311,8 @@
         (goal demand-water-gillnets 133)
         (goal demand-water-gillnets 131)
     )
-    (not (research-completed 65))
-    (not (up-research-status c: 65 >= 2))
+    (not (research-completed ri-gillnets))
+    (not (up-research-status c: ri-gillnets >= research-pending))
 =>
     (set-goal demand-water-gillnets 1)
     (set-goal research-retry-barrier-water-gillnets 1)
@@ -25266,17 +25321,17 @@
 ; Action issuance: water-gillnets | ACTIVE -> ISSUED
 (defrule
     (goal demand-water-gillnets 1)
-    (not (research-completed 65))
+    (not (research-completed ri-gillnets))
     (goal research-retry-barrier-water-gillnets 0)
-    (not (up-research-status c: 65 >= 2))
-    (not (research-completed 65))
+    (not (up-research-status c: ri-gillnets >= research-pending))
+    (not (research-completed ri-gillnets))
     (current-age >= castle-age)
     (map-type islands)
-    (can-research-with-escrow 65)
+    (can-research-with-escrow ri-gillnets)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 65)
+    (research ri-gillnets)
     (set-goal demand-water-gillnets 133)
 )
 
@@ -25291,7 +25346,7 @@
 ; Release: water-warships | COMPLETE -> RELEASED
 (defrule
     (goal demand-water-warships 142)
-    (research-completed 34)
+    (research-completed ri-war-galley)
 =>
     (set-goal demand-water-warships 0)
 )
@@ -25299,10 +25354,10 @@
 ; Recovery: water-warships | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-water-warships 0)
-    (not (research-completed 34))
+    (not (research-completed ri-war-galley))
     (goal strategic-primary-intent 1)
     (map-type islands)
-    (not (research-completed 34))
+    (not (research-completed ri-war-galley))
 =>
     (set-goal demand-water-warships 1)
 )
@@ -25313,7 +25368,7 @@
         (goal demand-water-warships 143)
         (goal demand-water-warships 141)
     )
-    (research-completed 34)
+    (research-completed ri-war-galley)
 =>
     (set-goal demand-water-warships 142)
 )
@@ -25324,8 +25379,8 @@
         (goal demand-water-warships 143)
         (goal demand-water-warships 141)
     )
-    (not (research-completed 34))
-    (up-research-status c: 34 >= 2)
+    (not (research-completed ri-war-galley))
+    (up-research-status c: ri-war-galley >= research-pending)
 =>
     (set-goal demand-water-warships 141)
 )
@@ -25336,8 +25391,8 @@
         (goal demand-water-warships 143)
         (goal demand-water-warships 141)
     )
-    (not (research-completed 34))
-    (not (up-research-status c: 34 >= 2))
+    (not (research-completed ri-war-galley))
+    (not (up-research-status c: ri-war-galley >= research-pending))
 =>
     (set-goal demand-water-warships 1)
     (set-goal research-retry-barrier-water-warships 1)
@@ -25346,17 +25401,17 @@
 ; Action issuance: water-warships | ACTIVE -> ISSUED
 (defrule
     (goal demand-water-warships 1)
-    (not (research-completed 34))
+    (not (research-completed ri-war-galley))
     (goal research-retry-barrier-water-warships 0)
-    (not (up-research-status c: 34 >= 2))
-    (not (research-completed 34))
+    (not (up-research-status c: ri-war-galley >= research-pending))
+    (not (research-completed ri-war-galley))
     (current-age >= castle-age)
     (map-type islands)
-    (can-research-with-escrow 34)
+    (can-research-with-escrow ri-war-galley)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 34)
+    (research ri-war-galley)
     (set-goal demand-water-warships 143)
 )
 
@@ -25371,7 +25426,7 @@
 ; Release: water-heavy-warships | COMPLETE -> RELEASED
 (defrule
     (goal demand-water-heavy-warships 135)
-    (research-completed 35)
+    (research-completed ri-galleon)
 =>
     (set-goal demand-water-heavy-warships 0)
 )
@@ -25379,10 +25434,10 @@
 ; Recovery: water-heavy-warships | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-water-heavy-warships 0)
-    (not (research-completed 35))
+    (not (research-completed ri-galleon))
     (goal strategic-primary-intent 1)
     (map-type islands)
-    (not (research-completed 35))
+    (not (research-completed ri-galleon))
 =>
     (set-goal demand-water-heavy-warships 1)
 )
@@ -25393,7 +25448,7 @@
         (goal demand-water-heavy-warships 136)
         (goal demand-water-heavy-warships 134)
     )
-    (research-completed 35)
+    (research-completed ri-galleon)
 =>
     (set-goal demand-water-heavy-warships 135)
 )
@@ -25404,8 +25459,8 @@
         (goal demand-water-heavy-warships 136)
         (goal demand-water-heavy-warships 134)
     )
-    (not (research-completed 35))
-    (up-research-status c: 35 >= 2)
+    (not (research-completed ri-galleon))
+    (up-research-status c: ri-galleon >= research-pending)
 =>
     (set-goal demand-water-heavy-warships 134)
 )
@@ -25416,8 +25471,8 @@
         (goal demand-water-heavy-warships 136)
         (goal demand-water-heavy-warships 134)
     )
-    (not (research-completed 35))
-    (not (up-research-status c: 35 >= 2))
+    (not (research-completed ri-galleon))
+    (not (up-research-status c: ri-galleon >= research-pending))
 =>
     (set-goal demand-water-heavy-warships 1)
     (set-goal research-retry-barrier-water-heavy-warships 1)
@@ -25426,17 +25481,17 @@
 ; Action issuance: water-heavy-warships | ACTIVE -> ISSUED
 (defrule
     (goal demand-water-heavy-warships 1)
-    (not (research-completed 35))
+    (not (research-completed ri-galleon))
     (goal research-retry-barrier-water-heavy-warships 0)
-    (not (up-research-status c: 35 >= 2))
-    (not (research-completed 35))
+    (not (up-research-status c: ri-galleon >= research-pending))
+    (not (research-completed ri-galleon))
     (current-age >= imperial-age)
     (map-type islands)
-    (can-research-with-escrow 35)
+    (can-research-with-escrow ri-galleon)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 35)
+    (research ri-galleon)
     (set-goal demand-water-heavy-warships 136)
 )
 
@@ -25451,7 +25506,7 @@
 ; Release: water-greek-fire | COMPLETE -> RELEASED
 (defrule
     (goal demand-water-greek-fire 133)
-    (research-completed 464)
+    (research-completed ri-greek-fire)
 =>
     (set-goal demand-water-greek-fire 0)
 )
@@ -25459,7 +25514,7 @@
 ; Recovery: water-greek-fire | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-water-greek-fire 0)
-    (not (research-completed 464))
+    (not (research-completed ri-greek-fire))
     (or
         (and
             (goal strategic-primary-intent 1)
@@ -25483,7 +25538,7 @@
         (goal demand-water-greek-fire 134)
         (goal demand-water-greek-fire 132)
     )
-    (research-completed 464)
+    (research-completed ri-greek-fire)
 =>
     (set-goal demand-water-greek-fire 133)
 )
@@ -25494,8 +25549,8 @@
         (goal demand-water-greek-fire 134)
         (goal demand-water-greek-fire 132)
     )
-    (not (research-completed 464))
-    (up-research-status c: 464 >= 2)
+    (not (research-completed ri-greek-fire))
+    (up-research-status c: ri-greek-fire >= research-pending)
 =>
     (set-goal demand-water-greek-fire 132)
 )
@@ -25506,8 +25561,8 @@
         (goal demand-water-greek-fire 134)
         (goal demand-water-greek-fire 132)
     )
-    (not (research-completed 464))
-    (not (up-research-status c: 464 >= 2))
+    (not (research-completed ri-greek-fire))
+    (not (up-research-status c: ri-greek-fire >= research-pending))
 =>
     (set-goal demand-water-greek-fire 1)
     (set-goal research-retry-barrier-water-greek-fire 1)
@@ -25516,10 +25571,10 @@
 ; Action issuance: water-greek-fire | ACTIVE -> ISSUED
 (defrule
     (goal demand-water-greek-fire 1)
-    (not (research-completed 464))
+    (not (research-completed ri-greek-fire))
     (goal research-retry-barrier-water-greek-fire 0)
-    (not (up-research-status c: 464 >= 2))
-    (not (research-completed 464))
+    (not (up-research-status c: ri-greek-fire >= research-pending))
+    (not (research-completed ri-greek-fire))
     (current-age >= castle-age)
     (or
         (map-type islands)
@@ -25531,11 +25586,11 @@
             (building-type-count castle >= 1)
         )
     )
-    (can-research-with-escrow 464)
+    (can-research-with-escrow ri-greek-fire)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research 464)
+    (research ri-greek-fire)
     (set-goal demand-water-greek-fire 134)
 )
 
@@ -25550,7 +25605,7 @@
 ; Release: research-demolition-ship | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-demolition-ship 105)
-    (research-completed 905)
+    (research-completed ri-demolition-ship)
 =>
     (set-goal demand-research-demolition-ship 0)
 )
@@ -25558,10 +25613,10 @@
 ; Recovery: research-demolition-ship | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-research-demolition-ship 0)
-    (not (research-completed 905))
+    (not (research-completed ri-demolition-ship))
     (goal strategic-primary-intent 1)
     (current-age >= castle-age)
-    (not (research-completed 905))
+    (not (research-completed ri-demolition-ship))
 =>
     (set-goal demand-research-demolition-ship 1)
 )
@@ -25572,7 +25627,7 @@
         (goal demand-research-demolition-ship 106)
         (goal demand-research-demolition-ship 104)
     )
-    (research-completed 905)
+    (research-completed ri-demolition-ship)
 =>
     (set-goal demand-research-demolition-ship 105)
 )
@@ -25583,8 +25638,8 @@
         (goal demand-research-demolition-ship 106)
         (goal demand-research-demolition-ship 104)
     )
-    (not (research-completed 905))
-    (up-research-status c: 905 >= 2)
+    (not (research-completed ri-demolition-ship))
+    (up-research-status c: ri-demolition-ship >= research-pending)
 =>
     (set-goal demand-research-demolition-ship 104)
 )
@@ -25595,8 +25650,8 @@
         (goal demand-research-demolition-ship 106)
         (goal demand-research-demolition-ship 104)
     )
-    (not (research-completed 905))
-    (not (up-research-status c: 905 >= 2))
+    (not (research-completed ri-demolition-ship))
+    (not (up-research-status c: ri-demolition-ship >= research-pending))
 =>
     (set-goal demand-research-demolition-ship 1)
     (set-goal research-retry-barrier-research-demolition-ship 1)
@@ -25605,16 +25660,16 @@
 ; Action issuance: research-demolition-ship | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-demolition-ship 1)
-    (not (research-completed 905))
+    (not (research-completed ri-demolition-ship))
     (goal research-retry-barrier-research-demolition-ship 0)
-    (not (up-research-status c: 905 >= 2))
-    (not (research-completed 905))
+    (not (up-research-status c: ri-demolition-ship >= research-pending))
+    (not (research-completed ri-demolition-ship))
     (current-age >= castle-age)
-    (can-research-with-escrow 905)
+    (can-research-with-escrow ri-demolition-ship)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research 905)
+    (research ri-demolition-ship)
     (set-goal demand-research-demolition-ship 106)
 )
 
@@ -25629,7 +25684,7 @@
 ; Release: research-heavy-demolition-ship | COMPLETE -> RELEASED
 (defrule
     (goal demand-research-heavy-demolition-ship 114)
-    (research-completed 244)
+    (research-completed ri-heavy-demolition-ship)
 =>
     (set-goal demand-research-heavy-demolition-ship 0)
 )
@@ -25637,10 +25692,10 @@
 ; Recovery: research-heavy-demolition-ship | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-research-heavy-demolition-ship 0)
-    (not (research-completed 244))
+    (not (research-completed ri-heavy-demolition-ship))
     (goal strategic-primary-intent 1)
     (current-age >= imperial-age)
-    (not (research-completed 244))
+    (not (research-completed ri-heavy-demolition-ship))
 =>
     (set-goal demand-research-heavy-demolition-ship 1)
 )
@@ -25651,7 +25706,7 @@
         (goal demand-research-heavy-demolition-ship 115)
         (goal demand-research-heavy-demolition-ship 113)
     )
-    (research-completed 244)
+    (research-completed ri-heavy-demolition-ship)
 =>
     (set-goal demand-research-heavy-demolition-ship 114)
 )
@@ -25662,8 +25717,8 @@
         (goal demand-research-heavy-demolition-ship 115)
         (goal demand-research-heavy-demolition-ship 113)
     )
-    (not (research-completed 244))
-    (up-research-status c: 244 >= 2)
+    (not (research-completed ri-heavy-demolition-ship))
+    (up-research-status c: ri-heavy-demolition-ship >= research-pending)
 =>
     (set-goal demand-research-heavy-demolition-ship 113)
 )
@@ -25674,8 +25729,8 @@
         (goal demand-research-heavy-demolition-ship 115)
         (goal demand-research-heavy-demolition-ship 113)
     )
-    (not (research-completed 244))
-    (not (up-research-status c: 244 >= 2))
+    (not (research-completed ri-heavy-demolition-ship))
+    (not (up-research-status c: ri-heavy-demolition-ship >= research-pending))
 =>
     (set-goal demand-research-heavy-demolition-ship 1)
     (set-goal research-retry-barrier-research-heavy-demolition-ship 1)
@@ -25684,16 +25739,16 @@
 ; Action issuance: research-heavy-demolition-ship | ACTIVE -> ISSUED
 (defrule
     (goal demand-research-heavy-demolition-ship 1)
-    (not (research-completed 244))
+    (not (research-completed ri-heavy-demolition-ship))
     (goal research-retry-barrier-research-heavy-demolition-ship 0)
-    (not (up-research-status c: 244 >= 2))
-    (not (research-completed 244))
+    (not (up-research-status c: ri-heavy-demolition-ship >= research-pending))
+    (not (research-completed ri-heavy-demolition-ship))
     (current-age >= imperial-age)
-    (can-research-with-escrow 244)
+    (can-research-with-escrow ri-heavy-demolition-ship)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research 244)
+    (research ri-heavy-demolition-ship)
     (set-goal demand-research-heavy-demolition-ship 115)
 )
 

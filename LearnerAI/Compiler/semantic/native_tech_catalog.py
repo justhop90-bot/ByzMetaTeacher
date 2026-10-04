@@ -15,6 +15,15 @@ _INVENTORY = (
     / "airef-tech-inventory.json"
 )
 
+# Current DE engine supplements not represented with AIRef ai_name values.
+# These are explicitly anchored by the native metadata profile.
+_NATIVE_TECH_SYMBOL_OVERRIDES = {
+    61: "ri-logistica",
+    905: "ri-demolition-ship",
+    906: "ri-fishing-lines",
+    1454: "ri-elite-varangian-guard",
+}
+
 
 class NativeTechIdError(ValueError):
     """Raised when a research target cannot be bound to a native TechId."""
@@ -75,19 +84,26 @@ def _matches(token: str) -> tuple[int, ...]:
     return tuple(sorted(set(matches)))
 
 
-def resolve_tech_id(symbol: str) -> int:
-    """Resolve a source research target to one deterministic native TechId."""
+def _resolve_entry(symbol: str) -> dict:
     token = symbol.strip().lower()
+    for tech_id, runtime_symbol in _NATIVE_TECH_SYMBOL_OVERRIDES.items():
+        if token == runtime_symbol:
+            return {"tech_id": tech_id, "ai_name": runtime_symbol}
     if not token or not re.fullmatch(r"[a-z][a-z0-9_ -]*|[0-9]+", token):
         raise NativeTechIdError(f"invalid TechId symbol '{symbol}'")
     if token.isdigit():
         tech_id = int(token)
-        known_ids = {entry["tech_id"] for entry in _techs()}
-        if tech_id not in known_ids:
-            raise NativeTechIdError(
-                f"numeric TechId '{symbol}' is not a known DE technology"
-            )
-        return tech_id
+        if tech_id in _NATIVE_TECH_SYMBOL_OVERRIDES:
+            return {
+                "tech_id": tech_id,
+                "ai_name": _NATIVE_TECH_SYMBOL_OVERRIDES[tech_id],
+            }
+        for entry in _techs():
+            if entry["tech_id"] == tech_id:
+                return entry
+        raise NativeTechIdError(
+            f"numeric TechId '{symbol}' is not a known DE technology"
+        )
 
     matches = _matches(token)
     if not matches:
@@ -99,7 +115,38 @@ def resolve_tech_id(symbol: str) -> int:
             f"native TechId symbol '{symbol}' maps to multiple DE technologies: "
             + ", ".join(str(item) for item in matches)
         )
-    return matches[0]
+    tech_id = matches[0]
+    for entry in _techs():
+        if entry["tech_id"] == tech_id:
+            return entry
+    raise NativeTechIdError(
+        f"native TechId '{tech_id}' is missing from the DE technology inventory"
+    )
 
 
-__all__ = ["NativeTechIdError", "resolve_tech_id"]
+def resolve_tech_id(symbol: str) -> int:
+    """Resolve a source research target to one deterministic native TechId."""
+    return int(_resolve_entry(symbol)["tech_id"])
+
+
+def resolve_tech_symbol(symbol: str) -> str:
+    """Resolve a source research target to its runtime-native AI TechId symbol."""
+    entry = _resolve_entry(symbol)
+    ai_name = entry.get("ai_name")
+    if not isinstance(ai_name, str):
+        raise NativeTechIdError(
+            f"native TechId '{entry['tech_id']}' has no runtime AI symbol"
+        )
+    symbols = tuple(
+        token.strip()
+        for token in ai_name.split(",")
+        if token.strip()
+    )
+    if not symbols:
+        raise NativeTechIdError(
+            f"native TechId '{entry['tech_id']}' has no runtime AI symbol"
+        )
+    return symbols[0]
+
+
+__all__ = ["NativeTechIdError", "resolve_tech_id", "resolve_tech_symbol"]

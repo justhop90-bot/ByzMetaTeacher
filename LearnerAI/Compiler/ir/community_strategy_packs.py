@@ -173,7 +173,12 @@ def _research_demand(
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
-    token = _slug(tech.name)
+    token = {
+        "wheelbarrow": "ri-wheel-barrow",
+    }.get(
+        _slug(tech.name),
+        f"ri-{_slug(tech.name)}",
+    )
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
     floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)

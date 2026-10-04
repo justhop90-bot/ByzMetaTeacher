@@ -44,7 +44,7 @@ from ..primitives import NativeSupportState, PrimitiveRegistry
 from .construction import canonical_build_completion_witness
 from .native_building_catalog import NativeBuildingIdError, resolve_building_id
 from .native_unit_catalog import NativeUnitIdError, resolve_unit_id
-from .native_tech_catalog import NativeTechIdError, resolve_tech_id
+from .native_tech_catalog import NativeTechIdError, resolve_tech_id, resolve_tech_symbol
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -895,10 +895,11 @@ def analyze(
             technology = action.args[0]
             try:
                 native_tech_id = resolve_tech_id(technology)
+                native_tech_symbol = resolve_tech_symbol(technology)
             except (NativeTechIdError, KeyError, TypeError, ValueError) as exc:
                 raise CompileError(
                     f"RESEARCH-TECH-ID: demand '{demand.name}' cannot resolve "
-                    f"TechId '{technology}'"
+                    f"runtime TechId symbol '{technology}'"
                 ) from exc
             research_retry_barrier = GoalSlotRequest(
                 request_id=StorageRequestId(
@@ -912,15 +913,15 @@ def analyze(
                 native_tech_id=native_tech_id,
                 pending_fact=Expression(
                     source=(
-                        f"(up-research-status c: {native_tech_id} >= "
-                        f"{int(ResearchState.PENDING)})"
+                        f"(up-research-status c: {native_tech_symbol} >= "
+                        f"research-pending)"
                     ),
                     head="up-research-status",
                     args=(
                         "c:",
-                        str(native_tech_id),
+                        native_tech_symbol,
                         ">=",
-                        str(int(ResearchState.PENDING)),
+                        "research-pending",
                     ),
                     location=action.location,
                 ),
