@@ -1,0 +1,75 @@
+import unittest
+
+from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
+from LearnerAI.Compiler.ir.strategy import build_byzantine_strategy
+from LearnerAI.Compiler.ir.role_separation import (
+    RoleControllerState,
+    RoleKind,
+)
+
+
+class RoleSeparationTests(unittest.TestCase):
+    def setUp(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        self.profile = build_byzantine_strategy(effective)
+
+    def test_byzantine_profile_exposes_role_plan(self):
+        plan = self.profile.role_separation_plan
+        self.assertIsNotNone(plan)
+        self.assertEqual(
+            tuple(role.role for role in plan.roles),
+            (
+                RoleKind.SCREEN,
+                RoleKind.MAIN,
+                RoleKind.SIEGE,
+                RoleKind.RAID,
+                RoleKind.RESERVE,
+            ),
+        )
+        self.assertEqual(
+            tuple(role.group_id for role in plan.roles),
+            (5, 6, 7, 8, 9),
+        )
+
+    def test_role_state_contract(self):
+        plan = self.profile.role_separation_plan
+        self.assertEqual(plan.state_values[RoleControllerState.IDLE], 0)
+        self.assertEqual(plan.state_values[RoleControllerState.FORMING], 1)
+        self.assertEqual(plan.state_values[RoleControllerState.COMMITTED], 2)
+        self.assertEqual(plan.state_values[RoleControllerState.RAID_SPLIT], 3)
+        self.assertEqual(plan.state_values[RoleControllerState.RECOVERING], 4)
+        self.assertEqual(len(plan.storage_requests), 2)
+
+    def test_role_rules_never_issue_attack_or_move(self):
+        plan = self.profile.role_separation_plan
+        forbidden = {
+            "attack-now",
+            "attack-groups",
+            "action-attack-move",
+            "up-target-objects",
+            "up-target-point",
+            "action-move",
+            "stop",
+        }
+        commands = {
+            expression.head
+            for rule in plan.rules
+            for expression in (*rule.facts, *rule.actions)
+        }
+        self.assertTrue(commands)
+        self.assertTrue(forbidden.isdisjoint(commands))
+
+    def test_fortified_siege_contract_blocks_raid(self):
+        plan = self.profile.role_separation_plan
+        self.assertIn(
+            "role-raid-admission-fortified-block",
+            tuple(rule.identity for rule in plan.rules),
+        )
+        self.assertIn(
+            "role-fortified-siege-witness",
+            tuple(rule.identity for rule in plan.rules),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
