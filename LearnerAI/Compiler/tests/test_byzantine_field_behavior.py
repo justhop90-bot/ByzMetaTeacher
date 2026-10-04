@@ -454,6 +454,65 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
         self.assertNotIn("(build lumber-camp)", self.per)
         self.assertNotIn("(build mining-camp)", self.per)
 
+    def test_resource_camp_builder_assignment_precedes_point_build_and_is_preserved(self):
+        for building in ("lumber-camp", "mining-camp"):
+            action = self.per[
+                self.per.index(
+                    f"(up-set-target-point byzantine-resource-camp-point)"
+                ):
+                self.per.index("; Pending diagnostics: economy-lumber-camp-floor-2")
+            ]
+            assign = action.index(f"(up-assign-builders c: {building} c: 1)")
+            build = action.index(f"(up-build place-point 0 c: {building})")
+            self.assertLess(assign, build)
+
+    def test_first_camp_failed_placement_removes_candidate_and_widens_before_retry(self):
+        lumber_start = self.per.index("; Failed first-camp placement recovery: remove the consumed wood candidate before retry.")
+        lumber_end = self.per.index("; Pending diagnostics: economy-lumber-camp-floor-1", lumber_start)
+        lumber = self.per[lumber_start:lumber_end]
+
+        gold_start = self.per.index("; Failed first-camp placement recovery: remove the consumed gold candidate before retry.")
+        gold_end = self.per.index("; economy-gold-camp-floor-1", gold_start)
+        gold = self.per[gold_start:gold_end]
+
+        for recovery, building_id, demand_states, resource in (
+            (lumber, "562", ("77", "75"), "wood"),
+            (gold, "584", ("621", "622"), "gold"),
+        ):
+            self.assertIn(f"(up-pending-objects c: {building_id} == 0)", recovery)
+            self.assertIn(f"(not (up-pending-placement c: {building_id}))", recovery)
+            self.assertIn("(goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)", recovery)
+            self.assertIn("(up-remove-objects search-remote object-data-index c:== 0)", recovery)
+            self.assertIn("(up-clean-search search-remote object-data-distance search-order-asc)", recovery)
+            self.assertIn("(up-get-search-state byzantine-resource-camp-search-state)", recovery)
+            self.assertIn("(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-reselect)", recovery)
+            for state in demand_states:
+                self.assertIn(f"(goal demand-economy-{'lumber-camp-floor-1' if resource == 'wood' else 'gold-camp-floor-1'} {state})", recovery)
+
+        controller = self._section_from(
+            "; A nearest resource already covered by an existing dropsite is not viable.",
+            "; REMOTE RESOURCE RECOVERY / PRODUCTIVITY-WITNESSED CAMP CONTROL",
+        )
+        base = controller.index(
+            "(goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-base)"
+        )
+        wide = controller.index(
+            "(goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-wide)"
+        )
+        remote = controller.index(
+            "(goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)"
+        )
+        self.assertLess(base, wide)
+        self.assertLess(wide, remote)
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-state byzantine-resource-camp-state-acquire-origin)",
+            controller,
+        )
+
+        lumber_retry = self.per.index("; RETRY | ISSUED/PENDING -> ACTIVE")
+        recovery = self.per.index("; Failed first-camp placement recovery: remove the consumed wood candidate before retry.")
+        self.assertLess(recovery, lumber_retry)
+
     def test_blocked_camp_placement_enters_pending_instead_of_reissuing(self):
         lumber = self._section_from(
             "; Pending diagnostics: economy-lumber-camp-floor-1",
