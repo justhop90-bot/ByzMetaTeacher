@@ -1277,18 +1277,14 @@ def build_byzantine_stock_strategy(
             observations.append(observation)
 
     demands = []
-    opening_resource_front = next(
-        item.expression
-        for item in observations
-        if item.identity == "strategy-opening-resource-front-ready"
-    )
     for base_demand in base.demands:
         if base_demand.identity == "feudal-transition":
             execution = replace(
                 base_demand.execution,
                 requirements=(
                     "(current-age == dark-age)",
-                    opening_resource_front,
+                    "(building-type-count-total lumber-camp >= 1)",
+                    "(building-type-count-total mining-camp >= 1)",
                     "(can-research-with-escrow feudal-age)",
                 ),
             )
