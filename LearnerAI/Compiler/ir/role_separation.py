@@ -514,7 +514,7 @@ def default_byzantine_role_separation_plan(
                 f"(or (and (goal byzantine-fortification-threat 0) "
                 f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-standard)) "
                 f"(and (goal byzantine-fortification-threat 1) "
-                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified))))",
+                f"(up-compare-goal {siege_size_name} < c:bt-role-siege-floor-fortified)))))",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-recovering)",
