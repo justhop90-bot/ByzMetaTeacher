@@ -413,18 +413,16 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-enable-offensive-priority 1)", self.per)
         self.assertIn("(set-strategic-number sn-zero-priority-distance 255)", self.per)
 
-    def test_castle_muster_holding_loss_witness_matches_mangonel_admission_group(self):
-        block = self._rule_block(
-            "; Holding remains a world-state witness, never a timer-only state."
-        )
-        self.assertIn(
-            "(up-group-size c: byzantine-siege-muster-mangonel-group >= bt-castle-mangonel-floor)",
-            block,
-        )
-        self.assertNotIn(
-            "(up-group-size c: byzantine-siege-muster-trebuchet-group >= bt-castle-mangonel-floor)",
-            block,
-        )
+    def test_castle_fortified_attack_uses_target_object_execution_primitive(self):
+        start = self.per.index("; Fortified Castle repair: the probe now owns an exact Castle point.")
+        end = self.per.index("; Package loss during a fortified approach returns through the existing army", start)
+        block = self.per[start:end]
+        self.assertIn("(up-set-target-point byzantine-offensive-castle-point)", block)
+        self.assertIn("(up-find-remote c: 82 c: 1)", block)
+        self.assertIn("(up-target-objects 0 action-attack-move -1 stance-aggressive)", block)
+        self.assertIn("(set-goal byzantine-siege-approach byzantine-siege-approach-assault)", block)
+        self.assertIn("(attack-now)", block)
+        self.assertNotIn("byzantine-siege-muster", block)
 
     def test_imperial_attack_ready_uses_any_sufficient_siege_anchor(self):
         block = self._find_rule(
