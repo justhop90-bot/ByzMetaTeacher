@@ -774,6 +774,7 @@ def emit(
     for demand in demands:
         slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = encoded[demand.name]
+        research = demand.research_lifecycle
         if demand.invalidation is not None:
             out += [
                 f"; Invalidation: {demand.name} | ACTIVE / ISSUED / PENDING -> CANCELLED",
