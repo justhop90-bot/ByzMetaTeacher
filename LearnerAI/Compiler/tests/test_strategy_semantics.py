@@ -148,9 +148,23 @@ class StrategySemanticsTests(unittest.TestCase):
             lower_economy_controller,
         )
 
+        from LearnerAI.Compiler.ir.community_strategy_packs import (
+            community_strategy_observations,
+        )
+
+        opening_pressure = next(
+            item
+            for item in community_strategy_observations(self.effective)
+            if item.identity == "strategy-opening-pressure"
+        )
+        profile = replace(
+            self.profile,
+            observations=(*self.profile.observations, opening_pressure),
+        )
+
         compilation = lower_economy_controller(
             default_byzantine_economy_controller(),
-            self.profile,
+            profile,
         )
         rule = next(
             item
