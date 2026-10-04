@@ -325,7 +325,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.assertIn(class_marker, section)
             self.assertIn("(goal byzantine-army-attack-ready 1)", section)
 
-    def test_objective_witness_reassessment_preserves_class_state(self):
+    def test_objective_witness_keeps_live_attack_in_execution_without_reissuing(self):
         witness_start = self.per.index(
             "(defrule\n    (goal byzantine-offensive-objective-state "
             "byzantine-offensive-objective-state-witness)"
@@ -348,6 +348,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "byzantine-offensive-objective-state-witness)" in rule
             and "(up-compare-goal byzantine-offensive-objective-search >= 1)"
             in rule
+            and "(attack-soldier-count > 0)" in rule
         ]
         self.assertEqual(len(positive_rules), 4)
 
@@ -366,12 +367,12 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             self.assertEqual(len(matching), 1)
             self.assertIn(
                 "(set-goal byzantine-offensive-objective-state "
-                f"{expected_state})",
+                "byzantine-offensive-objective-state-executing)",
                 matching[0],
             )
             self.assertNotIn(
                 "(set-goal byzantine-offensive-objective-state "
-                "byzantine-offensive-objective-state-executing)",
+                f"{expected_state})",
                 matching[0],
             )
 
@@ -379,6 +380,9 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "(up-target-objects 1 action-attack-move -1 -1)",
             witness_section,
         )
+        self.assertIn("(attack-soldier-count <= 0)", witness_section)
+        self.assertIn("(set-goal byzantine-army-attack-ready 0)", witness_section)
+        self.assertIn("(set-goal byzantine-army-reinforcement 1)", witness_section)
 
     def test_fortified_breach_preserves_attack_reserve(self):
         start = self.per.index(
