@@ -105,6 +105,13 @@ class ByzantinePlaytestOpeningTest(unittest.TestCase):
         self.assertIn("(food-amount >= 500)", bank)
         self.assertIn("(gold-amount >= 200)", bank)
         self.assertNotIn("(goal byzantine-feudal-bank-state -1)", self.per)
+        declaration = self.per.index("(defconst byzantine-feudal-bank-state 160)")
+        first_use = self.per.index("(goal byzantine-feudal-bank-state")
+        self.assertLess(
+            declaration,
+            first_use,
+            "Feudal bank Goal defconst must precede its first native use",
+        )
 
         villager = self._find_rule(
             "(train villager)",
