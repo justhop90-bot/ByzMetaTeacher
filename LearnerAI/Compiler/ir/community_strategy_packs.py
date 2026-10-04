@@ -654,7 +654,7 @@ def community_strategy_demands(
                 "(and (unit-type-count-total villager >= 13) "
                 "(and (building-type-count-total lumber-camp >= 1) "
                 "(and (building-type-count-total mining-camp >= 1) "
-                "(food-amount >= 50))))"
+                "(food-amount >= 50)))))"
             ),
             age_observation_ref="strategy-standard-loom-admission",
             tech_name="loom",
