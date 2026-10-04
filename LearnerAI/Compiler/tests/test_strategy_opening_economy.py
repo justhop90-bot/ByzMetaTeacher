@@ -256,10 +256,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(gold-amount < 200)",
             " ".join(f.source for f in rules["economy-controller-feudal-bank-prioritize-gold"].facts),
         )
-        self.assertNotIn(
-            "economy-controller-feudal-bank-prioritize-food",
-            {"economy-controller-feudal-bank-prioritize-food"},
-        )
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("economy-controller-feudal-bank-prioritize-food", output)
         self.assertIn("economy-controller-feudal-bank-prioritize-gold", output)
