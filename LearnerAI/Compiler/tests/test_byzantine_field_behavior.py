@@ -179,6 +179,73 @@ class ByzantineFieldBehaviorTest(unittest.TestCase):
             controller,
         )
 
+    def test_failed_wood_search_hands_off_gold_once_then_releases_to_lumber(self):
+        controller = self._section_from(
+            "; BYZANTINE THREE-LAYER CAMP PLACEMENT CONTROLLER",
+            "; RESOURCE-CENTERED CAMP PLACEMENT EXECUTION",
+        )
+        self.assertIn(
+            "(defconst byzantine-resource-camp-gold-handoff 795)",
+            self.per,
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-gold-handoff 0)",
+            self.per,
+        )
+
+        # Normal lumber priority is disabled only while the one-pass handoff is active.
+        self.assertIn(
+            "(goal byzantine-resource-camp-gold-handoff 0)\n    (not (town-under-attack))",
+            controller.split(
+                "(defrule\n    (goal byzantine-resource-camp-state byzantine-resource-camp-state-idle)",
+                1,
+            )[1],
+        )
+        self.assertIn(
+            "(goal byzantine-resource-camp-gold-handoff 1)\n        (not\n            (or\n                (goal demand-economy-lumber-camp-floor-1 1)",
+            controller,
+        )
+
+        failure = controller[
+            controller.index(
+                "(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-wood)\n"
+                "    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)"
+            ):
+        ]
+        failure_end = failure.index(
+            "(defrule",
+            1,
+        )
+        failure = failure[:failure_end]
+
+        self.assertIn("(goal byzantine-resource-camp-gold-handoff 0)", failure)
+        self.assertIn("(set-goal byzantine-resource-camp-gold-handoff 1)", failure)
+
+        gold_failure = controller[
+            controller.index(
+                "(goal byzantine-resource-camp-kind byzantine-resource-camp-kind-gold)\n"
+                "    (goal byzantine-resource-camp-radius-stage byzantine-resource-camp-radius-stage-remote)"
+            ):
+        ]
+        gold_failure_end = gold_failure.index("(defrule", 1)
+        gold_failure = gold_failure[:gold_failure_end]
+        self.assertIn("(goal byzantine-resource-camp-gold-handoff 1)", gold_failure)
+        self.assertIn("(set-goal byzantine-resource-camp-gold-handoff 0)", gold_failure)
+
+        gold_complete = self._section_from(
+            "; economy-gold-camp-floor-1",
+            "; economy-gold-camp-floor-2",
+        )
+        self.assertIn(
+            "(set-goal byzantine-resource-camp-gold-handoff 0)",
+            gold_complete,
+        )
+
+        self.assertEqual(
+            self.per.count("(set-goal byzantine-resource-camp-gold-handoff 1)"),
+            1,
+        )
+
     def test_resource_camp_search_state_goal_fields_are_declared(self):
         for expected in (
             "(defconst byzantine-resource-camp-search-state-local-total 791)",
