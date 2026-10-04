@@ -49,6 +49,7 @@
 ; Native parser bindings for symbolic unit/building/status/SN identifiers.
 ; These are engine IDs used by command arguments; they do not change runtime policy.
 (defconst monk 125)
+(defconst relic 285)
 (defconst town-center 109)
 (defconst castle 82)
 (defconst keep 235)
@@ -86,6 +87,8 @@
 (defconst sn-object-repair-level 246)
 (defconst sn-wall-targeting-mode 262)
 (defconst sn-cap-civilian-builders 4)
+(defconst sn-relic-return-distance 23)
+(defconst sn-relic-defend-priority 55)
 
 (defconst sn-gate-type-for-wall 304)
 (defconst wall-class 927)
@@ -1447,6 +1450,17 @@
     (up-get-object-data object-data-id 165)
 )
 
+; Native relic behavior defaults. Keep the standard return path enabled so a
+; Monk carrying a relic can complete the pickup-and-drop cycle instead of
+; wandering indefinitely.
+(defrule
+    (true)
+=>
+    (set-strategic-number sn-relic-return-distance 255)
+    (set-strategic-number sn-relic-defend-priority 1)
+    (disable-self)
+)
+
 ; Native DUC rule: byzantine-relic-control-init
 (defrule
     (goal byzantine-relic-control-state -1)
@@ -1458,23 +1472,25 @@
     (disable-timer byzantine-monk-defense-convert-timer)
 )
 
-; Acquisition: two monks are a deliberately small escort package. The search
-; target is reset every pass so stale relic positions do not become permanent truth.
+; Relic acquisition: a single newly-trained Monk is sufficient to start the
+; relic race. Relics are Gaia object 285, not Monk object 125. Reset the focus
+; to Gaia for this search, then let the normal focus-setting rules own it again.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-relic-control-state byzantine-relic-control-idle)
     (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 2)
+    (unit-type-count-total monk >= 1)
     (or
         (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
         (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
     )
 =>
     (up-full-reset-search)
-    (up-find-remote c: 125 c: 1)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (up-find-remote c: relic c: 1)
     (up-set-target-object search-remote c: 0)
-    (up-find-local c: monk c: 2)
-    (up-target-objects 0 action-move -1 -1)
+    (up-find-local c: monk c: 1)
+    (up-target-objects 0 action-default -1 stance-defensive)
     (set-goal byzantine-relic-control-state byzantine-relic-control-acquire)
     (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
 )
@@ -1493,10 +1509,10 @@
     )
 =>
     (up-full-reset-search)
-    (up-find-remote c: 125 c: 1)
+    (up-find-remote c: monk c: 1)
     (up-set-target-object search-remote c: 0)
     (up-find-local c: monk c: 1)
-    (up-target-objects 0 action-move -1 -1)
+    (up-target-objects 0 action-default -1 stance-aggressive)
     (set-goal byzantine-relic-control-state byzantine-relic-control-deny)
     (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
 )
@@ -20076,6 +20092,7 @@
     (not (up-research-status c: 231 >= 2))
     (not (research-completed 231))
     (current-age >= castle-age)
+    (unit-type-count-total monk >= 2)
     (can-research-with-escrow sanctity)
 =>
     (release-escrow food)
@@ -20144,6 +20161,7 @@
     (not (up-research-status c: 252 >= 2))
     (not (research-completed 252))
     (current-age >= castle-age)
+    (unit-type-count-total monk >= 2)
     (can-research-with-escrow fervor)
 =>
     (release-escrow food)
