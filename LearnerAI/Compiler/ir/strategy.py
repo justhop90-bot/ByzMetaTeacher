@@ -3084,11 +3084,22 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
                 parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                parse_expression("(not " + attack_package_ready + ")", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
                 parse_expression(
-                    "(or (not " + attack_package_ready + ") "
-                    "(not " + standard_siege_ready + "))",
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
                     SourceLocation(1),
                 ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-siege-not-ready",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                parse_expression("(not " + standard_siege_ready + ")", SourceLocation(1)),
             ),
             actions=(
                 parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
