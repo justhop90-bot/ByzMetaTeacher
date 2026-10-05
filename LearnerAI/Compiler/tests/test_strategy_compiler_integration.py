@@ -273,13 +273,17 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(
             output.count("(up-target-objects 1 action-attack-move -1 -1)"),
-            4,
+            8,
         )
         for identity in (
-            "byzantine-endgame-objective-dispatch-siege",
-            "byzantine-endgame-objective-dispatch-defense",
-            "byzantine-endgame-objective-dispatch-production",
-            "byzantine-endgame-objective-dispatch-town-center",
+            "byzantine-endgame-objective-dispatch-siege-committed",
+            "byzantine-endgame-objective-dispatch-siege-raid-split",
+            "byzantine-endgame-objective-dispatch-defense-committed",
+            "byzantine-endgame-objective-dispatch-defense-raid-split",
+            "byzantine-endgame-objective-dispatch-production-committed",
+            "byzantine-endgame-objective-dispatch-production-raid-split",
+            "byzantine-endgame-objective-dispatch-town-center-committed",
+            "byzantine-endgame-objective-dispatch-town-center-raid-split",
         ):
             marker = f"; Native DUC rule: {identity}"
             self.assertIn(marker, output)
@@ -292,6 +296,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(up-set-target-object search-remote c: 0)",
                 rule,
             )
+            self.assertIn("(up-filter-include cmdid-military -1 -1 -1)", rule)
+            self.assertIn("(up-find-local c: -1 c: 240)", rule)
+            self.assertIn("(up-remove-objects search-local 19 != 2)", rule)
+            self.assertIn("(up-remove-objects search-local 1 == 125)", rule)
+            self.assertNotIn("(or ", rule)
             self.assertIn(
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 rule,
