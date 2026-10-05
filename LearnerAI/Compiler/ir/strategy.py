@@ -1730,7 +1730,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             actions=(
                 parse_expression(f"(set-strategic-number sn-native-36 {plan.push_contract.attack_group_count})", SourceLocation(1)),
                 parse_expression(f"(set-strategic-number sn-native-227 {plan.push_contract.attack_soldier_percent})", SourceLocation(1)),
-                parse_expression(f"(enable-timer {push_timer_name} 20)", SourceLocation(1)),
+                parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
             ),
         ),
