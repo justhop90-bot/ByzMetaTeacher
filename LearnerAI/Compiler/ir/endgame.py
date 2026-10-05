@@ -47,6 +47,7 @@ class EndgamePushContract:
     minimum_group_size: int
     maximum_group_size: int
     live_witness_ref: str
+    cleared_witness_ref: str
     frontier: tuple[EndgameFrontierState, ...]
 
     def __post_init__(self) -> None:
@@ -60,6 +61,8 @@ class EndgamePushContract:
             raise ValueError("endgame attack group size bounds are invalid")
         if not self.live_witness_ref.strip():
             raise ValueError("endgame push contract requires a live witness reference")
+        if not self.cleared_witness_ref.strip():
+            raise ValueError("endgame push contract requires a cleared witness reference")
         if not self.frontier:
             raise ValueError("endgame push contract requires at least one frontier state")
         if len(self.frontier) != len(set(self.frontier)):
@@ -167,6 +170,7 @@ class EndgamePlan:
         }
         if self.push_contract is not None:
             references.add(self.push_contract.live_witness_ref)
+            references.add(self.push_contract.cleared_witness_ref)
         return tuple(sorted(references))
 
 
