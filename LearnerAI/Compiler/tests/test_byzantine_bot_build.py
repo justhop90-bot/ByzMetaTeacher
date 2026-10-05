@@ -24,30 +24,20 @@ class ByzantineBotBuildTests(unittest.TestCase):
         self.assertGreater(len(first.encode("utf-8")), 0)
         self.assertEqual(len(NATIVE_PARSER_REVISION), 40)
 
-    def test_canonical_build_fails_closed_without_declared_runtime_overlay(self):
-        import tempfile
-        from pathlib import Path
-
-        from tools import build_byzantine_bot
-
-        original_root = build_byzantine_bot.ROOT
-        original_overlay = Path("runtime/byzantine/Byzantine.runtime-overlay.per")
-        try:
-            self.assertFalse(
-                original_overlay.is_file(),
-                "main is expected to remain fail-closed until the canonical overlay is extracted",
-            )
-            with self.assertRaisesRegex(RuntimeError, r"BYZ-ASSEMBLY-003"):
-                build_byzantine_bot.build(Path("dist/byzantine"))
-        finally:
-            build_byzantine_bot.ROOT = original_root
-
-    def test_canonical_builder_no_longer_uses_old_dist_artifact_name(self):
+    def test_canonical_builder_uses_woven_runtime_contract(self):
         from pathlib import Path
 
         source = Path("tools/build_byzantine_bot.py").read_text(encoding="utf-8")
-        self.assertNotIn('output_dir / "Byzantine.per"', source)
-        self.assertIn('output_dir / "Byzantine.compiler.per"', source)
+        self.assertIn('runtime_artifact = output_dir / "Byzantine.runtime.per"', source)
+        self.assertIn("verify_woven_runtime_lineage", source)
+        self.assertNotIn("canonical Byzantine runtime overlay is missing", source)
+
+    def test_canonical_builder_retains_authoritative_root_artifact(self):
+        from pathlib import Path
+
+        source = Path("tools/build_byzantine_bot.py").read_text(encoding="utf-8")
+        self.assertIn('root_runtime = root / PROMOTED_ARTIFACT', source)
+        self.assertIn('"runtime_order_owned_by": "checked-in Byzantine.per"', source)
 
 
 if __name__ == "__main__":
