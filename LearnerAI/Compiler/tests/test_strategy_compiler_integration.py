@@ -310,6 +310,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         admit_facts = tuple(fact.source for fact in admit.facts)
         admit_actions = tuple(action.source for action in admit.actions)
         self.assertIn("(current-age >= castle-age)", admit_facts)
+        self.assertIn(
+            "(goal byzantine-endgame-push-state 1)",
+            admit_facts,
+        )
         self.assertIn("(goal byzantine-army-attack-ready 1)", admit_facts)
         self.assertIn("(goal byzantine-siege-approach byzantine-siege-approach-normal)", admit_facts)
         self.assertIn("(set-goal byzantine-offensive-objective-claim 1)", admit_actions)
