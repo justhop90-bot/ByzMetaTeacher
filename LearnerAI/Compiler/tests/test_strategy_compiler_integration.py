@@ -334,13 +334,22 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("byzantine-endgame-win-condition", output)
         self.assertIn("Verified frontier ground creates forward-production pressure", output)
 
+        exact_frontier_match = (
+            "(or (and (goal byzantine-endgame-frontier 1) "
+            "(goal byzantine-endgame-frontier-verified 1)) "
+            "(or (and (goal byzantine-endgame-frontier 2) "
+            "(goal byzantine-endgame-frontier-verified 2)) "
+            "(and (goal byzantine-endgame-frontier 3) "
+            "(goal byzantine-endgame-frontier-verified 3))))"
+        )
         for rule_id in (
+            "byzantine-endgame-mode-recovery",
             "byzantine-endgame-mode-resource-denial",
             "byzantine-endgame-mode-attrition",
             "byzantine-endgame-mode-breakthrough",
         ):
             facts = tuple(fact.source for fact in rules[rule_id].facts)
-            self.assertIn("(goal byzantine-endgame-frontier-verified 1)", facts)
+            self.assertIn(exact_frontier_match, facts)
 
         conversion_demands = tuple(
             demand for demand in compilation.demands
