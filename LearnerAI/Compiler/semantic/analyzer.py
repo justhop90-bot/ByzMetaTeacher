@@ -176,7 +176,9 @@ def parse_expression(source: str, location=None) -> Expression:
             ) from exc
         raise
     if end != len(tokens):
-        raise CompileError("trailing tokens after .per expression")
+        raise CompileError(
+            f"trailing tokens after .per expression: {source}"
+        )
     if expr.head in _LOGICAL_ARITY and len(expr.args) != _LOGICAL_ARITY[expr.head]:
         raise CompileError(
             f"logical operator '{expr.head}' requires "
