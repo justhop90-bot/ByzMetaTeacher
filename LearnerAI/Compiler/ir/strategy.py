@@ -3470,22 +3470,12 @@ def _default_byzantine_duc_plan(
                             f"(up-filter-distance c: 0 c: {objective_control.release_search_radius})",
                             SourceLocation(1),
                         ),
-                        parse_expression(
-                            "(up-modify-sn sn-focus-player-number g:= "
-                            "byzantine-offensive-enemy-player)",
-                            SourceLocation(1),
-                        ),
                         *tuple(
                             parse_expression(
                                 f"(up-find-remote c: {native_id} c: 1)",
                                 SourceLocation(1),
                             )
                             for native_id in native_ids
-                        ),
-                        parse_expression(
-                            "(up-modify-sn sn-focus-player-number g:= "
-                            "byzantine-scout-focus-player)",
-                            SourceLocation(1),
                         ),
                     ),
                     lifecycle=(
