@@ -240,6 +240,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-offensive-objective-search",
             "byzantine-offensive-enemy-player",
             "byzantine-offensive-objective-claim",
+            "byzantine-offensive-objective-release-reason",
+            "byzantine-offensive-objective-release-search",
             "byzantine-offensive-objective-timer",
         ):
             self.assertIn(expected, state_ids)
@@ -248,6 +250,12 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertEqual(constants["byzantine-offensive-objective-state-idle"], 0)
         self.assertEqual(constants["byzantine-offensive-objective-state-witness"], 6)
         self.assertEqual(constants["byzantine-offensive-objective-class-town-center"], 4)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-none"], 0)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-completed"], 1)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-lost-out-of-bounds"], 2)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-failed-execution"], 3)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-fortification-abort"], 4)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-tc-exhausted"], 5)
 
         initialize = next(
             rule for rule in control.rules
@@ -257,6 +265,14 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(set-goal byzantine-offensive-objective-claim 0)",
             tuple(action.source for action in initialize.actions),
         )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason 0)",
+            tuple(action.source for action in initialize.actions),
+        )
+        states_by_id = {state.identifier: state for state in control.states}
+        self.assertEqual(states_by_id["byzantine-offensive-objective-release-search"].request.width, 4)
+        self.assertEqual(states_by_id["byzantine-offensive-objective-release-search"].request.role.value, "NATIVE_OUTPUT")
+        self.assertEqual(states_by_id["byzantine-offensive-objective-release-reason"].request.role.value, "PERSISTENT_STATE")
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
         self.assertIn(
