@@ -32,7 +32,7 @@ from .endgame import (
     EndgameWinCondition,
     validate_endgame_plan,
 )
-from .role_separation import (
+from .imperial_military import (\n    ImperialMilitaryBand,\n    ImperialMilitaryReason,\n    ImperialMilitaryPlan,\n    ImperialMilitaryInput,\n    ImperialMilitaryDecision,\n    default_imperial_military_plan,\n    resolve_imperial_military,\n)\n\nfrom .role_separation import (
     NativeRoleRule,
     NativeRoleSeparationPlan,
     RoleControllerState,
