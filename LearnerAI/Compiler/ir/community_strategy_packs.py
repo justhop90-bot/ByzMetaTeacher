@@ -574,22 +574,22 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-imperial-cataphract-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count cataphract < 12))",
+            "(and (current-age >= imperial-age) (unit-type-count cataphract < 18))",
             effective.unit_line("cataphract-line").provenance,
         ),
         _observation(
             "strategy-imperial-varangian-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count varangian-guard < 12))",
+            "(and (current-age >= imperial-age) (unit-type-count varangian-guard < 14))",
             effective.unit_line("varangian-guard-line").provenance,
         ),
         _observation(
             "strategy-imperial-ram-replacement",
-            "(and (current-age >= imperial-age) (or (unit-type-count 422 < 2) (or (unit-type-count 548 < 2) (unit-type-count 1258 < 2))))",
+            "(and (current-age >= imperial-age) (or (unit-type-count 422 < 8) (or (unit-type-count 548 < 8) (unit-type-count 1258 < 8))))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
             "strategy-imperial-trebuchet-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count trebuchet < 2))",
+            "(and (current-age >= imperial-age) (unit-type-count trebuchet < 8))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
@@ -1323,7 +1323,7 @@ def community_strategy_demands(
                 minimum=18,
                 age_guard="(current-age >= imperial-age)",
                 action_symbol="skirmisher-line",
-                witness_symbol="skirmisher-line",
+                witness_symbol="6",
                 release_symbol="6",
                 additional_requirements=("(unit-type-count 6 < 18)",),
             ),
