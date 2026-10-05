@@ -531,8 +531,8 @@ def community_strategy_observations(
         (
             "siege-workshop",
             "(or "
-            "(or (unit-type-count-total 280 > 3) "
-            "(unit-type-count-total 550 > 3)) "
+            "(or (unit-type-count-total 280 > {threshold_minus_one}) "
+            "(unit-type-count-total 550 > {threshold_minus_one})) "
             "(or (unit-type-count-total 331 >= {threshold}) "
             "(unit-type-count-total 36 >= {threshold})))",
             "strategy-production-siege-depth",
@@ -856,7 +856,10 @@ def community_strategy_observations(
         thresholds = (6, 12, 18) if provider != "siege-workshop" else (2, 4, 6)
         for threshold in thresholds:
             identity = f"{base_identity}-{threshold}"
-            expression = expression_template.format(threshold=threshold)
+            expression = expression_template.format(
+                threshold=threshold,
+                threshold_minus_one=threshold - 1,
+            )
             observations.append(
                 _observation(
                     identity,
