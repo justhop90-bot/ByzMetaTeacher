@@ -86,6 +86,7 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         self.assertNotIn("byzantine-endgame-push-recover-premium", self.output)
         self.assertIn("byzantine-endgame-push-recover-army-package", self.output)
         self.assertIn("byzantine-endgame-push-recover-siege-package", self.output)
+        self.assertIn("byzantine-endgame-push-siege-not-ready", self.output)
 
 
 if __name__ == "__main__":
