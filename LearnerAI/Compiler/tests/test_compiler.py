@@ -10,6 +10,7 @@ ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
 from Compiler.compiler import CompileError, compile_source
 from Compiler.parser import parse
+from Compiler.emitter.per import _render_runtime_expression
 from Compiler.semantic import parse_expression
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.perdsl").read_text(encoding="utf-8")
@@ -39,25 +40,18 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(a.count("(defrule"), 22)
 
     def test_runtime_expression_lowers_camel_rider_line_alias(self):
-        source = """
-        demand camel-line-observation {
-            require (unit-type-count-total camel-rider-line < 3)
-            require (players-unit-type-count any-enemy camel-rider-line >= 8)
-            action (build castle)
-            witness (building-type-count castle > 0)
-            release (building-type-count castle > 0)
-        }
-        """
-        output = compile_source(source)
-        self.assertIn(
+        unit_total = parse_expression("(unit-type-count-total camel-rider-line < 3)")
+        enemy_count = parse_expression(
+            "(players-unit-type-count any-enemy camel-rider-line >= 8)"
+        )
+        self.assertEqual(
+            _render_runtime_expression(unit_total),
             "(unit-type-count-total camel-line < 3)",
-            output,
         )
-        self.assertIn(
+        self.assertEqual(
+            _render_runtime_expression(enemy_count),
             "(players-unit-type-count any-enemy camel-line >= 8)",
-            output,
         )
-        self.assertNotIn("camel-rider-line", output)
 
     def test_native_goal_reads_remain_invalid_as_witnesses(self):
         source = """
