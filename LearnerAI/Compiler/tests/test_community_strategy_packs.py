@@ -143,6 +143,81 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     demand.identity,
                 )
 
+    def test_imperial_spend_envelope_uses_bounded_resource_thresholds(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        observations = {item.identity: item.expression for item in profile.observations}
+
+        self.assertEqual(
+            observations["strategy-imperial-spend-food"],
+            "(and (current-age >= imperial-age) (food-amount >= 2200))",
+        )
+        self.assertEqual(
+            observations["strategy-imperial-spend-wood"],
+            "(and (current-age >= imperial-age) (wood-amount >= 2200))",
+        )
+        self.assertEqual(
+            observations["strategy-imperial-spend-gold"],
+            "(and (current-age >= imperial-age) (gold-amount >= 2500))",
+        )
+
+    def test_imperial_replacement_demands_follow_standing_floor_loss_and_spend_envelope(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+
+        cataphract = by_id["imperial-cataphract-sustain"]
+        self.assertEqual(cataphract.target.minimum, 12)
+        self.assertEqual(
+            tuple(item.observation_ref for item in cataphract.reason),
+            (
+                "strategy-imperial-spend-gold",
+                "strategy-imperial-cataphract-replacement",
+            ),
+        )
+        self.assertIn(
+            "(unit-type-count-total cataphract < 12)",
+            cataphract.execution.requirements,
+        )
+
+        ram = by_id["imperial-ram-sustain"]
+        self.assertEqual(ram.target.minimum, 4)
+        self.assertIn(
+            "strategy-imperial-ram-replacement",
+            [item.observation_ref for item in ram.reason],
+        )
+        self.assertIn(
+            "(unit-type-count-total battering-ram-line < 4)",
+            ram.execution.requirements,
+        )
+
+    def test_imperial_provider_depth_reopens_after_attrition_floor_loss(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        observations = {item.identity: item.expression for item in profile.observations}
+
+        self.assertIn(
+            "strategy-production-barracks-replacement",
+            observations,
+        )
+        self.assertIn(
+            "(or (unit-type-count-total varangian-guard-line >= 12) "
+            "(unit-type-count 359 >= 12))",
+            observations["strategy-production-barracks-replacement"],
+        )
+        self.assertIn(
+            "strategy-production-barracks-replacement",
+            [
+                evidence.observation_ref
+                for evidence in by_id["imperial-barracks-depth-3"].reason
+            ],
+        )
+        self.assertIn(
+            "strategy-production-barracks-replacement",
+            [
+                evidence.observation_ref
+                for evidence in by_id["imperial-barracks-depth-4"].reason
+            ],
+        )
+
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
