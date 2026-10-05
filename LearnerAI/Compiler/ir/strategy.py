@@ -1657,7 +1657,11 @@ def _strategy_control_plan(profile: StrategyProfile):
         from .camp_control import lower_byzantine_camp_controller
         camp_plan = lower_byzantine_camp_controller(profile.camp_controller, profile)
 
-    age_bank_plan = _age_bank_villager_control_plan()
+    age_bank_plan = (
+        _age_bank_villager_control_plan()
+        if profile.profile_id.startswith("byzantine-")
+        else None
+    )
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
