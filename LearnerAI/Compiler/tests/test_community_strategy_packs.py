@@ -280,7 +280,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         profile = build_byzantine_stock_strategy(self.effective)
         by_id = {item.identity: item for item in profile.demands}
         checks = {
-            "imperial-open-halberdier-standard": ("(goal byzantine-imperial-band-state 1)", 24),
+            "imperial-open-halberdier-standard": ("(up-compare-goal byzantine-imperial-band-state == 1)", 24),
             "imperial-open-halberdier-pressure": ("(goal byzantine-imperial-band-state 1)", 30),
             "imperial-open-halberdier-severe": ("(goal byzantine-imperial-band-state 1)", 36),
             "imperial-open-elite-skirmisher-standard": ("(goal byzantine-imperial-band-state 1)", 24),
@@ -288,10 +288,10 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "imperial-open-elite-skirmisher-severe": ("(goal byzantine-imperial-band-state 1)", 36),
             "imperial-open-hussar-standard": ("(goal byzantine-imperial-band-state 1)", 16),
             "imperial-open-hussar-mobile": ("(goal byzantine-imperial-band-state 1)", 20),
-            "imperial-fortified-halberdier": ("(goal byzantine-imperial-band-state 2)", 24),
+            "imperial-fortified-halberdier": ("(up-compare-goal byzantine-imperial-band-state == 2)", 24),
             "imperial-fortified-elite-skirmisher": ("(goal byzantine-imperial-band-state 2)", 20),
             "imperial-fortified-hussar": ("(goal byzantine-imperial-band-state 2)", 10),
-            "imperial-trash-halberdier-standard": ("(goal byzantine-imperial-band-state 3)", 30),
+            "imperial-trash-halberdier-standard": ("(up-compare-goal byzantine-imperial-band-state == 3)", 30),
             "imperial-trash-halberdier-high": ("(goal byzantine-imperial-band-state 3)", 36),
             "imperial-trash-elite-skirmisher-standard": ("(goal byzantine-imperial-band-state 3)", 30),
             "imperial-trash-elite-skirmisher-high": ("(goal byzantine-imperial-band-state 3)", 36),

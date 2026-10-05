@@ -1444,9 +1444,9 @@ def community_strategy_demands(
     # Band-specific Imperial scaling sits above the standing floor.
     # Each line uses mutually exclusive target tiers so one production line has
     # exactly one active upper target at a time.
-    imperial_band_open = "(goal byzantine-imperial-band-state 1)"
-    imperial_band_fortified = "(goal byzantine-imperial-band-state 2)"
-    imperial_band_trash = "(goal byzantine-imperial-band-state 3)"
+    imperial_band_open = "(up-compare-goal byzantine-imperial-band-state == 1)"
+    imperial_band_fortified = "(up-compare-goal byzantine-imperial-band-state == 2)"
+    imperial_band_trash = "(up-compare-goal byzantine-imperial-band-state == 3)"
     enemy_mounted_8 = (
         "(or (players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
