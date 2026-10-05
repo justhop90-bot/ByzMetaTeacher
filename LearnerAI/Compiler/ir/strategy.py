@@ -3016,7 +3016,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     premium_ready = (
         "(or (unit-type-count cataphract >= 12) "
         "(or (unit-type-count varangian-guard >= 12) "
-        "(or (unit-type-count 492 >= 12)))"
+        "(or (unit-type-count 492 >= 12))))"
     )
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
     standard_siege_ready_facts = (
