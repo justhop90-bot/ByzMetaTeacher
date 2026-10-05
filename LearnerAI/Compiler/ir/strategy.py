@@ -1710,6 +1710,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
             ),
             actions=(
+                parse_expression("(set-strategic-number sn-native-16 6)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-26 40)", SourceLocation(1)),
                 parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
                 parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
