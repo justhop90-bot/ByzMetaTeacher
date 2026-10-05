@@ -791,9 +791,7 @@ def community_strategy_observations(
         (
             "strategy-production-stable-replacement",
             "(and (current-age >= imperial-age) "
-            "(or (unit-type-count cataphract < 12) "
-            "(or (unit-type-count knight < 12) "
-            "(unit-type-count camel-rider < 8))))",
+            "(unit-type-count cataphract < 12))",
         ),
         (
             "strategy-production-range-replacement",
