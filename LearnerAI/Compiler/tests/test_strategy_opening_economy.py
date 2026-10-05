@@ -292,6 +292,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         for fragment in (
             "(set-goal demand-economy-lumber-camp-floor-2 0)",
             "(set-goal demand-economy-gold-camp-floor-2 0)",
+            "(set-goal demand-economy-stone-camp-floor-1 0)",
             "(set-goal demand-adaptive-outpost 0)",
             "(current-age >= feudal-age)",
             "(can-build outpost)",
