@@ -1247,6 +1247,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .recurrent import TimerRequest, TimerState
     from .strategic_number import StrategicNumberOrigin
 
     states: dict[str, NativeControlState] = {}
@@ -1582,6 +1583,21 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
+    stale_state = NativeControlState(
+        "byzantine-army-stale-state",
+        GoalSlotRequest(
+            StorageRequestId(military_owner, "army-stale-state"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    stale_timer = TimerState(
+        "byzantine-army-stale-timer",
+        TimerRequest(
+            StorageRequestId(military_owner, "timer:byzantine-army-stale-timer"),
+            initialization_policy="DISABLE_BEFORE_FIRST_USE",
+            stability_key=f"{profile.profile_id}:byzantine-army-stale-timer",
+        ),
+    )
 
     current_age = "(current-age >= castle-age)"
     allocation = "(goal strategy-posture 4)"
@@ -1745,6 +1761,8 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             siege_approach,
             siege_scale,
             overmatch_state,
+            stale_state,
+            stale_timer,
         ),
         rules=rules,
         constants=(
@@ -1757,6 +1775,10 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             ("byzantine-siege-scale-fortified", 2),
             ("byzantine-army-overmatch-none", 0),
             ("byzantine-army-overmatch-triggered", 1),
+            ("byzantine-army-stale-ready", 0),
+            ("byzantine-army-stale-armed", 1),
+            ("byzantine-army-stale-triggered", 2),
+            ("bt-army-stale-seconds", 90),
         ),
     )
 
