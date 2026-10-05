@@ -94,3 +94,5 @@ jobs:
           git add Byzantine.per
           git commit -m "sync: regenerate Byzantine.per from canonical compiler"
           git push origin HEAD:sync/byzantine-per-endgame-20261005
+
+# second-push trigger after workflow creation
