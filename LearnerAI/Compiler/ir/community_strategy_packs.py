@@ -808,6 +808,11 @@ def community_strategy_demands(
                         witness=witness,
                         release=witness,
                     ),
+                    initial_state=(
+                        LifecycleState.ACTIVE
+                        if floor == 1 and resource is not CampResource.STONE
+                        else LifecycleState.RELEASED
+                    ),
                     provenance=_airef_provenance(
                         effective,
                         "commands/commands-details.html#build",
