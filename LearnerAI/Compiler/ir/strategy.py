@@ -1173,7 +1173,7 @@ def _byzantine_endgame_attack_group_sn_controllers(
     ):
         controllers.append(
             StrategicNumberController(
-                identity=f"byzantine-endgame-push-{native_id}",
+                identity=f"byz-push-{native_id}",
                 native_strategic_number_id=native_id,
                 value=value,
                 layer=StrategicNumberControllerLayer.TEMPORARY,
