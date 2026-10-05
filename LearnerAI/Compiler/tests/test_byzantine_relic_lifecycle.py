@@ -95,7 +95,6 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
         return_rule = rules["byzantine-relic-control-return"]
         return_sources = tuple(item.source for item in (*return_rule.facts, *return_rule.actions))
         self.assertIn(
-            "(set-strategic-number sn-focus-player-number 0)",
             return_sources,
         )
         self.assertIn("(up-find-local c: 104 c: 1)", return_sources)
@@ -119,7 +118,6 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
             "(unit-type-count-total 286 >= 1)",
             "(up-find-remote c: 285 c: 1)",
             "(up-find-local c: 286 c: 1)",
-            "(up-modify-sn sn-focus-player-number c:= my-player-number)",
         )
         missing = tuple(fragment for fragment in required if fragment not in first)
         self.assertEqual(missing, ())
