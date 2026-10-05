@@ -995,11 +995,7 @@ def community_strategy_demands(
                 building=outpost,
                 requirements=(
                     "(current-age >= feudal-age)",
-                    next(
-                        item.expression
-                        for item in observations
-                        if item.identity == "strategy-enemy-pressure"
-                    ),
+                    opening_pressure,
                     "(or (dropsite-min-distance gold >= 7) "
                     "(or (dropsite-min-distance stone >= 7) "
                     "(dropsite-min-distance wood >= 7)))",
