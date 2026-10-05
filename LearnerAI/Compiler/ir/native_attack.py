@@ -240,6 +240,7 @@ class NativeAttackLifecyclePlan:
         return NativeAttackLifecyclePlan(
             rules=self.rules,
             strategic_number_action_attachments=tuple(bound),
+            goal_input_requests=self.goal_input_requests,
         )
 
     @property

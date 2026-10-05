@@ -226,6 +226,145 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_byzantine_stock_lowers_frontier_target_control_through_duc(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+
+        self.assertIsNotNone(compilation.duc_plan)
+        plan = compilation.duc_plan
+        assert plan is not None
+
+        target_rules = tuple(
+            rule for rule in plan.rules
+            if rule.identity.startswith("byzantine-endgame-target-")
+        )
+        self.assertEqual(len(target_rules), 18)
+        for rule in target_rules:
+            sources = tuple(fact.source for fact in rule.facts)
+            self.assertIn("(goal byzantine-offensive-objective-claim 0)", sources)
+            self.assertIn("(current-age >= imperial-age)", sources)
+            actions = tuple(action.source for action in rule.actions)
+            self.assertIn(
+                "(up-set-target-point byzantine-offensive-objective-point)",
+                actions,
+            )
+            self.assertIn("(up-filter-distance c: -1 c: 40)", actions)
+            self.assertIn("(up-set-target-object search-remote c: 0)", actions)
+            self.assertNotIn("(up-target-objects", " ".join(actions))
+            self.assertNotIn("(attack-now)", " ".join(actions))
+            self.assertFalse(
+                any("set-strategic-number sn-native-36" in action for action in actions)
+            )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn(
+            "(up-set-target-point byzantine-offensive-objective-point)",
+            output,
+        )
+        self.assertIn("(up-filter-distance c: -1 c: 40)", output)
+        self.assertIn("; Native DUC rule: byzantine-endgame-target-", output)
+
+    def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = tuple(state.identifier for state in control.states)
+        self.assertIn("byzantine-endgame-push-state", state_ids)
+        self.assertIn("byzantine-endgame-push-timer", state_ids)
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-push-")
+        }
+        self.assertIn("byzantine-endgame-push-admit", rules)
+        self.assertIn("byzantine-endgame-push-live-witness", rules)
+        self.assertIn("byzantine-endgame-push-pulse-expiry", rules)
+        self.assertIn("byzantine-endgame-push-release", rules)
+
+        admit_actions = tuple(action.source for action in rules["byzantine-endgame-push-admit"].actions)
+        self.assertIn("(set-strategic-number sn-native-36 1)", admit_actions)
+        self.assertIn("(set-strategic-number sn-native-227 100)", admit_actions)
+        ready_actions = tuple(action.source for action in rules["byzantine-endgame-push-imperial-ready"].actions)
+        self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
+        self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
+        self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
+
+        live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
+        self.assertIn("(set-strategic-number sn-native-36 0)", live_actions)
+        self.assertIn("(set-strategic-number sn-native-227 75)", live_actions)
+        self.assertIn("(disable-timer byzantine-endgame-push-timer)", live_actions)
+        self.assertIn("(set-goal byzantine-endgame-push-state 3)", live_actions)
+
+        expiry_actions = tuple(action.source for action in rules["byzantine-endgame-push-pulse-expiry"].actions)
+        self.assertIn("(set-strategic-number sn-native-36 0)", expiry_actions)
+        self.assertIn("(disable-timer byzantine-endgame-push-timer)", expiry_actions)
+        self.assertIn("(set-goal byzantine-endgame-push-state 3)", expiry_actions)
+
+        release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
+        self.assertIn("(goal byzantine-endgame-push-state 3)", release_facts)
+        self.assertIn("(attack-soldier-count <= 0)", release_facts)
+        self.assertIn("(unit-type-count cataphract >= 4)", " ".join(release_facts))
+
+        release_actions = tuple(action.source for action in rules["byzantine-endgame-push-release"].actions)
+        self.assertIn("(set-goal byzantine-endgame-push-state 1)", release_actions)
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", output)
+        self.assertIn("(set-strategic-number sn-native-36 0)", output)
+
+    def test_byzantine_endgame_closure_consumes_verified_campaign_state(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        state_ids = tuple(state.identifier for state in control.states)
+        self.assertIn("byzantine-endgame-mode", state_ids)
+        self.assertIn("byzantine-endgame-win-condition", state_ids)
+        rules = {rule.identity: rule for rule in control.rules}
+        self.assertIn("byzantine-endgame-mode-recovery", rules)
+        self.assertIn("byzantine-endgame-mode-resource-denial", rules)
+        self.assertIn("byzantine-endgame-mode-attrition", rules)
+        self.assertIn("byzantine-endgame-mode-breakthrough", rules)
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("byzantine-endgame-frontier-verified", output)
+        self.assertIn("byzantine-endgame-frontier-match", output)
+        self.assertIn("byzantine-endgame-mode", output)
+        self.assertIn("byzantine-endgame-win-condition", output)
+
+        exact_frontier_match = "(goal byzantine-endgame-frontier-match 1)"
+        for rule_id in (
+            "byzantine-endgame-mode-recovery",
+            "byzantine-endgame-mode-resource-denial",
+            "byzantine-endgame-mode-attrition",
+            "byzantine-endgame-mode-breakthrough",
+        ):
+            facts = tuple(fact.source for fact in rules[rule_id].facts)
+            self.assertIn(exact_frontier_match, facts)
+
+        conversion_demands = tuple(
+            demand for demand in self.stock_profile.demands
+            if demand.identity.startswith("imperial-forward-production-")
+        )
+        self.assertTrue(conversion_demands)
+        self.assertTrue(
+            all(demand.execution.action.startswith("(build ")
+                    for demand in conversion_demands)
+        )
+        conversion_rules = tuple(
+            rule for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-conversion-admit-")
+        )
+        self.assertEqual(len(conversion_rules), len(conversion_demands))
+        self.assertTrue(
+            all(
+                exact_frontier_match in tuple(fact.source for fact in rule.facts)
+                for rule in conversion_rules
+            )
+        )
+
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 

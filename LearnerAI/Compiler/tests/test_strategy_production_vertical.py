@@ -20,6 +20,7 @@ import unittest
 from Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_castle_strategy,
+    build_byzantine_stock_strategy,
     compile_strategy_profile,
 )
 from Compiler.ir.civ_profile import resolve_effective_civ
@@ -229,7 +230,8 @@ class StrategyProductionVerticalTests(unittest.TestCase):
         self.assertIn(SPEARS, done.strategically_complete_demands)
 
     def test_range_depth_uses_native_crossbowman_identifier(self):
-        artifact = compile_strategy_profile(self.profile, self.effective)
+        stock_profile = build_byzantine_stock_strategy(self.effective)
+        artifact = compile_strategy_profile(stock_profile, self.effective)
         self.assertIn(
             "(or (unit-type-count-total crossbowman >= 6) "
             "(unit-type-count-total skirmisher-line >= 6))",

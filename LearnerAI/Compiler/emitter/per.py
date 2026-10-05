@@ -114,7 +114,11 @@ def emit(
 ) -> str:
     registry = registry or default_de_registry()
     if control_plan is not None:
-        validate_native_control_plan(control_plan, registry)
+        validate_native_control_plan(
+            control_plan,
+            registry,
+            external_goal_states=tuple(f"demand-{demand.name}" for demand in demands),
+        )
     if duc_plan is not None:
         registry.validate_duc_plan(duc_plan)
     native_attack_plan = (

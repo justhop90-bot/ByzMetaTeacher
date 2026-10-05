@@ -1580,6 +1580,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         Primitive("up-train-site-ready", "FACT", "ADMISSIBILITY", 2, 2),
         Primitive("building-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("unit-type-count", "FACT", "OBSERVATION", 3, 3),
+        Primitive("attack-soldier-count", "FACT", "OBSERVATION", 2, 2, completion_witness=False),
         Primitive("unit-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("up-research-status", "FACT", "OBSERVATION", 4, 4, completion_witness=False),
         Primitive("can-train", "FACT", "FEASIBILITY", 1, 1),

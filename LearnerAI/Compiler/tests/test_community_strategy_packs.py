@@ -1,5 +1,7 @@
 import unittest
 
+from Compiler.ir.game_data import Age
+
 from Compiler.clients.basilisk import ByzantineProfile, resolve_effective_civ
 from Compiler.ir.community_strategy_packs import build_byzantine_stock_strategy
 from Compiler.ir.strategy import (
@@ -143,12 +145,130 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     demand.identity,
                 )
 
+    def test_imperial_spend_envelope_uses_bounded_resource_thresholds(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        observations = {item.identity: item.expression for item in profile.observations}
+
+        self.assertEqual(
+            observations["strategy-imperial-spend-food"],
+            "(and (current-age >= imperial-age) (food-amount >= 2200))",
+        )
+        self.assertEqual(
+            observations["strategy-imperial-spend-wood"],
+            "(and (current-age >= imperial-age) (wood-amount >= 2200))",
+        )
+        self.assertEqual(
+            observations["strategy-imperial-spend-gold"],
+            "(and (current-age >= imperial-age) (gold-amount >= 2500))",
+        )
+
+    def test_imperial_replacement_demands_follow_standing_floor_loss_and_spend_envelope(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+
+        cataphract = by_id["imperial-cataphract-sustain"]
+        self.assertEqual(cataphract.target.minimum, 30)
+        self.assertEqual(
+            tuple(item.observation_ref for item in cataphract.reason),
+            (
+                "strategy-imperial-spend-food",
+                "strategy-imperial-spend-gold",
+                "strategy-imperial-cataphract-replacement",
+            ),
+        )
+        self.assertIn(
+            "(unit-type-count-total cataphract-line < 30)",
+            cataphract.execution.requirements,
+        )
+        self.assertIn(
+            "strategy-imperial-cataphract-replacement",
+            [item.observation_ref for item in cataphract.reason],
+        )
+
+        ram = by_id["imperial-ram-sustain"]
+        self.assertEqual(ram.target.minimum, 8)
+        self.assertIn(
+            "strategy-imperial-ram-replacement",
+            [item.observation_ref for item in ram.reason],
+        )
+        self.assertIn(
+            "(unit-type-count-total battering-ram-line < 8)",
+            ram.execution.requirements,
+        )
+
+    def test_imperial_sustain_demands_run_to_their_declared_targets(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        expected = {
+            "imperial-cataphract-sustain": 30,
+            "imperial-varangian-sustain": 24,
+            "imperial-ram-sustain": 8,
+            "imperial-trebuchet-sustain": 8,
+        }
+        for identity, minimum in expected.items():
+            demand = by_id[identity]
+            self.assertIn(
+                f"(unit-type-count-total {demand.execution.action.split()[-1].rstrip(')')} < {minimum})",
+                demand.execution.requirements,
+            )
+            self.assertFalse(
+                any("< 12)" in requirement or "< 2)" in requirement for requirement in demand.execution.requirements),
+                demand.identity,
+            )
+
+    def test_imperial_provider_depth_reopens_after_attrition_floor_loss(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        observations = {item.identity: item.expression for item in profile.observations}
+
+        self.assertIn(
+            "strategy-production-barracks-replacement",
+            observations,
+        )
+        self.assertEqual(
+            observations["strategy-production-barracks-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count varangian-guard < 12) "
+            "(unit-type-count 359 < 12)))",
+        )
+        self.assertIn(
+            "strategy-production-barracks-replacement",
+            [
+                evidence.observation_ref
+                for evidence in by_id["imperial-barracks-depth-3"].reason
+            ],
+        )
+        self.assertIn(
+            "strategy-production-barracks-replacement",
+            [
+                evidence.observation_ref
+                for evidence in by_id["imperial-barracks-depth-4"].reason
+            ],
+        )
+
+    def test_imperial_attack_strategic_numbers_are_owned_by_endgame_push_control(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        modes = {mode.identity: mode for mode in profile.strategic_number_modes}
+        for identity in (
+            "attack-groups-feudal",
+            "attack-groups-castle",
+            "attack-allocation-flush",
+            "attack-allocation-rush",
+            "attack-allocation-boom",
+            "attack-allocation-castle-power",
+        ):
+            self.assertEqual(modes[identity].maximum_age, (
+                Age.FEUDAL if identity == "attack-groups-feudal" else Age.CASTLE
+            ))
+
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
         self.assertTrue({18, 36, 42, 227}.issubset(sn_ids))
         self.assertIsNotNone(profile.attack_plan)
         self.assertIsNotNone(profile.duc_plan)
+        self.assertIsNotNone(profile.endgame_plan)
+        self.assertEqual(profile.endgame_plan.identity, "byzantine-endgame-v1")
 
     def test_stock_profile_lowers_without_creating_a_second_lifecycle_model(self):
         profile = build_byzantine_stock_strategy(self.effective)

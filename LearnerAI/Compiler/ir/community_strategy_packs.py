@@ -30,11 +30,28 @@ from .strategy import (
     CapabilityRecoveryContract as _CapabilityRecoveryContract,
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
 )
+from .endgame import (
+    EndgameMode as _EndgameMode,
+    EndgamePolicyRule as _EndgamePolicyRule,
+    EndgamePlan as _EndgamePlan,
+    EndgameWinCondition as _EndgameWinCondition,
+    EndgameFrontierState as _EndgameFrontierState,
+    EndgamePushContract as _EndgamePushContract,
+    EndgameTargetCandidate as _EndgameTargetCandidate,
+    EndgameConversionContract as _EndgameConversionContract,
+    EndgameTargetControlContract as _EndgameTargetControlContract,
+    EndgameTargetQueryKind as _EndgameTargetQueryKind,
+)
 from .versioning import EvidenceKind, EvidenceRef
 from .map_profile import default_byzantine_map_profiles
 from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
 from .camp_control import CampResource, default_byzantine_camp_controller
+
+_ENDGAME_CATAPHRACT_TARGET = 30
+_ENDGAME_VARANGIAN_TARGET = 24
+_ENDGAME_RAM_TARGET = 8
+_ENDGAME_TREBUCHET_TARGET = 8
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
@@ -173,12 +190,23 @@ def _production_depth_demand(
     reason_label: str,
     age_guard: str,
     standing_demand: str,
+    replacement_reason_ref: str | None = None,
+    replacement_expression: str | None = None,
 ) -> _StrategicDemandSpec:
     building_token = _slug(building.name)
     requirements = [
         age_guard,
         standing_demand,
     ]
+    if replacement_reason_ref is not None:
+        if replacement_expression is None:
+            raise ValueError("replacement_reason_ref requires replacement_expression")
+        requirements[-1] = (
+            "(or "
+            f"{standing_demand} "
+            f"{replacement_expression}"
+            ")"
+        )
     if previous_floor > 0:
         requirements.append(
             f"(building-type-count-total {building_token} >= {previous_floor})"
@@ -189,7 +217,7 @@ def _production_depth_demand(
             f"(can-build {building_token})",
         )
     )
-    return _build_demand(
+    demand = _build_demand(
         identity=identity,
         owner="production-depth",
         posture=posture,
@@ -201,6 +229,18 @@ def _production_depth_demand(
         target_witness=f"(building-type-count {building_token} >= {floor})",
         release=f"(building-type-count {building_token} >= {floor})",
     )
+    if replacement_reason_ref is not None:
+        demand = replace(
+            demand,
+            reason=(
+                *demand.reason,
+                _persistent(
+                    f"{identity}:attrition-replacement",
+                    replacement_reason_ref,
+                ),
+            ),
+        )
+    return demand
 
 
 def _research_demand(
@@ -332,6 +372,73 @@ def _training_demand(
     )
 
 
+
+def _endgame_training_demand(
+    *,
+    effective: EffectiveCivData,
+    identity: str,
+    owner: str,
+    priority: _StrategicPriority,
+    line: str,
+    minimum: int,
+    reason_refs: tuple[str, ...],
+    reason_labels: tuple[str, ...],
+    requirement_expressions: tuple[str, ...],
+    action_symbol: str | None = None,
+    witness_symbol: str | None = None,
+) -> _StrategicDemandSpec:
+    if len(reason_refs) != len(reason_labels):
+        raise ValueError("endgame training reason refs/labels must have equal length")
+    provider = _provider_for_line(effective, line)
+    action_symbol = action_symbol or line
+    witness_symbol = witness_symbol or action_symbol
+    reasons = tuple(
+        _persistent(label, reference)
+        for reference, label in zip(reason_refs, reason_labels)
+    )
+    requirements = (
+        "(current-age >= imperial-age)",
+        *requirement_expressions,
+        f"(can-train-with-escrow {action_symbol})",
+        f"(unit-type-count-total {action_symbol} < {minimum})",
+    )
+    return _StrategicDemandSpec(
+        identity=identity,
+        owner=owner,
+        production_arbitration_group="production",
+        posture=_StrategyPosture.CASTLE_POWER,
+        priority=priority,
+        reason=reasons,
+        admissibility=(
+            _persistent(
+                f"{identity}:imperial-admission",
+                "strategy-imperial-age",
+            ),
+        ),
+        invalidation=(),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.TRAIN,
+            "unit-line",
+            line,
+            provider,
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.CURRENT_QUEUED,
+            "unit-line",
+            line,
+            minimum=minimum,
+        ),
+        opportunity_cost=None,
+        execution=_ExecutionDemandTemplate(
+            requirements=requirements,
+            action=f"(train {action_symbol})",
+            witness=f"(unit-type-count {witness_symbol} >= {minimum})",
+            release=f"(unit-type-count {witness_symbol} >= {minimum})",
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+
+
 _RESEARCH_PACK = (
     # Feudal economic multipliers take precedence over generic support research,
     # but the execution guard still yields whenever Castle Age is natively feasible.
@@ -395,11 +502,7 @@ def community_strategy_observations(
         ),
         (
             "siege-workshop",
-            "(or (or (unit-type-count-total mangonel-line >= {threshold}) "
-            "(unit-type-count-total trebuchet >= {threshold})) "
-            "(or (unit-type-count-total bombard-cannon >= {threshold}) "
-            "(unit-type-count-total battering-ram-line >= {threshold}))"
-            ")",
+            "(unit-type-count-total mangonel-line >= {threshold})",
             "strategy-production-siege-depth",
         ),
     )
@@ -414,6 +517,51 @@ def community_strategy_observations(
             "strategy-imperial-age",
             "(current-age >= imperial-age)",
             effective.age_advance(Age.IMPERIAL).provenance,
+        ),
+        _observation(
+            "strategy-endgame-attack-package-live",
+            "(attack-soldier-count > 0)",
+            _airef_provenance(effective, "commands/commands-details.html#attack-soldier-count"),
+        ),
+        _observation(
+            "strategy-endgame-attack-package-cleared",
+            "(attack-soldier-count <= 0)",
+            _airef_provenance(effective, "commands/commands-details.html#attack-soldier-count"),
+        ),
+        _observation(
+            "strategy-imperial-spend-food",
+            "(and (current-age >= imperial-age) (food-amount >= 2200))",
+            _airef_provenance(effective, "commands/commands-details.html#food-amount"),
+        ),
+        _observation(
+            "strategy-imperial-spend-wood",
+            "(and (current-age >= imperial-age) (wood-amount >= 2200))",
+            _airef_provenance(effective, "commands/commands-details.html#wood-amount"),
+        ),
+        _observation(
+            "strategy-imperial-spend-gold",
+            "(and (current-age >= imperial-age) (gold-amount >= 2500))",
+            _airef_provenance(effective, "commands/commands-details.html#gold-amount"),
+        ),
+        _observation(
+            "strategy-imperial-cataphract-replacement",
+            "(and (current-age >= imperial-age) (unit-type-count cataphract < 12))",
+            effective.unit_line("cataphract-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-varangian-replacement",
+            "(and (current-age >= imperial-age) (unit-type-count varangian-guard < 12))",
+            effective.unit_line("varangian-guard-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-ram-replacement",
+            "(and (current-age >= imperial-age) (or (unit-type-count 422 < 2) (or (unit-type-count 548 < 2) (unit-type-count 1258 < 2))))",
+            _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
+        ),
+        _observation(
+            "strategy-imperial-trebuchet-replacement",
+            "(and (current-age >= imperial-age) (unit-type-count trebuchet < 2))",
+            _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
             "strategy-arena-map",
@@ -630,6 +778,42 @@ def community_strategy_observations(
                 f"{identity}-pending",
                 f"(not (research-completed {int(tech.id)}))",
                 tech.provenance,
+            )
+        )
+
+    replacement_depth_observations = (
+        (
+            "strategy-production-barracks-replacement",
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count varangian-guard < 12) "
+            "(unit-type-count 359 < 12)))",
+        ),
+        (
+            "strategy-production-stable-replacement",
+            "(and (current-age >= imperial-age) "
+            "(unit-type-count cataphract < 12))",
+        ),
+        (
+            "strategy-production-range-replacement",
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count 492 < 12) "
+            "(unit-type-count skirmisher-line < 12)))",
+        ),
+        (
+            "strategy-production-siege-replacement",
+            "(and (current-age >= imperial-age) "
+            "(unit-type-count trebuchet < 4))",
+        ),
+    )
+    for identity, expression in replacement_depth_observations:
+        observations.append(
+            _observation(
+                identity,
+                expression,
+                _airef_provenance(
+                    effective,
+                    "commands/commands-details.html#unit-type-count",
+                ),
             )
         )
 
@@ -1145,18 +1329,18 @@ def community_strategy_demands(
         for item in observations
     }
     provider_depth_specs = (
-        ("barracks", "castle-barracks-depth-2", 2, 0, "strategy-production-barracks-depth-6", "(current-age >= castle-age)"),
-        ("barracks", "imperial-barracks-depth-3", 3, 2, "strategy-production-barracks-depth-12", "(current-age >= imperial-age)"),
-        ("barracks", "imperial-barracks-depth-4", 4, 3, "strategy-production-barracks-depth-18", "(current-age >= imperial-age)"),
-        ("stable", "castle-stable-depth-2", 2, 0, "strategy-production-stable-depth-6", "(current-age >= castle-age)"),
-        ("stable", "imperial-stable-depth-3", 3, 2, "strategy-production-stable-depth-12", "(current-age >= imperial-age)"),
-        ("stable", "imperial-stable-depth-4", 4, 3, "strategy-production-stable-depth-18", "(current-age >= imperial-age)"),
-        ("archery-range", "castle-range-depth-2", 2, 0, "strategy-production-range-depth-6", "(current-age >= castle-age)"),
-        ("archery-range", "imperial-range-depth-3", 3, 2, "strategy-production-range-depth-12", "(current-age >= imperial-age)"),
-        ("archery-range", "imperial-range-depth-4", 4, 3, "strategy-production-range-depth-18", "(current-age >= imperial-age)"),
-        ("siege-workshop", "castle-siege-depth-2", 2, 0, "strategy-production-siege-depth-2", "(current-age >= castle-age)"),
-        ("siege-workshop", "imperial-siege-depth-3", 3, 2, "strategy-production-siege-depth-4", "(current-age >= imperial-age)"),
-        ("siege-workshop", "imperial-siege-depth-4", 4, 3, "strategy-production-siege-depth-6", "(current-age >= imperial-age)"),
+        ("barracks", "castle-barracks-depth-2", 2, 0, "strategy-production-barracks-depth-6", "(current-age >= castle-age)", None),
+        ("barracks", "imperial-barracks-depth-3", 3, 2, "strategy-production-barracks-depth-12", "(current-age >= imperial-age)", "strategy-production-barracks-replacement"),
+        ("barracks", "imperial-barracks-depth-4", 4, 3, "strategy-production-barracks-depth-18", "(current-age >= imperial-age)", "strategy-production-barracks-replacement"),
+        ("stable", "castle-stable-depth-2", 2, 0, "strategy-production-stable-depth-6", "(current-age >= castle-age)", None),
+        ("stable", "imperial-stable-depth-3", 3, 2, "strategy-production-stable-depth-12", "(current-age >= imperial-age)", "strategy-production-stable-replacement"),
+        ("stable", "imperial-stable-depth-4", 4, 3, "strategy-production-stable-depth-18", "(current-age >= imperial-age)", "strategy-production-stable-replacement"),
+        ("archery-range", "castle-range-depth-2", 2, 0, "strategy-production-range-depth-6", "(current-age >= castle-age)", None),
+        ("archery-range", "imperial-range-depth-3", 3, 2, "strategy-production-range-depth-12", "(current-age >= imperial-age)", "strategy-production-range-replacement"),
+        ("archery-range", "imperial-range-depth-4", 4, 3, "strategy-production-range-depth-18", "(current-age >= imperial-age)", "strategy-production-range-replacement"),
+        ("siege-workshop", "castle-siege-depth-2", 2, 0, "strategy-production-siege-depth-2", "(current-age >= castle-age)", None),
+        ("siege-workshop", "imperial-siege-depth-3", 3, 2, "strategy-production-siege-depth-4", "(current-age >= imperial-age)", "strategy-production-siege-replacement"),
+        ("siege-workshop", "imperial-siege-depth-4", 4, 3, "strategy-production-siege-depth-6", "(current-age >= imperial-age)", "strategy-production-siege-replacement"),
     )
     for (
         building_name,
@@ -1165,6 +1349,7 @@ def community_strategy_demands(
         previous_floor,
         standing_observation_ref,
         age_guard,
+        replacement_reason_ref,
     ) in provider_depth_specs:
         building = _building(effective, building_name)
         standing_demand = standing_depth_observations[standing_observation_ref]
@@ -1183,8 +1368,149 @@ def community_strategy_demands(
                 ),
                 age_guard=age_guard,
                 standing_demand=standing_demand,
+                replacement_reason_ref=replacement_reason_ref,
+                replacement_expression=(
+                    next(
+                        item.expression
+                        for item in observations
+                        if item.identity == replacement_reason_ref
+                    )
+                    if replacement_reason_ref is not None
+                    else None
+                ),
             )
         )
+
+    # Imperial spending envelope: admit continuous replacement/sustain demands only
+    # while the protected food/wood/gold bank is present. The execution target remains
+    # the full standing package; replacement pressure is a world-state floor loss,
+    # never a synthetic "combat-loss" counter.
+    demands.extend(
+        (
+            _endgame_training_demand(
+                effective=effective,
+                identity="imperial-cataphract-sustain",
+                owner="endgame-replacement",
+                priority=_StrategicPriority.DEFENSE,
+                line="cataphract-line",
+                minimum=_ENDGAME_CATAPHRACT_TARGET,
+                reason_refs=(
+                    "strategy-imperial-spend-food",
+                    "strategy-imperial-spend-gold",
+                    "strategy-imperial-cataphract-replacement",
+                ),
+                reason_labels=(
+                    "Imperial food bank is above the protected spending envelope",
+                    "Imperial gold bank is above the protected spending envelope",
+                    "Cataphract standing floor has fallen below the replacement threshold",
+                ),
+                requirement_expressions=(
+                    "(and (food-amount >= 2200) (gold-amount >= 2500))",
+                ),
+            ),
+            _endgame_training_demand(
+                effective=effective,
+                identity="imperial-varangian-sustain",
+                owner="endgame-replacement",
+                priority=_StrategicPriority.DEFENSE,
+                line="varangian-guard-line",
+                minimum=_ENDGAME_VARANGIAN_TARGET,
+                reason_refs=(
+                    "strategy-imperial-spend-food",
+                    "strategy-imperial-spend-gold",
+                    "strategy-enemy-infantry-pressure",
+                    "strategy-imperial-varangian-replacement",
+                ),
+                reason_labels=(
+                    "Imperial food bank is above the protected spending envelope",
+                    "Imperial gold bank is above the protected spending envelope",
+                    "Enemy infantry pressure keeps the Varangian package strategically active",
+                    "Varangian standing floor has fallen below the replacement threshold",
+                ),
+                requirement_expressions=(
+                    "(and (food-amount >= 2200) (gold-amount >= 2500))",
+                    "(players-unit-type-count any-enemy militia-line >= 5)",
+                ),
+                action_symbol="varangian-guard",
+                witness_symbol="varangian-guard",
+            ),
+            _endgame_training_demand(
+                effective=effective,
+                identity="imperial-ram-sustain",
+                owner="endgame-siege-replacement",
+                priority=_StrategicPriority.DEFENSE,
+                line="ram-line",
+                minimum=_ENDGAME_RAM_TARGET,
+                reason_refs=(
+                    "strategy-imperial-spend-wood",
+                    "strategy-imperial-ram-replacement",
+                ),
+                reason_labels=(
+                    "Imperial wood bank is above the protected spending envelope",
+                    "Ram standing floor has fallen below the replacement threshold",
+                ),
+                requirement_expressions=(
+                    "(wood-amount >= 2200)",
+                    "(building-type-count-total siege-workshop >= 1)",
+                ),
+                action_symbol="battering-ram-line",
+                witness_symbol="battering-ram-line",
+            ),
+            _endgame_training_demand(
+                effective=effective,
+                identity="imperial-trebuchet-sustain",
+                owner="endgame-siege-replacement",
+                priority=_StrategicPriority.DEFENSE,
+                line="trebuchet-line",
+                minimum=_ENDGAME_TREBUCHET_TARGET,
+                reason_refs=(
+                    "strategy-imperial-spend-wood",
+                    "strategy-imperial-spend-gold",
+                    "strategy-enemy-castle",
+                    "strategy-imperial-trebuchet-replacement",
+                ),
+                reason_labels=(
+                    "Imperial wood bank is above the protected spending envelope",
+                    "Imperial gold bank is above the protected spending envelope",
+                    "Enemy fortification creates a valid trebuchet conversion channel",
+                    "Trebuchet standing floor has fallen below the replacement threshold",
+                ),
+                requirement_expressions=(
+                    "(and (wood-amount >= 2200) (gold-amount >= 2500))",
+                    "(players-building-type-count any-enemy castle >= 1)",
+                    "(building-type-count-total siege-workshop >= 1)",
+                ),
+                action_symbol="trebuchet",
+                witness_symbol="trebuchet",
+            ),
+        )
+    )
+
+    # Closure/conversion begins only after the compiler-owned frontier has
+    # already been advanced by a separately verified campaign witness. These
+    # demands raise construction pressure; construction placement remains owned
+    # by the existing builder lifecycle.
+    conversion = default_byzantine_endgame_plan().conversion_contract
+    if conversion is not None:
+        for index, building_name in enumerate(conversion.forward_production_buildings):
+            building = _building(effective, building_name)
+            demands.append(
+                _build_demand(
+                    identity=f"imperial-forward-production-{index}-{_slug(building_name)}",
+                    owner="endgame-conversion",
+                    posture=_StrategyPosture.CASTLE_POWER,
+                    priority=_StrategicPriority.SUPPORT,
+                    reason_ref="strategy-imperial-age",
+                    reason_label="Verified frontier ground creates forward-production pressure",
+                    building=building,
+                    requirements=(
+                        "(current-age >= imperial-age)",
+                        "(can-build " + _slug(building_name) + ")",
+                        "(building-type-count-total " + _slug(building_name) + " < 5)",
+                    ),
+                    initial_state=LifecycleState.RELEASED,
+                )
+            )
 
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
@@ -1399,6 +1725,94 @@ def community_strategy_demands(
     return tuple(demands)
 
 
+def default_byzantine_endgame_target_control() -> _EndgameTargetControlContract:
+    return _EndgameTargetControlContract(
+        identity="byzantine-endgame-target-v1",
+        anchor_goal="byzantine-offensive-objective-point",
+        search_radius=40,
+        candidates=(
+            _EndgameTargetCandidate("siege-bombard-cannon", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_TYPE, 36, 100),
+            _EndgameTargetCandidate("siege-trebuchet-packed", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_TYPE, 331, 95),
+            _EndgameTargetCandidate("siege-trebuchet", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_TYPE, 42, 90),
+            _EndgameTargetCandidate("siege-weapon-class", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_CLASS, 913, 10),
+            _EndgameTargetCandidate("defense-castle", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_TYPE, 82, 100),
+            _EndgameTargetCandidate("defense-keep", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_TYPE, 235, 95),
+            _EndgameTargetCandidate("defense-bombard-tower", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_TYPE, 236, 90),
+            _EndgameTargetCandidate("defense-tower-class", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_CLASS, 952, 10),
+            _EndgameTargetCandidate("defense-wall-class", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_CLASS, 927, 5),
+            _EndgameTargetCandidate("production-siege-workshop", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 49, 100),
+            _EndgameTargetCandidate("production-barracks", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 12, 95),
+            _EndgameTargetCandidate("production-archery-range", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 87, 90),
+            _EndgameTargetCandidate("production-stable", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 101, 85),
+            _EndgameTargetCandidate("production-monastery", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 104, 80),
+            _EndgameTargetCandidate("town-center-feudal", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 109, 100),
+            _EndgameTargetCandidate("town-center-castle", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 71, 95),
+            _EndgameTargetCandidate("town-center-imperial", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 141, 90),
+            _EndgameTargetCandidate("town-center-fortified", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 142, 85),
+        ),
+    )
+
+
+def default_byzantine_endgame_plan() -> _EndgamePlan:
+    return _EndgamePlan(
+        identity="byzantine-endgame-v1",
+        rules=(
+            _EndgamePolicyRule(
+                identity="breakthrough",
+                mode=_EndgameMode.BREAKTHROUGH,
+                win_condition=_EndgameWinCondition.CAPABILITY_COLLAPSE,
+                observation_refs=(
+                    "strategy-imperial-spend-gold",
+                    "strategy-enemy-castle",
+                ),
+                priority=100,
+            ),
+            _EndgamePolicyRule(
+                identity="attrition",
+                mode=_EndgameMode.ATTRITION,
+                win_condition=_EndgameWinCondition.ATTRITION,
+                observation_refs=("strategy-imperial-spend-gold",),
+                priority=90,
+            ),
+            _EndgamePolicyRule(
+                identity="resource-denial",
+                mode=_EndgameMode.RESOURCE_DENIAL,
+                win_condition=_EndgameWinCondition.RESOURCE_CONTROL,
+                observation_refs=(
+                    "strategy-imperial-spend-gold",
+                    "strategy-enemy-pressure",
+                ),
+                priority=80,
+            ),
+        ),
+        objective_priority=("siege", "defense", "production", "town-center"),
+        target_control=default_byzantine_endgame_target_control(),
+        conversion_contract=_EndgameConversionContract(
+            identity="byzantine-endgame-conversion-v1",
+            frontier_required=_EndgameFrontierState.DEFENSE,
+            forward_production_buildings=("barracks", "stable", "archery-range", "siege-workshop"),
+            resource_denial_native_ids=(932,),
+            resource_denial_query_kind=_EndgameTargetQueryKind.OBJECT_CLASS,
+        ),
+        push_contract=_EndgamePushContract(
+            identity="byzantine-endgame-push-v1",
+            attack_group_count=1,
+            attack_soldier_percent=100,
+            minimum_group_size=6,
+            maximum_group_size=40,
+            active_window_seconds=20,
+            live_witness_ref="strategy-endgame-attack-package-live",
+            cleared_witness_ref="strategy-endgame-attack-package-cleared",
+            frontier=(
+                _EndgameFrontierState.SIEGE,
+                _EndgameFrontierState.DEFENSE,
+                _EndgameFrontierState.PRODUCTION,
+                _EndgameFrontierState.TOWN_CENTER,
+            ),
+        ),
+    )
+
+
 def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
     return (
         _StrategicNumberMode(
@@ -1479,7 +1893,7 @@ def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
             36,
             2,
             minimum_age=Age.CASTLE,
-            maximum_age=Age.IMPERIAL,
+            maximum_age=Age.CASTLE,
             postures=(_StrategyPosture.CASTLE_POWER,),
             priority=5,
         ),
@@ -1521,6 +1935,7 @@ def build_byzantine_stock_strategy(
 
     base = build_byzantine_castle_strategy(effective)
     stock_profile_id = "byzantine-stock-v1"
+    endgame_plan = default_byzantine_endgame_plan()
     observations = list(base.observations)
     observed = {item.identity for item in observations}
     for observation in community_strategy_observations(effective):
@@ -1598,13 +2013,17 @@ def build_byzantine_stock_strategy(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),
         attack_plan=_default_byzantine_attack_plan(stock_profile_id),
-        duc_plan=_default_byzantine_duc_plan(stock_profile_id),
+        duc_plan=_default_byzantine_duc_plan(
+            stock_profile_id,
+            target_control=endgame_plan.target_control,
+        ),
         water_execution_plan=community_water_execution_plan(),
         map_profile=default_byzantine_map_profiles(),
         opening_selector=default_byzantine_opening_selector(),
         economy_controller=default_byzantine_economy_controller(),
         camp_controller=default_byzantine_camp_controller(),
         role_separation_plan=default_byzantine_role_separation_plan(stock_profile_id),
+        endgame_plan=endgame_plan,
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
@@ -1617,5 +2036,7 @@ __all__ = [
     "community_strategy_demands",
     "community_strategy_observations",
     "community_strategy_sn_modes",
+    "default_byzantine_endgame_plan",
+    "default_byzantine_endgame_target_control",
     "community_water_execution_plan",
 ]
