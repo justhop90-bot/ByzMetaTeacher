@@ -50,12 +50,12 @@ jobs:
 
           ge_count = before.count("    (gold-amount >= 1600)")
           lt_count = before.count("    (gold-amount < 1600)")
-          if ge_count != 3 or lt_count != 0:
+          if ge_count != 9 or lt_count != 3:
               raise SystemExit(
                   f"unexpected stale gold-floor shape before patch: >=1600={ge_count}, <1600={lt_count}"
               )
 
-          tail = tail.replace("    (gold-amount >= 1600)\n", "")
+          tail = tail.replace("    (gold-amount >= 1600)\n", "")\n          tail = tail.replace("    (gold-amount < 1600)\n", "")
 
           if "(gold-amount <= 800)" not in tail:
               raise SystemExit("gold-starved trash admission disappeared")
