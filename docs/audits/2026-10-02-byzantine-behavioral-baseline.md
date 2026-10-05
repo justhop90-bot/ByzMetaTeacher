@@ -106,3 +106,27 @@ Do not begin strategic tuning from intuition. First resolve or isolate the known
 
 The first strategic hypothesis to test after grammar hardening is:
 persistent late-game surplus is caused by fixed spending floors becoming satisfied while no higher-level objective continually creates new spend demand.
+
+
+## 2026-10-05 Imperial military tranche reconciliation
+
+The late-game audit has now been cross-reconciled against the executable Byzantine strategy source.
+
+The standing Imperial military floor is:
+- 18 Halberdiers
+- 18 Elite Skirmishers
+- 12 Hussars
+
+The floor is persistent and does not require exact enemy-counter confirmation. Enemy composition changes the scaling ceiling, not the existence of the army.
+
+The four persistent Imperial postures are:
+- STANDING_FLOOR: restore 18/18/12 and the floor-recovery bank.
+- OPEN_FIELD: 24/24/16, scaling to 30/30/20 on a high bank; mounted pressure can raise Halberdiers to 30/36 and ranged pressure can raise Elite Skirmishers to 30/36.
+- FORTIFIED_PUSH: 24/20/12 with a live siege package; high-bank scaling reaches 28/24/14 and requires the fortified battlefield/resource witness.
+- GOLD_STARVED_TRASH: 30/30/18, scaling to 36/36/24 when food/wood support sustained trash replacement.
+
+The state controller is hysteresis-latched. Standing recovery requires 30 seconds. Open, fortified, and trash minimum dwells are 60/45/90 seconds. Entry guard dwells are 20/15/30 seconds, fortified-clear and gold-recovery use 20/30 seconds, and re-entry cooldowns are 30/30/45 seconds. Floor loss is an immediate override. Fortified escalation only overrides normal dwell when the full fortified resource/siege package is executable.
+
+The Imperial upgrade contract now includes the Castle and Imperial Spear/Skirmisher/Cavalry ladder, Husbandry, relevant blacksmith armor/attack upgrades, Bracer, Halberdier, and Hussar. The policy explicitly does not request unavailable Byzantine technologies such as Blast Furnace, Bloodlines, or Siege Engineers.
+
+The older fixed floors in this document remain useful as historical observations of the pre-tranche artifact. The executable source is now the authority for the active 2026-10-05 Imperial military contract.
