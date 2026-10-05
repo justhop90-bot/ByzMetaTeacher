@@ -605,6 +605,17 @@ def community_strategy_observations(
         )
 
 
+    observations.append(
+        _observation(
+            "strategy-villager-continuity",
+            "(unit-type-count-total villager < 110)",
+            _airef_provenance(
+                effective,
+                "commands/commands-details.html#unit-type-count-total",
+            ),
+        )
+    )
+
     for identity, _owner, _age, tech_name, _priority, _resources in _RESEARCH_PACK:
         tech = _tech(effective, tech_name)
         observations.append(
@@ -660,6 +671,60 @@ def community_strategy_demands(
         "(players-unit-type-count any-enemy militia-line >= 5)))"
     )
     demands: list[_StrategicDemandSpec] = []
+
+    provider = _provider_for_line(effective, "villager-line")
+    villager_demand = _StrategicDemandSpec(
+        identity="civilian-villager-continuity",
+        owner="economy",
+        production_arbitration_group="production",
+        posture=_StrategyPosture.BOOM,
+        priority=_StrategicPriority.CORE,
+        reason=(
+            _persistent(
+                "Villager production remains the P0 economic continuity floor",
+                "strategy-villager-continuity",
+            ),
+        ),
+        admissibility=(
+            _persistent(
+                "Villager production remains admissible until the age bank is issuable",
+                "strategy-villager-continuity",
+            ),
+        ),
+        invalidation=(),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.TRAIN,
+            "unit-line",
+            "villager-line",
+            provider,
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.CURRENT_QUEUED,
+            "unit-line",
+            "villager-line",
+            minimum=110,
+        ),
+        opportunity_cost=None,
+        execution=_ExecutionDemandTemplate(
+            requirements=(
+                "(current-age >= dark-age)",
+                "(can-train villager)",
+                "(not (and (current-age == dark-age) "
+                "(and (unit-type-count-total villager >= 21) "
+                "(can-research-with-escrow feudal-age))))",
+                "(not (and (current-age == feudal-age) "
+                "(and (unit-type-count-total villager >= 28) "
+                "(and (building-type-count-total blacksmith >= 1) "
+                "(and (building-type-count-total market >= 1) "
+                "(can-research-with-escrow castle-age))))))",
+            ),
+            action="(train villager)",
+            witness="(unit-type-count villager >= 110)",
+            release="(unit-type-count villager >= 110)",
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+    demands.append(villager_demand)
 
     camp_specs = (
         (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
