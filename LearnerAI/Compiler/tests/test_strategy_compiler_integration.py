@@ -339,7 +339,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             self.assertIn(identity, target_rules)
             facts = tuple(fact.source for fact in target_rules[identity].facts)
             self.assertIn(
-                "(goal byzantine-endgame-push-state 1)",
+                "(goal byzantine-offensive-objective-claim 1)",
                 facts,
             )
             self.assertIn(
@@ -621,7 +621,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         sn_controllers = {
             rule.identity: rule
             for rule in control.rules
-            if rule.identity.startswith("sn-controller-byzantine-endgame-push-")
+            if rule.identity.startswith("sn-controller-byz-push-")
         }
         self.assertIn(
             "sn-controller-byz-push-227-activate",
