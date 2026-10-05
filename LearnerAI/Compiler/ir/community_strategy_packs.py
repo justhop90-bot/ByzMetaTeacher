@@ -1534,12 +1534,10 @@ def community_strategy_demands(
                     building=building,
                     requirements=(
                         "(current-age >= imperial-age)",
-                        "(goal byzantine-endgame-frontier-verified 1)",
-                        "(or (goal byzantine-endgame-frontier 1) (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3))",
                         "(can-build " + _slug(building_name) + ")",
                         "(building-type-count-total " + _slug(building_name) + " < 5)",
                     ),
-                    initial_state=LifecycleState.ACTIVE,
+                    initial_state=LifecycleState.RELEASED,
                 )
             )
 
