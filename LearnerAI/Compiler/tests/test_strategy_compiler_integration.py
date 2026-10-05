@@ -680,6 +680,19 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             or any("(goal byzantine-imperial-band-state 3)" in fact for fact in facts)
         )
 
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        generated_lines = tuple(
+            line
+            for line in output.splitlines()
+            if line.strip().startswith("(defrule")
+        )
+        self.assertTrue(generated_lines)
+        self.assertLessEqual(
+            max(map(len, generated_lines)),
+            255,
+            "Imperial endgame admission rules must remain within the DE 255-character line limit",
+        )
+
     def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
 
