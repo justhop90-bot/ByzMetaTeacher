@@ -572,6 +572,73 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-filter-distance c: -1 c: 40)", output)
         self.assertIn("; Native DUC rule: byzantine-endgame-target-", output)
 
+
+    def test_byzantine_stock_lowers_imperial_band_controller_and_attack_floor(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        for expected in (
+            "byzantine-imperial-band-state",
+            "byzantine-imperial-band-candidate",
+            "byzantine-imperial-band-rearm",
+            "byzantine-imperial-band-reason",
+            "byzantine-imperial-band-dwell-timer",
+            "byzantine-imperial-band-guard-timer",
+            "byzantine-imperial-band-rearm-timer",
+        ):
+            self.assertIn(expected, state_ids)
+
+        constants = dict(control.constants)
+        self.assertEqual(constants["bt-imp-band-standing"], 0)
+        self.assertEqual(constants["bt-imp-band-open"], 1)
+        self.assertEqual(constants["bt-imp-band-fortified"], 2)
+        self.assertEqual(constants["bt-imp-band-trash"], 3)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for identity in (
+            "byzantine-imperial-band-floor-break-open",
+            "byzantine-imperial-band-floor-break-fortified",
+            "byzantine-imperial-band-floor-break-trash",
+            "byzantine-imperial-band-fortified-candidate",
+            "byzantine-imperial-band-standing-open-candidate",
+            "byzantine-imperial-band-standing-trash-candidate",
+            "byzantine-imperial-band-transition-open",
+            "byzantine-imperial-band-transition-fortified",
+            "byzantine-imperial-band-transition-trash",
+            "byzantine-imperial-band-transition-economic",
+        ):
+            self.assertIn(identity, rules)
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("(defconst bt-imp-band-standing 0)", output)
+        self.assertIn("(enable-timer byzantine-imperial-band-guard-timer 15)", output)
+        self.assertIn("(enable-timer byzantine-imperial-band-dwell-timer 90)", output)
+        self.assertIn("(enable-timer byzantine-imperial-band-rearm-timer 45)", output)
+
+    def test_byzantine_endgame_push_requires_imperial_trash_floor_and_band(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item for item in control.rules
+            if item.identity == "byzantine-endgame-push-admit"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn(
+            "(up-compare-goal byzantine-imperial-band-state >= 1)",
+            facts,
+        )
+        self.assertTrue(any("(unit-type-count halberdier >= 18)" in fact for fact in facts))
+        self.assertTrue(any("(unit-type-count 6 >= 18)" in fact for fact in facts))
+        self.assertTrue(any("(unit-type-count hussar >= 12)" in fact for fact in facts))
+        self.assertTrue(
+            any("(unit-type-count cataphract >= 12)" in fact for fact in facts)
+            or any("(goal byzantine-imperial-band-state 3)" in fact for fact in facts)
+        )
+
     def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
 
