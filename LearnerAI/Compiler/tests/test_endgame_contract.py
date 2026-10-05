@@ -6,6 +6,7 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgamePolicyRule,
     EndgameObjectiveClass,
     EndgameObjectiveState,
+    EndgameObjectiveReleaseReason,
     EndgameObjectiveControlContract,
     EndgamePushState,
     EndgameRuntimeState,
@@ -58,6 +59,44 @@ class EndgameContractTests(unittest.TestCase):
             contract.constants[-1],
             ("byzantine-offensive-objective-class-town-center", 4),
         )
+
+    def test_objective_release_contract_is_typed_bounded_and_resets(self):
+        contract = EndgameObjectiveControlContract(
+            identity="byzantine-endgame-objective-v1",
+        )
+        self.assertEqual(
+            contract.release_reason_goal,
+            "byzantine-offensive-objective-release-reason",
+        )
+        self.assertEqual(
+            contract.release_search_goal,
+            "byzantine-offensive-objective-release-search",
+        )
+        self.assertEqual(contract.release_search_radius, 60)
+        self.assertEqual(
+            tuple(value for _name, value in contract.release_reason_constants),
+            tuple(range(len(EndgameObjectiveReleaseReason))),
+        )
+        self.assertEqual(
+            contract.release_reason_constants,
+            (
+                ("byzantine-offensive-objective-release-reason-none", 0),
+                ("byzantine-offensive-objective-release-reason-completed", 1),
+                ("byzantine-offensive-objective-release-reason-lost-out-of-bounds", 2),
+                ("byzantine-offensive-objective-release-reason-failed-execution", 3),
+                ("byzantine-offensive-objective-release-reason-fortification-abort", 4),
+                ("byzantine-offensive-objective-release-reason-tc-exhausted", 5),
+            ),
+        )
+        self.assertEqual(
+            contract.constants[-1],
+            ("byzantine-offensive-objective-release-reason-tc-exhausted", 5),
+        )
+        with self.assertRaises(ValueError):
+            EndgameObjectiveControlContract(
+                identity="bad",
+                release_search_radius=0,
+            )
 
     def test_endgame_plan_requires_deterministic_policy_order(self):
         plan = EndgamePlan(
