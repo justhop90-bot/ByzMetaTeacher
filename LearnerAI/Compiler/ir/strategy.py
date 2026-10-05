@@ -3257,8 +3257,32 @@ def _default_byzantine_duc_plan(
             "byzantine-offensive-objective-class-town-center",
         ),
     )
+    objective_dispatch_common_facts = (
+        parse_expression(
+            "(goal byzantine-offensive-objective-claim 1)",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(goal byzantine-army-attack-ready 1)",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(or "
+            "(goal byzantine-army-role-state "
+            "byzantine-army-role-committed) "
+            "(goal byzantine-army-role-state "
+            "byzantine-army-role-raid-split))",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(up-compare-goal "
+            "byzantine-offensive-objective-search >= 1)",
+            SourceLocation(1),
+        ),
+    )
     objective_attack_action = (
-        "(up-target-objects 1 action-attack-move -1 -1)"
+        "(up-target-objects 1 "
+        "action-attack-move -1 -1)"
     )
     for offset, (identity, state_value, class_value) in enumerate(
         objective_dispatch_specs
@@ -3278,46 +3302,26 @@ def _default_byzantine_duc_plan(
                         f"{class_value})",
                         SourceLocation(1),
                     ),
-                    parse_expression(
-                        "(goal byzantine-offensive-objective-claim 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(goal byzantine-army-attack-ready 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(or "
-                        "(goal byzantine-army-role-state "
-                        "byzantine-army-role-committed) "
-                        "(goal byzantine-army-role-state "
-                        "byzantine-army-role-raid-split))",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(up-compare-goal "
-                        "byzantine-offensive-objective-search >= 1)",
-                        SourceLocation(1),
-                        ),
-                        actions=(
+                    *objective_dispatch_common_facts,
+                ),
+                actions=(
                     parse_expression(
                         "(up-set-target-object search-remote c: 0)",
                         SourceLocation(1),
-                        ),
+                    ),
                     parse_expression(
                         objective_attack_action,
                         SourceLocation(1),
-                        ),
+                    ),
                     parse_expression(
                         "(up-reset-search 0 0 1 1)",
                         SourceLocation(1),
-                        ),
                     ),
-                lifecycle=(
+                )
+                    lifecycle=(
                     NativeDucLifecycleStage.TARGET,
                     NativeDucLifecycleStage.DISPATCH,
-                 ),
-                )
+                ),
         )
         
     relic_base = len(rules)
