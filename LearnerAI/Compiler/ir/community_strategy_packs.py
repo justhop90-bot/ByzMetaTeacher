@@ -35,6 +35,8 @@ from .endgame import (
     EndgamePolicyRule as _EndgamePolicyRule,
     EndgamePlan as _EndgamePlan,
     EndgameWinCondition as _EndgameWinCondition,
+    EndgameFrontierState as _EndgameFrontierState,
+    EndgamePushContract as _EndgamePushContract,
 )
 from .versioning import EvidenceKind, EvidenceRef
 from .map_profile import default_byzantine_map_profiles
@@ -1724,7 +1726,21 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
                 priority=80,
             ),
         ),
-        objective_priority=("siege", "defense", "production", "economy", "town-center"),
+        objective_priority=("siege", "defense", "production", "town-center"),
+        push_contract=_EndgamePushContract(
+            identity="byzantine-endgame-push-v1",
+            attack_group_count=1,
+            attack_soldier_percent=100,
+            minimum_group_size=6,
+            maximum_group_size=40,
+            live_witness_expression="(attack-soldier-count > 0)",
+            frontier=(
+                _EndgameFrontierState.SIEGE,
+                _EndgameFrontierState.DEFENSE,
+                _EndgameFrontierState.PRODUCTION,
+                _EndgameFrontierState.TOWN_CENTER,
+            ),
+        ),
     )
 
 
