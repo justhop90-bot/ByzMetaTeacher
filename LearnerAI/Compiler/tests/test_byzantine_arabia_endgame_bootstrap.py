@@ -51,7 +51,7 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         end = self.output.index("byzantine-endgame-push-live-witness", start)
         admit = self.output[start:end]
         self.assertIn("(unit-type-count-total battering-ram-line >= 4)", admit)
-        self.assertIn("(military-population >= 15)", admit)
+        self.assertIn("(unit-type-count cataphract >= 8)", admit)
         self.assertNotIn("(unit-type-count halberdier >= 18)", admit)
         self.assertNotIn("(unit-type-count 6 >= 18)", admit)
         self.assertNotIn("(unit-type-count hussar >= 12)", admit)
@@ -74,7 +74,7 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         start = self.output.index("byzantine-endgame-push-release")
         end = self.output.index("byzantine-endgame-push-release-trash", start)
         release = self.output[start:end]
-        self.assertIn("(military-population >= 15)", release)
+        self.assertIn("(unit-type-count cataphract >= 8)", release)
         self.assertNotIn("(unit-type-count halberdier >= 18)", release)
         self.assertNotIn("(unit-type-count 6 >= 18)", release)
         self.assertNotIn("(unit-type-count hussar >= 12)", release)
