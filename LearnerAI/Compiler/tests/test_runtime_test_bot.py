@@ -121,11 +121,16 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
                 rule[:500],
             )
 
-    def test_duplicate_town_under_attack_guard_is_removed(self) -> None:
-        self.assertNotIn(
-            "(or\n        (town-under-attack)\n        (town-under-attack)\n    )",
-            self.runtime,
-        )
+    def test_reposition_controller_has_single_town_under_attack_guard(self) -> None:
+        matching = [
+            rule
+            for rule in self.rules
+            if "byzantine-army-reposition-state byzantine-army-reposition-idle" in rule
+            and "(town-under-attack)" in rule
+        ]
+        self.assertTrue(matching)
+        for rule in matching:
+            self.assertEqual(rule.count("(town-under-attack)"), 1, rule[:600])
 
     def test_runtime_parentheses_and_rule_inventory(self) -> None:
         depth = 0
