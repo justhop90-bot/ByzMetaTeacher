@@ -20,6 +20,7 @@ from Compiler.semantic.strategy_dependency import (
     StrategyDependencyProof,
     analyze_strategy_dependencies,
 )
+from Compiler.ir.native_duc import NativeDucLifecycleStage, NativeDucPlan, NativeDucRule
 
 
 def _demand(name="d"):
@@ -159,6 +160,70 @@ class StrategyDependencyTests(unittest.TestCase):
         )
         self.assertEqual(finding.proof, StrategyDependencyProof.PROVEN)
         self.assertEqual(finding.rule_orders, (12,))
+
+    def test_compiler_owned_relic_lifecycle_is_reported_deterministically(self):
+        demand = _demand()
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="byzantine-relic-control-acquire",
+                    order=0,
+                    facts=(),
+                    actions=(),
+                    lifecycle=(
+                        NativeDucLifecycleStage.ADMISSIBILITY,
+                        NativeDucLifecycleStage.TARGET,
+                        NativeDucLifecycleStage.DISPATCH,
+                    ),
+                ),
+                NativeDucRule(
+                    identity="byzantine-relic-control-pickup-witness",
+                    order=1,
+                    facts=(),
+                    actions=(),
+                    lifecycle=(NativeDucLifecycleStage.PICKUP_WITNESS,),
+                ),
+                NativeDucRule(
+                    identity="byzantine-relic-control-return",
+                    order=2,
+                    facts=(),
+                    actions=(),
+                    lifecycle=(NativeDucLifecycleStage.RETURN,),
+                ),
+                NativeDucRule(
+                    identity="byzantine-relic-control-release-witness",
+                    order=3,
+                    facts=(),
+                    actions=(),
+                    lifecycle=(NativeDucLifecycleStage.RELEASE_WITNESS,),
+                ),
+                NativeDucRule(
+                    identity="byzantine-relic-control-recovery",
+                    order=4,
+                    facts=(),
+                    actions=(),
+                    lifecycle=(NativeDucLifecycleStage.RECOVERY,),
+                ),
+            ),
+        )
+        report = analyze_strategy_dependencies(
+            (demand,),
+            self._graph(demand),
+            ValidationReport(()),
+            RuleExecutionReport((), (), RuleReachabilityReport((), (), (), ())),
+            self._empty_state(),
+            duc_plan=plan,
+        )
+        codes = tuple(item.code for item in report.findings)
+        self.assertIn(
+            StrategyDependencyCode.RELIC_LIFECYCLE_CONNECTED,
+            codes,
+        )
+        self.assertIn(
+            StrategyDependencyCode.RELIC_RELEASE_WITNESS_OPEN,
+            codes,
+        )
+        self.assertEqual(report.to_json(), report.to_json())
 
     def test_json_is_deterministic(self):
         demand = _demand()
