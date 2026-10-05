@@ -42,7 +42,7 @@ from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
 from .camp_control import CampResource, default_byzantine_camp_controller
 
-_ENDGAME_CATAPHRACHT_TARGET = 30
+_ENDGAME_CATAPHRACT_TARGET = 30
 _ENDGAME_VARIANGIAN_TARGET = 24
 _ENDGAME_RAM_TARGET = 8
 _ENDGAME_TREBUCHET_TARGET = 8
