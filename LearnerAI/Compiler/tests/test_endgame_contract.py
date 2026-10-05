@@ -201,7 +201,7 @@ class EndgameContractTests(unittest.TestCase):
             (
                 *([EndgameFrontierState.SIEGE] * 4),
                 *([EndgameFrontierState.DEFENSE] * 5),
-                *([EndgameFrontierState.PRODUCTION] * 5),
+                *([EndgameFrontierState.PRODUCTION] * 6),
                 *([EndgameFrontierState.TOWN_CENTER] * 4),
             ),
         )
@@ -211,6 +211,10 @@ class EndgameContractTests(unittest.TestCase):
         )
         self.assertEqual(contract.candidates[0].query_kind, EndgameTargetQueryKind.OBJECT_TYPE)
         self.assertEqual(contract.candidates[3].query_kind, EndgameTargetQueryKind.OBJECT_CLASS)
+        self.assertEqual(
+            (contract.candidates[14].identity, contract.candidates[14].native_id),
+            ("production-exposed-villager", 83),
+        )
         with self.assertRaises(ValueError):
             EndgameTargetControlContract(
                 identity="bad",
