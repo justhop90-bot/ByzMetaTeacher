@@ -1620,9 +1620,6 @@ def _age_bank_villager_control_plan():
                         "(and (building-type-count-total market >= 1) "
                         "(can-research-with-escrow castle-age)))))"
                     ),
-                    fact("(not (goal byzantine-resource-claim 1))"),
-                    fact("(not (goal byzantine-resource-claim 2))"),
-                    fact("(not (goal byzantine-resource-claim 3))"),
                 ),
                 actions=(fact("(train villager)"),),
             ),
