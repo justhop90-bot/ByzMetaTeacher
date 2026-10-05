@@ -697,6 +697,20 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
         self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
+        self.assertIn(
+            "(up-compare-goal byzantine-imperial-band-state != 2)",
+            admit_facts,
+        )
+        fortified_admit = rules["byzantine-endgame-push-admit-fortified"]
+        fortified_facts = tuple(fact.source for fact in fortified_admit.facts)
+        self.assertIn(
+            "(goal byzantine-imperial-band-state 2)",
+            fortified_facts,
+        )
+        self.assertIn(
+            "(unit-type-count trebuchet >= 6)",
+            fortified_facts,
+        )
 
         live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
         self.assertNotIn("sn-native-36", " ".join(live_actions))
