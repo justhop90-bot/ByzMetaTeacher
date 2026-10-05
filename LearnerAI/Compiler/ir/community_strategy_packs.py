@@ -49,8 +49,8 @@ from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
 from .camp_control import CampResource, default_byzantine_camp_controller
 
-_ENDGAME_CATAPHRACT_TARGET = 30
-_ENDGAME_VARANGIAN_TARGET = 24
+_ENDGAME_CATAPHRACT_TARGET = 18
+_ENDGAME_VARANGIAN_TARGET = 14
 _ENDGAME_RAM_TARGET = 8
 _ENDGAME_TREBUCHET_TARGET = 8
 
@@ -459,6 +459,28 @@ _RESEARCH_PACK = (
 )
 
 
+def community_strategy_observation
+
+_IMPERIAL_MILITARY_RESEARCH_PACK = (
+    ("research-forging", "military", "feudal-age", "forging", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
+    ("research-pikeman", "military", "castle-age", "pikeman", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
+    ("research-elite-skirmisher", "military", "castle-age", "elite-skirmisher", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.WOOD)),
+    ("research-husbandry", "military", "castle-age", "husbandry", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-iron-casting", "military", "castle-age", "iron-casting", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+    ("research-padded-archer-armor", "military", "feudal-age", "padded-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
+    ("research-leather-archer-armor", "military", "castle-age", "leather-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+    ("research-halberdier", "military", "imperial-age", "halberdier", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
+    ("research-hussar", "military", "imperial-age", "hussar", _StrategicPriority.SUPPORT, (Resource.FOOD, GOLD)),
+    ("research-bracer", "military", "imperial-age", "bracer", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+    ("research-ring-archer-armor", "military", "imperial-age", "ring-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+    ("research-plate-barding-armor", "military", "imperial-age", "plate-barding-armor", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-scale-mail-armor", "military", "feudal-age", "scale-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
+    ("research-chain-mail-armor", "military", "castle-age", "chain-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+    ("research-plate-mail-armor", "military", "imperial-age", "plate-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+)
+
+
+
 def community_strategy_observations(
     effective: EffectiveCivData,
 ) -> tuple[_StrategicObservationSpec, ...]:
@@ -484,26 +506,30 @@ def community_strategy_observations(
     production_depth_observations = (
         (
             "barracks",
-            "(or (unit-type-count-total varangian-guard-line >= {threshold}) "
+            "(or (or (unit-type-count-total varangian-guard-line >= {threshold}) "
+            "(unit-type-count-total 359 >= {threshold})) "
             "(unit-type-count-total 359 >= {threshold}))",
             "strategy-production-barracks-depth",
         ),
         (
             "stable",
             "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
-            "(unit-type-count-total knight-line >= {threshold})) "
-            "(unit-type-count-total camel-rider-line >= {threshold}))",
+            "(or (unit-type-count-total knight-line >= {threshold}) "
+            "(or (unit-type-count-total camel-rider-line >= {threshold}) "
+            "(unit-type-count 441 >= {threshold})))",
             "strategy-production-stable-depth",
         ),
         (
             "archery-range",
-            "(or (unit-type-count-total crossbowman >= {threshold}) "
-            "(unit-type-count-total skirmisher-line >= {threshold}))",
+            "(or (or (unit-type-count-total crossbowman >= {threshold}) "
+            "(unit-type-count 6 >= {threshold}))",
             "strategy-production-range-depth",
         ),
         (
             "siege-workshop",
-            "(unit-type-count-total mangonel-line >= {threshold})",
+            "(or (or (unit-type-count-total mangonel-line >= {threshold}) "
+            "(unit-type-count-total trebuchet-line >= {threshold})) "
+            "(unit-type-count-total bombard-cannon-line >= {threshold}))",
             "strategy-production-siege-depth",
         ),
     )
@@ -765,7 +791,7 @@ def community_strategy_observations(
         )
     )
 
-    for identity, _owner, _age, tech_name, _priority, _resources in _RESEARCH_PACK:
+    for identity, _owner, _age, tech_name, _priority, _resources in _RESEARCH_PACK + _IMPERIAL_MILITARY_RESEARCH_PACK:
         tech = _tech(effective, tech_name)
         observations.append(
             _observation(
@@ -786,19 +812,21 @@ def community_strategy_observations(
         (
             "strategy-production-barracks-replacement",
             "(and (current-age >= imperial-age) "
-            "(or (unit-type-count varangian-guard < 12) "
-            "(unit-type-count 359 < 12)))",
+            "(or (unit-type-count varangian-guard < 14) "
+            "(or (unit-type-count 359 < 18) "
+            "(unit-type-count 359 < 18))))",
         ),
         (
             "strategy-production-stable-replacement",
             "(and (current-age >= imperial-age) "
-            "(unit-type-count cataphract < 12))",
+            "(or (unit-type-count cataphract < 18) "
+            "(unit-type-count 441 < 12)))",
         ),
         (
             "strategy-production-range-replacement",
             "(and (current-age >= imperial-age) "
-            "(or (unit-type-count 492 < 12) "
-            "(unit-type-count skirmisher-line < 12)))",
+            "(or (unit-type-count 6 < 18) "
+            "(unit-type-count 492 < 14)))",
         ),
         (
             "strategy-production-siege-replacement",
@@ -1224,6 +1252,92 @@ def community_strategy_demands(
             ),
         )
         demands.append(demand)
+
+    imperial_research_gates = {
+        "research-forging": ("(current-age >= feudal-age)", "(unit-type-count-total spearman-line >= 6)"),
+        "research-pikeman": ("(current-age >= castle-age)", "(unit-type-count 93 >= 6)"),
+        "research-elite-skirmisher": ("(current-age >= castle-age)", "(unit-type-count 7 >= 6)"),
+        "research-husbandry": ("(current-age >= castle-age)", "(unit-type-count 546 >= 6)"),
+        "research-iron-casting": ("(current-age >= castle-age)", "(unit-type-count 358 >= 6)"),
+        "research-padded-archer-armor": ("(current-age >= feudal-age)", "(unit-type-count 7 >= 6)"),
+        "research-leather-archer-armor": ("(current-age >= castle-age)", "(unit-type-count 6 >= 12)"),
+        "research-scale-mail-armor": ("(current-age >= feudal-age)", "(unit-type-count 93 >= 6)"),
+        "research-chain-mail-armor": ("(current-age >= castle-age)", "(unit-type-count 358 >= 6)"),
+        "research-halberdier": ("(current-age >= imperial-age)", "(unit-type-count 358 >= 6)"),
+        "research-hussar": ("(current-age >= imperial-age)", "(unit-type-count 546 >= 6)"),
+        "research-bracer": ("(current-age >= imperial-age)", "(unit-type-count 6 >= 12)"),
+        "research-ring-archer-armor": ("(current-age >= imperial-age)", "(unit-type-count 6 >= 18)"),
+        "research-plate-barding-armor": ("(current-age >= imperial-age)", "(unit-type-count 441 >= 12)"),
+        "research-plate-mail-armor": ("(current-age >= imperial-age)", "(unit-type-count 359 >= 12)"),
+    }
+    for identity, owner, age, tech_name, priority, resources in _IMPERIAL_MILITARY_RESEARCH_PACK:
+        age_guard, unit_gate = imperial_research_gates[identity]
+        demand = _research_demand(
+            effective=effective,
+            identity=identity,
+            owner=owner,
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=priority,
+            age_guard=age_guard,
+            age_observation_ref={
+                "feudal-age": "current-feudal-age",
+                "castle-age": "strategy-castle-age",
+                "imperial-age": "strategy-imperial-age",
+            }[age],
+            tech_name=tech_name,
+            reason_label=f"Imperial military package: {tech_name}",
+            resources=resources,
+            additional_requirements=(unit_gate,),
+        )
+        demands.append(demand)
+
+    # Persistent Imperial trash backbone. These are not enemy-counter triggers.
+    demands.extend(
+        (
+            _training_demand(
+                effective=effective,
+                identity="imperial-halberdier-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-imperial-age",
+                reason_label="Maintain the Byzantine Imperial Halberdier standing floor",
+                line="spearman-line",
+                minimum=18,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="halberdier",
+                witness_symbol="halberdier",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-elite-skirmisher-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-imperial-age",
+                reason_label="Maintain the Byzantine Imperial Elite Skirmisher standing floor",
+                line="skirmisher-line",
+                minimum=18,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="skirmisher-line",
+                witness_symbol="6",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-hussar-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-imperial-age",
+                reason_label="Maintain the Byzantine Imperial Hussar mobility floor",
+                line="scout-cavalry-line",
+                minimum=12,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="hussar",
+                witness_symbol="hussar",
+            ),
+        )
+    )
 
     # Standing military floors.
     demands.extend(
