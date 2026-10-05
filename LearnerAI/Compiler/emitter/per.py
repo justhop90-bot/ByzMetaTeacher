@@ -722,6 +722,19 @@ def emit(
             emitted_defconsts[state.identifier] = str(value)
             out.append(f"(defconst {state.identifier} {value})")
 
+        emitted_defconsts = _defconst_bindings(out)
+        for name, value in control_plan.constants:
+            existing_value = emitted_defconsts.get(name)
+            if existing_value is not None:
+                if existing_value != str(value):
+                    raise CompileError(
+                        f"CONTROL-PLANE-CONSTANT: duplicate emitted defconst '{name}' "
+                        f"has {existing_value}, expected {value}"
+                    )
+                continue
+            emitted_defconsts[name] = str(value)
+            out.append(f"(defconst {name} {value})")
+
         out.append("")
         for rule in control_plan.rules:
             out.append(f"; Native control rule: {rule.identity}")
