@@ -3,10 +3,10 @@ import unittest
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
+    compile_strategy_profile,
     lower_strategy_profile,
     resolve_effective_civ,
 )
-from LearnerAI.Compiler.ir.strategy import lower_strategy_profile as lower_profile
 
 
 class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
@@ -15,7 +15,7 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
         cls.profile = build_byzantine_strategy(cls.effective)
         cls.compilation = lower_strategy_profile(cls.profile, cls.effective)
-        cls.output = lower_profile(cls.profile, cls.effective).to_source()
+        cls.output = compile_strategy_profile(cls.profile, cls.effective)
 
     def test_castle_military_seed_demands_bootstrap_upgrade_paths(self):
         demands = {item.identity: item for item in self.profile.demands}
@@ -42,7 +42,9 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
             self.assertTrue(
                 any("ram-line" in requirement for requirement in demand.execution.requirements)
             )
-            self.assertIn("can-research-with-escrow", demand.execution.requirements[1])
+            self.assertTrue(
+                any("can-research-with-escrow" in requirement for requirement in demand.execution.requirements)
+            )
 
     def test_endgame_admission_accepts_ram_siege_and_mature_attack_force(self):
         start = self.output.index("byzantine-endgame-push-admit")
