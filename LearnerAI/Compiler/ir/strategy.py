@@ -1532,6 +1532,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .recurrent import TimerRequest, TimerState
     from .strategic_number import StrategicNumberOrigin
 
     owner = SemanticId(profile.profile_id, "byzantine-attack-phase")
