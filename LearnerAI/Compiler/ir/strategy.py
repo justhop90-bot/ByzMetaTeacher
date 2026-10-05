@@ -1394,9 +1394,10 @@ def _merge_native_control_plans(*plans):
     from .native_control import NativeControlPlan
 
     states = []
-    seen_state_ids = set()
     state_by_id = {}
     rules = []
+    constants = []
+    constant_by_name = {}
     for plan in plans:
         if plan is None:
             continue
@@ -1410,13 +1411,24 @@ def _merge_native_control_plans(*plans):
                 continue
             state_by_id[state.identifier] = state
             states.append(state)
+        for name, value in plan.constants:
+            existing = constant_by_name.get(name)
+            if existing is not None and existing != value:
+                raise ValueError(
+                    f"native control constant '{name}' has conflicting definitions"
+                )
+            if existing is None:
+                constant_by_name[name] = value
+                constants.append((name, value))
         rules.extend(plan.rules)
 
-    if not states and not rules:
+    if not states and not rules and not constants:
         return None
-    return NativeControlPlan(states=tuple(states), rules=tuple(rules))
-
-
+    return NativeControlPlan(
+        states=tuple(states),
+        rules=tuple(rules),
+        constants=tuple(constants),
+    )
 def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     """Lower the default Byzantine attack policy into explicit persistent phases.
 
@@ -1609,6 +1621,118 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
         ),
     )
     return NativeControlPlan(states=(state,), rules=rules)
+
+
+def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
+    """Lower persistent state ownership for the late-objective controller.
+
+    Prompt 1 establishes storage, symbolic state values, and the cadence timer.
+    Target discovery, attack dispatch, witness, and frontier transitions remain
+    separate lowering stages.
+    """
+    if profile.profile_id not in {
+        "byzantine-land-castle-v1",
+        "byzantine-stock-v1",
+    }:
+        return None
+    plan = profile.endgame_plan
+    if plan is None or plan.objective_control is None:
+        return None
+
+    from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .recurrent import TimerRequest
+
+    contract = plan.objective_control
+    owner = SemanticId(profile.profile_id, "byzantine-endgame-objective")
+
+    states = (
+        NativeControlState(
+            contract.state_goal,
+            GoalSlotRequest(
+                StorageRequestId(owner, "objective-state"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            contract.class_goal,
+            GoalSlotRequest(
+                StorageRequestId(owner, "objective-class"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            contract.point_goal,
+            GoalSpanRequest(
+                StorageRequestId(owner, "objective-point"),
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="up-get-point.Point",
+                start_min=41,
+                start_max=15998,
+                role=GoalRole.EXECUTION_MEMORY,
+            ),
+        ),
+        NativeControlState(
+            contract.search_goal,
+            GoalSpanRequest(
+                StorageRequestId(owner, "objective-search"),
+                width=4,
+                shape=GoalSpanKind.EXTENDED_4,
+                contract_id="up-get-search-state.OutputGoalId",
+                start_min=41,
+                start_max=15996,
+                role=GoalRole.NATIVE_OUTPUT,
+            ),
+        ),
+        NativeControlState(
+            contract.enemy_player_goal,
+            GoalSlotRequest(
+                StorageRequestId(owner, "enemy-player"),
+                role=GoalRole.EXECUTION_MEMORY,
+            ),
+        ),
+        NativeControlState(
+            contract.claim_goal,
+            GoalSlotRequest(
+                StorageRequestId(owner, "objective-claim"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            contract.timer_name,
+            TimerRequest(
+                StorageRequestId(owner, f"timer:{contract.timer_name}"),
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key=f"{profile.profile_id}:{contract.timer_name}",
+            ),
+        ),
+    )
+    rules = (
+        NativeControlRule(
+            "byzantine-endgame-objective-initialize",
+            facts=(
+                parse_expression(f"(goal {contract.state_goal} 0)", SourceLocation(1)),
+                parse_expression(f"(goal {contract.class_goal} 0)", SourceLocation(1)),
+                parse_expression(f"(goal {contract.claim_goal} 0)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(set-goal {contract.state_goal} 0)", SourceLocation(1)),
+                parse_expression(f"(set-goal {contract.class_goal} 0)", SourceLocation(1)),
+                parse_expression(f"(set-goal {contract.enemy_player_goal} 0)", SourceLocation(1)),
+                parse_expression(f"(set-goal {contract.claim_goal} 0)", SourceLocation(1)),
+                parse_expression(f"(disable-timer {contract.timer_name})", SourceLocation(1)),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
+        ),
+    )
+    return NativeControlPlan(
+        states=states,
+        rules=rules,
+        constants=contract.constants,
+    )
 
 
 def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
@@ -2046,6 +2170,7 @@ def _strategy_control_plan(profile: StrategyProfile):
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
+    endgame_objective_plan = _byzantine_endgame_objective_control_plan(profile)
     endgame_push_plan = _byzantine_endgame_push_control_plan(profile)
     water_plan = None
     if profile.water_execution_plan is not None:
@@ -2095,6 +2220,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         mode_plan,
         assertion_plan,
         attack_lifecycle_plan,
+        endgame_objective_plan,
         endgame_push_plan,
         water_plan,
         opening_plan,

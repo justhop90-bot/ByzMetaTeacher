@@ -14,6 +14,7 @@ from ..ir.native_control import NativeControlPlan
 from ..primitives.native_binder import NativeSupportState
 from ..runtime_binding import (
     GoalSlotRequest,
+    GoalSpanRequest,
     StrategicNumberRequest,
     TimerRequest,
 )
@@ -83,7 +84,7 @@ def _walk(expressions: tuple[Expression, ...]):
 
 
 def _request_kind(request: object) -> str:
-    if isinstance(request, GoalSlotRequest):
+    if isinstance(request, (GoalSlotRequest, GoalSpanRequest)):
         return "GOAL"
     if isinstance(request, StrategicNumberRequest):
         return "STRATEGIC_NUMBER"

@@ -53,10 +53,21 @@ class NativeControlRule:
 
 @dataclass(frozen=True)
 class NativeControlPlan:
-    """Typed collection of native persistent-control state and rules."""
+    """Typed collection of native persistent-control state, constants, and rules."""
 
     states: tuple[NativeControlState, ...] = ()
     rules: tuple[NativeControlRule, ...] = ()
+    constants: tuple[tuple[str, int], ...] = ()
+
+    def __post_init__(self) -> None:
+        names = tuple(name for name, _value in self.constants)
+        if len(names) != len(set(names)):
+            raise ValueError("native control constants must have unique identifiers")
+        for name, value in self.constants:
+            if not isinstance(name, str) or not name:
+                raise ValueError("native control constant name must be a non-empty string")
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise TypeError("native control constant value must be an integer")
 
     def state(self, identifier: str) -> NativeControlState:
         for state in self.states:

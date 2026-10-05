@@ -32,6 +32,25 @@ class EndgamePushState(str, Enum):
     ADVANCE = "ADVANCE"
     RECOVERY = "RECOVERY"
 
+
+class EndgameObjectiveState(str, Enum):
+    IDLE = "idle"
+    SIEGE = "siege"
+    DEFENSE = "defense"
+    PRODUCTION = "production"
+    TOWN_CENTER = "town-center"
+    EXECUTING = "executing"
+    WITNESS = "witness"
+
+
+class EndgameObjectiveClass(str, Enum):
+    NONE = "none"
+    SIEGE = "siege"
+    DEFENSE = "defense"
+    PRODUCTION = "production"
+    TOWN_CENTER = "town-center"
+
+
 class EndgameFrontierState(str, Enum):
     SIEGE = "SIEGE"
     DEFENSE = "DEFENSE"
@@ -121,6 +140,52 @@ class EndgameTargetControlContract:
                     f"endgame target candidates for {frontier.value} must be in "
                     "deterministic priority order"
                 )
+
+@dataclass(frozen=True)
+class EndgameObjectiveControlContract:
+    """Typed ownership contract for the existing late-objective Goal state."""
+
+    identity: str
+    state_goal: str = "byzantine-offensive-objective-state"
+    class_goal: str = "byzantine-offensive-objective-class"
+    point_goal: str = "byzantine-offensive-objective-point"
+    search_goal: str = "byzantine-offensive-objective-search"
+    enemy_player_goal: str = "byzantine-offensive-enemy-player"
+    claim_goal: str = "byzantine-offensive-objective-claim"
+    timer_name: str = "byzantine-offensive-objective-timer"
+
+    def __post_init__(self) -> None:
+        fields = (
+            self.identity,
+            self.state_goal,
+            self.class_goal,
+            self.point_goal,
+            self.search_goal,
+            self.enemy_player_goal,
+            self.claim_goal,
+            self.timer_name,
+        )
+        if any(not isinstance(item, str) or not item.strip() for item in fields):
+            raise ValueError("endgame objective control identifiers must be non-empty strings")
+
+    @property
+    def state_constants(self) -> tuple[tuple[str, int], ...]:
+        return tuple(
+            (f"{self.state_goal}-{state.value}", index)
+            for index, state in enumerate(EndgameObjectiveState)
+        )
+
+    @property
+    def class_constants(self) -> tuple[tuple[str, int], ...]:
+        return tuple(
+            (f"{self.class_goal}-{objective_class.value}", index)
+            for index, objective_class in enumerate(EndgameObjectiveClass)
+        )
+
+    @property
+    def constants(self) -> tuple[tuple[str, int], ...]:
+        return self.state_constants + self.class_constants
+
 
 @dataclass(frozen=True)
 class EndgamePushContract:
@@ -257,6 +322,7 @@ class EndgamePlan:
     objective_priority: tuple[str, ...]
     push_contract: EndgamePushContract | None = None
     target_control: EndgameTargetControlContract | None = None
+    objective_control: EndgameObjectiveControlContract | None = None
     conversion_contract: EndgameConversionContract | None = None
     push_states: tuple[EndgamePushState, ...] = (
         EndgamePushState.FORMING,
@@ -291,6 +357,12 @@ class EndgamePlan:
         ):
             raise TypeError(
                 "endgame plan target_control must be EndgameTargetControlContract or None"
+            )
+        if self.objective_control is not None and not isinstance(
+            self.objective_control, EndgameObjectiveControlContract
+        ):
+            raise TypeError(
+                "endgame plan objective_control must be EndgameObjectiveControlContract or None"
             )
 
         if not isinstance(self.objective_priority, tuple):
