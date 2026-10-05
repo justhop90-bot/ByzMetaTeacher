@@ -3233,6 +3233,7 @@ def _default_byzantine_duc_plan(
     profile_id: str,
     *,
     target_control=None,
+    objective_control=None,
 ) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
@@ -3414,6 +3415,168 @@ def _default_byzantine_duc_plan(
                     argument_index=1,
                 )
             )
+
+    if profile_id == "byzantine-stock-v1" and objective_control is not None:
+        from .endgame import EndgameObjectiveClass
+        from .model import GoalRole
+
+        witness_specs = (
+            (
+                "byzantine-endgame-objective-witness-siege-search",
+                "byzantine-offensive-objective-class-siege",
+                (36, 331, 42, 913),
+            ),
+            (
+                "byzantine-endgame-objective-witness-defense-search",
+                "byzantine-offensive-objective-class-defense",
+                (82, 235, 236, 952, 927),
+            ),
+            (
+                "byzantine-endgame-objective-witness-production-search",
+                "byzantine-offensive-objective-class-production",
+                (49, 12, 87, 101, 104, 83),
+            ),
+            (
+                "byzantine-endgame-objective-witness-town-center-search",
+                "byzantine-offensive-objective-class-town-center",
+                (109, 71, 141, 142),
+            ),
+        )
+        witness_base = len(rules)
+        for offset, (identity, class_value, native_ids) in enumerate(witness_specs):
+            rules.append(
+                NativeDucRule(
+                    identity=identity,
+                    order=witness_base + offset,
+                    facts=(
+                        parse_expression(
+                            "(goal byzantine-offensive-objective-state "
+                            "byzantine-offensive-objective-state-witness)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(goal byzantine-offensive-objective-class {class_value})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(goal byzantine-offensive-objective-claim 1)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    actions=(
+                        parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                        parse_expression(
+                            "(up-set-target-point byzantine-offensive-objective-point)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-filter-distance c: 0 c: {objective_control.release_search_radius})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-modify-sn sn-focus-player-number g:= "
+                            "byzantine-offensive-enemy-player)",
+                            SourceLocation(1),
+                        ),
+                        *tuple(
+                            parse_expression(
+                                f"(up-find-remote c: {native_id} c: 1)",
+                                SourceLocation(1),
+                            )
+                            for native_id in native_ids
+                        ),
+                        parse_expression(
+                            "(up-modify-sn sn-focus-player-number g:= "
+                            "byzantine-scout-focus-player)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    lifecycle=(
+                        NativeDucLifecycleStage.ADMISSIBILITY,
+                        NativeDucLifecycleStage.TARGET,
+                    ),
+                )
+            )
+
+        witness_consumer_identity = "byzantine-endgame-objective-witness-consume"
+        target_output = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "byzantine-endgame-objective"),
+                "objective-witness-target",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        search_output = GoalSpanRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "byzantine-endgame-objective"),
+                "objective-release-search",
+            ),
+            width=4,
+            shape=GoalSpanKind.EXTENDED_4,
+            contract_id="up-get-search-state.OutputGoalId",
+            start_min=41,
+            start_max=15996,
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        rules.append(
+            NativeDucRule(
+                identity=witness_consumer_identity,
+                order=witness_base + len(witness_specs),
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-state "
+                        "byzantine-offensive-objective-state-witness)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-claim 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(up-get-object-data id 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-search-state byzantine-offensive-objective-release-search)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-reset-search 0 0 1 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(
+                    NativeDucLifecycleStage.PICKUP_WITNESS,
+                    NativeDucLifecycleStage.RELEASE_WITNESS,
+                ),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=witness_consumer_identity,
+                section="ACTION",
+                expression_index=0,
+                request=target_output,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=witness_consumer_identity,
+                section="ACTION",
+                expression_index=1,
+                request=search_output,
+                command="up-get-search-state",
+                argument_index=0,
+            )
+        )
 
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
