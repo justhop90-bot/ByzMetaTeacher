@@ -1443,7 +1443,7 @@ def community_strategy_demands(
                 identity="imperial-ram-sustain",
                 owner="endgame-siege-replacement",
                 priority=_StrategicPriority.DEFENSE,
-                line="battering-ram-line",
+                line="ram-line",
                 minimum=_ENDGAME_RAM_TARGET,
                 reason_refs=(
                     "strategy-imperial-spend-wood",
