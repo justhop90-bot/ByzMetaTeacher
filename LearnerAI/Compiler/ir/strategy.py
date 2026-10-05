@@ -3165,15 +3165,23 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-push-recover-premium",
+            "byzantine-endgame-push-recover-premium-open",
             facts=(
-                parse_expression(
-                    "(or (goal byzantine-endgame-push-state 1) "
-                    "(goal byzantine-endgame-push-state 2))",
-                    SourceLocation(1),
-                ),
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression(premium_shortfall, SourceLocation(1)),
+                parse_expression(f"(not {premium_ready})", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-premium-fortified",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression(f"(not {premium_ready})", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
