@@ -1178,9 +1178,13 @@ def _byzantine_endgame_attack_group_sn_controllers(
             identity="byzantine-endgame-push-attack-groups-underlay",
             native_strategic_number_id=36,
             value=0,
-            layer=StrategicNumberControllerLayer.DEFAULT_BASE,
+            layer=StrategicNumberControllerLayer.AGE_BASE,
             priority=0,
             origin=StrategicNumberControllerOrigin.EXPLICIT,
+            activation_guard=parse_expression(
+                "(current-age >= dark-age)",
+                SourceLocation(1),
+            ),
             owner=profile.profile_id,
         ),
     ]
