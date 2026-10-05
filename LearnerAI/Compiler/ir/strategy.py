@@ -1709,11 +1709,21 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     "(goal byzantine-endgame-push-state 3))",
                     SourceLocation(1),
                 ),
-                parse_expression(f"(not {live_witness[1:]})" if live_witness.startswith("(") else live_witness, SourceLocation(1)),
+                parse_expression(f"(not {live_witness})", SourceLocation(1)),
             ),
             actions=(
                 *restore_attack_group_controls,
                 parse_expression("(set-goal byzantine-endgame-push-state 3)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-witness-live",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 3)", SourceLocation(1)),
+                parse_expression(live_witness, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
