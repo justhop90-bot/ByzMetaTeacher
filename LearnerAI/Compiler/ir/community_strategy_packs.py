@@ -10,6 +10,7 @@ from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, Resource, UnitLineId
+from .model import LifecycleState
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -121,6 +122,7 @@ def _build_demand(
     release: str | None = None,
     opportunity_cost: _OpportunityCostPolicy | None = None,
     invalidate_ref: str | None = None,
+    initial_state: LifecycleState = LifecycleState.ACTIVE,
 ) -> _StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
@@ -154,6 +156,7 @@ def _build_demand(
             witness=target_witness,
             release=release,
         ),
+        initial_state=initial_state,
         recovery=_CapabilityRecoveryContract(),
     )
 
@@ -587,7 +590,9 @@ def community_strategy_observations(
                 _observation(
                     f"camp-front-{label}-active",
                     (
-                        f"(and (current-age >= feudal-age) (resource-found {resource.value}))"
+                        "(and (current-age >= feudal-age) "
+                        "(goal demand-castle-commitment 1) "
+                        "(resource-found stone))"
                         if resource is CampResource.STONE
                         else f"(resource-found {resource.value})"
                     ),
@@ -676,7 +681,7 @@ def community_strategy_demands(
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
-            if floor >= 3:
+            if floor >= 2:
                 requirements = [
                     active_expression,
                     remote_expression,
@@ -727,6 +732,11 @@ def community_strategy_demands(
                         action=action,
                         witness=witness,
                         release=witness,
+                    ),
+                    initial_state=(
+                        LifecycleState.RELEASED
+                        if resource is CampResource.STONE
+                        else LifecycleState.ACTIVE
                     ),
                     provenance=_airef_provenance(
                         effective,
@@ -904,7 +914,8 @@ def community_strategy_demands(
                 reason_ref="strategy-enemy-pressure",
                 reason_label="Sustained enemy pressure justifies one defensive observation point",
                 building=outpost,
-                requirements=(" (can-build outpost)".strip(),),
+                requirements=("(current-age >= feudal-age)", "(can-build outpost)"),
+                initial_state=LifecycleState.RELEASED,
             ),
         )
     )
