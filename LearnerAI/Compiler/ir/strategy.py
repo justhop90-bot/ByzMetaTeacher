@@ -482,6 +482,7 @@ class StrategyCompilation:
     economy_controller: "EconomyControllerPlan | None" = None
     camp_controller: "ByzantineCampControllerPlan | None" = None
     role_separation_plan: "NativeRoleSeparationPlan | None" = None
+    endgame_plan: "EndgamePlan | None" = None
 
 
 _AGE_ORDER = {
