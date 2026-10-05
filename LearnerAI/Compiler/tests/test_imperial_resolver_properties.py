@@ -162,6 +162,20 @@ class ImperialResolverPropertyTests(unittest.TestCase):
         )
         self.assertTrue(ImperialResolver.gold_starved_eligible(trash))
 
+    def test_property_open_entry_requires_offensive_objective(self):
+        base = self.base()
+        without_objective = replace(base, offensive_objective=False)
+        decision = self.resolve(
+            without_objective,
+            dwell_seconds=30,
+            guard_seconds=20,
+            rearm_seconds=0,
+        )
+        self.assertNotEqual(
+            decision.destination,
+            ImperialBand.OPEN_FIELD,
+        )
+
     def test_property_open_entry_thresholds_are_inclusive(self):
         base = self.base()
         for field, threshold in OPEN_ENTRY_THRESHOLDS.items():
