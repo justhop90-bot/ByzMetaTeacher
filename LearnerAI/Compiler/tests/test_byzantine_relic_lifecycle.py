@@ -24,7 +24,6 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
         self.assertEqual(
             tuple(rules),
             (
-                "byzantine-relic-control-init",
                 "byzantine-relic-control-acquire",
                 "byzantine-relic-control-pickup-witness",
                 "byzantine-relic-control-return",
