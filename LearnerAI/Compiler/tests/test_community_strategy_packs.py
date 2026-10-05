@@ -124,15 +124,14 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             )
             self.assertEqual(demand.execution.release, demand.execution.witness)
 
-        self.assertTrue(
-            any(
-                "(unit-type-count-total cataphract-line >= 6)" in demand.reason[0].label
-                for demand in by_id.values()
-            )
-            or any(
-                "cataphract-line" in item.expression
-                for item in profile.observations
-            ),
+        observation_by_id = {item.identity: item.expression for item in profile.observations}
+        self.assertIn(
+            "(unit-type-count-total cataphract-line >= 6)",
+            observation_by_id["strategy-production-stable-depth-6"],
+        )
+        self.assertIn(
+            "(unit-type-count-total camel-rider-line >= 6)",
+            observation_by_id["strategy-production-stable-depth-6"],
         )
         for demand in by_id.values():
             if "-depth-" in demand.identity:
