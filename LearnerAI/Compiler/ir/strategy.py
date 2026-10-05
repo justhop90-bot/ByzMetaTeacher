@@ -3112,7 +3112,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             "byzantine-endgame-push-admit",
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
-                parse_expression("(goal byzantine-imperial-band-state 1)", SourceLocation(1)),
+                parse_expression(
+                    "(or (goal byzantine-imperial-band-state 1) "
+                    "(goal byzantine-imperial-band-state 3))",
+                    SourceLocation(1),
+                ),
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
