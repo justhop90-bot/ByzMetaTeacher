@@ -280,6 +280,36 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             wheelbarrow,
         )
 
+    def test_emitter_honors_released_initial_state(self):
+        output = compile_strategy_profile(
+            build_byzantine_strategy(self.effective),
+            self.effective,
+        )
+        init_start = output.index("; Demand initialization")
+        init_end = output.index("; Invalidation:", init_start)
+        init = output[init_start:init_end]
+
+        self.assertIn(
+            "(set-goal demand-adaptive-outpost 0)",
+            init,
+        )
+        self.assertIn(
+            "(set-goal demand-economy-stone-camp-floor-1 0)",
+            init,
+        )
+        self.assertIn(
+            "(set-goal demand-economy-wood-camp-floor-2 0)",
+            init,
+        )
+        self.assertIn(
+            "(set-goal demand-economy-gold-camp-floor-2 0)",
+            init,
+        )
+        self.assertIn(
+            "(set-goal demand-civilian-villager-continuity 1)",
+            init,
+        )
+
     def test_checked_in_runtime_preserves_age_bank_arbitration(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
