@@ -1584,76 +1584,139 @@
     (disable-self)
 )
 
-; Native DUC rule: byzantine-relic-control-init
+; Native control rule: byzantine-relic-control-initialize
 (defrule
     (goal byzantine-relic-control-state -1)
 =>
-    (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
+    (set-goal byzantine-relic-control-state 0)
     (disable-timer byzantine-relic-control-timer)
-    (set-goal byzantine-monk-defense-state byzantine-monk-defense-idle)
-    (disable-timer byzantine-monk-defense-heal-timer)
-    (disable-timer byzantine-monk-defense-convert-timer)
+    (set-strategic-number sn-focus-player-number 0)
 )
 
-; Relic acquisition: a single newly-trained Monk is sufficient to start the
-; relic race. Relics are Gaia object 285, not Monk object 125. Reset the focus
-; to Gaia for this search, then let the normal focus-setting rules own it again.
+; Native control rule: byzantine-relic-control-focus-gaia
+(defrule
+    (goal byzantine-relic-control-state 0)
+=>
+    (set-strategic-number sn-focus-player-number 0)
+)
+
+; Native control rule: byzantine-relic-control-mark-dispatch
 (defrule
     (current-age >= castle-age)
-    (goal byzantine-relic-control-state byzantine-relic-control-idle)
-    (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 1)
+    (goal byzantine-relic-control-state 0)
+    (building-type-count-total 104 >= 1)
+    (unit-type-count-total 125 >= 1)
+    (unit-type-count-total 286 < 1)
     (or
         (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
         (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
     )
 =>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-find-remote c: relic c: 1)
-    (up-set-target-object search-remote c: 0)
-    (up-find-local c: monk c: 1)
-    (up-target-objects 0 action-default -1 stance-defensive)
-    (set-goal byzantine-relic-control-state byzantine-relic-control-acquire)
-    (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
+    (set-goal byzantine-relic-control-state 1)
+    (enable-timer byzantine-relic-control-timer 45)
 )
 
-; Denial: contest relics only when enemy monk pressure justifies spending monk
-; movement on denial rather than routine wandering.
+; Native control rule: byzantine-relic-control-pickup-witness
 (defrule
-    (current-age >= castle-age)
-    (goal byzantine-relic-control-state byzantine-relic-control-idle)
-    (building-type-count-total monastery >= 1)
-    (unit-type-count-total monk >= 1)
-    (players-unit-type-count any-enemy monk >= 2)
-    (or
-        (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
-        (up-timer-status byzantine-relic-control-timer c:== timer-triggered)
-    )
+    (goal byzantine-relic-control-state 1)
+    (unit-type-count-total 286 >= 1)
 =>
-    (up-full-reset-search)
-    (up-find-remote c: monk c: 1)
-    (up-set-target-object search-remote c: 0)
-    (up-find-local c: monk c: 1)
-    (up-target-objects 0 action-default -1 stance-aggressive)
-    (set-goal byzantine-relic-control-state byzantine-relic-control-deny)
-    (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
+    (set-goal byzantine-relic-control-state 2)
+    (disable-timer byzantine-relic-control-timer)
 )
 
-; Target-task expiry is a cadence reset. It is not a claim that the relic was
-; acquired or denied; the next pass must observe the world again.
+; Native control rule: byzantine-relic-control-resume-carrier
+(defrule
+    (goal byzantine-relic-control-state 0)
+    (unit-type-count-total 286 >= 1)
+=>
+    (set-goal byzantine-relic-control-state 2)
+)
+
+; Native control rule: byzantine-relic-control-start-return
+(defrule
+    (goal byzantine-relic-control-state 2)
+    (unit-type-count-total 286 >= 1)
+    (building-type-count-total 104 >= 1)
+    (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
+=>
+    (enable-timer byzantine-relic-control-timer 45)
+)
+
+; Native control rule: byzantine-relic-control-carrier-loss-recovery
+(defrule
+    (goal byzantine-relic-control-state 2)
+    (unit-type-count-total 286 < 1)
+=>
+    (disable-timer byzantine-relic-control-timer)
+    (set-goal byzantine-relic-control-state 0)
+)
+
+; Native control rule: byzantine-relic-control-expiry
 (defrule
     (or
-        (goal byzantine-relic-control-state byzantine-relic-control-acquire)
-        (goal byzantine-relic-control-state byzantine-relic-control-deny)
+        (goal byzantine-relic-control-state 1)
+        (goal byzantine-relic-control-state 2)
     )
     (timer-triggered byzantine-relic-control-timer)
 =>
     (disable-timer byzantine-relic-control-timer)
-    (set-goal byzantine-relic-control-state byzantine-relic-control-idle)
+    (set-goal byzantine-relic-control-state 0)
 )
 
+; Native DUC rule: byzantine-relic-control-acquire
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-relic-control-state 0)
+    (building-type-count-total 104 >= 1)
+    (unit-type-count-total 125 >= 1)
+    (unit-type-count-total 286 < 1)
+    (up-gaia-type-count-total c: 285 > 0)
+    (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
+=>
+    (up-full-reset-search)
+    (up-find-remote c: 285 c: 1)
+    (up-set-target-object search-remote c: 0)
+    (up-find-local c: 125 c: 1)
+    (up-target-objects 0 0 -1 stance-defensive)
+)
 
+; Native DUC rule: byzantine-relic-control-pickup-witness
+(defrule
+    (goal byzantine-relic-control-state 1)
+=>
+    (up-find-local c: 286 c: 1)
+)
+
+; Native DUC rule: byzantine-relic-control-return
+(defrule
+    (goal byzantine-relic-control-state 2)
+    (unit-type-count-total 286 >= 1)
+    (building-type-count-total 104 >= 1)
+    (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
+=>
+    (up-full-reset-search)
+    (up-find-local c: 104 c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-find-local c: 286 c: 1)
+    (up-target-objects 0 0 -1 stance-defensive)
+)
+
+; Native DUC rule: byzantine-relic-control-release-witness
+(defrule
+    (goal byzantine-relic-control-state 2)
+    (up-gaia-type-count-total c: 285 == 0)
+=>
+    (up-full-reset-search)
+)
+
+; Native DUC rule: byzantine-relic-control-recovery
+(defrule
+    (goal byzantine-relic-control-state 2)
+    (up-gaia-type-count-total c: 285 >= 1)
+=>
+    (up-full-reset-search)
+)
 
 ; -----------------------------------------------------------------------------
 ; BYZANTINE MONK DEFENSE / CONVERSION CONTROL
