@@ -1861,18 +1861,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     conversion_contract = plan.conversion_contract
     if conversion_contract is not None:
         for demand in profile.demands:
-            if demand.identity.startswith("imperial-forward-production-"):
-                demand_owner = SemanticId(profile.profile_id, demand.identity)
-                states.append(
-                    NativeControlState(
-                        f"demand-{demand.identity}",
-                        GoalSlotRequest(
-                            StorageRequestId(demand_owner, "lifecycle"),
-                            role=GoalRole.LIFECYCLE_STATE,
-                        ),
-                    )
-                )
-        for demand in profile.demands:
             if not demand.identity.startswith("imperial-forward-production-"):
                 continue
             action = demand.execution.action.strip()
