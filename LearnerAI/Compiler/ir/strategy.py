@@ -2319,7 +2319,7 @@ def _byzantine_relic_control_plan(profile_id: str):
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
-    from .native_control import NativeControlPlan, NativeControlState
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
     from .recurrent import TimerRequest
     from .strategic_number import StrategicNumberOrigin
 
