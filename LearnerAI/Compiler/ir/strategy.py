@@ -2316,11 +2316,12 @@ def _byzantine_relic_control_plan(profile_id: str):
     if profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}:
         return None
 
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlState
     from .recurrent import TimerRequest
+    from .strategic_number import StrategicNumberOrigin
 
     owner = SemanticId(profile_id, "byzantine-relic-control")
     state_name = "byzantine-relic-control-state"
@@ -2340,7 +2341,36 @@ def _byzantine_relic_control_plan(profile_id: str):
             stability_key=f"{profile_id}:byzantine-relic-control-timer",
         ),
     )
-    return NativeControlPlan(states=(state, timer), rules=())
+    relic_return = NativeControlState(
+        "sn-relic-return-distance",
+        StrategicNumberRequest(
+            StorageRequestId(owner, "sn-native-relic-return-distance"),
+            why_not_goal=(
+                "DE-documented native relic return preference; the compiler sets no "
+                "additional semantic interpretation beyond the native identifier."
+            ),
+            stability_key=f"{profile_id}:strategic-number:23",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=23,
+        ),
+    )
+    relic_defend = NativeControlState(
+        "sn-relic-defend-priority",
+        StrategicNumberRequest(
+            StorageRequestId(owner, "sn-native-relic-defend-priority"),
+            why_not_goal=(
+                "DE-documented native relic defend priority; the compiler preserves "
+                "the native setting without treating it as a completion witness."
+            ),
+            stability_key=f"{profile_id}:strategic-number:55",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=55,
+        ),
+    )
+    return NativeControlPlan(
+        states=(state, timer, relic_return, relic_defend),
+        rules=(),
+    )
 \n\ndef _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
