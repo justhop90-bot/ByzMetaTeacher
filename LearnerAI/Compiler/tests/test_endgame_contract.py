@@ -11,7 +11,7 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgameFrontierState,
     EndgamePushContract,
 )
-from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
+from LearnerAI.Compiler.ir.civ_profile import Age, ByzantineProfile, resolve_effective_civ
 from LearnerAI.Compiler.ir.strategy import (
     StrategyEnvelope,
     StrategicObservationSpec,
@@ -244,6 +244,7 @@ class EndgameContractTests(unittest.TestCase):
                 StrategicObservationSpec(
                     identity="army-ready",
                     expression="(current-age >= imperial-age)",
+                    provenance=self.effective.age_advance(Age.IMPERIAL).provenance,
                 ),
             ),
         )
