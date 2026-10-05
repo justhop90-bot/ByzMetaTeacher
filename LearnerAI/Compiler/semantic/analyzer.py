@@ -241,16 +241,25 @@ def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     # seam may promote them to PERSISTENT_STATE. Witnesses/actions still pass
     # through their normal support/context validators.
     if expr.head in {"goal", "up-compare-goal"}:
-        primitive = registry.get(expr.head)
-        if primitive is None:
+        native = registry.native(expr.head)
+        if native is None:
             raise CompileError(
-                f"NATIVE-SUPPORT-005: native command '{expr.head}' has no semantic adapter"
+                f"NATIVE-SUPPORT-005: native command '{expr.head}' is missing from the checked-in native schema"
+            )
+        assessment = registry.assess_support(expr.head)
+        if assessment.state is NativeSupportState.UNSUPPORTED:
+            raise CompileError(
+                f"{assessment.diagnostics[-1].code}: native command '{expr.head}' "
+                f"is {assessment.state.value}: {assessment.message}"
             )
         try:
             registry.validate_native_signature(expr.head, len(expr.args))
-            registry.validate_adapter_contract(primitive)
         except ValueError as exc:
             raise CompileError(str(exc)) from exc
+        if native.command_type not in {"Fact", "Fact/Action"}:
+            raise CompileError(
+                f"NATIVE-SUPPORT-006: native command '{expr.head}' is not a read-only fact"
+            )
         return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
