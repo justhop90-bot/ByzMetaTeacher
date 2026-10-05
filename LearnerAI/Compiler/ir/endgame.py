@@ -166,7 +166,7 @@ def validate_endgame_plan(
     unknown = sorted(
         reference
         for reference in plan.observation_references
-        if known and reference not in known
+        if reference not in known
     )
     if unknown:
         raise ValueError(
