@@ -3620,7 +3620,7 @@ def _default_byzantine_duc_plan(
             (
                 "byzantine-endgame-objective-target-siege",
                 "byzantine-offensive-objective-state-siege",
-                "byzantine-offensive-objective-class-siege",
+                "byzantine-offensive-objective-class-none",
                 (36, 331, 42, 913),
                 "siege",
             ),
