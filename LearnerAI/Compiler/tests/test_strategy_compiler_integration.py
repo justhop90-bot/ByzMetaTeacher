@@ -226,6 +226,43 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_byzantine_stock_lowers_frontier_target_control_through_duc(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+
+        self.assertIsNotNone(compilation.duc_plan)
+        plan = compilation.duc_plan
+        assert plan is not None
+
+        target_rules = tuple(
+            rule for rule in plan.rules
+            if rule.identity.startswith("byzantine-endgame-target-")
+        )
+        self.assertEqual(len(target_rules), 18)
+        for rule in target_rules:
+            sources = tuple(fact.source for fact in rule.facts)
+            self.assertIn("(goal byzantine-offensive-objective-claim 0)", sources)
+            self.assertIn("(current-age >= imperial-age)", sources)
+            actions = tuple(action.source for action in rule.actions)
+            self.assertIn(
+                "(up-set-target-point byzantine-offensive-objective-point)",
+                actions,
+            )
+            self.assertIn("(up-filter-distance c: -1 c: 40)", actions)
+            self.assertIn("(up-set-target-object search-remote c: 0)", actions)
+            self.assertNotIn("(up-target-objects", " ".join(actions))
+            self.assertNotIn("(attack-now)", " ".join(actions))
+            self.assertFalse(
+                any("set-strategic-number sn-native-36" in action for action in actions)
+            )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn(
+            "(up-set-target-point byzantine-offensive-objective-point)",
+            output,
+        )
+        self.assertIn("(up-filter-distance c: -1 c: 40)", output)
+        self.assertIn("; Native DUC rule: byzantine-endgame-target-", output)
+
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
