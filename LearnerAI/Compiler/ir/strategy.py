@@ -2683,8 +2683,23 @@ def _byzantine_attack_phase_request(profile_id: str):
     )
 
 
-def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePlan":
-    """Default Castle-age Byzantine attack issue actuator gated by lifecycle phase."""
+def _byzantine_endgame_push_request(profile_id: str):
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
+
+    owner = SemanticId(profile_id, "byzantine-endgame-push")
+    return GoalSlotRequest(
+        StorageRequestId(owner, "byzantine-endgame-push-state"),
+        role=GoalRole.PERSISTENT_STATE,
+    )
+
+
+def _default_byzantine_attack_plan(
+    profile_id: str,
+    *,
+    push_contract=None,
+) -> "NativeAttackLifecyclePlan":
+    """Default Byzantine attack issue plan plus the Imperial grouped push actuator."""
 
     from ..semantic.analyzer import parse_expression
     from .native_attack import (
@@ -2693,6 +2708,7 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
         NativeAttackLifecyclePlan,
         NativeAttackRule,
     )
+    from .strategic_number_arbitration import StrategicNumberActionAttachment
 
     lifecycle = (
         AttackLifecycleObservation.ADMISSION_REQUIRED,
@@ -2701,70 +2717,155 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
         AttackLifecycleObservation.REASSESS_REQUIRED,
     )
     phase_request = _byzantine_attack_phase_request(profile_id)
+
     common_facts = (
-        parse_expression("(current-age == castle-age)", SourceLocation(1)),
+        parse_expression("(current-age >= castle-age)", SourceLocation(1)),
         parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
         parse_expression(
-            "(or (goal byzantine-army-role-state byzantine-army-role-committed) (goal byzantine-army-role-state byzantine-army-role-raid-split))",
+            "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
+            "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
             SourceLocation(1),
         ),
     )
-    return NativeAttackLifecyclePlan(
-        rules=(
+
+    rules = [
+        NativeAttackRule(
+            identity="byzantine-castle-attack-now-cataphract",
+            order=100,
+            facts=(
+                *common_facts,
+                parse_expression("(unit-type-count cataphract >= 2)", SourceLocation(1)),
+                parse_expression("(goal byzantine-attack-phase 2)", SourceLocation(1)),
+            ),
+            actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+            lifecycle=lifecycle,
+        ),
+        NativeAttackRule(
+            identity="byzantine-castle-attack-now-knight",
+            order=110,
+            facts=(
+                *common_facts,
+                parse_expression("(unit-type-count knight >= 3)", SourceLocation(1)),
+                parse_expression("(goal byzantine-attack-phase 4)", SourceLocation(1)),
+            ),
+            actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+            lifecycle=lifecycle,
+        ),
+    ]
+
+    goal_inputs = [
+        NativeAttackGoalInputRequest(
+            identity="byzantine-attack-phase-cataphract-input",
+            rule_identity="byzantine-castle-attack-now-cataphract",
+            section="FACT",
+            expression_index=4,
+            argument_index=0,
+            request=phase_request,
+        ),
+        NativeAttackGoalInputRequest(
+            identity="byzantine-attack-phase-knight-input",
+            rule_identity="byzantine-castle-attack-now-knight",
+            section="FACT",
+            expression_index=4,
+            argument_index=0,
+            request=phase_request,
+        ),
+    ]
+
+    attachments = []
+    if push_contract is not None:
+        push_request = _byzantine_endgame_push_request(profile_id)
+        rules.append(
             NativeAttackRule(
-                identity="byzantine-castle-attack-now-cataphract",
-                order=100,
+                identity="byzantine-imperial-attack-group-pulse",
+                order=200,
                 facts=(
-                    *common_facts,
+                    parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                    parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                    parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
                     parse_expression(
-                        "(unit-type-count cataphract >= 2)",
+                        "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
+                        "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
                         SourceLocation(1),
                     ),
-                    parse_expression(
-                        "(goal byzantine-attack-phase 2)",
-                        SourceLocation(1),
-                    ),
+                    parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                    parse_expression("(goal byzantine-siege-approach byzantine-siege-approach-normal)", SourceLocation(1)),
                 ),
                 actions=(parse_expression("(attack-now)", SourceLocation(1)),),
                 lifecycle=lifecycle,
-            ),
-            NativeAttackRule(
-                identity="byzantine-castle-attack-now-knight",
-                order=110,
-                facts=(
-                    *common_facts,
-                    parse_expression(
-                        "(unit-type-count knight >= 3)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(goal byzantine-attack-phase 4)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(parse_expression("(attack-now)", SourceLocation(1)),),
-                lifecycle=lifecycle,
-            ),
-        ),
-        goal_input_requests=(
+            )
+        )
+        goal_inputs.append(
             NativeAttackGoalInputRequest(
-                identity="byzantine-attack-phase-cataphract-input",
-                rule_identity="byzantine-castle-attack-now-cataphract",
+                identity="byzantine-endgame-push-state-input",
+                rule_identity="byzantine-imperial-attack-group-pulse",
                 section="FACT",
-                expression_index=4,
+                expression_index=1,
                 argument_index=0,
-                request=phase_request,
+                request=push_request,
+            )
+        )
+        activation_state = "byzantine-endgame-push-state"
+        action_identity = "attack-now"
+        owned_rule = "byzantine-imperial-attack-group-pulse"
+        attachments = [
+            StrategicNumberActionAttachment(
+                identity="byzantine-endgame-attack-groups",
+                controller_identity="byzantine-endgame-attack-groups",
+                action_identity=action_identity,
+                native_strategic_number_id=36,
+                value=push_contract.attack_group_count,
+                activation_state_name=activation_state,
+                owned_rule_identity=owned_rule,
+                action_index=0,
             ),
-            NativeAttackGoalInputRequest(
-                identity="byzantine-attack-phase-knight-input",
-                rule_identity="byzantine-castle-attack-now-knight",
-                section="FACT",
-                expression_index=4,
-                argument_index=0,
-                request=phase_request,
+            StrategicNumberActionAttachment(
+                identity="byzantine-endgame-attack-soldiers",
+                controller_identity="byzantine-endgame-attack-soldiers",
+                action_identity=action_identity,
+                native_strategic_number_id=227,
+                value=push_contract.attack_soldier_percent,
+                activation_state_name=activation_state,
+                owned_rule_identity=owned_rule,
+                action_index=0,
             ),
-        ),
+            StrategicNumberActionAttachment(
+                identity="byzantine-endgame-attack-minimum-group",
+                controller_identity="byzantine-endgame-attack-minimum-group",
+                action_identity=action_identity,
+                native_strategic_number_id=16,
+                value=push_contract.minimum_group_size,
+                activation_state_name=activation_state,
+                owned_rule_identity=owned_rule,
+                action_index=0,
+            ),
+            StrategicNumberActionAttachment(
+                identity="byzantine-endgame-attack-maximum-group",
+                controller_identity="byzantine-endgame-attack-maximum-group",
+                action_identity=action_identity,
+                native_strategic_number_id=26,
+                value=push_contract.maximum_group_size,
+                activation_state_name=activation_state,
+                owned_rule_identity=owned_rule,
+                action_index=0,
+            ),
+        ]
+
+    plan = NativeAttackLifecyclePlan(
+        rules=tuple(rules),
+        goal_input_requests=tuple(goal_inputs),
     )
+    if attachments:
+        plan = plan.bind_strategic_number_action_attachments(
+            tuple(attachments),
+            owned_actions={
+                "byzantine-endgame-attack-groups": (owned_rule, 0),
+                "byzantine-endgame-attack-soldiers": (owned_rule, 0),
+                "byzantine-endgame-attack-minimum-group": (owned_rule, 0),
+                "byzantine-endgame-attack-maximum-group": (owned_rule, 0),
+            },
+        )
+    return plan
 
 
 def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
