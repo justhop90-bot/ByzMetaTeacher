@@ -166,9 +166,13 @@ def parse_expression(source: str, location=None) -> Expression:
     try:
         expr, end = _parse(tokens)
     except CompileError as exc:
-        if str(exc) == "unbalanced .per expression":
+        if str(exc) in {
+            "unbalanced .per expression",
+            "logical operator 'or' requires 2 operands",
+            "logical operator 'and' requires 2 operands",
+        }:
             raise CompileError(
-                f"unbalanced .per expression: {source}"
+                f"{exc}: {source}"
             ) from exc
         raise
     if end != len(tokens):
