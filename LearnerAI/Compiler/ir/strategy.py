@@ -2350,7 +2350,6 @@ def _byzantine_relic_control_plan(profile_id: str):
         expr("(building-type-count-total monastery >= 1)"),
         expr("(unit-type-count-total monk >= 1)"),
         expr("(unit-type-count-total monk-with-relic < 1)"),
-        expr("(up-gaia-type-count-total c: relic > 0)"),
         expr(
             f"(or "
             f"(up-timer-status {timer_name} c:== timer-disabled) "
@@ -2409,24 +2408,10 @@ def _byzantine_relic_control_plan(profile_id: str):
             ),
         ),
         NativeControlRule(
-            "byzantine-relic-control-release-witness",
+            "byzantine-relic-control-carrier-loss-recovery",
             facts=(
                 expr(f"(goal {state_name} 2)"),
                 expr("(unit-type-count-total monk-with-relic < 1)"),
-                expr("(up-gaia-type-count-total c: relic == 0)"),
-                expr("(players-unit-type-count any-enemy monk-with-relic < 1)"),
-            ),
-            actions=(
-                expr(f"(disable-timer {timer_name})"),
-                expr(f"(set-goal {state_name} 0)"),
-            ),
-        ),
-        NativeControlRule(
-            "byzantine-relic-control-recovery",
-            facts=(
-                expr(f"(goal {state_name} 2)"),
-                expr("(unit-type-count-total monk-with-relic < 1)"),
-                expr("(up-gaia-type-count-total c: relic >= 1)"),
             ),
             actions=(
                 expr(f"(disable-timer {timer_name})"),
