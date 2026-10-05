@@ -163,26 +163,12 @@ def _populate_expression_sources(
 
 def parse_expression(source: str, location=None) -> Expression:
     tokens = _tokens(source)
-    try:
-        expr, end = _parse(tokens)
-    except CompileError as exc:
-        if str(exc) in {
-            "unbalanced .per expression",
-            "logical operator 'or' requires 2 operands",
-            "logical operator 'and' requires 2 operands",
-        }:
-            raise CompileError(
-                f"{exc}: {source}"
-            ) from exc
-        raise
+    expr, end = _parse(tokens)
     if end != len(tokens):
-        raise CompileError(
-            f"trailing tokens after .per expression: {source}"
-        )
+        raise CompileError("trailing tokens after .per expression")
     if expr.head in _LOGICAL_ARITY and len(expr.args) != _LOGICAL_ARITY[expr.head]:
         raise CompileError(
-            f"logical operator '{expr.head}' requires "
-            f"{_LOGICAL_ARITY[expr.head]} operands: {source}"
+            f"logical operator '{expr.head}' requires {_LOGICAL_ARITY[expr.head]} operands"
         )
     return _populate_expression_sources(
         expr,
@@ -243,30 +229,11 @@ def _is_open_production_queue_capacity_control(expr: Expression) -> bool:
     return 0 <= value <= 15
 
 
-def _persistent_goal_read(expr: Expression, registry: PrimitiveRegistry) -> bool:
-    # Goal reads are persistent-state observations. The generic native-support
-    # registry intentionally keeps them engine-semantics-mapped, but demand
-    # requirements are explicitly allowed to consume persistent state. Writes
-    # remain on the native control plane and witness contexts still reject the
-    # PERSISTENT_STATE role below.
-    if expr.head not in {"goal", "up-compare-goal"}:
-        return False
-    native = registry.require_native(expr.head)
-    registry.validate_native_signature(expr.head, len(expr.args))
-    if native.command_type != "Fact":
-        raise ValueError(
-            f"persistent goal read '{expr.head}' is not registered as a native fact"
-        )
-    return True
-
-
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     # SN 264 is accepted here only as OPEN production-capacity evidence. It
     # remains forbidden in all other contexts because ordinary Strategic
     # Number state is an engine-control effect, not a generic observation.
     if _is_open_production_queue_capacity_control(expr):
-        return {"PERSISTENT_STATE"}
-    if _persistent_goal_read(expr, registry):
         return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
