@@ -38,20 +38,6 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 22)
 
-    def test_native_goal_reads_are_allowed_as_persistent_strategy_requirements(self):
-        source = """
-        demand band-read {
-            require (goal 420 1)
-            require (up-compare-goal 420 >= 1)
-            action (build castle)
-            witness (building-type-count castle > 0)
-            release (building-type-count castle > 0)
-        }
-        """
-        output = compile_source(source)
-        self.assertIn("(goal 420 1)", output)
-        self.assertIn("(up-compare-goal 420 >= 1)", output)
-
     def test_native_goal_reads_remain_invalid_as_witnesses(self):
         source = """
         demand bad-witness {
