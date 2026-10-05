@@ -1665,14 +1665,14 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         plan.push_contract.cleared_witness_ref
     ).expression
     military_ready = (
-        "(or (unit-type-count-total cataphract-line >= 4) "
-        "(or (unit-type-count-total varangian-guard-line >= 6) "
-        "(or (unit-type-count-total arbalest-line >= 6) "
-        "(unit-type-count-total halberdier-line >= 6))))"
+        "(or (unit-type-count cataphract >= 4) "
+        "(or (unit-type-count varangian-guard >= 6) "
+        "(or (unit-type-count arbalest >= 6) "
+        "(unit-type-count halberdier >= 6))))"
     )
     siege_ready = (
-        "(or (unit-type-count-total trebuchet-line >= 1) "
-        "(or (unit-type-count-total bombard-cannon-line >= 1) "
+        "(or (unit-type-count trebuchet >= 1) "
+        "(or (unit-type-count bombard-cannon >= 1) "
         "(unit-type-count-total mangonel-line >= 1)))"
     )
 
