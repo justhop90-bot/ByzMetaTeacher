@@ -26810,7 +26810,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 3)
 =>
@@ -26834,7 +26834,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 1)
 =>
@@ -26856,7 +26856,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 3)
 =>
@@ -26881,7 +26881,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 1)
 =>
@@ -26907,7 +26907,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 1)
 =>
@@ -26931,7 +26931,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 3)
 =>
@@ -27105,7 +27105,7 @@
 ; Native control rule: byzantine-imperial-band-clear-trash-candidate-10
 (defrule
     (goal byzantine-imperial-band-candidate 3)
-    (gold-amount < 1600)
+
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -27225,7 +27225,7 @@
 (defrule
     (goal byzantine-imperial-band-candidate 1)
     (up-compare-goal byzantine-imperial-band-state != 3)
-    (gold-amount < 1600)
+
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -27345,7 +27345,7 @@
 (defrule
     (goal byzantine-imperial-band-candidate 1)
     (goal byzantine-imperial-band-state 3)
-    (gold-amount < 1600)
+
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -27438,7 +27438,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
     (set-goal byzantine-imperial-band-state 3)
@@ -27465,7 +27465,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
     (set-goal byzantine-imperial-band-state 1)
@@ -27492,7 +27492,7 @@
     (unit-type-count hussar >= 12)
     (food-amount >= 2000)
     (wood-amount >= 1700)
-    (gold-amount >= 1600)
+
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
     (set-goal byzantine-imperial-band-state 1)
