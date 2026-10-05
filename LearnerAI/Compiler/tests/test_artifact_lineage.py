@@ -11,6 +11,7 @@ from pathlib import Path
 from LearnerAI.Compiler.artifacts.lineage import (
     ArtifactLineageError,
     verify_byzantine_artifact_lineage,
+    verify_woven_runtime_lineage,
 )
 
 
@@ -180,6 +181,33 @@ class ByzantineArtifactLineageTests(unittest.TestCase):
         self.assertTrue(result.runtime_verified)
         self.assertTrue(result.promotion_verified)
         self.assertTrue(result.root_matches_runtime)
+
+    def test_woven_runtime_conserves_interleaved_compiler_rules(self) -> None:
+        root = self._fixture()
+        compiler = root / "dist/byzantine/Byzantine.compiler.per"
+        runtime = root / "Byzantine.per"
+        compiler.write_bytes(b"(defrule compiler-a)\n(defrule compiler-b)\n")
+        runtime.write_bytes(
+            b"(defrule runtime-only)\n"
+            b"(defrule compiler-b)\n"
+            b"(defrule runtime-two)\n"
+            b"(defrule compiler-a)\n"
+        )
+        result = verify_woven_runtime_lineage(repository_root=root)
+        self.assertTrue(result.compiler_rules_conserved)
+        self.assertEqual(result.compiler_rule_count, 2)
+        self.assertEqual(result.runtime_rule_count, 4)
+
+    def test_woven_runtime_reports_missing_compiler_rule(self) -> None:
+        root = self._fixture()
+        compiler = root / "dist/byzantine/Byzantine.compiler.per"
+        runtime = root / "Byzantine.per"
+        compiler.write_bytes(b"(defrule compiler-a)\n(defrule compiler-b)\n")
+        runtime.write_bytes(b"(defrule compiler-a)\n")
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_woven_runtime_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-032")
+        self.assertEqual(ctx.exception.edge, "compiler-owned-rules -> woven-runtime")
 
     def test_compiler_hash_mismatch_reports_first_broken_edge(self) -> None:
         root = self._fixture()
