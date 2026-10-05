@@ -131,7 +131,7 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
         self.assertEqual(duplicates, {}, f"Timer slots have multiple owners: {duplicates}")
         self.assertEqual(out_of_range, [], f"Timer slots out of native range: {out_of_range}")
 
-    def test_sn4_has_one_semantic_writer(self) -> None:
+    def test_strategic_number_writer_ownership_is_explicit(self) -> None:
         writers_by_id: dict[int, set[str]] = {}
         for match in SN_WRITE_RE.finditer(self.runtime):
             name = match.group(1)
@@ -141,11 +141,21 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
             if name.startswith("sn-") or name.startswith("sn-native-"):
                 writers_by_id.setdefault(native_id, set()).add(name)
 
+        expected = {
+            4: {"sn-cap-civilian-builders"},
+            36: {"sn-native-36", "sn-number-attack-groups"},
+            227: {"sn-native-227", "sn-percent-attack-soldiers"},
+        }
+        observed = {
+            native_id: names
+            for native_id, names in writers_by_id.items()
+            if len(names) > 1 or native_id in expected
+        }
         self.assertEqual(
-            writers_by_id.get(4, set()),
-            {"sn-cap-civilian-builders"},
-            "SN4 must be owned by the runtime civilian-builder cap controller; "
-            f"observed writers={writers_by_id.get(4, set())}",
+            observed,
+            expected,
+            "Strategic Number ownership drifted without an explicit arbitration "
+            f"contract: observed={observed}",
         )
 
 
