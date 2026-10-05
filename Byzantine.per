@@ -12738,17 +12738,29 @@
     (can-train villager)
     (not (and
         (current-age == dark-age)
-        (unit-type-count-total villager >= 21)
-        (building-type-count-total lumber-camp >= 1)
-        (building-type-count-total mining-camp >= 1)
-        (can-research-with-escrow feudal-age)
+        (and
+            (unit-type-count-total villager >= 21)
+            (and
+                (building-type-count-total lumber-camp >= 1)
+                (and
+                    (building-type-count-total mining-camp >= 1)
+                    (can-research-with-escrow feudal-age)
+                )
+            )
+        )
     ))
     (not (and
         (current-age == feudal-age)
-        (unit-type-count-total villager >= bt-castle-age-villager-maturity)
-        (building-type-count-total blacksmith >= 1)
-        (building-type-count-total market >= 1)
-        (can-research-with-escrow castle-age)
+        (and
+            (unit-type-count-total villager >= bt-castle-age-villager-maturity)
+            (and
+                (building-type-count-total blacksmith >= 1)
+                (and
+                    (building-type-count-total market >= 1)
+                    (can-research-with-escrow castle-age)
+                )
+            )
+        )
     ))
     (not (goal byzantine-resource-claim 1))
     (not (goal byzantine-resource-claim 2))
