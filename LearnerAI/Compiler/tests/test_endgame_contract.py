@@ -8,6 +8,8 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgameRuntimeState,
     EndgameWinCondition,
     EndgamePlan,
+    EndgameFrontierState,
+    EndgamePushContract,
 )
 from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
 from LearnerAI.Compiler.ir.strategy import (
@@ -63,6 +65,85 @@ class EndgameContractTests(unittest.TestCase):
                 EndgamePushState.ADVANCE,
                 EndgamePushState.RECOVERY,
             ),
+        )
+
+    def test_endgame_push_contract_is_bounded_and_frontier_ordered(self):
+        contract = EndgamePushContract(
+            identity="byzantine-endgame-push-v1",
+            attack_group_count=1,
+            attack_soldier_percent=100,
+            minimum_group_size=6,
+            maximum_group_size=40,
+            live_witness_expression="(attack-soldier-count > 0)",
+            frontier=(
+                EndgameFrontierState.SIEGE,
+                EndgameFrontierState.DEFENSE,
+                EndgameFrontierState.PRODUCTION,
+                EndgameFrontierState.TOWN_CENTER,
+            ),
+        )
+        self.assertEqual(contract.attack_group_count, 1)
+        self.assertEqual(contract.maximum_group_size, 40)
+        self.assertEqual(
+            contract.frontier,
+            (
+                EndgameFrontierState.SIEGE,
+                EndgameFrontierState.DEFENSE,
+                EndgameFrontierState.PRODUCTION,
+                EndgameFrontierState.TOWN_CENTER,
+            ),
+        )
+        with self.assertRaises(ValueError):
+            EndgamePushContract(
+                identity="bad",
+                attack_group_count=0,
+                attack_soldier_percent=100,
+                minimum_group_size=6,
+                maximum_group_size=40,
+                live_witness_expression="(attack-soldier-count > 0)",
+                frontier=contract.frontier,
+            )
+
+    def test_byzantine_stock_lowers_endgame_push_and_frontier_control(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        plan = profile.endgame_plan
+        self.assertIsNotNone(plan)
+        self.assertIsNotNone(plan.push_contract)
+        compilation = lower_strategy_profile(profile, self.effective)
+
+        self.assertIn(
+            "byzantine-endgame-push-state",
+            {state.identifier for state in compilation.control_plan.states},
+        )
+        self.assertIn(
+            "byzantine-endgame-frontier",
+            {state.identifier for state in compilation.control_plan.states},
+        )
+        rules = {rule.identity: rule for rule in compilation.control_plan.rules}
+        for identity in (
+            "byzantine-endgame-push-admit",
+            "byzantine-endgame-push-release",
+            "byzantine-endgame-frontier-defense",
+            "byzantine-endgame-frontier-production",
+            "byzantine-endgame-frontier-town-center",
+        ):
+            self.assertIn(identity, rules)
+
+        attack_rules = {
+            rule.identity: rule
+            for rule in profile.attack_plan.rules
+        }
+        pulse = attack_rules["byzantine-imperial-attack-group-pulse"]
+        self.assertIn(
+            "(goal byzantine-endgame-push-state 1)",
+            tuple(fact.source for fact in pulse.facts),
+        )
+        self.assertEqual(
+            tuple(
+                attachment.native_strategic_number_id
+                for attachment in profile.attack_plan.strategic_number_action_attachments
+            ),
+            (36, 227, 122, 123),
         )
 
     def test_endgame_runtime_recovery_requires_recovery_push_state(self):
