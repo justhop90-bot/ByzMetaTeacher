@@ -1736,6 +1736,53 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
                 stability_key=f"{profile.profile_id}:{contract.timer_name}",
             ),
         ),
+        NativeControlState(
+            "byzantine-offensive-objective-target-latch",
+            GoalSlotRequest(
+                StorageRequestId(owner, "objective-target-latch"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            "byzantine-offensive-objective-target-siege",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, "endgame-objective-target:siege"),
+                    "target-object-id",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+            ),
+        ),
+        NativeControlState(
+            "byzantine-offensive-objective-target-defense",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, "endgame-objective-target:defense"),
+                    "target-object-id",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+            ),
+        ),
+        NativeControlState(
+            "byzantine-offensive-objective-target-production",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, "endgame-objective-target:production"),
+                    "target-object-id",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+            ),
+        ),
+        NativeControlState(
+            "byzantine-offensive-objective-target-town-center",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, "endgame-objective-target:town-center"),
+                    "target-object-id",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+            ),
+        ),
     )
 
     objective_state = contract.state_goal
