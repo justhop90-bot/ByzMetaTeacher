@@ -1645,12 +1645,19 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         return NativeControlState(
             state_name,
             StrategicNumberRequest(
-                StorageRequestId(owner, f"strategic-number:{state_name}"),
-                why_not_goal=(
-                    f"Endgame push requires the documented native Strategic Number {native_id}; "
-                    "the physical slot remains the shared native owner."
+                StorageRequestId(
+                    owner,
+                    f"strategy-sn-native:{native_id}",
                 ),
-                stability_key=f"{profile.profile_id}:{state_name}",
+                why_not_goal=(
+                    "This state is a compiler policy reference to a DE-documented "
+                    "native Strategic Number; native per-SN effect semantics remain "
+                    "evidence-bounded."
+                ),
+                stability_key=(
+                    f"{profile.profile_id}:strategic-number:"
+                    f"{native_id}"
+                ),
                 origin=StrategicNumberOrigin.NATIVE_REFERENCE,
                 native_strategic_number_id=native_id,
             ),
