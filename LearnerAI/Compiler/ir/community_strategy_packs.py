@@ -804,9 +804,7 @@ def community_strategy_observations(
         (
             "strategy-production-siege-replacement",
             "(and (current-age >= imperial-age) "
-            "(or (unit-type-count trebuchet < 4) "
-            "(or (unit-type-count bombard-cannon < 3) "
-            "(unit-type-count battering-ram-line < 4))))",
+            "(unit-type-count trebuchet < 4))",
         ),
     )
     for identity, expression in replacement_depth_observations:
