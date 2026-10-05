@@ -328,17 +328,23 @@ def analyze_strategy_dependencies(
                     codes=pcodes, rules=orders, locations=(_loc(provider.location),),
                 ))
 
-            if any(getattr(x.code, "value", x.code) == CapabilityDiagnosticCode.CYCLE.value for x in pdiags):
-                related = tuple(_node_id(x) for x in getattr(next(
-                    x for x in pdiags if getattr(x.code, "value", x.code) == CapabilityDiagnosticCode.CYCLE.value
-                ), "related", ()))
+            cycle_diags = tuple(
+                item
+                for key in (root, _node_id(demand.target), pid)
+                for item in cap_by_node.get(key, ())
+                if getattr(item.code, "value", item.code) == CapabilityDiagnosticCode.CYCLE.value
+            )
+            if cycle_diags:
+                cycle = cycle_diags[0]
+                related = tuple(_node_id(x) for x in getattr(cycle, "related", ()))
                 findings.append(_finding(
                     StrategyDependencyCode.UNROOTED_CYCLE,
                     DiagnosticSeverity.ERROR, StrategyDependencyProof.PROVEN,
                     "unrooted capability dependency cycle affects this demand",
                     root=root, blocking=_node_id(demand.target),
                     chain=(root, _node_id(demand.target), *related),
-                    codes=pcodes, locations=(_loc(provider.location),),
+                    codes=_diag_codes(cycle_diags),
+                    locations=(_loc(getattr(cycle, "location", None)), _loc(provider.location)),
                 ))
 
             for diagnostic in persistent_state_report.diagnostics:
