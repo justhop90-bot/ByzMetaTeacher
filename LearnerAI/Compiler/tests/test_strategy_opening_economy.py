@@ -254,7 +254,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertIn("(can-build outpost)", requirements)
 
-    def test_stone_camp_is_castle_commitment_owned(self):
+    def test_stone_camp_is_castle_trajectory_staged(self):
         profile = build_byzantine_strategy(self.effective)
 
         for floor in range(1, 6):
@@ -265,7 +265,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "(and (current-age >= feudal-age) (resource-found stone))",
                 requirements,
             )
-            self.assertIn("(goal demand-castle-commitment 1)", requirements)
+            self.assertNotIn("(goal demand-castle-commitment 1)", requirements)
             self.assertIsNotNone(demand.opportunity_cost)
             self.assertEqual(demand.opportunity_cost.owner, "castle-trajectory")
 
