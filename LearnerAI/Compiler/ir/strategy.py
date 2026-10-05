@@ -2877,13 +2877,6 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byz-imperial-military-guard-expiry",
-            facts=(expr(f"(timer-triggered {guard_timer_name})"),),
-            actions=(
-                expr(f"(disable-timer {guard_timer_name})"),
-            ),
-        ),
-        NativeControlRule(
             "byz-imperial-military-rearm-expiry",
             facts=(expr(f"(timer-triggered {rearm_timer_name})"),),
             actions=(
@@ -2916,18 +2909,25 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
             )
         )
 
+    def candidate_value(destination: ImperialMilitaryBand) -> int:
+        return 4 if destination is ImperialMilitaryBand.STANDING_FLOOR else destination.value
+
     def add_candidate_rule(
         identity: str,
         facts: tuple[str, ...],
         destination: ImperialMilitaryBand,
         guard_seconds: int,
     ) -> None:
+        candidate = candidate_value(destination)
         rules.append(
             NativeControlRule(
                 identity,
-                facts=tuple(expr(item) for item in facts),
+                facts=(
+                    *tuple(expr(item) for item in facts),
+                    expr(f"(not (goal {candidate_name} {candidate}))"),
+                ),
                 actions=(
-                    expr(f"(set-goal {candidate_name} {destination.value})"),
+                    expr(f"(set-goal {candidate_name} {candidate})"),
                     expr(f"(set-goal {guard_ready_name} 0)"),
                     expr(f"(enable-timer {guard_timer_name} {guard_seconds})"),
                 ),
@@ -2971,7 +2971,7 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
                 identity,
                 facts=(
                     expr(f"(goal {state_name} {source.value})"),
-                    expr(f"(goal {candidate_name} {destination.value})"),
+                    expr(f"(goal {candidate_name} {candidate_value(destination)})"),
                     expr(f"(goal {guard_ready_name} 1)"),
                     *tuple(expr(item) for item in facts),
                 ),
@@ -3112,7 +3112,7 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
                 f"byz-imperial-military-guard-{band.name.lower()}",
                 facts=(
                     expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {band.value})"),
+                    expr(f"(goal {candidate_name} {candidate_value(band)})"),
                     *tuple(expr(item) for item in live_facts),
                 ),
                 actions=(expr(f"(set-goal {guard_ready_name} 1)"),
@@ -3124,7 +3124,8 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
                 f"byz-imperial-military-guard-clear-{band.name.lower()}",
                 facts=(
                     expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {band.value})"),
+                    expr(f"(goal {candidate_name} {candidate_value(band)})"),
+                    *tuple(expr(f"(not {item})") for item in live_facts),
                 ),
                 actions=(
                     expr(f"(set-goal {candidate_name} 0)"),
