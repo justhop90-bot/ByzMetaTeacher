@@ -383,6 +383,7 @@ def validate_endgame_plan(
     plan: EndgamePlan,
     *,
     observation_ids: tuple[str, ...] = (),
+    frontier_witness_provenance: dict[str, tuple[object, ...]] | None = None,
 ) -> None:
     if not isinstance(plan, EndgamePlan):
         raise TypeError("endgame plan must be EndgamePlan")
@@ -397,3 +398,24 @@ def validate_endgame_plan(
             "endgame plan references unknown strategic observation(s): "
             + ", ".join(unknown)
         )
+
+    if plan.push_contract is not None and plan.push_contract.frontier_witness_ref is not None:
+        provenance = (frontier_witness_provenance or {}).get(
+            plan.push_contract.frontier_witness_ref,
+            (),
+        )
+        if not provenance:
+            raise ValueError(
+                "endgame frontier witness must carry external world-state provenance"
+            )
+        from .versioning import EvidenceKind
+        allowed = {
+            EvidenceKind.ENGINE_DATA,
+            EvidenceKind.RUNTIME_VERIFIED,
+            EvidenceKind.AIREF,
+            EvidenceKind.OFFICIAL_PATCH,
+        }
+        if not any(getattr(item, "kind", None) in allowed for item in provenance):
+            raise ValueError(
+                "endgame frontier witness provenance must include engine/world evidence"
+            )
