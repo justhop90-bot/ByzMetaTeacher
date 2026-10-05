@@ -250,6 +250,7 @@ _OBSERVATION_SPECS = (
     ("dropsite-min-distance", "observation.placement.dropsite-distance"),
     ("resource-found", "observation.resource.presence"),
     ("unit-type-count", "observation.unit.count"),
+    ("attack-soldier-count", "observation.attack.soldier-count"),
     ("map-type", "observation.map.type"),
     ("warboat-count", "observation.naval.warboat-count"),
     ("up-research-status", "observation.research.status"),
