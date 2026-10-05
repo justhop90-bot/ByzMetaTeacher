@@ -287,6 +287,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         admit_actions = tuple(action.source for action in rules["byzantine-endgame-push-admit"].actions)
         self.assertIn("(set-strategic-number sn-native-36 1)", admit_actions)
         self.assertIn("(set-strategic-number sn-native-227 100)", admit_actions)
+        ready_actions = tuple(action.source for action in rules["byzantine-endgame-push-imperial-ready"].actions)
+        self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
+        self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
 
         live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
