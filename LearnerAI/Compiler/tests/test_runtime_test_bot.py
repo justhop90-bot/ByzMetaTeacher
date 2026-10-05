@@ -57,6 +57,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
 
         for expr in (
             "(defconst byzantine-endgame-push-state 16190)",
+            "(defconst byzantine-endgame-push-timer 21)",
             "(set-strategic-number sn-minimum-attack-group-size 6)",
             "(set-strategic-number sn-maximum-attack-group-size 40)",
             "(attack-soldier-count > 0)",
