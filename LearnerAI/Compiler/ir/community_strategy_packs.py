@@ -792,7 +792,7 @@ def community_strategy_observations(
         (
             "strategy-production-range-replacement",
             "(and (current-age >= imperial-age) "
-            "(or (unit-type-count arbalest < 12) "
+            "(or (unit-type-count 492 < 12) "
             "(unit-type-count skirmisher-line < 12)))",
         ),
         (
