@@ -1776,28 +1776,20 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     states = [push_state, *sn_states]
 
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
-    if frontier_witness_ref is not None:
+    target_control = plan.target_control
+    if target_control is not None or frontier_witness_ref is not None:
         frontier_name = "byzantine-endgame-frontier"
-        frontier_witness_name = "byzantine-endgame-frontier-witness"
         frontier_owner = SemanticId(profile.profile_id, "byzantine-endgame-frontier")
-        states.extend((
+        states.append(
             NativeControlState(
                 frontier_name,
                 GoalSlotRequest(
                     StorageRequestId(frontier_owner, frontier_name),
                     role=GoalRole.PERSISTENT_STATE,
                 ),
-            ),
-            NativeControlState(
-                frontier_witness_name,
-                GoalSlotRequest(
-                    StorageRequestId(frontier_owner, frontier_witness_name),
-                    role=GoalRole.EXECUTION_MEMORY,
-                ),
-            ),
-        ))
-        frontier_witness = profile.observation(frontier_witness_ref).expression
-        rules.extend((
+            )
+        )
+        rules.append(
             NativeControlRule(
                 "byzantine-endgame-frontier-initialize",
                 facts=(parse_expression(f"(goal {frontier_name} 0)", SourceLocation(1)),),
@@ -1805,7 +1797,23 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(f"(set-goal {frontier_name} 0)", SourceLocation(1)),
                     parse_expression("(disable-self)", SourceLocation(1)),
                 ),
-            ),
+            )
+        )
+
+    if frontier_witness_ref is not None:
+        frontier_witness_name = "byzantine-endgame-frontier-witness"
+        frontier_owner = SemanticId(profile.profile_id, "byzantine-endgame-frontier")
+        states.append(
+            NativeControlState(
+                frontier_witness_name,
+                GoalSlotRequest(
+                    StorageRequestId(frontier_owner, frontier_witness_name),
+                    role=GoalRole.EXECUTION_MEMORY,
+                ),
+            )
+        )
+        frontier_witness = profile.observation(frontier_witness_ref).expression
+        rules.append(
             NativeControlRule(
                 "byzantine-endgame-frontier-witness-initialize",
                 facts=(parse_expression(f"(goal {frontier_witness_name} 0)", SourceLocation(1)),),
@@ -1813,8 +1821,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(f"(set-goal {frontier_witness_name} 0)", SourceLocation(1)),
                     parse_expression("(disable-self)", SourceLocation(1)),
                 ),
-            ),
-        ))
+            )
+        )
         frontier_steps = (
             ("byzantine-endgame-frontier-witness-defense", 0, 1),
             ("byzantine-endgame-frontier-witness-production", 1, 2),
