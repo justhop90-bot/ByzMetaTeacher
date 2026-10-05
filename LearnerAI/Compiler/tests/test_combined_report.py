@@ -81,6 +81,44 @@ class CombinedReportTests(unittest.TestCase):
             ])
             self.assertEqual([item.code for item in ordered], ["SEMANTIC-A", "NATIVE-A"])
 
+    def test_strategy_report_contains_populated_feature_traces(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact = tmp / "Byzantine.per"
+            strategy_report = tmp / "strategy-dependency.json"
+            backend = FakeBackend(native_result(artifact, ValidationStatus.VALIDATED))
+            source = '''
+            demand castle {
+                require (can-build castle)
+                action (build castle)
+                witness (building-type-count castle > 0)
+                release (building-type-count castle > 0)
+            }
+            '''
+
+            report = compile_source_with_report(
+                source,
+                native_backend=backend,
+                output=artifact,
+                strategy_report=strategy_report,
+                source_unit="feature-trace-test.perdsl",
+            )
+
+            self.assertEqual(report.status, ReportStatus.VALIDATED)
+            payload = json.loads(strategy_report.read_text(encoding="utf-8"))
+            traces = payload["feature_traces"]
+            self.assertTrue(traces)
+            trace = traces[0]
+            self.assertEqual(trace["status"], "PASS")
+            stages = tuple(node["stage"] for node in trace["nodes"])
+            self.assertIn("SEMANTIC_IR", stages)
+            self.assertIn("CAPABILITY_GRAPH", stages)
+            self.assertIn("STORAGE_BINDING", stages)
+            self.assertIn("NATIVE_LOWERING", stages)
+            self.assertIn("EMISSION", stages)
+            self.assertIn("ARTIFACT_ANALYSIS", stages)
+            self.assertEqual(payload["first_broken_edge_diagnostics"], [])
+
     def test_native_diagnostics_are_stably_ordered_by_origin_location_code(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
