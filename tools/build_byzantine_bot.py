@@ -20,11 +20,11 @@ from LearnerAI.Compiler.clients.basilisk import (  # noqa: E402
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ  # noqa: E402
 from LearnerAI.Compiler.artifacts.lineage import (  # noqa: E402
+    COMPILER_ARTIFACT,
+    COMPILER_MANIFEST,
     PROMOTED_ARTIFACT,
-    PROMOTION_MANIFEST,
-    RUNTIME_ARTIFACT,
-    RUNTIME_MANIFEST,
-    verify_byzantine_artifact_lineage,
+    WovenRuntimeLineageResult,
+    verify_woven_runtime_lineage,
 )
 from tools.assemble_byzantine_runtime import assemble_byzantine_runtime  # noqa: E402
 from tools.promote_byzantine_runtime import promote_byzantine_runtime  # noqa: E402
@@ -59,23 +59,16 @@ def _canonical_json(value: object) -> str:
 
 
 def build(output_dir: Path = DEFAULT_OUTPUT_DIR) -> tuple[Path, Path]:
-    """Compile, assemble, promote, and cryptographically verify Byzantine."""
+    """Compile, verify compiler-rule conservation, and package woven runtime."""
     root = ROOT
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     compiler_artifact = output_dir / "Byzantine.compiler.per"
     compiler_manifest = output_dir / "Byzantine.compiler.manifest.json"
-    overlay_artifact = root / "runtime/byzantine/Byzantine.runtime-overlay.per"
-    if not overlay_artifact.is_file():
-        raise RuntimeError(
-            "BYZ-ASSEMBLY-003: canonical Byzantine runtime overlay is missing at "
-            f"{overlay_artifact}"
-        )
-    if not (root / "runtime/byzantine/Byzantine.runtime-overlay.json").is_file():
-        raise RuntimeError(
-            "BYZ-ASSEMBLY-003: canonical Byzantine runtime overlay manifest is missing"
-        )
+    runtime_artifact = output_dir / "Byzantine.runtime.per"
+    runtime_manifest = output_dir / "Byzantine.runtime.manifest.json"
+    root_runtime = root / PROMOTED_ARTIFACT
 
     civ_profile = ByzantineProfile.for_update_185872()
     effective = resolve_effective_civ(civ_profile)
@@ -86,7 +79,8 @@ def build(output_dir: Path = DEFAULT_OUTPUT_DIR) -> tuple[Path, Path]:
     if first != second:
         raise RuntimeError("canonical Byzantine compilation is not byte-deterministic")
 
-    artifact_sha256 = _sha256_text(first)
+    compiler_bytes = first.encode("utf-8")
+    artifact_sha256 = hashlib.sha256(compiler_bytes).hexdigest()
     build_input_identity = {
         "profile_entrypoint": "ByzantineProfile.for_update_185872",
         "strategy_entrypoint": "build_byzantine_strategy",
@@ -106,7 +100,7 @@ def build(output_dir: Path = DEFAULT_OUTPUT_DIR) -> tuple[Path, Path]:
             "path": "dist/byzantine/Byzantine.compiler.per",
             "manifest_path": "dist/byzantine/Byzantine.compiler.manifest.json",
             "sha256": artifact_sha256,
-            "byte_length": len(first.encode("utf-8")),
+            "byte_length": len(compiler_bytes),
             "line_count": len(first.splitlines()),
             "rule_count": first.count("(defrule"),
         },
@@ -134,35 +128,69 @@ def build(output_dir: Path = DEFAULT_OUTPUT_DIR) -> tuple[Path, Path]:
             "hash_recomputed": True,
         },
     }
-    compiler_artifact.write_text(first, encoding="utf-8", newline="")
+    compiler_artifact.write_bytes(compiler_bytes)
     compiler_manifest.write_text(
         _canonical_json(compiler_manifest_payload) + "\n",
         encoding="utf-8",
-        newline="",
     )
 
-    assemble_byzantine_runtime(repository_root=root, output_dir=output_dir)
-    promote_byzantine_runtime(repository_root=root)
-    result = verify_byzantine_artifact_lineage(repository_root=root)
-    if not result.root_matches_runtime:
-        raise RuntimeError("BYZ-PROMOTE-001: promoted Byzantine.per diverges from runtime")
+    if not root_runtime.is_file():
+        raise RuntimeError(
+            f"BYZ-LINEAGE-031: checked-in woven runtime artifact is missing at {root_runtime}"
+        )
+
+    lineage = verify_woven_runtime_lineage(repository_root=root)
+    runtime_bytes = root_runtime.read_bytes()
+    runtime_artifact.write_bytes(runtime_bytes)
+
+    runtime_manifest_payload = {
+        "schema": "byzantine-woven-runtime-1",
+        "artifact_kind": "woven-runtime",
+        "compiler": {
+            "artifact_kind": "compiler",
+            "path": COMPILER_ARTIFACT.as_posix(),
+            "manifest_path": COMPILER_MANIFEST.as_posix(),
+            "sha256": lineage.compiler_sha256,
+            "source_revision": lineage.compiler_source_revision,
+            "compiler_rule_count": lineage.compiler_rule_count,
+        },
+        "runtime": {
+            "artifact_kind": "woven-runtime",
+            "authoritative_path": PROMOTED_ARTIFACT.as_posix(),
+            "packaged_path": "dist/byzantine/Byzantine.runtime.per",
+            "sha256": lineage.runtime_sha256,
+            "runtime_rule_count": lineage.runtime_rule_count,
+            "compiler_rules_conserved": lineage.compiler_rules_conserved,
+        },
+        "assembly": {
+            "model": "woven-rule-conservation",
+            "compiler_order_owned": False,
+            "runtime_order_owned_by": "checked-in Byzantine.per",
+            "deterministic": True,
+        },
+    }
+    runtime_manifest.write_text(
+        _canonical_json(runtime_manifest_payload) + "\n",
+        encoding="utf-8",
+    )
 
     print(
         json.dumps(
             {
                 "compiler_artifact": str(compiler_artifact),
-                "runtime_artifact": str(root / RUNTIME_ARTIFACT),
-                "promoted_artifact": str(root / PROMOTED_ARTIFACT),
-                "promotion_manifest": str(root / PROMOTION_MANIFEST),
-                "compiler_sha256": result.compiler_sha256,
-                "runtime_sha256": result.runtime_sha256,
-                "promoted_sha256": result.promoted_sha256,
-                "lineage_verified": True,
+                "runtime_artifact": str(runtime_artifact),
+                "authoritative_runtime": str(root_runtime),
+                "compiler_sha256": lineage.compiler_sha256,
+                "runtime_sha256": lineage.runtime_sha256,
+                "compiler_rule_count": lineage.compiler_rule_count,
+                "runtime_rule_count": lineage.runtime_rule_count,
+                "compiler_rules_conserved": lineage.compiler_rules_conserved,
             },
             sort_keys=True,
         )
     )
-    return root / PROMOTED_ARTIFACT, root / PROMOTION_MANIFEST
+    return runtime_artifact, runtime_manifest
+
 
 
 def main() -> int:
