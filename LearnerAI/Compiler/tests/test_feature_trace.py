@@ -230,23 +230,49 @@ class FeatureTraceBuilderTests(unittest.TestCase):
     def test_same_feature_trace_is_deterministic(self):
         builder_a = FeatureTraceBuilder("research-pikeman")
         builder_b = FeatureTraceBuilder("research-pikeman")
-        for builder in (builder_a, builder_b):
-            builder.add_node(_node("research-pikeman", FeatureStage.EMISSION))
-            builder.add_node(_node("research-pikeman", FeatureStage.NATIVE_LOWERING))
-            builder.add_edge(_edge(
-                "research-pikeman",
-                FeatureStage.NATIVE_LOWERING,
-                FeatureStage.EMISSION,
-                FeatureEdgeStatus.SATISFIED,
-                contract="native-emission",
-                expected_identity="research-pikeman",
-                observed_identity="research-pikeman",
-            ))
+
+        builder_a.add_node(_node("research-pikeman", FeatureStage.EMISSION))
+        builder_a.add_node(_node("research-pikeman", FeatureStage.NATIVE_LOWERING))
+        builder_a.add_edge(_edge(
+            "research-pikeman",
+            FeatureStage.NATIVE_LOWERING,
+            FeatureStage.EMISSION,
+            FeatureEdgeStatus.SATISFIED,
+            contract="native-emission",
+            expected_identity="research-pikeman",
+            observed_identity="research-pikeman",
+        ))
+
+        builder_b.add_node(_node("research-pikeman", FeatureStage.NATIVE_LOWERING))
+        builder_b.add_node(_node("research-pikeman", FeatureStage.EMISSION))
+        builder_b.add_edge(_edge(
+            "research-pikeman",
+            FeatureStage.NATIVE_LOWERING,
+            FeatureStage.EMISSION,
+            FeatureEdgeStatus.SATISFIED,
+            contract="native-emission",
+            expected_identity="research-pikeman",
+            observed_identity="research-pikeman",
+        ))
 
         self.assertEqual(
             builder_a.build(root_stage=FeatureStage.NATIVE_LOWERING),
             builder_b.build(root_stage=FeatureStage.NATIVE_LOWERING),
         )
+
+    def test_backward_stage_edge_is_rejected(self):
+        builder = FeatureTraceBuilder("research-pikeman")
+
+        with self.assertRaises(ValueError):
+            builder.add_edge(_edge(
+                "research-pikeman",
+                FeatureStage.EMISSION,
+                FeatureStage.NATIVE_LOWERING,
+                FeatureEdgeStatus.SATISFIED,
+                contract="invalid-backward-edge",
+                expected_identity="research-pikeman",
+                observed_identity="research-pikeman",
+            ))
 
     def test_conflicting_duplicate_node_is_rejected(self):
         builder = FeatureTraceBuilder("research-pikeman")
