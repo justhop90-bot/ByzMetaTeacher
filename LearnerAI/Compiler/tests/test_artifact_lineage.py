@@ -36,6 +36,15 @@ def _write_json(path: Path, value: dict[str, object]) -> str:
     return _sha256(payload)
 
 
+def _refresh_compiler_manifest(root: Path, compiler: Path) -> None:
+    manifest_path = root / "dist/byzantine/Byzantine.compiler.manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["artifact"]["sha256"] = _sha256(compiler.read_bytes())
+    manifest["artifact"]["byte_length"] = len(compiler.read_bytes())
+    manifest["artifact"]["rule_count"] = compiler.read_text().count("(defrule")
+    _write_json(manifest_path, manifest)
+
+
 class ByzantineArtifactLineageTests(unittest.TestCase):
     def _fixture(self) -> Path:
         root = Path(tempfile.mkdtemp())
@@ -187,6 +196,7 @@ class ByzantineArtifactLineageTests(unittest.TestCase):
         compiler = root / "dist/byzantine/Byzantine.compiler.per"
         runtime = root / "Byzantine.per"
         compiler.write_bytes(b"(defrule compiler-a)\n(defrule compiler-b)\n")
+        _refresh_compiler_manifest(root, compiler)
         runtime.write_bytes(
             b"(defrule runtime-only)\n"
             b"(defrule compiler-b)\n"
@@ -203,6 +213,7 @@ class ByzantineArtifactLineageTests(unittest.TestCase):
         compiler = root / "dist/byzantine/Byzantine.compiler.per"
         runtime = root / "Byzantine.per"
         compiler.write_bytes(b"(defrule compiler-a)\n(defrule compiler-b)\n")
+        _refresh_compiler_manifest(root, compiler)
         runtime.write_bytes(b"(defrule compiler-a)\n")
         with self.assertRaises(ArtifactLineageError) as ctx:
             verify_woven_runtime_lineage(repository_root=root)
