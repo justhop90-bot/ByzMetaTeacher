@@ -1139,7 +1139,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
         return None
 
     from ..ast import SourceLocation
-    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
+    from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest
     from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
@@ -2321,7 +2321,6 @@ def _byzantine_relic_control_plan(profile_id: str):
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
     from .recurrent import TimerRequest
-    from .strategic_number import StrategicNumberOrigin
 
     owner = SemanticId(profile_id, "byzantine-relic-control")
     state_name = "byzantine-relic-control-state"
@@ -2341,55 +2340,9 @@ def _byzantine_relic_control_plan(profile_id: str):
             stability_key=f"{profile_id}:byzantine-relic-control-timer",
         ),
     )
-    relic_return = NativeControlState(
-        "sn-relic-return-distance",
-        StrategicNumberRequest(
-            StorageRequestId(owner, "sn-native-relic-return-distance"),
-            why_not_goal=(
-                "DE-documented native relic return preference; the compiler sets no "
-                "additional semantic interpretation beyond the native identifier."
-            ),
-            stability_key=f"{profile_id}:strategic-number:23",
-            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-            native_strategic_number_id=23,
-        ),
-    )
-    relic_defend = NativeControlState(
-        "sn-relic-defend-priority",
-        StrategicNumberRequest(
-            StorageRequestId(owner, "sn-native-relic-defend-priority"),
-            why_not_goal=(
-                "DE-documented native relic defend priority; the compiler preserves "
-                "the native setting without treating it as a completion witness."
-            ),
-            stability_key=f"{profile_id}:strategic-number:55",
-            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-            native_strategic_number_id=55,
-        ),
-    )
     return NativeControlPlan(
-        states=(state, timer, relic_return, relic_defend),
-        rules=(
-            NativeControlRule(
-                "byzantine-relic-control-defaults",
-                facts=(
-                    parse_expression(
-                        f"(goal {state_name} -1)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-strategic-number sn-relic-return-distance 255)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-strategic-number sn-relic-defend-priority 1)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-        ),
+        states=(state, timer),
+        rules=(),
     )
 
 
