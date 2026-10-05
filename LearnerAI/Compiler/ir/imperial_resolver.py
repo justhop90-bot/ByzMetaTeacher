@@ -124,7 +124,6 @@ class ImperialResolver:
     def open_field_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
             cls.floor_recovered(value)
-            and value.offensive_objective
             and not value.fortification_threat
             and not value.fortified_objective_requires_siege
             and value.enemy_field_army >= 12
