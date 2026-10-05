@@ -404,6 +404,71 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
                 f"(building-type-count {building} >= {floor})",
                 self.per,
             )
+    def test_objective_witness_keeps_live_attack_in_execution_without_reissuing(self):
+        witness_start = self.per.index(
+            "(defrule\n    (goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-witness)"
+        )
+        witness_end = self.per.index(
+            "(defrule\n    (goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-executing)",
+            witness_start,
+        )
+        witness_section = self.per[witness_start:witness_end]
+        rules = [
+            "(defrule" + rule
+            for rule in witness_section.split("(defrule")[1:]
+        ]
+
+        positive_rules = [
+            rule
+            for rule in rules
+            if "(goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-witness)" in rule
+            and "(up-compare-goal byzantine-offensive-objective-search >= 1)"
+            in rule
+            and "(attack-soldier-count > 0)" in rule
+        ]
+        self.assertEqual(len(positive_rules), 4)
+
+        expected_classes = (
+            "siege",
+            "defense",
+            "production",
+            "town-center",
+        )
+        for objective_class in expected_classes:
+            class_marker = (
+                "(goal byzantine-offensive-objective-class "
+                f"byzantine-offensive-objective-class-{objective_class})"
+            )
+            matching = [rule for rule in positive_rules if class_marker in rule]
+            self.assertEqual(len(matching), 1)
+            self.assertIn(
+                "(set-goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-executing)",
+                matching[0],
+            )
+            self.assertNotIn(
+                f"(set-goal byzantine-offensive-objective-state "
+                f"byzantine-offensive-objective-state-{objective_class})",
+                matching[0],
+            )
+
+        self.assertNotIn(
+            "(up-target-objects 1 action-attack-move -1 -1)",
+            witness_section,
+        )
+        self.assertIn("(attack-soldier-count <= 0)", witness_section)
+        self.assertIn(
+            "(set-goal byzantine-army-attack-ready 0)",
+            witness_section,
+        )
+        self.assertIn(
+            "(set-goal byzantine-army-reinforcement 1)",
+            witness_section,
+        )
+
     def test_fortified_breach_preserves_attack_reserve(self):
         start = self.per.index(
             "(goal byzantine-siege-approach byzantine-siege-approach-breach)"
