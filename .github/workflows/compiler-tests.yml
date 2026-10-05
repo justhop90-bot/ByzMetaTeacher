@@ -104,43 +104,45 @@ jobs:
           compiler = compile_strategy_profile(profile, effective).encode("utf-8")
           root = Path("Byzantine.per").read_bytes()
 
-          common = 0
-          limit = min(len(compiler), len(root))
-          while common < limit and compiler[common] == root[common]:
-              common += 1
+          compiler_text = compiler.decode("utf-8", errors="replace")
+          root_text = root.decode("utf-8", errors="replace")
+          compiler_lines = compiler_text.splitlines(keepends=True)
+          root_lines = root_text.splitlines(keepends=True)
 
           print(f"compiler_bytes={len(compiler)}")
           print(f"root_bytes={len(root)}")
-          print(f"common_prefix_bytes={common}")
           print(f"compiler_sha256={hashlib.sha256(compiler).hexdigest()}")
           print(f"root_sha256={hashlib.sha256(root).hexdigest()}")
 
-          if root.startswith(compiler):
-              overlay = root[len(compiler):]
-              print("append_only_overlay=true")
+          compiler_body = compiler_lines[7:] if len(compiler_lines) >= 7 else compiler_lines
+          root_body = root_lines[7:] if len(root_lines) >= 7 else root_lines
+          body_prefix = root_body[:len(compiler_body)] == compiler_body
+          print(f"header_normalized_prefix={body_prefix}")
+          print(f"compiler_body_lines={len(compiler_body)}")
+          print(f"root_body_lines={len(root_body)}")
+
+          if body_prefix:
+              overlay = b"".join(root_body[len(compiler_body):])
+              print("append_only_overlay_after_header=true")
               print(f"overlay_bytes={len(overlay)}")
               print(f"overlay_sha256={hashlib.sha256(overlay).hexdigest()}")
               Path("/tmp/byzantine-overlay-bootstrap.per").write_bytes(overlay)
           else:
-              compiler_text = compiler.decode("utf-8", errors="replace")
-              root_text = root.decode("utf-8", errors="replace")
-              compiler_lines = compiler_text.splitlines()
-              root_lines = root_text.splitlines()
               mismatch = next(
                   (
                       i
                       for i, (left, right) in enumerate(
-                          zip(compiler_lines, root_lines),
-                          start=1,
+                          zip(compiler_body, root_body),
+                          start=8,
                       )
                       if left != right
                   ),
-                  min(len(compiler_lines), len(root_lines)) + 1,
+                  min(len(compiler_body), len(root_body)) + 8,
               )
-              print("append_only_overlay=false")
+              print("append_only_overlay_after_header=false")
               print(f"first_mismatching_line={mismatch}")
-              print(f"compiler_line={compiler_lines[mismatch-1] if mismatch <= len(compiler_lines) else '<eof>'}")
-              print(f"root_line={root_lines[mismatch-1] if mismatch <= len(root_lines) else '<eof>'}")
+              print(f"compiler_line={compiler_body[mismatch-8].rstrip() if mismatch-8 < len(compiler_body) else '<eof>'}")
+              print(f"root_line={root_body[mismatch-8].rstrip() if mismatch-8 < len(root_body) else '<eof>'}")
               raise SystemExit(2)
           PY
       - name: Upload overlay bootstrap candidate
