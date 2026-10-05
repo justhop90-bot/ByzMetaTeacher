@@ -1608,17 +1608,17 @@ def _age_bank_villager_control_plan():
                     fact("(can-train villager)"),
                     fact(
                         "(not (and (current-age == dark-age) "
-                        "(unit-type-count-total villager >= 21) "
-                        "(building-type-count-total lumber-camp >= 1) "
-                        "(building-type-count-total mining-camp >= 1) "
-                        "(can-research-with-escrow feudal-age)))"
+                        "(and (unit-type-count-total villager >= 21) "
+                        "(and (building-type-count-total lumber-camp >= 1) "
+                        "(and (building-type-count-total mining-camp >= 1) "
+                        "(can-research-with-escrow feudal-age)))))"
                     ),
                     fact(
                         "(not (and (current-age == feudal-age) "
-                        "(unit-type-count-total villager >= 28) "
-                        "(building-type-count-total blacksmith >= 1) "
-                        "(building-type-count-total market >= 1) "
-                        "(can-research-with-escrow castle-age)))"
+                        "(and (unit-type-count-total villager >= 28) "
+                        "(and (building-type-count-total blacksmith >= 1) "
+                        "(and (building-type-count-total market >= 1) "
+                        "(can-research-with-escrow castle-age)))))"
                     ),
                     fact("(not (goal byzantine-resource-claim 1))"),
                     fact("(not (goal byzantine-resource-claim 2))"),
