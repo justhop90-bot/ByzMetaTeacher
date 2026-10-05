@@ -341,12 +341,12 @@ jobs:
           python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "RuleDiagnosticsTests" 2>&1 | tee -a focused-persistent-state-tests.log
           python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "RuleExecutionSemanticsTests" 2>&1 | tee -a focused-persistent-state-tests.log
       - name: Upload focused persistent-state verification log
-        if: ${{ always() }}
+        if: ${{ always() && hashFiles('focused-persistent-state-tests.log') != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: focused-persistent-state-verification-log
           path: focused-persistent-state-tests.log
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
       - name: Focused military composition proof regression
         run: python -m unittest LearnerAI/Compiler/tests/test_military_composition_proof.py
