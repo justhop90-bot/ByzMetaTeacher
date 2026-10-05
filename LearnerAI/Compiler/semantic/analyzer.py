@@ -163,7 +163,14 @@ def _populate_expression_sources(
 
 def parse_expression(source: str, location=None) -> Expression:
     tokens = _tokens(source)
-    expr, end = _parse(tokens)
+    try:
+        expr, end = _parse(tokens)
+    except CompileError as exc:
+        if str(exc) == "unbalanced .per expression":
+            raise CompileError(
+                f"unbalanced .per expression: source={source!r}"
+            ) from exc
+        raise
     if end != len(tokens):
         raise CompileError("trailing tokens after .per expression")
     if expr.head in _LOGICAL_ARITY and len(expr.args) != _LOGICAL_ARITY[expr.head]:
