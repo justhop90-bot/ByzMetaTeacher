@@ -1761,6 +1761,13 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
         ),
         objective_priority=("siege", "defense", "production", "town-center"),
         target_control=default_byzantine_endgame_target_control(),
+        conversion_contract=_EndgameConversionContract(
+            identity="byzantine-endgame-conversion-v1",
+            frontier_required=_EndgameFrontierState.DEFENSE,
+            forward_production_buildings=("barracks", "stable", "archery-range", "siege-workshop"),
+            resource_denial_native_ids=(932,),
+            resource_denial_query_kind=_EndgameTargetQueryKind.OBJECT_CLASS,
+        ),
         push_contract=_EndgamePushContract(
             identity="byzantine-endgame-push-v1",
             attack_group_count=1,
