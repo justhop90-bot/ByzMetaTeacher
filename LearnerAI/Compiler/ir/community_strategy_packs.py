@@ -1547,6 +1547,7 @@ def community_strategy_demands(
     )
 
     for identity, _alias, minimum, requirements, label in band_demands:
+        release_symbol = None
         if "elite-skirmisher" in identity:
             unit_line = "skirmisher-line"
             action_symbol = "skirmisher-line"
@@ -1579,7 +1580,7 @@ def community_strategy_demands(
                 requirement_expressions=(*requirements, exact_requirement),
                 action_symbol=action_symbol,
                 witness_symbol=witness_symbol,
-                release_symbol=release_symbol if "release_symbol" in locals() else witness_symbol,
+                release_symbol=release_symbol or witness_symbol,
             )
         )
 
