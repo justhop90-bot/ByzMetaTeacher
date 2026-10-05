@@ -16773,7 +16773,6 @@
 (defrule
     (goal demand-economy-stone-camp-floor-1 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (not (building-type-count mining-camp >= 1))
 =>
     (set-goal demand-economy-stone-camp-floor-1 1)
@@ -16833,7 +16832,6 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
@@ -16853,7 +16851,6 @@
 (defrule
     (goal demand-economy-stone-camp-floor-2 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (not (building-type-count mining-camp >= 2))
 =>
     (set-goal demand-economy-stone-camp-floor-2 1)
@@ -16913,7 +16910,6 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
@@ -16933,7 +16929,6 @@
 (defrule
     (goal demand-economy-stone-camp-floor-3 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (not (building-type-count mining-camp >= 3))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -16994,7 +16989,6 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
@@ -17015,7 +17009,6 @@
 (defrule
     (goal demand-economy-stone-camp-floor-4 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (not (building-type-count mining-camp >= 4))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -17076,7 +17069,6 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
@@ -17097,7 +17089,6 @@
 (defrule
     (goal demand-economy-stone-camp-floor-5 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (not (building-type-count mining-camp >= 5))
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
 =>
@@ -17158,7 +17149,6 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (goal demand-castle-commitment 1)
     (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
