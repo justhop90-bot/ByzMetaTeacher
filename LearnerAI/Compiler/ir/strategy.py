@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, FactStatus, Resource
+from .model import LifecycleState
 from .versioning import EvidenceKind, EvidenceRef
 from .strategic_number import StrategicNumberOrigin
 
@@ -283,6 +284,7 @@ class StrategicDemandSpec:
     target: StrategicTarget
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
+    initial_state: LifecycleState = LifecycleState.ACTIVE
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
