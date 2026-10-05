@@ -1616,6 +1616,27 @@ def community_strategy_demands(
     ) in provider_depth_specs:
         building = _building(effective, building_name)
         standing_demand = standing_depth_observations[standing_observation_ref]
+        replacement_expression = (
+            next(
+                item.expression
+                for item in observations
+                if item.identity == replacement_reason_ref
+            )
+            if replacement_reason_ref is not None
+            else None
+        )
+        if building_name == "siege-workshop" and replacement_expression is not None:
+            standing_demand = (
+                f"(or (unit-type-count-total 550 >= {standing_observation_ref.rsplit('-', 1)[-1]}) "
+                f"(or (unit-type-count-total 331 >= {standing_observation_ref.rsplit('-', 1)[-1]}) "
+                f"(unit-type-count-total 36 >= {standing_observation_ref.rsplit('-', 1)[-1]})))"
+            )
+            replacement_expression = (
+                "(and (current-age >= imperial-age) "
+                "(or (unit-type-count 331 < 4) "
+                "(or (unit-type-count 36 < 4) "
+                "(unit-type-count-total 550 < 4))))"
+            )
         demands.append(
             _production_depth_demand(
                 identity=identity,
@@ -1632,15 +1653,7 @@ def community_strategy_demands(
                 age_guard=age_guard,
                 standing_demand=standing_demand,
                 replacement_reason_ref=replacement_reason_ref,
-                replacement_expression=(
-                    next(
-                        item.expression
-                        for item in observations
-                        if item.identity == replacement_reason_ref
-                    )
-                    if replacement_reason_ref is not None
-                    else None
-                ),
+                replacement_expression=replacement_expression,
             )
         )
 
