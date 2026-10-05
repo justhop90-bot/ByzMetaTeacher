@@ -3004,7 +3004,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(or (unit-type-count knight >= 8) "
         "(or (unit-type-count halberdier >= 8) "
         "(or (unit-type-count hussar >= 8) "
-        "(unit-type-count 6 >= 8)))))"
+        "(unit-type-count 6 >= 8))))))"
     )
     imperial_floor_ready_facts = (attack_package_ready,)
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
