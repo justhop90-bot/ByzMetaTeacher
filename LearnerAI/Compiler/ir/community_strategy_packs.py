@@ -389,7 +389,7 @@ def community_strategy_observations(
         ),
         (
             "archery-range",
-            "(or (unit-type-count-total crossbow-line >= {threshold}) "
+            "(or (unit-type-count-total crossbowman >= {threshold}) "
             "(unit-type-count-total skirmisher-line >= {threshold}))",
             "strategy-production-range-depth",
         ),
