@@ -3000,6 +3000,7 @@ def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
             native_strategic_number_id=227,
             value=50,
             minimum_age=Age.FEUDAL,
+            maximum_age=Age.CASTLE,
             postures=(StrategyPosture.FLUSH,),
         ),
         StrategicNumberMode(
@@ -3007,6 +3008,7 @@ def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
             native_strategic_number_id=227,
             value=50,
             minimum_age=Age.FEUDAL,
+            maximum_age=Age.CASTLE,
             postures=(StrategyPosture.RUSH,),
         ),
         StrategicNumberMode(
@@ -3014,6 +3016,7 @@ def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
             native_strategic_number_id=227,
             value=75,
             minimum_age=Age.FEUDAL,
+            maximum_age=Age.CASTLE,
             postures=(StrategyPosture.BOOM,),
         ),
         StrategicNumberMode(
@@ -3021,6 +3024,7 @@ def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
             native_strategic_number_id=227,
             value=75,
             minimum_age=Age.FEUDAL,
+            maximum_age=Age.CASTLE,
             postures=(StrategyPosture.CASTLE_POWER,),
         ),
     )
