@@ -33,6 +33,7 @@ from .strategy import (
 from .endgame import (
     EndgameMode as _EndgameMode,
     EndgamePolicyRule as _EndgamePolicyRule,
+    EndgameObjectiveControlContract as _EndgameObjectiveControlContract,
     EndgamePlan as _EndgamePlan,
     EndgameWinCondition as _EndgameWinCondition,
     EndgameFrontierState as _EndgameFrontierState,
@@ -1725,6 +1726,12 @@ def community_strategy_demands(
     return tuple(demands)
 
 
+def default_byzantine_endgame_objective_control() -> _EndgameObjectiveControlContract:
+    return _EndgameObjectiveControlContract(
+        identity="byzantine-endgame-objective-v1",
+    )
+
+
 def default_byzantine_endgame_target_control() -> _EndgameTargetControlContract:
     return _EndgameTargetControlContract(
         identity="byzantine-endgame-target-v1",
@@ -1787,6 +1794,7 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
         ),
         objective_priority=("siege", "defense", "production", "town-center"),
         target_control=default_byzantine_endgame_target_control(),
+        objective_control=default_byzantine_endgame_objective_control(),
         conversion_contract=_EndgameConversionContract(
             identity="byzantine-endgame-conversion-v1",
             frontier_required=_EndgameFrontierState.DEFENSE,
