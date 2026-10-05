@@ -74,7 +74,8 @@ class EndgameContractTests(unittest.TestCase):
             attack_soldier_percent=100,
             minimum_group_size=6,
             maximum_group_size=40,
-            live_witness_expression="(attack-soldier-count > 0)",
+            live_witness_ref="strategy-endgame-attack-package-live",
+            cleared_witness_ref="strategy-endgame-attack-package-cleared",
             frontier=(
                 EndgameFrontierState.SIEGE,
                 EndgameFrontierState.DEFENSE,
@@ -100,7 +101,8 @@ class EndgameContractTests(unittest.TestCase):
                 attack_soldier_percent=100,
                 minimum_group_size=6,
                 maximum_group_size=40,
-                live_witness_expression="(attack-soldier-count > 0)",
+                live_witness_ref="strategy-endgame-attack-package-live",
+                cleared_witness_ref="strategy-endgame-attack-package-cleared",
                 frontier=contract.frontier,
             )
 
@@ -129,21 +131,24 @@ class EndgameContractTests(unittest.TestCase):
         ):
             self.assertIn(identity, rules)
 
-        attack_rules = {
-            rule.identity: rule
-            for rule in profile.attack_plan.rules
-        }
-        pulse = attack_rules["byzantine-imperial-attack-group-pulse"]
+        rules = {rule.identity: rule for rule in compilation.control_plan.rules}
+        admit = rules["byzantine-endgame-push-admit"]
         self.assertIn(
-            "(goal byzantine-endgame-push-state 1)",
-            tuple(fact.source for fact in pulse.facts),
+            "(set-strategic-number sn-number-attack-groups 1)",
+            tuple(action.source for action in admit.actions),
         )
-        self.assertEqual(
-            tuple(
-                attachment.native_strategic_number_id
-                for attachment in profile.attack_plan.strategic_number_action_attachments
-            ),
-            (36, 227, 16, 26),
+        self.assertIn(
+            "(set-strategic-number sn-percent-attack-soldiers 100)",
+            tuple(action.source for action in admit.actions),
+        )
+        frontier = rules["byzantine-endgame-frontier-defense"]
+        self.assertNotIn(
+            "(goal byzantine-endgame-push-state 2)",
+            tuple(fact.source for fact in frontier.facts),
+        )
+        self.assertIn(
+            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)",
+            tuple(fact.source for fact in frontier.facts),
         )
 
     def test_endgame_runtime_recovery_requires_recovery_push_state(self):
@@ -154,6 +159,46 @@ class EndgameContractTests(unittest.TestCase):
                 push_state=EndgamePushState.READY,
                 frontier_valid=True,
                 recovery_required=True,
+            )
+
+    def test_endgame_push_witness_refs_are_part_of_plan_observation_contract(self):
+        plan = EndgamePlan(
+            identity="byzantine-endgame-v1",
+            rules=(
+                EndgamePolicyRule(
+                    identity="breakthrough",
+                    mode=EndgameMode.BREAKTHROUGH,
+                    win_condition=EndgameWinCondition.CAPABILITY_COLLAPSE,
+                    observation_refs=("strategy-imperial-spend-gold",),
+                    priority=100,
+                ),
+            ),
+            objective_priority=("siege", "defense", "production", "town-center"),
+            push_contract=EndgamePushContract(
+                identity="push",
+                attack_group_count=1,
+                attack_soldier_percent=100,
+                minimum_group_size=6,
+                maximum_group_size=40,
+                live_witness_ref="live",
+                cleared_witness_ref="cleared",
+                frontier=(
+                    EndgameFrontierState.SIEGE,
+                    EndgameFrontierState.DEFENSE,
+                    EndgameFrontierState.PRODUCTION,
+                    EndgameFrontierState.TOWN_CENTER,
+                ),
+            ),
+        )
+        self.assertEqual(
+            plan.observation_references,
+            ("cleared", "live", "strategy-imperial-spend-gold"),
+        )
+        with self.assertRaisesRegex(ValueError, "cleared"):
+            from LearnerAI.Compiler.ir.endgame import validate_endgame_plan
+            validate_endgame_plan(
+                plan,
+                observation_ids=("strategy-imperial-spend-gold", "live"),
             )
 
     def test_endgame_plan_rejects_unknown_observation(self):
