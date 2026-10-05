@@ -1019,6 +1019,106 @@
 (defconst sn-minimum-attack-group-size 16)
 (defconst sn-maximum-attack-group-size 26)
 
+
+; Compiler-owned Imperial endgame synchronization layer.
+(defconst halberdier 429)
+(defconst byzantine-imperial-band-state 16000)
+(defconst byzantine-imperial-band-candidate 16001)
+(defconst byzantine-imperial-band-rearm 16002)
+(defconst byzantine-imperial-band-reason 16003)
+(defconst byzantine-imperial-band-guard-timer 18)
+(defconst byzantine-imperial-band-rearm-timer 19)
+(defconst byzantine-imperial-band-dwell-timer 20)
+(defconst demand-imperial-elite-skirmisher-floor 16100)
+(defconst issued-imperial-elite-skirmisher-floor 16101)
+(defconst pending-imperial-elite-skirmisher-floor 16102)
+(defconst complete-imperial-elite-skirmisher-floor 16103)
+(defconst production-retry-barrier-imperial-elite-skirmisher-floor 16104)
+(defconst demand-imperial-open-halberdier-standard 16105)
+(defconst issued-imperial-open-halberdier-standard 16106)
+(defconst pending-imperial-open-halberdier-standard 16107)
+(defconst complete-imperial-open-halberdier-standard 16108)
+(defconst production-retry-barrier-imperial-open-halberdier-standard 16109)
+(defconst demand-imperial-open-halberdier-pressure 16110)
+(defconst issued-imperial-open-halberdier-pressure 16111)
+(defconst pending-imperial-open-halberdier-pressure 16112)
+(defconst complete-imperial-open-halberdier-pressure 16113)
+(defconst production-retry-barrier-imperial-open-halberdier-pressure 16114)
+(defconst demand-imperial-open-halberdier-severe 16115)
+(defconst issued-imperial-open-halberdier-severe 16116)
+(defconst pending-imperial-open-halberdier-severe 16117)
+(defconst complete-imperial-open-halberdier-severe 16118)
+(defconst production-retry-barrier-imperial-open-halberdier-severe 16119)
+(defconst demand-imperial-open-elite-skirmisher-standard 16120)
+(defconst issued-imperial-open-elite-skirmisher-standard 16121)
+(defconst pending-imperial-open-elite-skirmisher-standard 16122)
+(defconst complete-imperial-open-elite-skirmisher-standard 16123)
+(defconst production-retry-barrier-imperial-open-elite-skirmisher-standard 16124)
+(defconst demand-imperial-open-elite-skirmisher-pressure 16125)
+(defconst issued-imperial-open-elite-skirmisher-pressure 16126)
+(defconst pending-imperial-open-elite-skirmisher-pressure 16127)
+(defconst complete-imperial-open-elite-skirmisher-pressure 16128)
+(defconst production-retry-barrier-imperial-open-elite-skirmisher-pressure 16129)
+(defconst demand-imperial-open-elite-skirmisher-severe 16130)
+(defconst issued-imperial-open-elite-skirmisher-severe 16131)
+(defconst pending-imperial-open-elite-skirmisher-severe 16132)
+(defconst complete-imperial-open-elite-skirmisher-severe 16133)
+(defconst production-retry-barrier-imperial-open-elite-skirmisher-severe 16134)
+(defconst demand-imperial-open-hussar-standard 16135)
+(defconst issued-imperial-open-hussar-standard 16136)
+(defconst pending-imperial-open-hussar-standard 16137)
+(defconst complete-imperial-open-hussar-standard 16138)
+(defconst production-retry-barrier-imperial-open-hussar-standard 16139)
+(defconst demand-imperial-open-hussar-mobile 16140)
+(defconst issued-imperial-open-hussar-mobile 16141)
+(defconst pending-imperial-open-hussar-mobile 16142)
+(defconst complete-imperial-open-hussar-mobile 16143)
+(defconst production-retry-barrier-imperial-open-hussar-mobile 16144)
+(defconst demand-imperial-fortified-halberdier 16145)
+(defconst issued-imperial-fortified-halberdier 16146)
+(defconst pending-imperial-fortified-halberdier 16147)
+(defconst complete-imperial-fortified-halberdier 16148)
+(defconst production-retry-barrier-imperial-fortified-halberdier 16149)
+(defconst demand-imperial-fortified-elite-skirmisher 16150)
+(defconst issued-imperial-fortified-elite-skirmisher 16151)
+(defconst pending-imperial-fortified-elite-skirmisher 16152)
+(defconst complete-imperial-fortified-elite-skirmisher 16153)
+(defconst production-retry-barrier-imperial-fortified-elite-skirmisher 16154)
+(defconst demand-imperial-fortified-hussar 16155)
+(defconst issued-imperial-fortified-hussar 16156)
+(defconst pending-imperial-fortified-hussar 16157)
+(defconst complete-imperial-fortified-hussar 16158)
+(defconst production-retry-barrier-imperial-fortified-hussar 16159)
+(defconst demand-imperial-trash-halberdier-standard 16160)
+(defconst issued-imperial-trash-halberdier-standard 16161)
+(defconst pending-imperial-trash-halberdier-standard 16162)
+(defconst complete-imperial-trash-halberdier-standard 16163)
+(defconst production-retry-barrier-imperial-trash-halberdier-standard 16164)
+(defconst demand-imperial-trash-halberdier-high 16165)
+(defconst issued-imperial-trash-halberdier-high 16166)
+(defconst pending-imperial-trash-halberdier-high 16167)
+(defconst complete-imperial-trash-halberdier-high 16168)
+(defconst production-retry-barrier-imperial-trash-halberdier-high 16169)
+(defconst demand-imperial-trash-elite-skirmisher-standard 16170)
+(defconst issued-imperial-trash-elite-skirmisher-standard 16171)
+(defconst pending-imperial-trash-elite-skirmisher-standard 16172)
+(defconst complete-imperial-trash-elite-skirmisher-standard 16173)
+(defconst production-retry-barrier-imperial-trash-elite-skirmisher-standard 16174)
+(defconst demand-imperial-trash-elite-skirmisher-high 16175)
+(defconst issued-imperial-trash-elite-skirmisher-high 16176)
+(defconst pending-imperial-trash-elite-skirmisher-high 16177)
+(defconst complete-imperial-trash-elite-skirmisher-high 16178)
+(defconst production-retry-barrier-imperial-trash-elite-skirmisher-high 16179)
+(defconst demand-imperial-trash-hussar-standard 16180)
+(defconst issued-imperial-trash-hussar-standard 16181)
+(defconst pending-imperial-trash-hussar-standard 16182)
+(defconst complete-imperial-trash-hussar-standard 16183)
+(defconst production-retry-barrier-imperial-trash-hussar-standard 16184)
+(defconst demand-imperial-trash-hussar-high 16185)
+(defconst issued-imperial-trash-hussar-high 16186)
+(defconst pending-imperial-trash-hussar-high 16187)
+(defconst complete-imperial-trash-hussar-high 16188)
+(defconst production-retry-barrier-imperial-trash-hussar-high 16189)
 (defrule
     (goal byzantine-static-defense-score-state -1)
 =>
@@ -4606,13 +4706,13 @@
 (defconst bt-castle-mangonel-floor 2)
 (defconst bt-castle-monk-floor 4)
 (defconst bt-imperial-cavalier-target 2)
-(defconst bt-imperial-hussar-target 4)
+(defconst bt-imperial-hussar-target 12)
 (defconst bt-imperial-onager-target 2)
 (defconst bt-imperial-heavy-camel-target 3)
 (defconst bt-imperial-cataphract-floor 6)
 (defconst bt-imperial-varangian-floor 6)
 (defconst bt-imperial-arbalester-floor 6)
-(defconst bt-imperial-halberdier-floor 8)
+(defconst bt-imperial-halberdier-floor 18)
 (defconst bt-imperial-late-cataphract-target 30)
 (defconst bt-imperial-late-varangian-target 24)
 (defconst bt-imperial-late-arbalester-target 24)
@@ -10434,6 +10534,7 @@
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (goal byzantine-army-reinforcement 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)
@@ -10454,6 +10555,7 @@
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (goal byzantine-army-reinforcement 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total 2703 >= bt-imperial-timing-backbone-floor)
@@ -10474,6 +10576,7 @@
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (goal byzantine-army-reinforcement 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)
@@ -24285,13 +24388,6 @@
     (not (up-pending-objects c: 441 >= 1))
     (not (unit-type-count hussar >= bt-imperial-hussar-target))
     (goal action-claim-train-arbitration 0)
-    (or
-        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
-        (or
-            (players-unit-type-count any-enemy mangonel-line >= 2)
-            (unit-type-count hussar >= 1)
-        )
-    )
     (current-age >= imperial-age)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < bt-imperial-hussar-target)
@@ -24811,10 +24907,6 @@
     (not (up-pending-objects c: 359 >= 1))
     (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
     (goal action-claim-train-arbitration 0)
-    (or
-        (goal byzantine-army-plan-phase 2)
-        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
-    )
     (current-age >= imperial-age)
     (can-train-with-escrow 359)
     (or
@@ -26581,3 +26673,2337 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-water-trade-cog-floor 140)
 )
+
+;================================================================
+; COMPILER-OWNED IMPERIAL ENDGAME OVERLAY
+; Preserves validated runtime-only defensive/geometry behavior while
+; synchronizing compiler-owned Imperial military policy.
+;================================================================
+
+; Native control rule: byzantine-imperial-band-initialize
+(defrule
+    (goal byzantine-imperial-band-state 0)
+    (goal byzantine-imperial-band-candidate 0)
+    (goal byzantine-imperial-band-rearm 0)
+    (goal byzantine-imperial-band-reason 0)
+=>
+    (set-goal byzantine-imperial-band-state 0)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (set-goal byzantine-imperial-band-rearm 0)
+    (set-goal byzantine-imperial-band-reason 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-rearm-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 30)
+    (disable-self)
+)
+
+; Native control rule: byzantine-imperial-band-rearm-clear
+(defrule
+    (timer-triggered byzantine-imperial-band-rearm-timer)
+=>
+    (disable-timer byzantine-imperial-band-rearm-timer)
+    (set-goal byzantine-imperial-band-rearm 0)
+)
+
+; Native control rule: byzantine-imperial-band-floor-break-open
+(defrule
+    (goal byzantine-imperial-band-state 1)
+    (or (unit-type-count halberdier < 18) (or (unit-type-count 6 < 18) (unit-type-count hussar < 12)))
+=>
+    (set-goal byzantine-imperial-band-rearm 1)
+    (enable-timer byzantine-imperial-band-rearm-timer 30)
+    (set-goal byzantine-imperial-band-state 0)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (set-goal byzantine-imperial-band-reason 10)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-floor-break-fortified
+(defrule
+    (goal byzantine-imperial-band-state 2)
+    (or (unit-type-count halberdier < 18) (or (unit-type-count 6 < 18) (unit-type-count hussar < 12)))
+=>
+    (set-goal byzantine-imperial-band-rearm 2)
+    (enable-timer byzantine-imperial-band-rearm-timer 30)
+    (set-goal byzantine-imperial-band-state 0)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (set-goal byzantine-imperial-band-reason 10)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-floor-break-trash
+(defrule
+    (goal byzantine-imperial-band-state 3)
+    (or (unit-type-count halberdier < 18) (or (unit-type-count 6 < 18) (unit-type-count hussar < 12)))
+=>
+    (set-goal byzantine-imperial-band-rearm 3)
+    (enable-timer byzantine-imperial-band-rearm-timer 45)
+    (set-goal byzantine-imperial-band-state 0)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (set-goal byzantine-imperial-band-reason 10)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-floor-break-standing
+(defrule
+    (goal byzantine-imperial-band-state 0)
+    (or (unit-type-count halberdier < 18) (or (unit-type-count 6 < 18) (unit-type-count hussar < 12)))
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (set-goal byzantine-imperial-band-reason 10)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-fortified-candidate
+(defrule
+    (up-compare-goal byzantine-imperial-band-state != 2)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (goal byzantine-offensive-objective-claim 1)
+    (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet-line >= 2) (unit-type-count-total bombard-cannon-line >= 2)))
+    (food-amount >= 2400)
+    (wood-amount >= 2400)
+    (gold-amount >= 2600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 2) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (or (up-compare-goal byzantine-imperial-band-state != 0) (timer-triggered byzantine-imperial-band-dwell-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 2)
+=>
+    (set-goal byzantine-imperial-band-candidate 2)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 15)
+)
+
+; Native control rule: byzantine-imperial-band-economic-candidate
+(defrule
+    (up-compare-goal byzantine-imperial-band-state != 0)
+    (not (goal byzantine-fortification-threat 1))
+    (not (goal byzantine-siege-approach byzantine-siege-approach-fortified))
+    (not (goal byzantine-offensive-objective-claim 1))
+    (not (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet-line >= 2) (unit-type-count-total bombard-cannon-line >= 2))))
+    (not (food-amount >= 2400))
+    (not (wood-amount >= 2400))
+    (not (gold-amount >= 2600))
+    (or (food-amount < 1800) (wood-amount < 1500))
+    (up-compare-goal byzantine-imperial-band-candidate != 4)
+=>
+    (set-goal byzantine-imperial-band-candidate 4)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-standing-trash-candidate
+(defrule
+    (goal byzantine-imperial-band-state 0)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (goal byzantine-fortification-threat 0)
+    (food-amount >= 2400)
+    (wood-amount >= 2200)
+    (gold-amount <= 800)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 3)
+=>
+    (set-goal byzantine-imperial-band-candidate 3)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-standing-open-candidate
+(defrule
+    (goal byzantine-imperial-band-state 0)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 1)
+    (players-military-population any-enemy >= 12)
+    (food-amount >= 2400)
+    (wood-amount >= 2000)
+    (gold-amount >= 2000)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 1)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 20)
+)
+
+; Native control rule: byzantine-imperial-band-open-trash-candidate
+(defrule
+    (goal byzantine-imperial-band-state 1)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (goal byzantine-fortification-threat 0)
+    (food-amount >= 2400)
+    (wood-amount >= 2200)
+    (gold-amount <= 800)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 3)
+=>
+    (set-goal byzantine-imperial-band-candidate 3)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-trash-open-candidate
+(defrule
+    (goal byzantine-imperial-band-state 3)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (gold-amount >= 1800)
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 1)
+    (players-military-population any-enemy >= 12)
+    (food-amount >= 2400)
+    (wood-amount >= 2000)
+    (gold-amount >= 1800)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 1)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-fortified-open-candidate
+(defrule
+    (goal byzantine-imperial-band-state 2)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (goal byzantine-fortification-threat 0)
+    (not (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege))
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 1)
+    (players-military-population any-enemy >= 12)
+    (food-amount >= 2400)
+    (wood-amount >= 2000)
+    (gold-amount >= 2000)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 1)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 20)
+)
+
+; Native control rule: byzantine-imperial-band-fortified-trash-candidate
+(defrule
+    (goal byzantine-imperial-band-state 2)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (goal byzantine-fortification-threat 0)
+    (not (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege))
+    (goal byzantine-fortification-threat 0)
+    (food-amount >= 2400)
+    (wood-amount >= 2200)
+    (gold-amount <= 800)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 3)
+=>
+    (set-goal byzantine-imperial-band-candidate 3)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 20)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (goal byzantine-fortification-threat 0)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-02
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (up-compare-goal byzantine-siege-approach != 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-03
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (goal byzantine-offensive-objective-claim 0)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-04
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (unit-type-count-total mangonel-line < 2)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-05
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (unit-type-count-total trebuchet-line < 2)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-06
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (unit-type-count-total bombard-cannon-line < 2)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-07
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (food-amount < 2400)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-08
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (wood-amount < 2400)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-fortified-candidate-09
+(defrule
+    (goal byzantine-imperial-band-candidate 2)
+    (gold-amount < 2600)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-02
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (food-amount < 2400)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-03
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (wood-amount < 2200)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-04
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (gold-amount > 800)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-05
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (unit-type-count halberdier < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-06
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (unit-type-count 6 < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-07
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (unit-type-count hussar < 12)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-08
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (food-amount < 2000)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-09
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (wood-amount < 1700)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-trash-candidate-10
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (gold-amount < 1600)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-02
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (goal byzantine-offensive-objective-claim 0)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-03
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (players-military-population any-enemy < 12)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-04
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (food-amount < 2400)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-05
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (wood-amount < 2000)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-06
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (gold-amount < 2000)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-07
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (unit-type-count halberdier < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-08
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (unit-type-count 6 < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-09
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (unit-type-count hussar < 12)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-10
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (food-amount < 2000)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-11
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (wood-amount < 1700)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-candidate-12
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (gold-amount < 1600)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-02
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (goal byzantine-offensive-objective-claim 0)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-03
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (players-military-population any-enemy < 12)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-04
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (food-amount < 2400)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-05
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (wood-amount < 2000)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-06
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (gold-amount < 1800)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-07
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (unit-type-count halberdier < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-08
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (unit-type-count 6 < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-09
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (unit-type-count hussar < 12)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-10
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (food-amount < 2000)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-11
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (wood-amount < 1700)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-12
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (goal byzantine-imperial-band-state 3)
+    (gold-amount < 1600)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-economic-candidate
+(defrule
+    (goal byzantine-imperial-band-candidate 4)
+    (not (or (food-amount < 1800) (wood-amount < 1500)))
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-arm-open-rearm
+(defrule
+    (goal byzantine-imperial-band-state 1)
+    (up-compare-goal byzantine-imperial-band-candidate != 1)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+=>
+    (set-goal byzantine-imperial-band-rearm 1)
+    (enable-timer byzantine-imperial-band-rearm-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-arm-fortified-rearm
+(defrule
+    (goal byzantine-imperial-band-state 2)
+    (up-compare-goal byzantine-imperial-band-candidate != 2)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+=>
+    (set-goal byzantine-imperial-band-rearm 2)
+    (enable-timer byzantine-imperial-band-rearm-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-arm-trash-rearm
+(defrule
+    (goal byzantine-imperial-band-state 3)
+    (up-compare-goal byzantine-imperial-band-candidate != 3)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+=>
+    (set-goal byzantine-imperial-band-rearm 3)
+    (enable-timer byzantine-imperial-band-rearm-timer 45)
+)
+
+; Native control rule: byzantine-imperial-band-transition-fortified
+(defrule
+    (up-compare-goal byzantine-imperial-band-candidate == 2)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+    (goal byzantine-fortification-threat 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+    (goal byzantine-offensive-objective-claim 1)
+    (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet-line >= 2) (unit-type-count-total bombard-cannon-line >= 2)))
+    (food-amount >= 2400)
+    (wood-amount >= 2400)
+    (gold-amount >= 2600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 2) (timer-triggered byzantine-imperial-band-rearm-timer))
+=>
+    (set-goal byzantine-imperial-band-state 2)
+    (set-goal byzantine-imperial-band-reason 20)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 45)
+)
+
+; Native control rule: byzantine-imperial-band-transition-economic
+(defrule
+    (goal byzantine-imperial-band-candidate 4)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+    (or (food-amount < 1800) (wood-amount < 1500))
+=>
+    (set-goal byzantine-imperial-band-state 0)
+    (set-goal byzantine-imperial-band-reason 30)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 30)
+)
+
+; Native control rule: byzantine-imperial-band-transition-trash
+(defrule
+    (goal byzantine-imperial-band-candidate 3)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+    (goal byzantine-fortification-threat 0)
+    (food-amount >= 2400)
+    (wood-amount >= 2200)
+    (gold-amount <= 800)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
+=>
+    (set-goal byzantine-imperial-band-state 3)
+    (set-goal byzantine-imperial-band-reason 40)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 90)
+)
+
+; Native control rule: byzantine-imperial-band-transition-open
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+    (up-compare-goal byzantine-imperial-band-state != 3)
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 1)
+    (players-military-population any-enemy >= 12)
+    (food-amount >= 2400)
+    (wood-amount >= 2000)
+    (gold-amount >= 2000)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+=>
+    (set-goal byzantine-imperial-band-state 1)
+    (set-goal byzantine-imperial-band-reason 60)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 60)
+)
+
+; Native control rule: byzantine-imperial-band-transition-open-recovery
+(defrule
+    (goal byzantine-imperial-band-candidate 1)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+    (goal byzantine-imperial-band-state 3)
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 1)
+    (players-military-population any-enemy >= 12)
+    (food-amount >= 2400)
+    (wood-amount >= 2000)
+    (gold-amount >= 1800)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (food-amount >= 2000)
+    (wood-amount >= 1700)
+    (gold-amount >= 1600)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+=>
+    (set-goal byzantine-imperial-band-state 1)
+    (set-goal byzantine-imperial-band-reason 50)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 60)
+)
+
+
+
+(defrule
+    (true)
+=>
+    (set-goal demand-imperial-elite-skirmisher-floor 1
+    (set-goal demand-imperial-open-halberdier-standard 1
+    (set-goal demand-imperial-open-halberdier-pressure 1
+    (set-goal demand-imperial-open-halberdier-severe 1
+    (set-goal demand-imperial-open-elite-skirmisher-standard 1
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 1
+    (set-goal demand-imperial-open-elite-skirmisher-severe 1
+    (set-goal demand-imperial-open-hussar-standard 1
+    (set-goal demand-imperial-open-hussar-mobile 1
+    (set-goal demand-imperial-fortified-halberdier 1
+    (set-goal demand-imperial-fortified-elite-skirmisher 1
+    (set-goal demand-imperial-fortified-hussar 1
+    (set-goal demand-imperial-trash-halberdier-standard 1
+    (set-goal demand-imperial-trash-halberdier-high 1
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 1
+    (set-goal demand-imperial-trash-elite-skirmisher-high 1
+    (set-goal demand-imperial-trash-hussar-standard 1
+    (set-goal demand-imperial-trash-hussar-high 1
+    (disable-self)
+)
+
+
+; Imperial standing-floor activation and replacement reconciliation
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-elite-skirmisher-floor 0)
+    (unit-type-count-total 6 < 18)
+=>
+    (set-goal demand-imperial-elite-skirmisher-floor 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-halberdier-floor 0)
+    (unit-type-count-total 359 < 18)
+=>
+    (set-goal demand-imperial-halberdier-floor 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-hussar-floor 0)
+    (unit-type-count-total hussar < 12)
+=>
+    (set-goal demand-imperial-hussar-floor 1)
+)
+; Imperial band-specific replacement reconciliation
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-halberdier-standard 0)
+    (unit-type-count-total halberdier < 24)
+=>
+    (set-goal demand-imperial-open-halberdier-standard 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-halberdier-pressure 0)
+    (unit-type-count-total halberdier < 30)
+=>
+    (set-goal demand-imperial-open-halberdier-pressure 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-halberdier-severe 0)
+    (unit-type-count-total halberdier < 36)
+=>
+    (set-goal demand-imperial-open-halberdier-severe 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-elite-skirmisher-standard 0)
+    (unit-type-count-total skirmisher-line < 24)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-standard 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-elite-skirmisher-pressure 0)
+    (unit-type-count-total skirmisher-line < 30)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-elite-skirmisher-severe 0)
+    (unit-type-count-total skirmisher-line < 36)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-severe 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-hussar-standard 0)
+    (unit-type-count-total hussar < 16)
+=>
+    (set-goal demand-imperial-open-hussar-standard 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 1)
+    (goal demand-imperial-open-hussar-mobile 0)
+    (unit-type-count-total hussar < 20)
+=>
+    (set-goal demand-imperial-open-hussar-mobile 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 2)
+    (goal demand-imperial-fortified-halberdier 0)
+    (unit-type-count-total halberdier < 24)
+=>
+    (set-goal demand-imperial-fortified-halberdier 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 2)
+    (goal demand-imperial-fortified-elite-skirmisher 0)
+    (unit-type-count-total skirmisher-line < 20)
+=>
+    (set-goal demand-imperial-fortified-elite-skirmisher 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 2)
+    (goal demand-imperial-fortified-hussar 0)
+    (unit-type-count-total hussar < 10)
+=>
+    (set-goal demand-imperial-fortified-hussar 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 3)
+    (goal demand-imperial-trash-halberdier-standard 0)
+    (unit-type-count-total halberdier < 30)
+=>
+    (set-goal demand-imperial-trash-halberdier-standard 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 3)
+    (goal demand-imperial-trash-halberdier-high 0)
+    (unit-type-count-total halberdier < 36)
+=>
+    (set-goal demand-imperial-trash-halberdier-high 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 3)
+    (goal demand-imperial-trash-elite-skirmisher-standard 0)
+    (unit-type-count-total skirmisher-line < 30)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 3)
+    (goal demand-imperial-trash-elite-skirmisher-high 0)
+    (unit-type-count-total skirmisher-line < 36)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-high 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 3)
+    (goal demand-imperial-trash-hussar-standard 0)
+    (unit-type-count-total hussar < 18)
+=>
+    (set-goal demand-imperial-trash-hussar-standard 1)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-imperial-band-state 3)
+    (goal demand-imperial-trash-hussar-high 0)
+    (unit-type-count-total hussar < 24)
+=>
+    (set-goal demand-imperial-trash-hussar-high 1)
+)
+
+; Pending diagnostics: imperial-elite-skirmisher-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 91 and cannot reissue from pending goal 92
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 92 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 93 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-elite-skirmisher-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-elite-skirmisher-floor in ACTIVE; it is not PENDING.
+; Release: imperial-elite-skirmisher-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-elite-skirmisher-floor 93)
+    (unit-type-count 6 >= 18)
+=>
+    (set-goal demand-imperial-elite-skirmisher-floor 0)
+)
+
+; Completion witness: imperial-elite-skirmisher-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-elite-skirmisher-floor 94)
+        (goal demand-imperial-elite-skirmisher-floor 92)
+    )
+    (unit-type-count skirmisher-line >= 18)
+=>
+    (set-goal demand-imperial-elite-skirmisher-floor 93)
+)
+
+; Pending admission: imperial-elite-skirmisher-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-elite-skirmisher-floor 94)
+        (goal demand-imperial-elite-skirmisher-floor 92)
+    )
+    (not (unit-type-count skirmisher-line >= 18))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-elite-skirmisher-floor 92)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-elite-skirmisher-floor 94)
+        (goal demand-imperial-elite-skirmisher-floor 92)
+    )
+    (not (unit-type-count skirmisher-line >= 18))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-elite-skirmisher-floor 1)
+    (set-goal production-retry-barrier-imperial-elite-skirmisher-floor 1)
+)
+
+; Action issuance: imperial-elite-skirmisher-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-elite-skirmisher-floor 1)
+    (not (unit-type-count skirmisher-line >= 18))
+    (goal production-retry-barrier-imperial-elite-skirmisher-floor 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 18))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (unit-type-count 6 < 18)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 18)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-elite-skirmisher-floor 94)
+)
+
+
+
+; Pending diagnostics: imperial-open-halberdier-standard
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 106 and cannot reissue from pending goal 107
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 107 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 108 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-halberdier-standard | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-halberdier-standard in ACTIVE; it is not PENDING.
+; Release: imperial-open-halberdier-standard | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-halberdier-standard 108)
+    (unit-type-count halberdier >= 24)
+=>
+    (set-goal demand-imperial-open-halberdier-standard 0)
+)
+
+; Completion witness: imperial-open-halberdier-standard | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-standard 109)
+        (goal demand-imperial-open-halberdier-standard 107)
+    )
+    (unit-type-count halberdier >= 24)
+=>
+    (set-goal demand-imperial-open-halberdier-standard 108)
+)
+
+; Pending admission: imperial-open-halberdier-standard | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-standard 109)
+        (goal demand-imperial-open-halberdier-standard 107)
+    )
+    (not (unit-type-count halberdier >= 24))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-open-halberdier-standard 107)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-standard 109)
+        (goal demand-imperial-open-halberdier-standard 107)
+    )
+    (not (unit-type-count halberdier >= 24))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-open-halberdier-standard 1)
+    (set-goal production-retry-barrier-imperial-open-halberdier-standard 1)
+)
+
+; Action issuance: imperial-open-halberdier-standard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-halberdier-standard 1)
+    (not (unit-type-count halberdier >= 24))
+    (goal production-retry-barrier-imperial-open-halberdier-standard 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count halberdier >= 24))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-rider-line >= 8))))
+    (unit-type-count 359 < 24)
+    (can-train-with-escrow halberdier)
+    (unit-type-count-total halberdier < 24)
+=>
+    (train halberdier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-halberdier-standard 109)
+)
+
+
+; Pending diagnostics: imperial-open-halberdier-pressure
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 104 and cannot reissue from pending goal 105
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 105 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 106 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-halberdier-pressure | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-halberdier-pressure in ACTIVE; it is not PENDING.
+; Release: imperial-open-halberdier-pressure | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-halberdier-pressure 106)
+    (unit-type-count halberdier >= 30)
+=>
+    (set-goal demand-imperial-open-halberdier-pressure 0)
+)
+
+; Completion witness: imperial-open-halberdier-pressure | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-pressure 107)
+        (goal demand-imperial-open-halberdier-pressure 105)
+    )
+    (unit-type-count halberdier >= 30)
+=>
+    (set-goal demand-imperial-open-halberdier-pressure 106)
+)
+
+; Pending admission: imperial-open-halberdier-pressure | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-pressure 107)
+        (goal demand-imperial-open-halberdier-pressure 105)
+    )
+    (not (unit-type-count halberdier >= 30))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-open-halberdier-pressure 105)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-pressure 107)
+        (goal demand-imperial-open-halberdier-pressure 105)
+    )
+    (not (unit-type-count halberdier >= 30))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-open-halberdier-pressure 1)
+    (set-goal production-retry-barrier-imperial-open-halberdier-pressure 1)
+)
+
+; Action issuance: imperial-open-halberdier-pressure | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-halberdier-pressure 1)
+    (not (unit-type-count halberdier >= 30))
+    (goal production-retry-barrier-imperial-open-halberdier-pressure 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count halberdier >= 30))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-rider-line >= 8)))
+    (not (or (players-unit-type-count any-enemy knight-line >= 12) (or (players-unit-type-count any-enemy scout-cavalry-line >= 12) (players-unit-type-count any-enemy camel-rider-line >= 12))))
+    (unit-type-count 359 < 30)
+    (can-train-with-escrow halberdier)
+    (unit-type-count-total halberdier < 30)
+=>
+    (train halberdier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-halberdier-pressure 107)
+)
+
+
+; Pending diagnostics: imperial-open-halberdier-severe
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 105 and cannot reissue from pending goal 106
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 106 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 107 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-halberdier-severe | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-halberdier-severe in ACTIVE; it is not PENDING.
+; Release: imperial-open-halberdier-severe | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-halberdier-severe 107)
+    (unit-type-count halberdier >= 36)
+=>
+    (set-goal demand-imperial-open-halberdier-severe 0)
+)
+
+; Completion witness: imperial-open-halberdier-severe | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-severe 108)
+        (goal demand-imperial-open-halberdier-severe 106)
+    )
+    (unit-type-count halberdier >= 36)
+=>
+    (set-goal demand-imperial-open-halberdier-severe 107)
+)
+
+; Pending admission: imperial-open-halberdier-severe | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-severe 108)
+        (goal demand-imperial-open-halberdier-severe 106)
+    )
+    (not (unit-type-count halberdier >= 36))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-open-halberdier-severe 106)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-halberdier-severe 108)
+        (goal demand-imperial-open-halberdier-severe 106)
+    )
+    (not (unit-type-count halberdier >= 36))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-open-halberdier-severe 1)
+    (set-goal production-retry-barrier-imperial-open-halberdier-severe 1)
+)
+
+; Action issuance: imperial-open-halberdier-severe | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-halberdier-severe 1)
+    (not (unit-type-count halberdier >= 36))
+    (goal production-retry-barrier-imperial-open-halberdier-severe 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count halberdier >= 36))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (or (players-unit-type-count any-enemy knight-line >= 12) (or (players-unit-type-count any-enemy scout-cavalry-line >= 12) (players-unit-type-count any-enemy camel-rider-line >= 12)))
+    (unit-type-count 359 < 36)
+    (can-train-with-escrow halberdier)
+    (unit-type-count-total halberdier < 36)
+=>
+    (train halberdier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-halberdier-severe 108)
+)
+
+
+; Pending diagnostics: imperial-open-elite-skirmisher-standard
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 103 and cannot reissue from pending goal 104
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 104 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 105 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-elite-skirmisher-standard | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-elite-skirmisher-standard in ACTIVE; it is not PENDING.
+; Release: imperial-open-elite-skirmisher-standard | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-elite-skirmisher-standard 105)
+    (unit-type-count 6 >= 24)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-standard 0)
+)
+
+; Completion witness: imperial-open-elite-skirmisher-standard | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-standard 106)
+        (goal demand-imperial-open-elite-skirmisher-standard 104)
+    )
+    (unit-type-count skirmisher-line >= 24)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-standard 105)
+)
+
+; Pending admission: imperial-open-elite-skirmisher-standard | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-standard 106)
+        (goal demand-imperial-open-elite-skirmisher-standard 104)
+    )
+    (not (unit-type-count skirmisher-line >= 24))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-standard 104)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-standard 106)
+        (goal demand-imperial-open-elite-skirmisher-standard 104)
+    )
+    (not (unit-type-count skirmisher-line >= 24))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-standard 1)
+    (set-goal production-retry-barrier-imperial-open-elite-skirmisher-standard 1)
+)
+
+; Action issuance: imperial-open-elite-skirmisher-standard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-elite-skirmisher-standard 1)
+    (not (unit-type-count skirmisher-line >= 24))
+    (goal production-retry-barrier-imperial-open-elite-skirmisher-standard 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 24))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (not (or (players-unit-type-count any-enemy archer-line >= 8) (players-unit-type-count any-enemy crossbow-line >= 8)))
+    (unit-type-count 6 < 24)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 24)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-elite-skirmisher-standard 106)
+)
+
+
+; Pending diagnostics: imperial-open-elite-skirmisher-pressure
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 101 and cannot reissue from pending goal 102
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 102 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 103 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-elite-skirmisher-pressure | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-elite-skirmisher-pressure in ACTIVE; it is not PENDING.
+; Release: imperial-open-elite-skirmisher-pressure | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-elite-skirmisher-pressure 103)
+    (unit-type-count 6 >= 30)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 0)
+)
+
+; Completion witness: imperial-open-elite-skirmisher-pressure | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-pressure 104)
+        (goal demand-imperial-open-elite-skirmisher-pressure 102)
+    )
+    (unit-type-count skirmisher-line >= 30)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 103)
+)
+
+; Pending admission: imperial-open-elite-skirmisher-pressure | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-pressure 104)
+        (goal demand-imperial-open-elite-skirmisher-pressure 102)
+    )
+    (not (unit-type-count skirmisher-line >= 30))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 102)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-pressure 104)
+        (goal demand-imperial-open-elite-skirmisher-pressure 102)
+    )
+    (not (unit-type-count skirmisher-line >= 30))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 1)
+    (set-goal production-retry-barrier-imperial-open-elite-skirmisher-pressure 1)
+)
+
+; Action issuance: imperial-open-elite-skirmisher-pressure | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-elite-skirmisher-pressure 1)
+    (not (unit-type-count skirmisher-line >= 30))
+    (goal production-retry-barrier-imperial-open-elite-skirmisher-pressure 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 30))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (or (players-unit-type-count any-enemy archer-line >= 8) (players-unit-type-count any-enemy crossbow-line >= 8))
+    (not (or (players-unit-type-count any-enemy archer-line >= 12) (players-unit-type-count any-enemy crossbow-line >= 12)))
+    (unit-type-count 6 < 30)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 30)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-elite-skirmisher-pressure 104)
+)
+
+
+; Pending diagnostics: imperial-open-elite-skirmisher-severe
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 102 and cannot reissue from pending goal 103
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 103 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 104 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-elite-skirmisher-severe | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-elite-skirmisher-severe in ACTIVE; it is not PENDING.
+; Release: imperial-open-elite-skirmisher-severe | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-elite-skirmisher-severe 104)
+    (unit-type-count 6 >= 36)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-severe 0)
+)
+
+; Completion witness: imperial-open-elite-skirmisher-severe | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-severe 105)
+        (goal demand-imperial-open-elite-skirmisher-severe 103)
+    )
+    (unit-type-count skirmisher-line >= 36)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-severe 104)
+)
+
+; Pending admission: imperial-open-elite-skirmisher-severe | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-severe 105)
+        (goal demand-imperial-open-elite-skirmisher-severe 103)
+    )
+    (not (unit-type-count skirmisher-line >= 36))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-severe 103)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-elite-skirmisher-severe 105)
+        (goal demand-imperial-open-elite-skirmisher-severe 103)
+    )
+    (not (unit-type-count skirmisher-line >= 36))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-open-elite-skirmisher-severe 1)
+    (set-goal production-retry-barrier-imperial-open-elite-skirmisher-severe 1)
+)
+
+; Action issuance: imperial-open-elite-skirmisher-severe | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-elite-skirmisher-severe 1)
+    (not (unit-type-count skirmisher-line >= 36))
+    (goal production-retry-barrier-imperial-open-elite-skirmisher-severe 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 36))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (or (players-unit-type-count any-enemy archer-line >= 12) (players-unit-type-count any-enemy crossbow-line >= 12))
+    (unit-type-count 6 < 36)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 36)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-elite-skirmisher-severe 105)
+)
+
+
+; Pending diagnostics: imperial-open-hussar-standard
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 108 and cannot reissue from pending goal 109
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 109 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 110 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-hussar-standard | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-hussar-standard in ACTIVE; it is not PENDING.
+; Release: imperial-open-hussar-standard | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-hussar-standard 110)
+    (unit-type-count hussar >= 16)
+=>
+    (set-goal demand-imperial-open-hussar-standard 0)
+)
+
+; Completion witness: imperial-open-hussar-standard | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-hussar-standard 111)
+        (goal demand-imperial-open-hussar-standard 109)
+    )
+    (unit-type-count hussar >= 16)
+=>
+    (set-goal demand-imperial-open-hussar-standard 110)
+)
+
+; Pending admission: imperial-open-hussar-standard | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-hussar-standard 111)
+        (goal demand-imperial-open-hussar-standard 109)
+    )
+    (not (unit-type-count hussar >= 16))
+    (up-pending-objects c: 441 >= 1)
+=>
+    (set-goal demand-imperial-open-hussar-standard 109)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-hussar-standard 111)
+        (goal demand-imperial-open-hussar-standard 109)
+    )
+    (not (unit-type-count hussar >= 16))
+    (not (up-pending-objects c: 441 >= 1))
+=>
+    (set-goal demand-imperial-open-hussar-standard 1)
+    (set-goal production-retry-barrier-imperial-open-hussar-standard 1)
+)
+
+; Action issuance: imperial-open-hussar-standard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-hussar-standard 1)
+    (not (unit-type-count hussar >= 16))
+    (goal production-retry-barrier-imperial-open-hussar-standard 0)
+    (not (up-pending-objects c: 441 >= 1))
+    (not (unit-type-count hussar >= 16))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (or (players-unit-type-count any-enemy camel-rider-line >= 8) (players-unit-type-count any-enemy mangonel-line >= 2)))))
+    (unit-type-count hussar < 16)
+    (can-train-with-escrow hussar)
+    (unit-type-count-total hussar < 16)
+=>
+    (train hussar)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-hussar-standard 111)
+)
+
+
+; Pending diagnostics: imperial-open-hussar-mobile
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 107 and cannot reissue from pending goal 108
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 108 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 109 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-open-hussar-mobile | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-open-hussar-mobile in ACTIVE; it is not PENDING.
+; Release: imperial-open-hussar-mobile | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-open-hussar-mobile 109)
+    (unit-type-count hussar >= 20)
+=>
+    (set-goal demand-imperial-open-hussar-mobile 0)
+)
+
+; Completion witness: imperial-open-hussar-mobile | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-open-hussar-mobile 110)
+        (goal demand-imperial-open-hussar-mobile 108)
+    )
+    (unit-type-count hussar >= 20)
+=>
+    (set-goal demand-imperial-open-hussar-mobile 109)
+)
+
+; Pending admission: imperial-open-hussar-mobile | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-open-hussar-mobile 110)
+        (goal demand-imperial-open-hussar-mobile 108)
+    )
+    (not (unit-type-count hussar >= 20))
+    (up-pending-objects c: 441 >= 1)
+=>
+    (set-goal demand-imperial-open-hussar-mobile 108)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-open-hussar-mobile 110)
+        (goal demand-imperial-open-hussar-mobile 108)
+    )
+    (not (unit-type-count hussar >= 20))
+    (not (up-pending-objects c: 441 >= 1))
+=>
+    (set-goal demand-imperial-open-hussar-mobile 1)
+    (set-goal production-retry-barrier-imperial-open-hussar-mobile 1)
+)
+
+; Action issuance: imperial-open-hussar-mobile | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-open-hussar-mobile 1)
+    (not (unit-type-count hussar >= 20))
+    (goal production-retry-barrier-imperial-open-hussar-mobile 0)
+    (not (up-pending-objects c: 441 >= 1))
+    (not (unit-type-count hussar >= 20))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 1)
+    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (or (players-unit-type-count any-enemy camel-rider-line >= 8) (players-unit-type-count any-enemy mangonel-line >= 2))))
+    (unit-type-count hussar < 20)
+    (can-train-with-escrow hussar)
+    (unit-type-count-total hussar < 20)
+=>
+    (train hussar)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-open-hussar-mobile 110)
+)
+
+
+; Pending diagnostics: imperial-fortified-halberdier
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 93 and cannot reissue from pending goal 94
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 94 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 95 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-fortified-halberdier | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-fortified-halberdier in ACTIVE; it is not PENDING.
+; Release: imperial-fortified-halberdier | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-fortified-halberdier 95)
+    (unit-type-count halberdier >= 24)
+=>
+    (set-goal demand-imperial-fortified-halberdier 0)
+)
+
+; Completion witness: imperial-fortified-halberdier | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-fortified-halberdier 96)
+        (goal demand-imperial-fortified-halberdier 94)
+    )
+    (unit-type-count halberdier >= 24)
+=>
+    (set-goal demand-imperial-fortified-halberdier 95)
+)
+
+; Pending admission: imperial-fortified-halberdier | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-fortified-halberdier 96)
+        (goal demand-imperial-fortified-halberdier 94)
+    )
+    (not (unit-type-count halberdier >= 24))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-fortified-halberdier 94)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-fortified-halberdier 96)
+        (goal demand-imperial-fortified-halberdier 94)
+    )
+    (not (unit-type-count halberdier >= 24))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-fortified-halberdier 1)
+    (set-goal production-retry-barrier-imperial-fortified-halberdier 1)
+)
+
+; Action issuance: imperial-fortified-halberdier | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-fortified-halberdier 1)
+    (not (unit-type-count halberdier >= 24))
+    (goal production-retry-barrier-imperial-fortified-halberdier 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count halberdier >= 24))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 2)
+    (unit-type-count 359 < 24)
+    (can-train-with-escrow halberdier)
+    (unit-type-count-total halberdier < 24)
+=>
+    (train halberdier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-fortified-halberdier 96)
+)
+
+
+; Pending diagnostics: imperial-fortified-elite-skirmisher
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 92 and cannot reissue from pending goal 93
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 93 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 94 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-fortified-elite-skirmisher | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-fortified-elite-skirmisher in ACTIVE; it is not PENDING.
+; Release: imperial-fortified-elite-skirmisher | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-fortified-elite-skirmisher 94)
+    (unit-type-count 6 >= 20)
+=>
+    (set-goal demand-imperial-fortified-elite-skirmisher 0)
+)
+
+; Completion witness: imperial-fortified-elite-skirmisher | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-fortified-elite-skirmisher 95)
+        (goal demand-imperial-fortified-elite-skirmisher 93)
+    )
+    (unit-type-count skirmisher-line >= 20)
+=>
+    (set-goal demand-imperial-fortified-elite-skirmisher 94)
+)
+
+; Pending admission: imperial-fortified-elite-skirmisher | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-fortified-elite-skirmisher 95)
+        (goal demand-imperial-fortified-elite-skirmisher 93)
+    )
+    (not (unit-type-count skirmisher-line >= 20))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-fortified-elite-skirmisher 93)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-fortified-elite-skirmisher 95)
+        (goal demand-imperial-fortified-elite-skirmisher 93)
+    )
+    (not (unit-type-count skirmisher-line >= 20))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-fortified-elite-skirmisher 1)
+    (set-goal production-retry-barrier-imperial-fortified-elite-skirmisher 1)
+)
+
+; Action issuance: imperial-fortified-elite-skirmisher | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-fortified-elite-skirmisher 1)
+    (not (unit-type-count skirmisher-line >= 20))
+    (goal production-retry-barrier-imperial-fortified-elite-skirmisher 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 20))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 2)
+    (unit-type-count 6 < 20)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 20)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-fortified-elite-skirmisher 95)
+)
+
+
+; Pending diagnostics: imperial-fortified-hussar
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 94 and cannot reissue from pending goal 95
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 95 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 96 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-fortified-hussar | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-fortified-hussar in ACTIVE; it is not PENDING.
+; Release: imperial-fortified-hussar | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-fortified-hussar 96)
+    (unit-type-count hussar >= 10)
+=>
+    (set-goal demand-imperial-fortified-hussar 0)
+)
+
+; Completion witness: imperial-fortified-hussar | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-fortified-hussar 97)
+        (goal demand-imperial-fortified-hussar 95)
+    )
+    (unit-type-count hussar >= 10)
+=>
+    (set-goal demand-imperial-fortified-hussar 96)
+)
+
+; Pending admission: imperial-fortified-hussar | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-fortified-hussar 97)
+        (goal demand-imperial-fortified-hussar 95)
+    )
+    (not (unit-type-count hussar >= 10))
+    (up-pending-objects c: 441 >= 1)
+=>
+    (set-goal demand-imperial-fortified-hussar 95)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-fortified-hussar 97)
+        (goal demand-imperial-fortified-hussar 95)
+    )
+    (not (unit-type-count hussar >= 10))
+    (not (up-pending-objects c: 441 >= 1))
+=>
+    (set-goal demand-imperial-fortified-hussar 1)
+    (set-goal production-retry-barrier-imperial-fortified-hussar 1)
+)
+
+; Action issuance: imperial-fortified-hussar | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-fortified-hussar 1)
+    (not (unit-type-count hussar >= 10))
+    (goal production-retry-barrier-imperial-fortified-hussar 0)
+    (not (up-pending-objects c: 441 >= 1))
+    (not (unit-type-count hussar >= 10))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 2)
+    (unit-type-count hussar < 10)
+    (can-train-with-escrow hussar)
+    (unit-type-count-total hussar < 10)
+=>
+    (train hussar)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-fortified-hussar 97)
+)
+
+
+; Pending diagnostics: imperial-trash-halberdier-standard
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 119 and cannot reissue from pending goal 120
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 120 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 121 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-trash-halberdier-standard | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-trash-halberdier-standard in ACTIVE; it is not PENDING.
+; Release: imperial-trash-halberdier-standard | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trash-halberdier-standard 121)
+    (unit-type-count halberdier >= 30)
+=>
+    (set-goal demand-imperial-trash-halberdier-standard 0)
+)
+
+; Completion witness: imperial-trash-halberdier-standard | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trash-halberdier-standard 122)
+        (goal demand-imperial-trash-halberdier-standard 120)
+    )
+    (unit-type-count halberdier >= 30)
+=>
+    (set-goal demand-imperial-trash-halberdier-standard 121)
+)
+
+; Pending admission: imperial-trash-halberdier-standard | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trash-halberdier-standard 122)
+        (goal demand-imperial-trash-halberdier-standard 120)
+    )
+    (not (unit-type-count halberdier >= 30))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-trash-halberdier-standard 120)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trash-halberdier-standard 122)
+        (goal demand-imperial-trash-halberdier-standard 120)
+    )
+    (not (unit-type-count halberdier >= 30))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-trash-halberdier-standard 1)
+    (set-goal production-retry-barrier-imperial-trash-halberdier-standard 1)
+)
+
+; Action issuance: imperial-trash-halberdier-standard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trash-halberdier-standard 1)
+    (not (unit-type-count halberdier >= 30))
+    (goal production-retry-barrier-imperial-trash-halberdier-standard 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count halberdier >= 30))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 3)
+    (not (and (food-amount >= 3000) (wood-amount >= 2500)))
+    (unit-type-count 359 < 30)
+    (can-train-with-escrow halberdier)
+    (unit-type-count-total halberdier < 30)
+=>
+    (train halberdier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trash-halberdier-standard 122)
+)
+
+
+; Pending diagnostics: imperial-trash-halberdier-high
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 118 and cannot reissue from pending goal 119
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 119 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 120 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-trash-halberdier-high | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-trash-halberdier-high in ACTIVE; it is not PENDING.
+; Release: imperial-trash-halberdier-high | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trash-halberdier-high 120)
+    (unit-type-count halberdier >= 36)
+=>
+    (set-goal demand-imperial-trash-halberdier-high 0)
+)
+
+; Completion witness: imperial-trash-halberdier-high | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trash-halberdier-high 121)
+        (goal demand-imperial-trash-halberdier-high 119)
+    )
+    (unit-type-count halberdier >= 36)
+=>
+    (set-goal demand-imperial-trash-halberdier-high 120)
+)
+
+; Pending admission: imperial-trash-halberdier-high | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trash-halberdier-high 121)
+        (goal demand-imperial-trash-halberdier-high 119)
+    )
+    (not (unit-type-count halberdier >= 36))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-trash-halberdier-high 119)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trash-halberdier-high 121)
+        (goal demand-imperial-trash-halberdier-high 119)
+    )
+    (not (unit-type-count halberdier >= 36))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-trash-halberdier-high 1)
+    (set-goal production-retry-barrier-imperial-trash-halberdier-high 1)
+)
+
+; Action issuance: imperial-trash-halberdier-high | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trash-halberdier-high 1)
+    (not (unit-type-count halberdier >= 36))
+    (goal production-retry-barrier-imperial-trash-halberdier-high 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count halberdier >= 36))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 3)
+    (food-amount >= 3000)
+    (wood-amount >= 2500)
+    (unit-type-count 359 < 36)
+    (can-train-with-escrow halberdier)
+    (unit-type-count-total halberdier < 36)
+=>
+    (train halberdier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trash-halberdier-high 121)
+)
+
+
+; Pending diagnostics: imperial-trash-elite-skirmisher-standard
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 117 and cannot reissue from pending goal 118
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 118 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 119 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-trash-elite-skirmisher-standard | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-trash-elite-skirmisher-standard in ACTIVE; it is not PENDING.
+; Release: imperial-trash-elite-skirmisher-standard | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trash-elite-skirmisher-standard 119)
+    (unit-type-count 6 >= 30)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 0)
+)
+
+; Completion witness: imperial-trash-elite-skirmisher-standard | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trash-elite-skirmisher-standard 120)
+        (goal demand-imperial-trash-elite-skirmisher-standard 118)
+    )
+    (unit-type-count skirmisher-line >= 30)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 119)
+)
+
+; Pending admission: imperial-trash-elite-skirmisher-standard | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trash-elite-skirmisher-standard 120)
+        (goal demand-imperial-trash-elite-skirmisher-standard 118)
+    )
+    (not (unit-type-count skirmisher-line >= 30))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 118)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trash-elite-skirmisher-standard 120)
+        (goal demand-imperial-trash-elite-skirmisher-standard 118)
+    )
+    (not (unit-type-count skirmisher-line >= 30))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 1)
+    (set-goal production-retry-barrier-imperial-trash-elite-skirmisher-standard 1)
+)
+
+; Action issuance: imperial-trash-elite-skirmisher-standard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trash-elite-skirmisher-standard 1)
+    (not (unit-type-count skirmisher-line >= 30))
+    (goal production-retry-barrier-imperial-trash-elite-skirmisher-standard 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 30))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 3)
+    (not (and (food-amount >= 3000) (wood-amount >= 2500)))
+    (unit-type-count 6 < 30)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 30)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trash-elite-skirmisher-standard 120)
+)
+
+
+; Pending diagnostics: imperial-trash-elite-skirmisher-high
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 116 and cannot reissue from pending goal 117
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 117 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 118 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-trash-elite-skirmisher-high | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-trash-elite-skirmisher-high in ACTIVE; it is not PENDING.
+; Release: imperial-trash-elite-skirmisher-high | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trash-elite-skirmisher-high 118)
+    (unit-type-count 6 >= 36)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-high 0)
+)
+
+; Completion witness: imperial-trash-elite-skirmisher-high | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trash-elite-skirmisher-high 119)
+        (goal demand-imperial-trash-elite-skirmisher-high 117)
+    )
+    (unit-type-count skirmisher-line >= 36)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-high 118)
+)
+
+; Pending admission: imperial-trash-elite-skirmisher-high | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trash-elite-skirmisher-high 119)
+        (goal demand-imperial-trash-elite-skirmisher-high 117)
+    )
+    (not (unit-type-count skirmisher-line >= 36))
+    (up-pending-objects c: 7 >= 1)
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-high 117)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trash-elite-skirmisher-high 119)
+        (goal demand-imperial-trash-elite-skirmisher-high 117)
+    )
+    (not (unit-type-count skirmisher-line >= 36))
+    (not (up-pending-objects c: 7 >= 1))
+=>
+    (set-goal demand-imperial-trash-elite-skirmisher-high 1)
+    (set-goal production-retry-barrier-imperial-trash-elite-skirmisher-high 1)
+)
+
+; Action issuance: imperial-trash-elite-skirmisher-high | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trash-elite-skirmisher-high 1)
+    (not (unit-type-count skirmisher-line >= 36))
+    (goal production-retry-barrier-imperial-trash-elite-skirmisher-high 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (not (unit-type-count 6 >= 36))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 3)
+    (food-amount >= 3000)
+    (wood-amount >= 2500)
+    (unit-type-count 6 < 36)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 36)
+=>
+    (train skirmisher-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trash-elite-skirmisher-high 119)
+)
+
+
+; Pending diagnostics: imperial-trash-hussar-standard
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 121 and cannot reissue from pending goal 122
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 122 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 123 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-trash-hussar-standard | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-trash-hussar-standard in ACTIVE; it is not PENDING.
+; Release: imperial-trash-hussar-standard | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trash-hussar-standard 123)
+    (unit-type-count hussar >= 18)
+=>
+    (set-goal demand-imperial-trash-hussar-standard 0)
+)
+
+; Completion witness: imperial-trash-hussar-standard | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trash-hussar-standard 124)
+        (goal demand-imperial-trash-hussar-standard 122)
+    )
+    (unit-type-count hussar >= 18)
+=>
+    (set-goal demand-imperial-trash-hussar-standard 123)
+)
+
+; Pending admission: imperial-trash-hussar-standard | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trash-hussar-standard 124)
+        (goal demand-imperial-trash-hussar-standard 122)
+    )
+    (not (unit-type-count hussar >= 18))
+    (up-pending-objects c: 441 >= 1)
+=>
+    (set-goal demand-imperial-trash-hussar-standard 122)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trash-hussar-standard 124)
+        (goal demand-imperial-trash-hussar-standard 122)
+    )
+    (not (unit-type-count hussar >= 18))
+    (not (up-pending-objects c: 441 >= 1))
+=>
+    (set-goal demand-imperial-trash-hussar-standard 1)
+    (set-goal production-retry-barrier-imperial-trash-hussar-standard 1)
+)
+
+; Action issuance: imperial-trash-hussar-standard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trash-hussar-standard 1)
+    (not (unit-type-count hussar >= 18))
+    (goal production-retry-barrier-imperial-trash-hussar-standard 0)
+    (not (up-pending-objects c: 441 >= 1))
+    (not (unit-type-count hussar >= 18))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 3)
+    (not (and (food-amount >= 3000) (wood-amount >= 2500)))
+    (unit-type-count hussar < 18)
+    (can-train-with-escrow hussar)
+    (unit-type-count-total hussar < 18)
+=>
+    (train hussar)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trash-hussar-standard 124)
+)
+
+
+; Pending diagnostics: imperial-trash-hussar-high
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 120 and cannot reissue from pending goal 121
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 121 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 122 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-trash-hussar-high | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-trash-hussar-high in ACTIVE; it is not PENDING.
+; Release: imperial-trash-hussar-high | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trash-hussar-high 122)
+    (unit-type-count hussar >= 24)
+=>
+    (set-goal demand-imperial-trash-hussar-high 0)
+)
+
+; Completion witness: imperial-trash-hussar-high | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trash-hussar-high 123)
+        (goal demand-imperial-trash-hussar-high 121)
+    )
+    (unit-type-count hussar >= 24)
+=>
+    (set-goal demand-imperial-trash-hussar-high 122)
+)
+
+; Pending admission: imperial-trash-hussar-high | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trash-hussar-high 123)
+        (goal demand-imperial-trash-hussar-high 121)
+    )
+    (not (unit-type-count hussar >= 24))
+    (up-pending-objects c: 441 >= 1)
+=>
+    (set-goal demand-imperial-trash-hussar-high 121)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trash-hussar-high 123)
+        (goal demand-imperial-trash-hussar-high 121)
+    )
+    (not (unit-type-count hussar >= 24))
+    (not (up-pending-objects c: 441 >= 1))
+=>
+    (set-goal demand-imperial-trash-hussar-high 1)
+    (set-goal production-retry-barrier-imperial-trash-hussar-high 1)
+)
+
+; Action issuance: imperial-trash-hussar-high | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trash-hussar-high 1)
+    (not (unit-type-count hussar >= 24))
+    (goal production-retry-barrier-imperial-trash-hussar-high 0)
+    (not (up-pending-objects c: 441 >= 1))
+    (not (unit-type-count hussar >= 24))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (up-compare-goal byzantine-imperial-band-state == 3)
+    (food-amount >= 3000)
+    (wood-amount >= 2500)
+    (unit-type-count hussar < 24)
+    (can-train-with-escrow hussar)
+    (unit-type-count-total hussar < 24)
+=>
+    (train hussar)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trash-hussar-high 123)
+)
+
+
+
