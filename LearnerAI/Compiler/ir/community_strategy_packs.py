@@ -662,6 +662,13 @@ def community_strategy_demands(
         (CampResource.GOLD, mining_camp, 5, "sn-mining-camp-max-distance"),
         (CampResource.STONE, mining_camp, 5, "sn-mining-camp-max-distance"),
     )
+    stone_camp_policy = _OpportunityCostPolicy(
+        owner="castle-trajectory",
+        protected_floors=(
+            _ProtectedResourceFloor(Resource.STONE, 650),
+        ),
+        emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
+    )
     for resource, building, max_count, distance_sn in camp_specs:
         label = resource.value
         active_ref = f"camp-front-{label}-active"
@@ -724,7 +731,11 @@ def community_strategy_demands(
                         "building",
                         int(building.id),
                     ),
-                    opportunity_cost=None,
+                    opportunity_cost=(
+                        stone_camp_policy
+                        if resource is CampResource.STONE
+                        else None
+                    ),
                     execution=_ExecutionDemandTemplate(
                         requirements=tuple(requirements),
                         action=action,
