@@ -1624,10 +1624,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     if plan is None or plan.push_contract is None:
         return None
 
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .strategic_number import StrategicNumberOrigin
 
     push_state_name = "byzantine-endgame-push-state"
     frontier_name = "byzantine-endgame-frontier"
