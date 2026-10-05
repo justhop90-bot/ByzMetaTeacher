@@ -243,6 +243,18 @@ def analyze_strategy_dependencies(
         ))
         return ident
 
+    def add_named_node(node_id, kind, label, rule_order=None):
+        nodes.setdefault(
+            node_id,
+            StrategyDependencyNode(
+                node_id,
+                kind,
+                label,
+                rule_order=rule_order,
+            ),
+        )
+        return node_id
+
     for demand in capability_graph.demands:
         did = add_node(demand.identity, "STRATEGIC_DEMAND", demand.identity.local_name)
         cid = add_node(demand.target, "CAPABILITY", demand.target.local_name)
@@ -432,12 +444,12 @@ def analyze_strategy_dependencies(
         if relic_rules:
             relic_root = "strategy:byzantine-relic-acquisition"
             relic_capability = "capability:relic-acquisition"
-            add_node(relic_root, "STRATEGIC_DEMAND", "byzantine-relic-acquisition")
-            add_node(relic_capability, "CAPABILITY", "relic-acquisition")
+            add_named_node(relic_root, "STRATEGIC_DEMAND", "byzantine-relic-acquisition")
+            add_named_node(relic_capability, "CAPABILITY", "relic-acquisition")
             edge_set.add((relic_root, relic_capability, "REQUIRES"))
             stage_rules: dict[NativeDucLifecycleStage, list] = {}
             for rule in sorted(relic_rules, key=lambda item: (item.order, item.identity)):
-                rule_id = add_node(
+                rule_id = add_named_node(
                     f"duc:{rule.identity}",
                     "DUC_RULE",
                     rule.identity,
