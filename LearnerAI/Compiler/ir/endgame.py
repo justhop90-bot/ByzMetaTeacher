@@ -46,7 +46,7 @@ class EndgamePushContract:
     attack_soldier_percent: int
     minimum_group_size: int
     maximum_group_size: int
-    live_witness_expression: str
+    live_witness_ref: str
     frontier: tuple[EndgameFrontierState, ...]
 
     def __post_init__(self) -> None:
@@ -58,8 +58,8 @@ class EndgamePushContract:
             raise ValueError("endgame attack soldier percent must be in 0..100")
         if not 1 <= self.minimum_group_size <= self.maximum_group_size <= 32767:
             raise ValueError("endgame attack group size bounds are invalid")
-        if not self.live_witness_expression.strip():
-            raise ValueError("endgame push contract requires a live witness expression")
+        if not self.live_witness_ref.strip():
+            raise ValueError("endgame push contract requires a live witness reference")
         if not self.frontier:
             raise ValueError("endgame push contract requires at least one frontier state")
         if len(self.frontier) != len(set(self.frontier)):
@@ -160,15 +160,14 @@ class EndgamePlan:
 
     @property
     def observation_references(self) -> tuple[str, ...]:
-        return tuple(
-            sorted(
-                {
-                    reference
-                    for rule in self.rules
-                    for reference in rule.observation_refs
-                }
-            )
-        )
+        references = {
+            reference
+            for rule in self.rules
+            for reference in rule.observation_refs
+        }
+        if self.push_contract is not None:
+            references.add(self.push_contract.live_witness_ref)
+        return tuple(sorted(references))
 
 
 @dataclass(frozen=True)
