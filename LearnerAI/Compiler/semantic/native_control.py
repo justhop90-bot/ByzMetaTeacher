@@ -144,6 +144,7 @@ def _validate_typed_operand(
     command: str,
     expression: Expression,
     states: dict[str, str],
+    external_goal_states: frozenset[str],
 ) -> None:
     if len(expression.args) != 3:
         return
@@ -288,7 +289,7 @@ def _validate_leaf(
         "up-modify-sn",
         "strategic-number",
     }:
-        _validate_typed_operand(head, expression, states)
+        _validate_typed_operand(head, expression, states, external_goal_states)
         try:
             semantic_expression = expression
             if head in {"up-compare-goal"}:
@@ -374,6 +375,7 @@ def validate_native_control_plan(
                 is_action=False,
                 registry=registry,
                 states=states,
+                external_goal_states=external_goal_state_set,
             )
             commands.update(
                 expression.head
@@ -386,6 +388,7 @@ def validate_native_control_plan(
                 is_action=True,
                 registry=registry,
                 states=states,
+                external_goal_states=external_goal_state_set,
             )
             commands.update(
                 expression.head
