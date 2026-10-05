@@ -557,6 +557,7 @@ def analyze_strategy_dependencies(
     persistent_state_report: PersistentStateReport,
     persistent_control_report=None,
     duc_plan=None,
+    feature_traces: Iterable[FeatureTrace] = (),
 ) -> StrategyDependencyReport:
     """Correlate existing compiler reports; never reparses or invents semantics."""
     if not isinstance(capability_graph, CapabilityGraph):
@@ -892,7 +893,7 @@ def analyze_strategy_dependencies(
         for provider in capability_graph.providers
     )
     _ = demands, persistent_control_report
-    return StrategyDependencyReport(
+    report = StrategyDependencyReport(
         schema_version=1,
         demands=len(capability_graph.demands),
         capabilities=len(capability_graph.capabilities),
@@ -907,6 +908,7 @@ def analyze_strategy_dependencies(
         findings=ordered,
         runtime_open_dependencies=runtime_open,
     )
+    return report.with_feature_traces(feature_traces)
 
 
 __all__ = [
