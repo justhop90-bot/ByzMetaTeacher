@@ -1620,18 +1620,23 @@ def community_strategy_demands(
         building = _building(effective, building_name)
         standing_demand = standing_depth_observations[standing_observation_ref]
         replacement_expression = (
-            "(or (unit-type-count 331 < 4) "
-            "(or (unit-type-count 36 < 4) "
-            "(unit-type-count-total mangonel-line < 4)))"
-            if replacement_reason_ref == "strategy-production-siege-replacement"
+            "(or (unit-type-count 40 < 18) "
+            "(unit-type-count 441 < 12))"
+            if replacement_reason_ref == "strategy-production-stable-replacement"
             else (
+                "(or (unit-type-count 331 < 4) "
+                "(or (unit-type-count 36 < 4) "
+                "(unit-type-count-total mangonel-line < 4)))"
+                if replacement_reason_ref == "strategy-production-siege-replacement"
+                else (
                 next(
                     item.expression
                     for item in observations
                     if item.identity == replacement_reason_ref
+                    )
+                    if replacement_reason_ref is not None
+                    else None
                 )
-                if replacement_reason_ref is not None
-                else None
             )
         )
         demands.append(
