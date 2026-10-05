@@ -263,8 +263,11 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         for identity, (witness, minimum) in expected.items():
             demand = by_id[identity]
             self.assertIn(f"(unit-type-count {witness} >= {minimum})", demand.execution.witness)
+            action_unit = (
+                demand.execution.action.removeprefix("(train ").removesuffix(")")
+            )
             self.assertIn(
-                f"(unit-type-count-total {demand.execution.action.split()[-1]} < {minimum})",
+                f"(unit-type-count-total {action_unit} < {minimum})",
                 demand.execution.requirements,
             )
 
