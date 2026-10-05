@@ -1385,9 +1385,10 @@ def community_strategy_demands(
             )
         )
 
-    # Imperial spending envelope: spend down bounded excess through the
-    # existing military production lifecycle. Replacement pressure is a standing
-    # floor-loss witness, never a synthetic "combat-loss" counter.
+    # Imperial spending envelope: admit continuous replacement/sustain demands only
+    # while the protected food/wood/gold bank is present. The execution target remains
+    # the full standing package; replacement pressure is a world-state floor loss,
+    # never a synthetic "combat-loss" counter.
     demands.extend(
         (
             _endgame_training_demand(
@@ -1403,12 +1404,11 @@ def community_strategy_demands(
                     "strategy-imperial-cataphract-replacement",
                 ),
                 reason_labels=(
-                    "Imperial gold bank exceeds the protected spending envelope",
+                    "Imperial food/gold bank is above the protected spending envelope",
                     "Cataphract standing floor has fallen below the replacement threshold",
                 ),
                 requirement_expressions=(
                     "(and (food-amount >= 2200) (gold-amount >= 2500))",
-                    "(unit-type-count cataphract < 12)",
                 ),
             ),
             _endgame_training_demand(
@@ -1425,14 +1425,13 @@ def community_strategy_demands(
                     "strategy-imperial-varangian-replacement",
                 ),
                 reason_labels=(
-                    "Imperial gold bank exceeds the protected spending envelope",
+                    "Imperial food/gold bank is above the protected spending envelope",
                     "Enemy infantry pressure keeps the Varangian package strategically active",
                     "Varangian standing floor has fallen below the replacement threshold",
                 ),
                 requirement_expressions=(
                     "(and (food-amount >= 2200) (gold-amount >= 2500))",
                     "(players-unit-type-count any-enemy militia-line >= 5)",
-                    "(unit-type-count varangian-guard < 12)",
                 ),
                 action_symbol="varangian-guard",
                 witness_symbol="varangian-guard",
@@ -1449,12 +1448,11 @@ def community_strategy_demands(
                     "strategy-imperial-ram-replacement",
                 ),
                 reason_labels=(
-                    "Imperial wood bank exceeds the protected spending envelope",
+                    "Imperial wood bank is above the protected spending envelope",
                     "Ram standing floor has fallen below the replacement threshold",
                 ),
                 requirement_expressions=(
                     "(wood-amount >= 2200)",
-                    "(unit-type-count battering-ram-line < 2)",
                     "(building-type-count-total siege-workshop >= 1)",
                 ),
                 action_symbol="battering-ram-line",
@@ -1474,15 +1472,13 @@ def community_strategy_demands(
                     "strategy-imperial-trebuchet-replacement",
                 ),
                 reason_labels=(
-                    "Imperial wood bank exceeds the protected spending envelope",
-                    "Imperial gold bank exceeds the protected spending envelope",
+                    "Imperial wood/gold bank is above the protected spending envelope",
                     "Enemy fortification creates a valid trebuchet conversion channel",
                     "Trebuchet standing floor has fallen below the replacement threshold",
                 ),
                 requirement_expressions=(
                     "(and (wood-amount >= 2200) (gold-amount >= 2500))",
                     "(players-building-type-count any-enemy castle >= 1)",
-                    "(unit-type-count trebuchet < 2)",
                     "(building-type-count-total siege-workshop >= 1)",
                 ),
                 action_symbol="trebuchet",
