@@ -3299,6 +3299,7 @@ def _strategy_control_plan(profile: StrategyProfile):
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
     endgame_objective_plan = _byzantine_endgame_objective_control_plan(profile)
     endgame_push_plan = _byzantine_endgame_push_control_plan(profile)
+    imperial_military_plan = _byzantine_imperial_military_control_plan(profile)
     water_plan = None
     if profile.water_execution_plan is not None:
         from .water import lower_water_execution_plan
@@ -3349,6 +3350,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         attack_lifecycle_plan,
         endgame_objective_plan,
         endgame_push_plan,
+        imperial_military_plan,
         water_plan,
         opening_plan,
         economy_plan,
