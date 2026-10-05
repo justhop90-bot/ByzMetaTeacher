@@ -21,6 +21,7 @@ from LearnerAI.Compiler.ir.endgame import (
     validate_endgame_plan,
 )
 from LearnerAI.Compiler.ir.civ_profile import Age, ByzantineProfile, resolve_effective_civ
+from LearnerAI.Compiler.ir.versioning import EvidenceKind, EvidenceRef
 from LearnerAI.Compiler.ir.strategy import (
     StrategyEnvelope,
     StrategicObservationSpec,
@@ -300,7 +301,15 @@ class EndgameContractTests(unittest.TestCase):
         frontier_observation = StrategicObservationSpec(
             "endgame-fortified-world-witness",
             "(building-type-count castle >= 1)",
-            provenance=self.effective.building(82).provenance,
+            provenance=(
+                EvidenceRef(
+                    EvidenceKind.RUNTIME_VERIFIED,
+                    "tests",
+                    "imperial-resolver",
+                    "endgame-fortified-world-witness",
+                    self.effective.patch,
+                ),
+            ),
         )
         configured_push = replace(
             plan.push_contract,
