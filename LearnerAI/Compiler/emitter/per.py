@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from ..errors import CompileError
 from ..ir import (
+    LifecycleState,
     AttackExecution,
     ConstructionTransitionKind,
     NativeAttackLifecyclePlan,
@@ -793,9 +794,18 @@ def emit(
             chunk = demands[start : start + INITIALIZATION_CHUNK]
             out += ["(defrule", "    (true)", "=>"]
             for demand in chunk:
+                initial_state = demand.lifecycle.initial_state
+                if initial_state is LifecycleState.ACTIVE:
+                    initial_value = encoded[demand.name].active.value
+                elif initial_state is LifecycleState.RELEASED:
+                    initial_value = 0
+                else:
+                    raise CompileError(
+                        f"EMITTER-DEMAND-INIT: unsupported initial lifecycle state "
+                        f"'{initial_state.value}' for demand '{demand.name}'"
+                    )
                 out.append(
-                    f"    (set-goal demand-{demand.name} "
-                    f"{encoded[demand.name].active.value})"
+                    f"    (set-goal demand-{demand.name} {initial_value})"
                 )
             out.append("    (disable-self)")
             out += [")", ""]

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, FactStatus, Resource
+from .model import LifecycleState
 from .versioning import EvidenceKind, EvidenceRef
 from .strategic_number import StrategicNumberOrigin
 
@@ -283,6 +284,7 @@ class StrategicDemandSpec:
     target: StrategicTarget
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
+    initial_state: LifecycleState = LifecycleState.ACTIVE
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
@@ -2005,6 +2007,9 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == dark-age)",
+                    "(unit-type-count-total villager >= 21)",
+                    "(building-type-count-total lumber-camp >= 1)",
+                    "(building-type-count-total mining-camp >= 1)",
                     "(can-research-with-escrow feudal-age)",
                 ),
                 action="(research feudal-age)",
@@ -2057,6 +2062,7 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == feudal-age)",
+                    "(unit-type-count-total villager >= 28)",
                     "(building-type-count-total blacksmith >= 1)",
                     "(building-type-count-total market >= 1)",
                     "(can-research-with-escrow castle-age)",

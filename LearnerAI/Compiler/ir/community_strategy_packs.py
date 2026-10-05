@@ -10,6 +10,7 @@ from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, Resource, UnitLineId
+from .model import LifecycleState
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -121,6 +122,7 @@ def _build_demand(
     release: str | None = None,
     opportunity_cost: _OpportunityCostPolicy | None = None,
     invalidate_ref: str | None = None,
+    initial_state: LifecycleState = LifecycleState.ACTIVE,
 ) -> _StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
@@ -155,6 +157,7 @@ def _build_demand(
             release=release,
         ),
         recovery=_CapabilityRecoveryContract(),
+        initial_state=initial_state,
     )
 
 
@@ -651,13 +654,27 @@ def community_strategy_demands(
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
-
+    opening_pressure = (
+        "(or (players-unit-type-count any-enemy knight >= 3) "
+        "(or (players-unit-type-count any-enemy archer-line >= 4) "
+        "(players-unit-type-count any-enemy militia-line >= 5)))"
+    )
     demands: list[_StrategicDemandSpec] = []
 
     camp_specs = (
         (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
         (CampResource.GOLD, mining_camp, 5, "sn-mining-camp-max-distance"),
         (CampResource.STONE, mining_camp, 5, "sn-mining-camp-max-distance"),
+    )
+    stone_camp_policy = _OpportunityCostPolicy(
+        owner="castle-trajectory",
+        protected_floors=(
+            _ProtectedResourceFloor(Resource.STONE, 650),
+        ),
+        emergency_override_postures=(
+            _StrategyPosture.FLUSH,
+            _StrategyPosture.RUSH,
+        ),
     )
     for resource, building, max_count, distance_sn in camp_specs:
         label = resource.value
@@ -676,7 +693,7 @@ def community_strategy_demands(
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
-            if floor >= 3:
+            if floor >= 2:
                 requirements = [
                     active_expression,
                     remote_expression,
@@ -689,7 +706,11 @@ def community_strategy_demands(
             demands.append(
                 _StrategicDemandSpec(
                     identity=f"economy-{label}-camp-floor-{floor}",
-                    owner="economy-camps",
+                    owner=(
+                        "castle-trajectory"
+                        if resource is CampResource.STONE
+                        else "economy-camps"
+                    ),
                     posture=_StrategyPosture.BOOM,
                     priority=(
                         _StrategicPriority.SUPPORT
@@ -721,12 +742,21 @@ def community_strategy_demands(
                         "building",
                         int(building.id),
                     ),
-                    opportunity_cost=None,
+                    opportunity_cost=(
+                        stone_camp_policy
+                        if resource is CampResource.STONE
+                        else None
+                    ),
                     execution=_ExecutionDemandTemplate(
                         requirements=tuple(requirements),
                         action=action,
                         witness=witness,
                         release=witness,
+                    ),
+                    initial_state=(
+                        LifecycleState.ACTIVE
+                        if floor == 1 and resource is not CampResource.STONE
+                        else LifecycleState.RELEASED
                     ),
                     provenance=_airef_provenance(
                         effective,
@@ -904,7 +934,15 @@ def community_strategy_demands(
                 reason_ref="strategy-enemy-pressure",
                 reason_label="Sustained enemy pressure justifies one defensive observation point",
                 building=outpost,
-                requirements=(" (can-build outpost)".strip(),),
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    opening_pressure,
+                    "(or (dropsite-min-distance gold >= 7) "
+                    "(or (dropsite-min-distance stone >= 7) "
+                    "(dropsite-min-distance wood >= 7)))",
+                    "(can-build outpost)",
+                ),
+                initial_state=LifecycleState.RELEASED,
             ),
         )
     )
@@ -1432,6 +1470,7 @@ def build_byzantine_stock_strategy(
                 base_demand.execution,
                 requirements=(
                     "(current-age == dark-age)",
+                    "(unit-type-count-total villager >= 21)",
                     "(building-type-count-total lumber-camp >= 1)",
                     "(building-type-count-total mining-camp >= 1)",
                     "(can-research-with-escrow feudal-age)",
