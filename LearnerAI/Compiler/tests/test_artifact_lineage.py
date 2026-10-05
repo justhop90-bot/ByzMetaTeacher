@@ -250,6 +250,25 @@ class ByzantineArtifactLineageTests(unittest.TestCase):
             verify_byzantine_artifact_lineage(repository_root=root)
         self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-020")
 
+    def test_overlay_artifact_hash_mismatch_is_detected(self) -> None:
+        root = self._fixture()
+        (root / "runtime/byzantine/Byzantine.runtime-overlay.per").write_bytes(
+            b"(defrule overlay-tampered)\n"
+        )
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_byzantine_artifact_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-011")
+
+    def test_promoted_artifact_hash_mismatch_is_detected(self) -> None:
+        root = self._fixture()
+        path = root / "Byzantine.manifest.json"
+        payload = json.loads(path.read_text())
+        payload["promoted_artifact"]["sha256"] = "f" * 64
+        _write_json(path, payload)
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_byzantine_artifact_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-022")
+
     def test_runtime_source_revision_must_match_compiler(self) -> None:
         root = self._fixture()
         path = root / "dist/byzantine/Byzantine.runtime.manifest.json"
