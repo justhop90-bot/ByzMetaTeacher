@@ -240,6 +240,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-offensive-objective-search",
             "byzantine-offensive-enemy-player",
             "byzantine-offensive-objective-claim",
+            "byzantine-fortification-threat",
             "byzantine-offensive-objective-target-latch",
             "byzantine-offensive-objective-target-siege",
             "byzantine-offensive-objective-target-defense",
