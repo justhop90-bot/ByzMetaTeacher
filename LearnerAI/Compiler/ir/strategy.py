@@ -2536,9 +2536,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
                 parse_expression("(unit-type-count-total monk-with-relic < 1)", SourceLocation(1)),
                 parse_expression("(up-gaia-type-count-total c: relic > 0)", SourceLocation(1)),
                 parse_expression(
-                    "(or "
-                    "(up-timer-status byzantine-relic-control-timer c:== timer-disabled) "
-                    "(up-timer-status byzantine-relic-control-timer c:== timer-triggered))",
+                    "(up-timer-status byzantine-relic-control-timer c:== timer-disabled)",
                     SourceLocation(1),
                 ),
             ),
