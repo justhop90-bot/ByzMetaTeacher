@@ -56,6 +56,17 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         self.assertNotIn("(unit-type-count 6 >= 18)", admit)
         self.assertNotIn("(unit-type-count hussar >= 12)", admit)
 
+    def test_endgame_attack_package_nested_or_lowers_into_army_ready_rule(self):
+        start = self.output.index("byzantine-endgame-push-army-ready")
+        end = self.output.index("byzantine-endgame-push-army-not-ready", start)
+        army_ready = self.output[start:end]
+        self.assertIn("(unit-type-count cataphract >= 8)", army_ready)
+        self.assertIn("(unit-type-count varangian-guard >= 8)", army_ready)
+        self.assertIn("(unit-type-count knight >= 8)", army_ready)
+        self.assertIn("(unit-type-count halberdier >= 8)", army_ready)
+        self.assertIn("(unit-type-count hussar >= 8)", army_ready)
+        self.assertIn("(unit-type-count 6 >= 8)", army_ready)
+
     def test_endgame_push_owns_attack_readiness_and_siege_approach_writers(self):
         self.assertIn(
             "(set-goal byzantine-army-attack-ready 1)",
