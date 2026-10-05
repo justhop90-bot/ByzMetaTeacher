@@ -12,10 +12,14 @@ from tools.build_byzantine_bot import NATIVE_PARSER_REVISION, build
 
 
 _OBJECTIVE_DISPATCH_IDENTITIES = (
-    "byzantine-endgame-objective-dispatch-siege",
-    "byzantine-endgame-objective-dispatch-defense",
-    "byzantine-endgame-objective-dispatch-production",
-    "byzantine-endgame-objective-dispatch-town-center",
+    "byzantine-endgame-objective-dispatch-siege-committed",
+    "byzantine-endgame-objective-dispatch-siege-raid-split",
+    "byzantine-endgame-objective-dispatch-defense-committed",
+    "byzantine-endgame-objective-dispatch-defense-raid-split",
+    "byzantine-endgame-objective-dispatch-production-committed",
+    "byzantine-endgame-objective-dispatch-production-raid-split",
+    "byzantine-endgame-objective-dispatch-town-center-committed",
+    "byzantine-endgame-objective-dispatch-town-center-raid-split",
 )
 _OBJECTIVE_ATTACK_DISPATCH = "(up-target-objects 1 action-attack-move -1 -1)"
 _ROLE_FORBIDDEN_ACTIONS = (
@@ -104,7 +108,7 @@ class ByzantineBotBuildTests(unittest.TestCase):
             self.assertGreater(first_data["artifact_rule_count"], 0)
             self.assertGreater(first_data["artifact_byte_length"], 0)
 
-    def test_canonical_dist_artifact_contains_four_objective_attack_dispatches_and_preserves_role_separation(self):
+    def test_canonical_dist_artifact_contains_eight_flattened_objective_attack_dispatches_and_preserves_role_separation(self):
         with tempfile.TemporaryDirectory() as root:
             artifact, _manifest = build(Path(root))
 
@@ -114,14 +118,19 @@ class ByzantineBotBuildTests(unittest.TestCase):
             )
             rendered = artifact.read_text(encoding="utf-8")
 
-            self.assertEqual(rendered.count(_OBJECTIVE_ATTACK_DISPATCH), 4)
+            self.assertEqual(rendered.count(_OBJECTIVE_ATTACK_DISPATCH), 8)
             for identity in _OBJECTIVE_DISPATCH_IDENTITIES:
                 rule = _duc_rule_block(rendered, identity)
                 self.assertIn(
                     "(up-set-target-object search-remote c: 0)",
                     rule,
                 )
+                self.assertIn("(up-filter-include cmdid-military -1 -1 -1)", rule)
+                self.assertIn("(up-find-local c: -1 c: 240)", rule)
+                self.assertIn("(up-remove-objects search-local 19 != 2)", rule)
+                self.assertIn("(up-remove-objects search-local 1 == 125)", rule)
                 self.assertIn(_OBJECTIVE_ATTACK_DISPATCH, rule)
+                self.assertNotIn("(or ", rule)
                 self.assertIn(
                     "(up-reset-search 0 0 1 1)",
                     rule,
