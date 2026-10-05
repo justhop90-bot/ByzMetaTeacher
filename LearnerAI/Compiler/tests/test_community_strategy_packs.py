@@ -1,5 +1,7 @@
 import unittest
 
+from Compiler.ir.game_data import Age
+
 from Compiler.clients.basilisk import ByzantineProfile, resolve_effective_civ
 from Compiler.ir.community_strategy_packs import build_byzantine_stock_strategy
 from Compiler.ir.strategy import (
@@ -242,6 +244,16 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                 for evidence in by_id["imperial-barracks-depth-4"].reason
             ],
         )
+
+    def test_imperial_attack_strategic_numbers_are_owned_by_endgame_push_control(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        for mode in profile.strategic_number_modes:
+            if mode.native_strategic_number_id in {36, 227}:
+                self.assertEqual(
+                    mode.maximum_age,
+                    Age.CASTLE,
+                    mode.identity,
+                )
 
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
