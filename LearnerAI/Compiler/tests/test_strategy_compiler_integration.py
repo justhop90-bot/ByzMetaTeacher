@@ -240,6 +240,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-offensive-objective-search",
             "byzantine-offensive-enemy-player",
             "byzantine-offensive-objective-claim",
+            "byzantine-offensive-objective-witness-target",
             "byzantine-offensive-objective-release-reason",
             "byzantine-offensive-objective-release-search",
             "byzantine-offensive-objective-timer",
@@ -270,6 +271,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             tuple(action.source for action in initialize.actions),
         )
         states_by_id = {state.identifier: state for state in control.states}
+        self.assertEqual(states_by_id["byzantine-offensive-objective-witness-target"].request.role.value, "NATIVE_OUTPUT")
         self.assertEqual(states_by_id["byzantine-offensive-objective-release-search"].request.width, 4)
         self.assertEqual(states_by_id["byzantine-offensive-objective-release-search"].request.role.value, "NATIVE_OUTPUT")
         self.assertEqual(states_by_id["byzantine-offensive-objective-release-reason"].request.role.value, "PERSISTENT_STATE")
@@ -290,6 +292,137 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertNotIn(
             "(up-target-objects 1 action-attack-move -1 -1)",
             output,
+        )
+
+    def test_byzantine_endgame_objective_witness_release_lifecycle(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        duc = compilation.duc_plan
+        assert control is not None
+        assert duc is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for identity in (
+            "byzantine-endgame-objective-enter-executing",
+            "byzantine-endgame-objective-executing-to-witness",
+            "byzantine-endgame-objective-witness-live-rearm",
+            "byzantine-endgame-objective-witness-failed-execution",
+            "byzantine-endgame-objective-witness-town-center-exhausted",
+            "byzantine-endgame-objective-witness-lost-out-of-bounds",
+            "byzantine-endgame-objective-fortification-abort",
+        ):
+            self.assertIn(identity, rules)
+
+        release_actions = {
+            identity: tuple(action.source for action in rules[identity].actions)
+            for identity in (
+                "byzantine-endgame-objective-witness-failed-execution",
+                "byzantine-endgame-objective-witness-town-center-exhausted",
+                "byzantine-endgame-objective-witness-lost-out-of-bounds",
+                "byzantine-endgame-objective-fortification-abort",
+            )
+        }
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-failed-execution)",
+            release_actions["byzantine-endgame-objective-witness-failed-execution"],
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-tc-exhausted)",
+            release_actions["byzantine-endgame-objective-witness-town-center-exhausted"],
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-lost-out-of-bounds)",
+            release_actions["byzantine-endgame-objective-witness-lost-out-of-bounds"],
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-fortification-abort)",
+            release_actions["byzantine-endgame-objective-fortification-abort"],
+        )
+
+        witness_search = tuple(
+            rule for rule in duc.rules
+            if rule.identity.startswith("byzantine-endgame-objective-witness-")
+            and rule.identity.endswith("-search")
+        )
+        self.assertEqual(len(witness_search), 4)
+        for rule in witness_search:
+            facts = tuple(fact.source for fact in rule.facts)
+            actions = tuple(action.source for action in rule.actions)
+            self.assertIn(
+                "(goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-witness)",
+                facts,
+            )
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 1)",
+                facts,
+            )
+            self.assertIn(
+                "(up-filter-distance c: 0 c: 60)",
+                actions,
+            )
+            self.assertIn("(up-find-remote", " ".join(actions))
+            self.assertNotIn("(up-target-objects", " ".join(actions))
+
+        consumer = next(
+            rule for rule in duc.rules
+            if rule.identity == "byzantine-endgame-objective-witness-consume"
+        )
+        self.assertIn(
+            "(up-set-target-object search-remote c: 0)",
+            tuple(fact.source for fact in consumer.facts),
+        )
+        consumer_actions = tuple(action.source for action in consumer.actions)
+        self.assertEqual(
+            consumer_actions,
+            (
+                "(up-get-object-data id 0)",
+                "(up-get-search-state byzantine-offensive-objective-release-search)",
+                "(up-reset-search 0 0 1 1)",
+            ),
+        )
+        output_sites = {
+            (request.rule_identity, request.section, request.expression_index, request.command)
+            for request in duc.output_requests
+            if request.rule_identity == "byzantine-endgame-objective-witness-consume"
+        }
+        self.assertEqual(
+            output_sites,
+            {
+                (
+                    "byzantine-endgame-objective-witness-consume",
+                    "ACTION",
+                    0,
+                    "up-get-object-data",
+                ),
+                (
+                    "byzantine-endgame-objective-witness-consume",
+                    "ACTION",
+                    1,
+                    "up-get-search-state",
+                ),
+            },
+        )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn(
+            "; Native DUC rule: byzantine-endgame-objective-witness-consume",
+            output,
+        )
+        self.assertIn(
+            "(up-get-search-state ",
+            output,
+        )
+        self.assertNotIn(
+            "(set-goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-executing)",
+            output.split("; Native DUC execution plan", 1)[1].split(
+                "; Native attack lifecycle plan", 1
+            )[0],
         )
 
     def test_byzantine_stock_lowers_frontier_target_control_through_duc(self):
