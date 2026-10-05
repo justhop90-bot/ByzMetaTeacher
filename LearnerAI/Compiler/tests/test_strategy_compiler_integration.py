@@ -639,6 +639,21 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 tuple(fact.source for fact in sn_controllers[identity].facts),
             )
 
+        for identity in (
+            "sn-controller-byzantine-endgame-push-36-release",
+            "sn-controller-byzantine-endgame-push-227-release",
+        ):
+            release_facts = tuple(fact.source for fact in sn_controllers[identity].facts)
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 3)",
+                release_facts[0],
+            )
+
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 2)",
+                tuple(fact.source for fact in sn_controllers[identity].facts),
+            )
+
         release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
         self.assertIn("(goal byzantine-endgame-push-state 3)", release_facts)
         self.assertIn(
