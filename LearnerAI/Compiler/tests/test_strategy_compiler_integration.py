@@ -271,10 +271,43 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(defconst byzantine-offensive-objective-claim ",
             output,
         )
-        self.assertNotIn(
-            "(up-target-objects 1 action-attack-move -1 -1)",
-            output,
+        self.assertEqual(
+            output.count("(up-target-objects 1 action-attack-move -1 -1)"),
+            4,
         )
+        for identity in (
+            "byzantine-endgame-objective-dispatch-siege",
+            "byzantine-endgame-objective-dispatch-defense",
+            "byzantine-endgame-objective-dispatch-production",
+            "byzantine-endgame-objective-dispatch-town-center",
+        ):
+            marker = f"; Native DUC rule: {identity}"
+            self.assertIn(marker, output)
+            rule_start = output.index(marker)
+            next_rule = output.find("\n; Native DUC rule: ", rule_start + len(marker))
+            if next_rule < 0:
+                next_rule = len(output)
+            rule = output[rule_start:next_rule]
+            self.assertIn(
+                "(up-set-target-object search-remote c: 0)",
+                rule,
+            )
+            self.assertIn(
+                "(up-target-objects 1 action-attack-move -1 -1)",
+                rule,
+            )
+            self.assertIn(
+                "(up-reset-search 0 0 1 1)",
+                rule,
+            )
+            for forbidden in (
+                "set-goal",
+                "enable-timer",
+                "disable-timer",
+                "up-modify-sn",
+                "up-get-point",
+            ):
+                self.assertNotIn(forbidden, rule)
 
     def test_byzantine_stock_lowers_frontier_target_control_through_duc(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
