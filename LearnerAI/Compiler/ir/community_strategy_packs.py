@@ -485,20 +485,23 @@ def community_strategy_observations(
         (
             "barracks",
             "(or (unit-type-count-total varangian-guard-line >= {threshold}) "
-            "(unit-type-count-total 359 >= {threshold}))",
+            "(or (unit-type-count-total 359 >= {threshold}) "
+            "(unit-type-count-total halberdier >= {threshold})))",
             "strategy-production-barracks-depth",
         ),
         (
             "stable",
-            "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
-            "(unit-type-count-total knight-line >= {threshold})) "
-            "(unit-type-count-total camel-rider-line >= {threshold}))",
+            "(or (or (unit-type-count-total hussar >= {threshold}) "
+            "(or (unit-type-count-total cataphract-line >= {threshold}) "
+            "(or (unit-type-count-total knight-line >= {threshold}) "
+            "(unit-type-count-total camel-rider-line >= {threshold}))))",
             "strategy-production-stable-depth",
         ),
         (
             "archery-range",
+            "(or (unit-type-count-total skirmisher-line >= {threshold}) "
             "(or (unit-type-count-total crossbowman >= {threshold}) "
-            "(unit-type-count-total skirmisher-line >= {threshold}))",
+            "(unit-type-count-total arbalester >= {threshold}))",
             "strategy-production-range-depth",
         ),
         (
@@ -543,6 +546,46 @@ def community_strategy_observations(
             "strategy-imperial-spend-gold",
             "(and (current-age >= imperial-age) (gold-amount >= 2500))",
             _airef_provenance(effective, "commands/commands-details.html#gold-amount"),
+        ),
+        _observation(
+            "strategy-imperial-floor-halberdier",
+            "(and (current-age >= imperial-age) (unit-type-count halberdier < 18))",
+            effective.unit_line("spearman-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-floor-elite-skirmisher",
+            "(and (current-age >= imperial-age) (unit-type-count skirmisher-line < 18))",
+            effective.unit_line("skirmisher-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-floor-hussar",
+            "(and (current-age >= imperial-age) (unit-type-count hussar < 12))",
+            effective.unit_line("scout-cavalry-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-enemy-mounted-8",
+            "(or (players-unit-type-count any-enemy knight-line >= 8) (players-unit-type-count any-enemy camel-rider-line >= 8))",
+            tuple(dict.fromkeys((*effective.unit_line("knight-line").provenance, *effective.unit_line("camel-rider-line").provenance))),
+        ),
+        _observation(
+            "strategy-imperial-enemy-mounted-12",
+            "(or (players-unit-type-count any-enemy knight-line >= 12) (players-unit-type-count any-enemy camel-rider-line >= 12))",
+            tuple(dict.fromkeys((*effective.unit_line("knight-line").provenance, *effective.unit_line("camel-rider-line").provenance))),
+        ),
+        _observation(
+            "strategy-imperial-enemy-ranged-8",
+            "(players-unit-type-count any-enemy archer-line >= 8)",
+            effective.unit_line("archer-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-enemy-ranged-12",
+            "(players-unit-type-count any-enemy archer-line >= 12)",
+            effective.unit_line("archer-line").provenance,
+        ),
+        _observation(
+            "strategy-imperial-floor-gold-layer",
+            "(and (current-age >= imperial-age) (and (unit-type-count cataphract < 12) (unit-type-count varangian-guard < 12)))",
+            tuple(dict.fromkeys((*effective.unit_line("cataphract-line").provenance, *effective.unit_line("varangian-guard-line").provenance))),
         ),
         _observation(
             "strategy-imperial-cataphract-replacement",
@@ -786,19 +829,22 @@ def community_strategy_observations(
         (
             "strategy-production-barracks-replacement",
             "(and (current-age >= imperial-age) "
+            "(or (unit-type-count halberdier < 18) "
             "(or (unit-type-count varangian-guard < 12) "
             "(unit-type-count 359 < 12)))",
         ),
         (
             "strategy-production-stable-replacement",
             "(and (current-age >= imperial-age) "
-            "(unit-type-count cataphract < 12))",
+            "(or (unit-type-count hussar < 12) "
+            "(unit-type-count cataphract < 12)))",
         ),
         (
             "strategy-production-range-replacement",
             "(and (current-age >= imperial-age) "
+            "(or (unit-type-count skirmisher-line < 18) "
             "(or (unit-type-count 492 < 12) "
-            "(unit-type-count skirmisher-line < 12)))",
+            "(unit-type-count arbalester < 12)))",
         ),
         (
             "strategy-production-siege-replacement",
