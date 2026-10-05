@@ -270,15 +270,15 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertEqual(by_id[identity].target.minimum, minimum)
 
         self.assertIn(
-            "(goal byz-imp-band-state 1)",
+            "(food-amount >= 2400)",
             by_id["imperial-open-halberdier-band"].execution.requirements,
         )
         self.assertIn(
-            "(goal byz-imp-band-state 2)",
+            "(players-building-type-count any-enemy 104 >= 1)",
             by_id["imperial-fortified-elite-skirmisher-band"].execution.requirements,
         )
         self.assertIn(
-            "(goal byz-imp-band-state 3)",
+            "(gold-amount <= 800)",
             by_id["imperial-trashwar-hussar-band"].execution.requirements,
         )
 
