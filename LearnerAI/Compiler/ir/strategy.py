@@ -2718,8 +2718,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
 def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
     """Lower the persistent Imperial military-band resolver.
 
-    This controller selects a production posture only. It never owns attack,
-    movement, target selection, or battlefield completion witnesses.
+    The controller owns production posture only. Attack, movement, target
+    selection, and completion witnesses remain owned by their existing domains.
     """
     if profile.profile_id not in {
         "byzantine-land-castle-v1",
@@ -2751,6 +2751,9 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
     guard_timer_name = "byz-imp-band-guard"
     rearm_timer_name = "byz-imp-band-rearm-timer"
 
+    def expr(source: str):
+        return parse_expression(source, SourceLocation(1))
+
     def goal_state(identifier: str, role: GoalRole) -> NativeControlState:
         return NativeControlState(
             identifier,
@@ -2770,9 +2773,6 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
             ),
         )
 
-    def expr(source: str):
-        return parse_expression(source, SourceLocation(1))
-
     states = (
         goal_state(state_name, GoalRole.PERSISTENT_STATE),
         goal_state(candidate_name, GoalRole.EXECUTION_MEMORY),
@@ -2786,47 +2786,57 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
     )
 
     floor_broken = (
-        "(or (unit-type-count halberdier < 18) "
-        "(or (unit-type-count skirmisher-line < 18) "
-        "(unit-type-count hussar < 12)))"
+        "(unit-type-count halberdier < 18)",
+        "(unit-type-count skirmisher-line < 18)",
+        "(unit-type-count hussar < 12)",
     )
     floor_recovered = (
-        "(and (unit-type-count halberdier >= 18) "
-        "(and (unit-type-count skirmisher-line >= 18) "
-        "(and (unit-type-count hussar >= 12) "
-        "(and (food-amount >= 2000) "
-        "(and (wood-amount >= 1700) (gold-amount >= 1600))))))"
+        "(unit-type-count halberdier >= 18)",
+        "(unit-type-count skirmisher-line >= 18)",
+        "(unit-type-count hussar >= 12)",
+        "(food-amount >= 2000)",
+        "(wood-amount >= 1700)",
+        "(gold-amount >= 1600)",
     )
-    fortified = (
-        "(and (goal byzantine-fortification-threat 1) "
-        "(and (goal byzantine-siege-approach byzantine-siege-approach-fortified) "
-        "(and (goal byzantine-offensive-objective-claim 1) "
-        "(and (food-amount >= 2400) "
-        "(and (wood-amount >= 2400) "
-        "(and (gold-amount >= 2600) "
-        "(or (unit-type-count trebuchet >= 2) "
-        "(or (unit-type-count bombard-cannon >= 2) "
-        "(or (unit-type-count-total mangonel-line >= 2) "
-        "(up-group-size c: 7 >= 2))))))))"
+    fortified_facts = (
+        "(goal byzantine-fortification-threat 1)",
+        "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
+        "(goal byzantine-offensive-objective-claim 1)",
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2400)",
+        "(gold-amount >= 2600)",
+        "(or (unit-type-count trebuchet >= 2) (or (unit-type-count bombard-cannon >= 2) (unit-type-count-total mangonel-line >= 2)))",
     )
-    open_field = (
-        "(and (goal byzantine-offensive-objective-claim 1) "
-        "(and (goal byzantine-fortification-threat 0) "
-        "(and (food-amount >= 2400) "
-        "(and (wood-amount >= 2000) (gold-amount >= 2000))))"
+    open_facts = (
+        "(goal byzantine-offensive-objective-claim 1)",
+        "(goal byzantine-fortification-threat 0)",
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2000)",
+        "(gold-amount >= 2000)",
     )
-    trash = (
-        "(and (gold-amount <= 800) "
-        "(and (food-amount >= 2400) "
-        "(and (wood-amount >= 2200) "
-        "(and (goal byzantine-fortification-threat 0) "
-        + floor_recovered[5:]
+    trash_facts = (
+        "(gold-amount <= 800)",
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2200)",
+        "(goal byzantine-fortification-threat 0)",
+        *floor_recovered,
     )
-    economic_collapse = "(or (food-amount < 1800) (wood-amount < 1500))"
-    fort_clear = "(goal byzantine-fortification-threat 0)"
-    rearm_open_clear = f"(not (goal {rearm_name} {ImperialMilitaryBand.OPEN_FIELD.value}))"
-    rearm_fort_clear = f"(not (goal {rearm_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))"
-    rearm_trash_clear = f"(not (goal {rearm_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value}))"
+    economic_collapse = (
+        "(or (food-amount < 1800) (wood-amount < 1500))"
+    )
+    fort_clear = (
+        "(goal byzantine-fortification-threat 0)",
+        "(or (goal byzantine-siege-approach byzantine-siege-approach-normal) "
+        "(goal byzantine-offensive-objective-claim 0))",
+    )
+    rearm_clear = {
+        band: f"(not (goal {rearm_name} {band.value}))"
+        for band in (
+            ImperialMilitaryBand.OPEN_FIELD,
+            ImperialMilitaryBand.FORTIFIED_PUSH,
+            ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        )
+    }
 
     rules = [
         NativeControlRule(
@@ -2839,9 +2849,9 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
                 expr(f"(set-goal {reason_name} 0)"),
                 expr(f"(set-goal {dwell_ready_name} 0)"),
                 expr(f"(set-goal {guard_ready_name} 0)"),
-                expr(f"(disable-timer {dwell_timer_name})"),
                 expr(f"(disable-timer {guard_timer_name})"),
                 expr(f"(disable-timer {rearm_timer_name})"),
+                expr(f"(enable-timer {dwell_timer_name} {plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR]})"),
                 expr("(disable-self)"),
             ),
         ),
@@ -2854,6 +2864,13 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
+            "byz-imperial-military-guard-expiry",
+            facts=(expr(f"(timer-triggered {guard_timer_name})"),),
+            actions=(
+                expr(f"(disable-timer {guard_timer_name})"),
+            ),
+        ),
+        NativeControlRule(
             "byz-imperial-military-rearm-expiry",
             facts=(expr(f"(timer-triggered {rearm_timer_name})"),),
             actions=(
@@ -2861,63 +2878,58 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
                 expr(f"(set-goal {rearm_name} 0)"),
             ),
         ),
-        NativeControlRule(
-            "byz-imperial-military-floor-break",
-            facts=(
-                expr(f"(not (goal {state_name} {ImperialMilitaryBand.STANDING_FLOOR.value}))"),
-                expr(floor_broken),
-            ),
-            actions=(
-                expr(f"(set-goal {state_name} 0)"),
-                expr(f"(set-goal {candidate_name} 0)"),
-                expr(f"(set-goal {guard_ready_name} 0)"),
-                expr(f"(set-goal {dwell_ready_name} 0)"),
-                expr(f"(set-goal {reason_name} {ImperialMilitaryReason.FLOOR_BREAK.value})"),
-                expr(f"(set-goal {rearm_name} 1)"),
-                expr(f"(enable-timer {rearm_timer_name} 30)"),
-                expr(f"(enable-timer {dwell_timer_name} 30)"),
-                expr(f"(disable-timer {guard_timer_name})"),
-            ),
-        ),
-        NativeControlRule(
-            "byz-imperial-military-candidate-clear-self",
-            facts=(
-                f"(goal {candidate_name} 1)",
-                f"(goal {state_name} 1)",
-            )
-            if False else (),
-            actions=(),
-        ),
     ]
 
-    # The remaining rules are assembled below to keep each emitted rule explicit.
-    def add_transition(
+    # P0: floor break is immediate and clears all scaling cooldowns.
+    for index, floor_fact in enumerate(floor_broken):
+        rules.append(
+            NativeControlRule(
+                f"byz-imperial-military-floor-break-{index}",
+                facts=(
+                    expr(f"(not (goal {state_name} {ImperialMilitaryBand.STANDING_FLOOR.value}))"),
+                    expr(floor_fact),
+                ),
+                actions=(
+                    expr(f"(set-goal {state_name} {ImperialMilitaryBand.STANDING_FLOOR.value})"),
+                    expr(f"(set-goal {candidate_name} 0)"),
+                    expr(f"(set-goal {rearm_name} 0)"),
+                    expr(f"(set-goal {reason_name} {ImperialMilitaryReason.FLOOR_BREAK.value})"),
+                    expr(f"(set-goal {dwell_ready_name} 0)"),
+                    expr(f"(set-goal {guard_ready_name} 0)"),
+                    expr(f"(disable-timer {guard_timer_name})"),
+                    expr(f"(disable-timer {rearm_timer_name})"),
+                    expr(f"(enable-timer {dwell_timer_name} {plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR]})"),
+                ),
+            )
+        )
+
+    def add_candidate_rule(
         identity: str,
-        source: int,
-        destination: int,
-        reason: int,
-        extra_facts: tuple[str, ...],
-        actions: tuple[str, ...],
+        facts: tuple[str, ...],
+        destination: ImperialMilitaryBand,
+        guard_seconds: int,
     ) -> None:
         rules.append(
             NativeControlRule(
                 identity,
-                facts=(
-                    expr(f"(goal {state_name} {source})"),
-                    expr(f"(goal {candidate_name} {destination})"),
-                    expr(f"(goal {guard_ready_name} 1)"),
-                    *tuple(expr(item) for item in extra_facts),
+                facts=tuple(expr(item) for item in facts),
+                actions=(
+                    expr(f"(set-goal {candidate_name} {destination.value})"),
+                    expr(f"(set-goal {guard_ready_name} 0)"),
+                    expr(f"(enable-timer {guard_timer_name} {guard_seconds})"),
                 ),
-                actions=tuple(expr(item) for item in actions),
             )
         )
 
-    def transition_actions(
+    def add_transition_rule(
+        identity: str,
+        source: ImperialMilitaryBand,
         destination: ImperialMilitaryBand,
         reason: ImperialMilitaryReason,
+        facts: tuple[str, ...],
+        old_scaling: ImperialMilitaryBand | None,
         dwell_seconds: int,
-        old_scaling_band: ImperialMilitaryBand | None = None,
-    ) -> tuple[str, ...]:
+    ) -> None:
         actions = [
             f"(set-goal {state_name} {destination.value})",
             f"(set-goal {candidate_name} 0)",
@@ -2927,368 +2939,298 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
             f"(enable-timer {dwell_timer_name} {dwell_seconds})",
             f"(disable-timer {guard_timer_name})",
         ]
-        if old_scaling_band is None:
-            actions.append(f"(set-goal {rearm_name} 0)")
+        if old_scaling is None:
+            actions.extend(
+                (
+                    f"(set-goal {rearm_name} 0)",
+                    f"(disable-timer {rearm_timer_name})",
+                )
+            )
         else:
             actions.extend(
                 (
-                    f"(set-goal {rearm_name} {old_scaling_band.value})",
-                    f"(enable-timer {rearm_timer_name} {plan.rearm[old_scaling_band]})",
+                    f"(set-goal {rearm_name} {old_scaling.value})",
+                    f"(enable-timer {rearm_timer_name} {plan.rearm[old_scaling]})",
                 )
             )
-        return tuple(actions)
-
-    # Fortified candidate has highest ordinary escalation priority.
-    rules.extend(
-        (
+        rules.append(
             NativeControlRule(
-                "byz-imperial-military-latch-fortified",
+                identity,
                 facts=(
-                    expr(f"(not (goal {state_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))"),
-                    expr(fortified),
-                    expr(rearm_fort_clear),
-                    expr(f"(not (goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))"),
+                    expr(f"(goal {state_name} {source.value})"),
+                    expr(f"(goal {candidate_name} {destination.value})"),
+                    expr(f"(goal {guard_ready_name} 1)"),
+                    *tuple(expr(item) for item in facts),
                 ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.guard_dwell[ImperialMilitaryBand.FORTIFIED_PUSH]})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-economic",
-                facts=(
-                    expr(f"(not (goal {state_name} {ImperialMilitaryBand.STANDING_FLOOR.value}))"),
-                    expr(economic_collapse),
-                    expr(f"(not {fortified})"),
-                    expr(f"(not (goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))"),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} 4)"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.economic_collapse_dwell})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-trash",
-                facts=(
-                    expr(f"(not (goal {state_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value}))"),
-                    expr(f"(goal {candidate_name} 0)"),
-                    expr(trash),
-                    expr(f"(not {fortified})"),
-                    expr(f"(or (goal {rearm_name} 0) (goal {rearm_name} {ImperialMilitaryBand.OPEN_FIELD.value}) )"),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.guard_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH]})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-open",
-                facts=(
-                    expr(f"(not (goal {state_name} {ImperialMilitaryBand.OPEN_FIELD.value}))"),
-                    expr(f"(goal {candidate_name} 0)"),
-                    expr(open_field),
-                    expr(f"(not {fortified})"),
-                    expr(rearm_open_clear),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.guard_dwell[ImperialMilitaryBand.OPEN_FIELD]})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-trash-from-open",
-                facts=(
-                    expr(f"(goal {state_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(trash),
-                    expr(f"(not {fortified})"),
-                    expr(f"(goal {candidate_name} 0)"),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.guard_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH]})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-gold-recovery",
-                facts=(
-                    expr(f"(goal {state_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value})"),
-                    expr(f"(gold-amount >= 1800)"),
-                    expr(open_field),
-                    expr(rearm_open_clear),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.gold_recovery_dwell})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-fort-clear",
-                facts=(
-                    expr(f"(goal {state_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value})"),
-                    expr(fort_clear),
-                    expr(f"(goal {candidate_name} 0)"),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.fortified_clear_dwell})"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-latch-standing-recovery",
-                facts=(
-                    expr(f"(goal {state_name} {ImperialMilitaryBand.STANDING_FLOOR.value})"),
-                    expr(floor_recovered),
-                    expr(f"(goal {candidate_name} 0)"),
-                ),
-                actions=(
-                    expr(f"(set-goal {candidate_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                    expr(f"(enable-timer {guard_timer_name} {plan.guard_dwell[ImperialMilitaryBand.OPEN_FIELD]})"),
-                ),
-            ),
+                actions=tuple(expr(item) for item in actions),
+            )
         )
-    )
 
-    # Guard-timer witness: expiry is only a reassessment point.
-    rules.extend(
-        (
-            NativeControlRule(
-                "byz-imperial-military-guard-open",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(f"(or (goal {state_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}) {open_field} )"),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {guard_ready_name} 1)"),
-                ),
+    # P1: fortified escalation has priority over ordinary posture changes.
+    for source in (
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+    ):
+        facts = list(fortified_facts)
+        if source is ImperialMilitaryBand.STANDING_FLOOR:
+            facts.extend(floor_recovered)
+            facts.append(f"(goal {dwell_ready_name} 1)")
+        facts.append(rearm_clear[ImperialMilitaryBand.FORTIFIED_PUSH])
+        if source is ImperialMilitaryBand.OPEN_FIELD:
+            # Fortified escalation is allowed before the Open 60s minimum dwell.
+            pass
+        add_candidate_rule(
+            f"byz-imperial-military-latch-fortified-{source.name.lower()}",
+            tuple(
+                (f"(goal {state_name} {source.value})",)
+                + tuple(facts)
+                + (f"(not (goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))",)
             ),
-            NativeControlRule(
-                "byz-imperial-military-guard-open-clear",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {ImperialMilitaryBand.OPEN_FIELD.value})"),
-                    expr(f"(not {open_field})"),
-                    expr(f"(not (goal {state_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))"),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {candidate_name} 0)"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-guard-fortified",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value})"),
-                    expr(fortified),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {guard_ready_name} 1)"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-guard-fortified-clear",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value})"),
-                    expr(f"(not {fortified})"),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {candidate_name} 0)"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-guard-trash",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value})"),
-                    expr(trash),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {guard_ready_name} 1)"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-guard-trash-clear",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} {ImperialMilitaryBand.GOLD_STARVED_TRASH.value})"),
-                    expr(f"(not {trash})"),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {candidate_name} 0)"),
-                    expr(f"(set-goal {guard_ready_name} 0)"),
-                ),
-            ),
-            NativeControlRule(
-                "byz-imperial-military-guard-economic",
-                facts=(
-                    expr(f"(timer-triggered {guard_timer_name})"),
-                    expr(f"(goal {candidate_name} 4)"),
-                    expr(economic_collapse),
-                    expr(f"(not {fortified})"),
-                ),
-                actions=(
-                    expr(f"(disable-timer {guard_timer_name})"),
-                    expr(f"(set-goal {guard_ready_name} 1)"),
-                ),
-            ),
+            ImperialMilitaryBand.FORTIFIED_PUSH,
+            plan.guard_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
         )
-    )
 
-    add_transition(
-        "byz-imperial-military-enter-fortified",
-        0,
-        2,
-        ImperialMilitaryReason.FORTIFIED_ESCALATION.value,
-        (fortified, f"(goal {rearm_name} 0)"),
-        transition_actions(
-            ImperialMilitaryBand.FORTIFIED_PUSH,
-            ImperialMilitaryReason.FORTIFIED_ESCALATION,
-            plan.minimum_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-open-to-fortified",
-        1,
-        2,
-        ImperialMilitaryReason.FORTIFIED_ESCALATION.value,
-        (fortified, f"(goal {rearm_name} 0)"),
-        transition_actions(
-            ImperialMilitaryBand.FORTIFIED_PUSH,
-            ImperialMilitaryReason.FORTIFIED_ESCALATION,
-            plan.minimum_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
-            ImperialMilitaryBand.OPEN_FIELD,
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-trash-to-fortified",
-        3,
-        2,
-        ImperialMilitaryReason.FORTIFIED_ESCALATION.value,
-        (fortified, f"(goal {rearm_name} 0)"),
-        transition_actions(
-            ImperialMilitaryBand.FORTIFIED_PUSH,
-            ImperialMilitaryReason.FORTIFIED_ESCALATION,
-            plan.minimum_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
-            ImperialMilitaryBand.GOLD_STARVED_TRASH,
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-standing-to-open",
-        0,
-        1,
-        ImperialMilitaryReason.OPEN_FIELD_ELIGIBLE.value,
-        (f"(goal {dwell_ready_name} 1)", open_field, rearm_open_clear),
-        transition_actions(
-            ImperialMilitaryBand.OPEN_FIELD,
-            ImperialMilitaryReason.OPEN_FIELD_ELIGIBLE,
-            plan.minimum_dwell[ImperialMilitaryBand.OPEN_FIELD],
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-standing-to-trash",
-        0,
-        3,
-        ImperialMilitaryReason.GOLD_STARVED.value,
-        (f"(goal {dwell_ready_name} 1)", trash, rearm_trash_clear),
-        transition_actions(
-            ImperialMilitaryBand.GOLD_STARVED_TRASH,
-            ImperialMilitaryReason.GOLD_STARVED,
-            plan.minimum_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-open-to-trash",
-        1,
-        3,
-        ImperialMilitaryReason.GOLD_STARVED.value,
-        (f"(goal {dwell_ready_name} 1)", trash, rearm_trash_clear),
-        transition_actions(
-            ImperialMilitaryBand.GOLD_STARVED_TRASH,
-            ImperialMilitaryReason.GOLD_STARVED,
-            plan.minimum_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
-            ImperialMilitaryBand.OPEN_FIELD,
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-fortified-to-open",
-        2,
-        1,
-        ImperialMilitaryReason.FORTIFIED_CLEAR.value,
-        (f"(goal {dwell_ready_name} 1)", f"(goal {guard_ready_name} 1)", fort_clear, open_field),
-        transition_actions(
-            ImperialMilitaryBand.OPEN_FIELD,
-            ImperialMilitaryReason.FORTIFIED_CLEAR,
-            plan.minimum_dwell[ImperialMilitaryBand.OPEN_FIELD],
-            ImperialMilitaryBand.FORTIFIED_PUSH,
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-fortified-to-trash",
-        2,
-        3,
-        ImperialMilitaryReason.FORTIFIED_CLEAR.value,
-        (f"(goal {dwell_ready_name} 1)", f"(goal {guard_ready_name} 1)", fort_clear, trash),
-        transition_actions(
-            ImperialMilitaryBand.GOLD_STARVED_TRASH,
-            ImperialMilitaryReason.FORTIFIED_CLEAR,
-            plan.minimum_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
-            ImperialMilitaryBand.FORTIFIED_PUSH,
-        ),
-    )
-    add_transition(
-        "byz-imperial-military-trash-to-open",
-        3,
-        1,
-        ImperialMilitaryReason.GOLD_RECOVERY.value,
-        (f"(goal {dwell_ready_name} 1)", f"(goal {guard_ready_name} 1)", open_field, rearm_open_clear),
-        transition_actions(
-            ImperialMilitaryBand.OPEN_FIELD,
-            ImperialMilitaryReason.GOLD_RECOVERY,
-            plan.minimum_dwell[ImperialMilitaryBand.OPEN_FIELD],
-            ImperialMilitaryBand.GOLD_STARVED_TRASH,
-        ),
-    )
-
-    # Economic recovery can return any scaling state to the floor once its
-    # 30-second persistence guard has been witnessed.
+    # P2: economic collapse, unless fortified escalation remains executable.
     for source in (
         ImperialMilitaryBand.OPEN_FIELD,
         ImperialMilitaryBand.FORTIFIED_PUSH,
         ImperialMilitaryBand.GOLD_STARVED_TRASH,
     ):
-        add_transition(
-            f"byz-imperial-military-{source.name.lower()}-to-floor",
-            source.value,
-            ImperialMilitaryBand.STANDING_FLOOR.value,
-            ImperialMilitaryReason.ECONOMIC_COLLAPSE.value,
-            (f"(goal {candidate_name} 4)", f"(goal {guard_ready_name} 1)", economic_collapse, f"(not {fortified})"),
-            transition_actions(
-                ImperialMilitaryBand.STANDING_FLOOR,
-                ImperialMilitaryReason.ECONOMIC_COLLAPSE,
-                plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR],
-                source,
+        add_candidate_rule(
+            f"byz-imperial-military-latch-economic-{source.name.lower()}",
+            (
+                f"(goal {state_name} {source.value})",
+                economic_collapse,
+                f"(not (goal {candidate_name} {ImperialMilitaryBand.FORTIFIED_PUSH.value}))",
+                "(not (goal byzantine-fortification-threat 1))",
+                "(not (goal byzantine-siege-approach byzantine-siege-approach-fortified))",
             ),
+            ImperialMilitaryBand.STANDING_FLOOR,
+            plan.economic_collapse_dwell,
         )
 
-    # Candidate values identical to current state are cleared so stale timers
-    # cannot authorize a self-transition.
+    # P4 normal candidates, ordered Fortified > Trash > Open by explicit guards.
+    add_candidate_rule(
+        "byz-imperial-military-latch-trash-standing",
+        (
+            "(goal byz-imp-band-state 0)",
+            *floor_recovered,
+            *trash_facts[:4],
+            rearm_clear[ImperialMilitaryBand.GOLD_STARVED_TRASH],
+            f"(goal {dwell_ready_name} 1)",
+            f"(not (goal {candidate_name} 2))",
+        ),
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        plan.guard_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
+    )
+    add_candidate_rule(
+        "byz-imperial-military-latch-open-standing",
+        (
+            "(goal byz-imp-band-state 0)",
+            *floor_recovered,
+            *open_facts,
+            rearm_clear[ImperialMilitaryBand.OPEN_FIELD],
+            f"(goal {dwell_ready_name} 1)",
+            f"(not (goal {candidate_name} 2))",
+            f"(not (goal {candidate_name} 3))",
+        ),
+        ImperialMilitaryBand.OPEN_FIELD,
+        plan.guard_dwell[ImperialMilitaryBand.OPEN_FIELD],
+    )
+    add_candidate_rule(
+        "byz-imperial-military-latch-trash-open",
+        (
+            "(goal byz-imp-band-state 1)",
+            *trash_facts[:4],
+            f"(goal {dwell_ready_name} 1)",
+            f"(not (goal {candidate_name} 2))",
+        ),
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        plan.guard_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
+    )
+    add_candidate_rule(
+        "byz-imperial-military-latch-open-recover",
+        (
+            "(goal byz-imp-band-state 3)",
+            "(gold-amount >= 1800)",
+            *open_facts,
+            f"(goal {dwell_ready_name} 1)",
+            rearm_clear[ImperialMilitaryBand.OPEN_FIELD],
+        ),
+        ImperialMilitaryBand.OPEN_FIELD,
+        plan.gold_recovery_dwell,
+    )
+    add_candidate_rule(
+        "byz-imperial-military-latch-open-fort-clear",
+        (
+            "(goal byz-imp-band-state 2)",
+            *fort_clear,
+            f"(goal {dwell_ready_name} 1)",
+            f"(not (goal {candidate_name} 2))",
+        ),
+        ImperialMilitaryBand.OPEN_FIELD,
+        plan.fortified_clear_dwell,
+    )
+    add_candidate_rule(
+        "byz-imperial-military-latch-trash-fort-clear",
+        (
+            "(goal byz-imp-band-state 2)",
+            *fort_clear,
+            *trash_facts[:4],
+            f"(goal {dwell_ready_name} 1)",
+            f"(not (goal {candidate_name} 2))",
+        ),
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        plan.fortified_clear_dwell,
+    )
+
+    # Guard expiry is only a reassessment point. These rules require the current
+    # live candidate guard before setting guard-ready.
+    candidate_live_guards = {
+        ImperialMilitaryBand.OPEN_FIELD: open_facts,
+        ImperialMilitaryBand.FORTIFIED_PUSH: fortified_facts,
+        ImperialMilitaryBand.GOLD_STARVED_TRASH: trash_facts,
+        ImperialMilitaryBand.STANDING_FLOOR: (economic_collapse,),
+    }
+    for band, live_facts in candidate_live_guards.items():
+        rules.append(
+            NativeControlRule(
+                f"byz-imperial-military-guard-{band.name.lower()}",
+                facts=(
+                    expr(f"(timer-triggered {guard_timer_name})"),
+                    expr(f"(goal {candidate_name} {band.value})"),
+                    *tuple(expr(item) for item in live_facts),
+                ),
+                actions=(expr(f"(set-goal {guard_ready_name} 1)"),
+                         expr(f"(disable-timer {guard_timer_name})")),
+            )
+        )
+        rules.append(
+            NativeControlRule(
+                f"byz-imperial-military-guard-clear-{band.name.lower()}",
+                facts=(
+                    expr(f"(timer-triggered {guard_timer_name})"),
+                    expr(f"(goal {candidate_name} {band.value})"),
+                ),
+                actions=(
+                    expr(f"(set-goal {candidate_name} 0)"),
+                    expr(f"(set-goal {guard_ready_name} 0)"),
+                    expr(f"(disable-timer {guard_timer_name})"),
+                ),
+            )
+        )
+
+    # Transition precedence after guard witness.
+    add_transition_rule(
+        "byz-imperial-military-enter-fortified",
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        ImperialMilitaryReason.FORTIFIED_ESCALATION,
+        tuple(fortified_facts) + tuple(floor_recovered) + (f"(goal {dwell_ready_name} 1)",),
+        None,
+        plan.minimum_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
+    )
+    add_transition_rule(
+        "byz-imperial-military-open-to-fortified",
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        ImperialMilitaryReason.FORTIFIED_ESCALATION,
+        tuple(fortified_facts),
+        ImperialMilitaryBand.OPEN_FIELD,
+        plan.minimum_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
+    )
+    add_transition_rule(
+        "byz-imperial-military-trash-to-fortified",
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        ImperialMilitaryReason.FORTIFIED_ESCALATION,
+        tuple(fortified_facts),
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        plan.minimum_dwell[ImperialMilitaryBand.FORTIFIED_PUSH],
+    )
+    add_transition_rule(
+        "byz-imperial-military-economic-to-floor",
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryReason.ECONOMIC_COLLAPSE,
+        (economic_collapse,),
+        ImperialMilitaryBand.OPEN_FIELD,
+        plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR],
+    )
+    add_transition_rule(
+        "byz-imperial-military-economic-fortified-to-floor",
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryReason.ECONOMIC_COLLAPSE,
+        (economic_collapse,),
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR],
+    )
+    add_transition_rule(
+        "byz-imperial-military-economic-trash-to-floor",
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryReason.ECONOMIC_COLLAPSE,
+        (economic_collapse,),
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR],
+    )
+    add_transition_rule(
+        "byz-imperial-military-standing-to-trash",
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        ImperialMilitaryReason.GOLD_STARVED,
+        tuple(trash_facts) + (f"(goal {dwell_ready_name} 1)",),
+        None,
+        plan.minimum_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
+    )
+    add_transition_rule(
+        "byz-imperial-military-standing-to-open",
+        ImperialMilitaryBand.STANDING_FLOOR,
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryReason.OPEN_FIELD_ELIGIBLE,
+        tuple(open_facts) + (f"(goal {dwell_ready_name} 1)",),
+        None,
+        plan.minimum_dwell[ImperialMilitaryBand.OPEN_FIELD],
+    )
+    add_transition_rule(
+        "byz-imperial-military-open-to-trash",
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        ImperialMilitaryReason.GOLD_STARVED,
+        tuple(trash_facts) + (f"(goal {dwell_ready_name} 1)",),
+        ImperialMilitaryBand.OPEN_FIELD,
+        plan.minimum_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
+    )
+    add_transition_rule(
+        "byz-imperial-military-fortified-to-open",
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryReason.FORTIFIED_CLEAR,
+        tuple(fort_clear) + tuple(open_facts),
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        plan.minimum_dwell[ImperialMilitaryBand.OPEN_FIELD],
+    )
+    add_transition_rule(
+        "byz-imperial-military-fortified-to-trash",
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        ImperialMilitaryReason.FORTIFIED_CLEAR,
+        tuple(fort_clear) + tuple(trash_facts),
+        ImperialMilitaryBand.FORTIFIED_PUSH,
+        plan.minimum_dwell[ImperialMilitaryBand.GOLD_STARVED_TRASH],
+    )
+    add_transition_rule(
+        "byz-imperial-military-trash-to-open",
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        ImperialMilitaryBand.OPEN_FIELD,
+        ImperialMilitaryReason.GOLD_RECOVERY,
+        tuple(open_facts) + ("(gold-amount >= 1800)",),
+        ImperialMilitaryBand.GOLD_STARVED_TRASH,
+        plan.minimum_dwell[ImperialMilitaryBand.OPEN_FIELD],
+    )
+
     for band in (
         ImperialMilitaryBand.OPEN_FIELD,
         ImperialMilitaryBand.FORTIFIED_PUSH,
@@ -3310,20 +3252,10 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
         )
 
     constants = (
-        ("byz-imp-band-standing", ImperialMilitaryBand.STANDING_FLOOR.value),
-        ("byz-imp-band-open", ImperialMilitaryBand.OPEN_FIELD.value),
-        ("byz-imp-band-fortified", ImperialMilitaryBand.FORTIFIED_PUSH.value),
-        ("byz-imp-band-trash", ImperialMilitaryBand.GOLD_STARVED_TRASH.value),
-        ("byz-imp-reason-floor", ImperialMilitaryReason.FLOOR_BREAK.value),
-        ("byz-imp-reason-fort", ImperialMilitaryReason.FORTIFIED_ESCALATION.value),
-        ("byz-imp-reason-economic", ImperialMilitaryReason.ECONOMIC_COLLAPSE.value),
-        ("byz-imp-reason-trash", ImperialMilitaryReason.GOLD_STARVED.value),
-        ("byz-imp-reason-gold", ImperialMilitaryReason.GOLD_RECOVERY.value),
-        ("byz-imp-reason-open", ImperialMilitaryReason.OPEN_FIELD_ELIGIBLE.value),
-        ("byz-imp-reason-fort-clear", ImperialMilitaryReason.FORTIFIED_CLEAR.value),
-        ("byz-imp-reason-objective", ImperialMilitaryReason.OBJECTIVE_LOST.value),
-        ("byz-imp-reason-dwell", ImperialMilitaryReason.HOLD_DWELL.value),
-        ("byz-imp-reason-cooldown", ImperialMilitaryReason.HOLD_COOLDOWN.value),
+        ("byz-imp-band-standing", 0),
+        ("byz-imp-band-open", 1),
+        ("byz-imp-band-fortified", 2),
+        ("byz-imp-band-trash", 3),
         ("byz-imp-floor-halbs", 18),
         ("byz-imp-floor-eskirm", 18),
         ("byz-imp-floor-hussar", 12),
@@ -3351,6 +3283,7 @@ def _byzantine_imperial_military_control_plan(profile: StrategyProfile):
         rules=tuple(rules),
         constants=constants,
     )
+
 
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
