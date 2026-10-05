@@ -375,7 +375,11 @@ def _compile_ir_parts(
 
     if program.control_plan is not None:
         try:
-            validate_native_control_plan(program.control_plan, registry)
+            validate_native_control_plan(
+                program.control_plan,
+                registry,
+                external_goal_states=tuple(f"demand-{demand.name}" for demand in ir),
+            )
         except (TypeError, ValueError) as exc:
             raise CompileError(f"CONTROL-PLANE-VALIDATION: {exc}") from exc
 
