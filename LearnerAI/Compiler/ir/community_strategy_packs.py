@@ -530,9 +530,11 @@ def community_strategy_observations(
         ),
         (
             "siege-workshop",
-            "(or (unit-type-count-total mangonel-line >= {threshold}) "
-            "(or (unit-type-count-total trebuchet-line >= {threshold}) "
-            "(unit-type-count-total bombard-cannon-line >= {threshold})))",
+            "(or "
+            "(or (unit-type-count-total 280 >= {threshold}) "
+            "(unit-type-count-total 550 >= {threshold})) "
+            "(or (unit-type-count-total 331 >= {threshold}) "
+            "(unit-type-count-total 36 >= {threshold})))",
             "strategy-production-siege-depth",
         ),
     )
@@ -1617,6 +1619,21 @@ def community_strategy_demands(
     ) in provider_depth_specs:
         building = _building(effective, building_name)
         standing_demand = standing_depth_observations[standing_observation_ref]
+        replacement_expression = (
+            "(or (unit-type-count 331 < 4) "
+            "(or (unit-type-count 36 < 4) "
+            "(unit-type-count-total mangonel-line < 4)))"
+            if replacement_reason_ref == "strategy-production-siege-replacement"
+            else (
+                next(
+                    item.expression
+                    for item in observations
+                    if item.identity == replacement_reason_ref
+                )
+                if replacement_reason_ref is not None
+                else None
+            )
+        )
         demands.append(
             _production_depth_demand(
                 identity=identity,
@@ -1633,15 +1650,7 @@ def community_strategy_demands(
                 age_guard=age_guard,
                 standing_demand=standing_demand,
                 replacement_reason_ref=replacement_reason_ref,
-                replacement_expression=(
-                    next(
-                        item.expression
-                        for item in observations
-                        if item.identity == replacement_reason_ref
-                    )
-                    if replacement_reason_ref is not None
-                    else None
-                ),
+                replacement_expression=replacement_expression,
             )
         )
 
