@@ -160,6 +160,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             requirements,
             (
                 "(current-age == dark-age)",
+                "(unit-type-count-total villager >= 21)",
                 "(building-type-count-total lumber-camp >= 1)",
                 "(building-type-count-total mining-camp >= 1)",
                 "(can-research-with-escrow feudal-age)",
@@ -174,6 +175,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             tuple(transition.execution.requirements),
             (
                 "(current-age == feudal-age)",
+                "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
                 "(building-type-count-total blacksmith >= 1)",
                 "(building-type-count-total market >= 1)",
                 "(can-research-with-escrow castle-age)",
@@ -191,38 +193,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             ((Resource.FOOD, 800), (Resource.GOLD, 200)),
         )
-
-    def test_villager_continuity_is_castle_bank_arbitrated(self):
-        profile = build_byzantine_strategy(self.effective)
-        demand = profile.demand("civilian-villager-continuity")
-
-        self.assertEqual(demand.owner, "economy")
-        self.assertEqual(demand.production_arbitration_group, "production")
-        self.assertIn("(can-train villager)", demand.execution.requirements)
-        self.assertIn(
-            "(not (and (current-age == dark-age) "
-            "(and (unit-type-count-total villager >= 21) "
-            "(and (building-type-count-total lumber-camp >= 1) "
-            "(and (building-type-count-total mining-camp >= 1) "
-            "(can-research-with-escrow feudal-age))))))",
-            demand.execution.requirements,
-        )
-        self.assertIn(
-            "(not (and (current-age == feudal-age) "
-            "(and (unit-type-count-total villager >= 28) "
-            "(and (building-type-count-total blacksmith >= 1) "
-            "(and (building-type-count-total market >= 1) "
-            "(can-research-with-escrow castle-age))))))",
-            demand.execution.requirements,
-        )
-        self.assertEqual(demand.execution.action, "(train villager)")
-        compilation = lower_strategy_profile(profile, self.effective)
-        lowered = next(
-            item for item in compilation.demands
-            if item.identity.local_name == "civilian-villager-continuity"
-        )
-        self.assertIsNotNone(lowered.production_lifecycle)
-        self.assertEqual(lowered.production_lifecycle.unit, "villager")
 
     def test_camp_floor_two_requires_remote_resource_front_and_starts_released(self):
         profile = build_byzantine_strategy(self.effective)
