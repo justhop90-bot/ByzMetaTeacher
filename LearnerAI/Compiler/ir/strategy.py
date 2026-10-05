@@ -1247,7 +1247,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
-    from .recurrent import TimerRequest, TimerState
+    from .recurrent import TimerRequest
     from .strategic_number import StrategicNumberOrigin
 
     states: dict[str, NativeControlState] = {}
@@ -1591,7 +1591,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
-    stale_timer = TimerState(
+    stale_timer = NativeControlState(
         "byzantine-army-stale-timer",
         TimerRequest(
             StorageRequestId(military_owner, "timer:byzantine-army-stale-timer"),
