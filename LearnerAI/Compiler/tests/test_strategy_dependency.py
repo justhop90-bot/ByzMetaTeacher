@@ -168,7 +168,7 @@ class StrategyDependencyTests(unittest.TestCase):
                 NativeDucRule(
                     identity="byzantine-relic-control-acquire",
                     order=0,
-                    facts=(),
+                    facts=(SimpleNamespace(source="(true)"),),
                     actions=(),
                     lifecycle=(
                         NativeDucLifecycleStage.ADMISSIBILITY,
@@ -179,28 +179,28 @@ class StrategyDependencyTests(unittest.TestCase):
                 NativeDucRule(
                     identity="byzantine-relic-control-pickup-witness",
                     order=1,
-                    facts=(),
+                    facts=(SimpleNamespace(source="(true)"),),
                     actions=(),
                     lifecycle=(NativeDucLifecycleStage.PICKUP_WITNESS,),
                 ),
                 NativeDucRule(
                     identity="byzantine-relic-control-return",
                     order=2,
-                    facts=(),
+                    facts=(SimpleNamespace(source="(true)"),),
                     actions=(),
                     lifecycle=(NativeDucLifecycleStage.RETURN,),
                 ),
                 NativeDucRule(
                     identity="byzantine-relic-control-release-witness",
                     order=3,
-                    facts=(),
+                    facts=(SimpleNamespace(source="(true)"),),
                     actions=(),
                     lifecycle=(NativeDucLifecycleStage.RELEASE_WITNESS,),
                 ),
                 NativeDucRule(
                     identity="byzantine-relic-control-recovery",
                     order=4,
-                    facts=(),
+                    facts=(SimpleNamespace(source="(true)"),),
                     actions=(),
                     lifecycle=(NativeDucLifecycleStage.RECOVERY,),
                 ),
