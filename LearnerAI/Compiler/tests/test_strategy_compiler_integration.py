@@ -346,7 +346,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         conversion_demands = tuple(
             demand for demand in compilation.demands
-            if demand.identity.startswith("imperial-forward-production-")
+            if demand.name.startswith("imperial-forward-production-")
         )
         self.assertTrue(conversion_demands)
         self.assertTrue(
