@@ -64,19 +64,19 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
 
         acquire = rules["byzantine-relic-control-acquire"]
         acquire_sources = tuple(item.source for item in (*acquire.facts, *acquire.actions))
-        self.assertIn("(up-gaia-type-count-total c: relic > 0)", acquire_sources)
+        self.assertIn("(up-gaia-type-count-total c: 285 > 0)", acquire_sources)
         self.assertIn("(up-modify-sn sn-focus-player-number c:= 0)", acquire_sources)
-        self.assertIn("(up-find-remote c: relic c: 1)", acquire_sources)
+        self.assertIn("(up-find-remote c: 285 c: 1)", acquire_sources)
         self.assertIn("(up-set-target-object search-remote c: 0)", acquire_sources)
         self.assertIn("(up-find-local c: monk c: 1)", acquire_sources)
         self.assertIn(
-            "(up-target-objects 0 action-default -1 stance-defensive)",
+            "(up-target-objects 0 0 -1 stance-defensive)",
             acquire_sources,
         )
 
         pickup = rules["byzantine-relic-control-pickup-witness"]
         self.assertIn(
-            "(up-find-local c: monk-with-relic c: 1)",
+            "(up-find-local c: 286 c: 1)",
             tuple(item.source for item in pickup.actions),
         )
 
@@ -88,7 +88,7 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
             if rule.identity == "byzantine-relic-control-pickup-witness"
         )
         self.assertIn(
-            "(unit-type-count-total monk-with-relic >= 1)",
+            "(unit-type-count-total 286 >= 1)",
             tuple(item.source for item in pickup_control.facts),
         )
 
@@ -98,10 +98,10 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
             "(set-strategic-number sn-focus-player-number 0)",
             return_sources,
         )
-        self.assertIn("(up-find-local c: monastery c: 1)", return_sources)
-        self.assertIn("(up-find-local c: monk-with-relic c: 1)", return_sources)
+        self.assertIn("(up-find-local c: 104 c: 1)", return_sources)
+        self.assertIn("(up-find-local c: 286 c: 1)", return_sources)
         self.assertIn(
-            "(up-target-objects 0 action-default -1 stance-defensive)",
+            "(up-target-objects 0 0 -1 stance-defensive)",
             return_sources,
         )
 
@@ -116,9 +116,9 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
             "; Native DUC rule: byzantine-relic-control-acquire",
             "; Native DUC rule: byzantine-relic-control-pickup-witness",
             "; Native DUC rule: byzantine-relic-control-return",
-            "(unit-type-count-total monk-with-relic >= 1)",
-            "(up-find-remote c: relic c: 1)",
-            "(up-find-local c: monk-with-relic c: 1)",
+            "(unit-type-count-total 286 >= 1)",
+            "(up-find-remote c: 285 c: 1)",
+            "(up-find-local c: 286 c: 1)",
             "(up-modify-sn sn-focus-player-number c:= my-player-number)",
         )
         missing = tuple(fragment for fragment in required if fragment not in first)
