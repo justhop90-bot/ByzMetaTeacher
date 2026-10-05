@@ -1752,6 +1752,7 @@ def default_byzantine_endgame_target_control() -> _EndgameTargetControlContract:
             _EndgameTargetCandidate("production-archery-range", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 87, 90),
             _EndgameTargetCandidate("production-stable", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 101, 85),
             _EndgameTargetCandidate("production-monastery", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 104, 80),
+            _EndgameTargetCandidate("production-exposed-villager", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 83, 70),
             _EndgameTargetCandidate("town-center-feudal", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 109, 100),
             _EndgameTargetCandidate("town-center-castle", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 71, 95),
             _EndgameTargetCandidate("town-center-imperial", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 141, 90),
