@@ -1910,6 +1910,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     open_field_eligible = land(
         "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
@@ -1925,6 +1926,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     gold_recovery_open_eligible = land(
         "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
@@ -1938,7 +1940,8 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     gold_recovered = "(gold-amount >= 1800)"
     fortified_clear = land(
         "(goal byzantine-fortification-threat 0)",
-        "(goal byzantine-offensive-objective-claim 0)",
+        "(not (goal byzantine-offensive-objective-class "
+        "byzantine-offensive-objective-class-siege))",
     )
 
     def cooldown_clear(target: int) -> str:
