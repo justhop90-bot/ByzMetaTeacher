@@ -698,6 +698,8 @@ def emit(
             binding = bindings.binding_for(state.request.request_id)
             if isinstance(binding, GoalSlot):
                 value = binding.id.value
+            elif isinstance(binding, GoalSpan):
+                value = binding.start.value
             elif isinstance(binding, StrategicNumberSlot):
                 value = binding.id
             elif isinstance(binding, TimerSlot):
