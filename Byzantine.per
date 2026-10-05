@@ -4741,16 +4741,16 @@
     (goal byzantine-army-role-state byzantine-army-role-forming)
     (goal byzantine-army-role-formation-mask 31)
     (goal byzantine-army-attack-ready 1)
-    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
-    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-screen-size >= bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= bt-role-main-floor)
     (or
         (and
             (goal byzantine-fortification-threat 0)
-            (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+            (up-compare-goal byzantine-army-role-siege-size >= bt-role-siege-floor-standard)
         )
         (and
             (goal byzantine-fortification-threat 1)
-            (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
+            (up-compare-goal byzantine-army-role-siege-size >= bt-role-siege-floor-fortified)
         )
     )
 =>
@@ -4762,17 +4762,17 @@
     (goal byzantine-army-role-formation-mask 31)
     (goal byzantine-army-attack-ready 1)
     (or
-        (up-compare-goal byzantine-army-role-screen-size < c:bt-role-screen-floor)
+        (up-compare-goal byzantine-army-role-screen-size < bt-role-screen-floor)
         (or
-            (up-compare-goal byzantine-army-role-main-size < c:bt-role-main-floor)
+            (up-compare-goal byzantine-army-role-main-size < bt-role-main-floor)
             (or
                 (and
                     (goal byzantine-fortification-threat 0)
-                    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-standard)
+                    (up-compare-goal byzantine-army-role-siege-size < bt-role-siege-floor-standard)
                 )
                 (and
                     (goal byzantine-fortification-threat 1)
-                    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
+                    (up-compare-goal byzantine-army-role-siege-size < bt-role-siege-floor-fortified)
                 )
             )
         )
@@ -4873,10 +4873,10 @@
         (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-town-center)
     )
     (goal byzantine-fortification-threat 0)
-    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
-    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
-    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
-    (up-compare-goal byzantine-army-role-reserve-size >= c:bt-role-raid-floor)
+    (up-compare-goal byzantine-army-role-screen-size >= bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-siege-size >= bt-role-siege-floor-standard)
+    (up-compare-goal byzantine-army-role-reserve-size >= bt-role-raid-floor)
     (or
         (unit-type-count-total knight-line >= bt-role-raid-floor)
         (or
@@ -4913,10 +4913,10 @@
 (defrule
     (goal byzantine-army-role-state byzantine-army-role-committed)
     (goal byzantine-army-role-formation-mask 41)
-    (up-compare-goal byzantine-army-role-raid-size >= c:bt-role-raid-floor)
-    (up-compare-goal byzantine-army-role-screen-size >= c:bt-role-screen-floor)
-    (up-compare-goal byzantine-army-role-main-size >= c:bt-role-main-floor)
-    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-standard)
+    (up-compare-goal byzantine-army-role-raid-size >= bt-role-raid-floor)
+    (up-compare-goal byzantine-army-role-screen-size >= bt-role-screen-floor)
+    (up-compare-goal byzantine-army-role-main-size >= bt-role-main-floor)
+    (up-compare-goal byzantine-army-role-siege-size >= bt-role-siege-floor-standard)
 =>
     (set-goal byzantine-army-role-state byzantine-army-role-raid-split)
 )
@@ -4924,7 +4924,7 @@
 (defrule
     (goal byzantine-army-role-state byzantine-army-role-committed)
     (goal byzantine-army-role-formation-mask 41)
-    (up-compare-goal byzantine-army-role-raid-size < c:bt-role-raid-floor)
+    (up-compare-goal byzantine-army-role-raid-size < bt-role-raid-floor)
 =>
     (up-reset-group c: 8)
     (set-goal byzantine-army-role-formation-mask 31)
@@ -4984,7 +4984,7 @@
     (goal byzantine-army-role-state byzantine-army-role-committed)
     (goal byzantine-fortification-threat 1)
     (goal byzantine-army-role-formation-mask 50)
-    (up-compare-goal byzantine-army-role-siege-size < c:bt-role-siege-floor-fortified)
+    (up-compare-goal byzantine-army-role-siege-size < bt-role-siege-floor-fortified)
 =>
     (set-goal byzantine-army-role-state byzantine-army-role-recovering)
     (set-goal byzantine-army-role-recovery-request 1)
@@ -5001,7 +5001,7 @@
     (goal byzantine-army-role-state byzantine-army-role-committed)
     (goal byzantine-fortification-threat 1)
     (goal byzantine-army-role-formation-mask 50)
-    (up-compare-goal byzantine-army-role-siege-size >= c:bt-role-siege-floor-fortified)
+    (up-compare-goal byzantine-army-role-siege-size >= bt-role-siege-floor-fortified)
 =>
     (set-goal byzantine-army-role-formation-mask 31)
 )
