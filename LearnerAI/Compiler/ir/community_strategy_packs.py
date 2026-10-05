@@ -1470,7 +1470,7 @@ def community_strategy_demands(
         "(players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
         "(or (players-unit-type-count any-enemy camel-rider-line >= 8) "
-        "(players-unit-type-count any-enemy mangonel-line >= 2)))"
+        "(players-unit-type-count any-enemy mangonel-line >= 2))))"
     )
 
     band_demands = (
