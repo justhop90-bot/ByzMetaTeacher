@@ -68,31 +68,11 @@ def main() -> int:
         )
 
     expected_aliases = (
-        "(defconst sn-native-4 4)",
         "(defconst sn-native-227 227)",
     )
     for alias in expected_aliases:
         if alias not in first:
             raise SystemExit(f"missing native Strategic Number alias: {alias}")
-
-    expected_age_modes = (
-        ("dark-age", 3),
-        ("feudal-age", 5),
-        ("castle-age", 8),
-        ("imperial-age", 12),
-    )
-    for age_name, value in expected_age_modes:
-        write = f"(set-strategic-number sn-native-4 {value})"
-        drift = f"(up-compare-sn sn-native-4 != {value})"
-        guard = f"(current-age == {age_name})"
-        if first.count(write) != 1:
-            raise SystemExit(
-                f"expected exactly one age-mode write for {age_name}: {write}"
-            )
-        if drift not in first or guard not in first:
-            raise SystemExit(
-                f"missing deterministic age-mode guard for {age_name}"
-            )
 
     expected_posture_modes = (
         (1, 50),
@@ -125,8 +105,12 @@ def main() -> int:
             "expected all posture-driven SN modes to be gated to Feudal Age or later"
         )
 
+    if "(defconst sn-native-4 4)" in first:
+        raise SystemExit(
+            "Byzantine compiler strategy must not claim SN4; runtime owns the civilian-builder cap"
+        )
+
     forbidden_initializers = (
-        "(set-strategic-number sn-native-4 0)",
         "(set-strategic-number sn-native-227 0)",
     )
     for initializer in forbidden_initializers:
