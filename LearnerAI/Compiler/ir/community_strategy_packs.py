@@ -29,6 +29,10 @@ from .strategy import (
     StrategicObservationSpec as _StrategicObservationSpec,
     CapabilityRecoveryContract as _CapabilityRecoveryContract,
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
+    EndgameMode as _EndgameMode,
+    EndgamePolicyRule as _EndgamePolicyRule,
+    EndgamePlan as _EndgamePlan,
+    EndgameWinCondition as _EndgameWinCondition,
 )
 from .versioning import EvidenceKind, EvidenceRef
 from .map_profile import default_byzantine_map_profiles
@@ -1679,6 +1683,42 @@ def community_strategy_demands(
     return tuple(demands)
 
 
+def default_byzantine_endgame_plan() -> _EndgamePlan:
+    return _EndgamePlan(
+        identity="byzantine-endgame-v1",
+        rules=(
+            _EndgamePolicyRule(
+                identity="breakthrough",
+                mode=_EndgameMode.BREAKTHROUGH,
+                win_condition=_EndgameWinCondition.CAPABILITY_COLLAPSE,
+                observation_refs=(
+                    "strategy-imperial-spend-gold",
+                    "strategy-enemy-castle",
+                ),
+                priority=100,
+            ),
+            _EndgamePolicyRule(
+                identity="attrition",
+                mode=_EndgameMode.ATTRITION,
+                win_condition=_EndgameWinCondition.ATTRITION,
+                observation_refs=("strategy-imperial-spend-gold",),
+                priority=90,
+            ),
+            _EndgamePolicyRule(
+                identity="resource-denial",
+                mode=_EndgameMode.RESOURCE_DENIAL,
+                win_condition=_EndgameWinCondition.RESOURCE_CONTROL,
+                observation_refs=(
+                    "strategy-imperial-spend-gold",
+                    "strategy-enemy-pressure",
+                ),
+                priority=80,
+            ),
+        ),
+        objective_priority=("siege", "defense", "production", "economy", "town-center"),
+    )
+
+
 def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
     return (
         _StrategicNumberMode(
@@ -1885,6 +1925,7 @@ def build_byzantine_stock_strategy(
         economy_controller=default_byzantine_economy_controller(),
         camp_controller=default_byzantine_camp_controller(),
         role_separation_plan=default_byzantine_role_separation_plan(stock_profile_id),
+        endgame_plan=default_byzantine_endgame_plan(),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
@@ -1897,5 +1938,6 @@ __all__ = [
     "community_strategy_demands",
     "community_strategy_observations",
     "community_strategy_sn_modes",
+    "default_byzantine_endgame_plan",
     "community_water_execution_plan",
 ]
