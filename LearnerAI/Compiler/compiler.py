@@ -760,6 +760,10 @@ def compile_package_with_report(
             strategy_capability_graph,
             bindings,
             artifact_result,
+            verified_stage_identities=frozenset(
+                f"{demand.identity.source_unit}:{demand.identity.local_name}"
+                for demand in ir
+            ),
         )
         strategy_dependency_report = analyze_strategy_dependencies(
             ir,
