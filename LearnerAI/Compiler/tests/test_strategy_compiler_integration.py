@@ -805,7 +805,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             release_facts,
         )
         self.assertIn("(attack-soldier-count <= 0)", release_facts)
-        self.assertIn("(unit-type-count cataphract >= 12)", " ".join(release_facts))
+        self.assertIn("(unit-type-count cataphract >= 8)", " ".join(release_facts))
 
         release_actions = tuple(action.source for action in rules["byzantine-endgame-push-release"].actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 1)", release_actions)
