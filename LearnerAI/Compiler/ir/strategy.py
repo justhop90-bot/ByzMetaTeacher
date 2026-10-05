@@ -1870,12 +1870,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     f"byzantine-endgame-conversion-admit-{demand.identity}",
                     facts=(
                         parse_expression(verified_frontier_match, SourceLocation(1)),
-                        parse_expression(f"(goal demand-{demand.name} 0)", SourceLocation(1)),
+                        parse_expression(f"(goal demand-{demand.identity} 0)", SourceLocation(1)),
                         parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                         parse_expression(f"(can-build {building_token})", SourceLocation(1)),
                     ),
                     actions=(
-                        parse_expression(f"(set-goal demand-{demand.name} 1)", SourceLocation(1)),
+                        parse_expression(f"(set-goal demand-{demand.identity} 1)", SourceLocation(1)),
                     ),
                 )
             )
