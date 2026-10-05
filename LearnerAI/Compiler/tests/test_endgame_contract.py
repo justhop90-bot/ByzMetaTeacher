@@ -332,8 +332,11 @@ class EndgameContractTests(unittest.TestCase):
         )
         push_release = configured_rules["byzantine-endgame-push-release"]
         push_release_facts = tuple(fact.source for fact in push_release.facts)
+        frontier_expression = configured_profile.observation(
+            "strategy-enemy-pressure"
+        ).expression
         self.assertIn(
-            "(not (players-unit-type-count any-enemy knight >= 3))",
+            f"(not {frontier_expression})",
             push_release_facts,
         )
         for identity in (
