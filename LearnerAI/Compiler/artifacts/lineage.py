@@ -190,27 +190,6 @@ def _artifact_hash(
     return observed
 
 
-def _manifest_hash(
-    *,
-    root: Path,
-    relative_path: Path,
-    declared_sha256: str,
-    code: str,
-    edge: str,
-) -> str:
-    _expect_hex(declared_sha256, 64, code=code, edge=edge)
-    path = _expect_file(root=root, relative_path=relative_path, code=code, edge=edge)
-    observed = sha256_file(path)
-    _expect_equal(
-        code=code,
-        edge=edge,
-        expected=declared_sha256,
-        observed=observed,
-        target_path=path,
-    )
-    return observed
-
-
 def _check_canonical_artifact_reference(
     *,
     manifest: Mapping[str, Any],
@@ -558,6 +537,22 @@ def verify_promotion_manifest_semantics(
         observed=_get(promoted, "manifest_path", context="promotion.promoted_artifact"),
     )
 
+    promoted_path = root / PROMOTED_ARTIFACT
+    runtime_path = root / RUNTIME_ARTIFACT
+    source_bytes = runtime_path.read_bytes()
+    promoted_bytes = promoted_path.read_bytes()
+    source_sha = sha256_bytes(source_bytes)
+    promoted_actual_sha = sha256_bytes(promoted_bytes)
+    if source_bytes != promoted_bytes:
+        raise ArtifactLineageError(
+            code="BYZ-PROMOTE-001",
+            edge="runtime-artifact -> promoted-artifact",
+            expected=source_sha,
+            observed=promoted_actual_sha,
+            source_path=runtime_path,
+            target_path=promoted_path,
+        )
+
     promoted_sha_declared = str(
         _get(promoted, "sha256", context="promotion.promoted_artifact")
     )
@@ -598,17 +593,6 @@ def verify_promotion_manifest_semantics(
             context="promotion.promotion",
         ),
     )
-
-    source_sha = sha256_file(root / RUNTIME_ARTIFACT)
-    if (root / RUNTIME_ARTIFACT).read_bytes() != (root / PROMOTED_ARTIFACT).read_bytes():
-        raise ArtifactLineageError(
-            code="BYZ-PROMOTE-001",
-            edge="runtime-artifact -> promoted-artifact",
-            expected=source_sha,
-            observed=promoted_sha,
-            source_path=root / RUNTIME_ARTIFACT,
-            target_path=root / PROMOTED_ARTIFACT,
-        )
 
     compiler_source_revision = str(
         _get(manifest, "compiler_source_revision", context="promotion")
