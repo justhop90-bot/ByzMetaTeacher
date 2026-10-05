@@ -224,6 +224,8 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertTrue({18, 36, 42, 227}.issubset(sn_ids))
         self.assertIsNotNone(profile.attack_plan)
         self.assertIsNotNone(profile.duc_plan)
+        self.assertIsNotNone(profile.endgame_plan)
+        self.assertEqual(profile.endgame_plan.identity, "byzantine-endgame-v1")
 
     def test_stock_profile_lowers_without_creating_a_second_lifecycle_model(self):
         profile = build_byzantine_stock_strategy(self.effective)
