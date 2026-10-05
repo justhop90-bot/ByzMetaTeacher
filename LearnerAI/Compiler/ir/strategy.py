@@ -1152,13 +1152,6 @@ def _byzantine_endgame_attack_group_sn_controllers(
     )
 
     contract = plan.push_contract
-    live_witness = profile.observation(contract.live_witness_ref).expression
-    military_ready = (
-        "(or (unit-type-count cataphract >= 4) "
-        "(or (unit-type-count varangian-guard >= 6) "
-        "(or (unit-type-count 492 >= 6) "
-        "(unit-type-count halberdier >= 6))))"
-    )
     release_guard = parse_expression(
         "(or (goal byzantine-endgame-push-state 3) "
         "(goal byzantine-endgame-push-state 5))",
