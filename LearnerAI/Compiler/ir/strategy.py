@@ -1849,7 +1849,10 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         (
             NativeControlRule(
                 "byzantine-endgame-mode-recovery",
-                facts=(parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),),
+                facts=(
+                    parse_expression(f"(goal {frontier_verified} 1)", SourceLocation(1)),
+                    parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+                ),
                 actions=(
                     parse_expression(f"(set-goal {endgame_mode} 3)", SourceLocation(1)),
                     parse_expression(f"(set-goal {endgame_win} 3)", SourceLocation(1)),
