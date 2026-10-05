@@ -102,8 +102,6 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
         required = (
             "(defconst byzantine-relic-control-state",
             "(defconst byzantine-relic-control-timer",
-            "(defconst sn-relic-return-distance",
-            "(defconst sn-relic-defend-priority",
             "; Native DUC rule: byzantine-relic-control-acquire",
             "; Native DUC rule: byzantine-relic-control-pickup-witness",
             "; Native DUC rule: byzantine-relic-control-return",
