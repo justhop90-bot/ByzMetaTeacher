@@ -374,6 +374,8 @@ def build_feature_traces(
     capability_graph: CapabilityGraph,
     bindings,
     artifact: str | bytes,
+    *,
+    verified_stage_identities: frozenset[str] = frozenset(),
 ) -> tuple[FeatureTrace, ...]:
     """Populate causal feature traces from verified compiler-stage outputs.
 
@@ -622,7 +624,11 @@ def build_feature_traces(
                 feature_id=feature_id,
                 stage=FeatureStage.NATIVE_LOWERING,
                 identity=semantic_identity,
-                status=FeatureNodeStatus.PASS,
+                status=(
+                    FeatureNodeStatus.PASS
+                    if semantic_identity in verified_stage_identities
+                    else FeatureNodeStatus.UNKNOWN
+                ),
                 source_unit=source_unit,
                 location=location,
                 evidence=("native-lowering-gate",),
