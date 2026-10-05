@@ -257,7 +257,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         by_id = {item.identity: item for item in profile.demands}
         expected = {
             "imperial-halberdier-floor": ("halberdier", 18),
-            "imperial-elite-skirmisher-floor": ("6", 18),
+            "imperial-elite-skirmisher-floor": ("skirmisher-line", 18),
             "imperial-hussar-floor": ("hussar", 12),
         }
         for identity, (witness, minimum) in expected.items():
