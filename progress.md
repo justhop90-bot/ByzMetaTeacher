@@ -12,11 +12,12 @@
 - [x] Reconcile production-depth/replacement observations with trash backbone.
 - [x] Lower endgame attack admission onto the Imperial band and standing military package.
 - [x] Reconcile focused regression expectations with the frozen resolver precedence and band admission contract.
-- [ ] Regenerate canonical Byzantine.per and manifest.
-- [ ] Run native zero-findings on generated and checked-in artifacts.
-- [ ] Run full authoritative Compiler CI.
-- [ ] Merge the coherent military tranche to main.
+- [x] Regenerate canonical Byzantine.per and manifest.
+- [x] Run native zero-findings on generated and checked-in artifacts.
+- [x] Run full authoritative Compiler CI.
+- [x] Merge the coherent military tranche to main (PR #421, merge commit `73b6867b050df4806dd0a8a95ff1db494d4e634f`).
 - [ ] Runtime playtest remains user-owned after merge.
 - [x] Repair verified native `players-military-population` registry coverage.
 - [x] Require offensive-objective ownership for Open Field and Trash-to-Open recovery.
 - [x] Permit Fortified handoff once siege is no longer required, including a still-owned non-siege objective.
+- [x] Verified final acceptance: 1,581 compiler tests, 9/9 cross-platform native determinism jobs, native zero-findings, and compiler verification gate all green on head `94ce8ae705226c633b9e3c752cc7bddcb71908ed` before merge.
