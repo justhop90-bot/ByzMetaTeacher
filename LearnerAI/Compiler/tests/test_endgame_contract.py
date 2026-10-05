@@ -65,6 +65,10 @@ class EndgameContractTests(unittest.TestCase):
             identity="byzantine-endgame-objective-v1",
         )
         self.assertEqual(
+            contract.witness_target_goal,
+            "byzantine-offensive-objective-witness-target",
+        )
+        self.assertEqual(
             contract.release_reason_goal,
             "byzantine-offensive-objective-release-reason",
         )
