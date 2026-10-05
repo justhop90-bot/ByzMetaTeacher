@@ -135,11 +135,17 @@ class ByzantineRoleNativeEmissionTests(unittest.TestCase):
 
         self.assertIn(
             """    (or
-        (up-compare-goal byzantine-army-role-screen-size < c:bt-role-screen-floor)
+        (up-compare-goal byzantine-army-role-screen-size < bt-role-screen-floor)
         (or
-            (up-compare-goal byzantine-army-role-main-size < c:bt-role-main-floor)""",
+            (up-compare-goal byzantine-army-role-main-size < bt-role-main-floor)""",
             role_block,
         )
+        self.assertNotIn(" c:bt-role-screen-floor", role_block)
+        self.assertNotIn(" c:bt-role-main-floor", role_block)
+        self.assertNotIn(" c:bt-role-siege-floor-standard", role_block)
+        self.assertNotIn(" c:bt-role-siege-floor-fortified", role_block)
+        self.assertNotIn(" c:bt-role-raid-floor", role_block)
+
         self.assertIn(
             """    (or
         (unit-type-count-total knight-line >= bt-role-raid-floor)
