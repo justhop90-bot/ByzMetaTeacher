@@ -2369,7 +2369,27 @@ def _byzantine_relic_control_plan(profile_id: str):
     )
     return NativeControlPlan(
         states=(state, timer, relic_return, relic_defend),
-        rules=(),
+        rules=(
+            NativeControlRule(
+                "byzantine-relic-control-defaults",
+                facts=(
+                    parse_expression(
+                        f"(goal {state_name} -1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-strategic-number sn-relic-return-distance 255)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-strategic-number sn-relic-defend-priority 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+        ),
     )
 
 
