@@ -1811,6 +1811,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     endgame_mode = "byzantine-endgame-mode"
     endgame_win = "byzantine-endgame-win-condition"
     frontier_verified = "byzantine-endgame-frontier-verified"
+    states = [push_state, push_timer, *sn_states]
     states.extend(
         (
             NativeControlState(
@@ -1898,8 +1899,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         )
     )
-
-    states = [push_state, push_timer, *sn_states]
 
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     target_control = plan.target_control
