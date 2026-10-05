@@ -1606,13 +1606,13 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
 
 
 def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
-    """Lower the Imperial grouped push into persistent push/frontier state.
+    """Lower one-shot Imperial attack-group control and objective progress witnesses.
 
-    Attack-group admission is one-shot: the native attack rule opens one group,
-    the live attack-soldier witness advances the push, and the first no-package
-    witness stops further group formation. Existing offensive-objective class
-    transitions are mirrored into frontier state; the controller never invents
-    target destruction.
+    Grouped attacks stay on the existing native Strategic Number control surface.
+    This controller never emits attack-now for the grouped-push path: community
+    evidence treats attack-groups as SN 36 driven, while attack-now is a
+    separate issue mechanism. The live attack package and objective witness are
+    world-state evidence; timers remain cadence-only elsewhere.
     """
     if profile.profile_id not in {
         "byzantine-land-castle-v1",
@@ -1632,18 +1632,27 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     frontier_name = "byzantine-endgame-frontier"
     push_owner = SemanticId(profile.profile_id, "byzantine-endgame-push")
     frontier_owner = SemanticId(profile.profile_id, "byzantine-endgame-frontier")
-    push_request = GoalSlotRequest(
-        StorageRequestId(push_owner, push_state_name),
-        role=GoalRole.PERSISTENT_STATE,
+    push_state = NativeControlState(
+        push_state_name,
+        GoalSlotRequest(
+            StorageRequestId(push_owner, push_state_name),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
     )
-    frontier_request = GoalSlotRequest(
-        StorageRequestId(frontier_owner, frontier_name),
-        role=GoalRole.PERSISTENT_STATE,
+    frontier_state = NativeControlState(
+        frontier_name,
+        GoalSlotRequest(
+            StorageRequestId(frontier_owner, frontier_name),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
     )
-    push_state = NativeControlState(push_state_name, push_request)
-    frontier_state = NativeControlState(frontier_name, frontier_request)
 
-    p0 = "(goal byzantine-endgame-push-state 0)"
+    live_witness = profile.observation(
+        plan.push_contract.live_witness_ref
+    ).expression
+    cleared_witness = profile.observation(
+        plan.push_contract.cleared_witness_ref
+    ).expression
     current_attack_ready = "(goal byzantine-army-attack-ready 1)"
     open_ground = "(goal byzantine-offensive-objective-claim 0)"
     siege_normal = "(goal byzantine-siege-approach byzantine-siege-approach-normal)"
@@ -1651,19 +1660,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(or (goal byzantine-army-role-state byzantine-army-role-committed) "
         "(goal byzantine-army-role-state byzantine-army-role-raid-split))"
     )
-    live_witness = plan.push_contract.live_witness_expression
-
-    restore_attack_group_controls = (
-        parse_expression("(set-strategic-number sn-number-attack-groups 0)", SourceLocation(1)),
-        parse_expression("(set-strategic-number sn-percent-attack-soldiers 75)", SourceLocation(1)),
-        parse_expression("(set-strategic-number sn-minimum-attack-group-size 4)", SourceLocation(1)),
-        parse_expression("(set-strategic-number sn-maximum-attack-group-size 10)", SourceLocation(1)),
-    )
 
     rules = [
         NativeControlRule(
             "byzantine-endgame-push-initialize",
-            facts=(p0 and parse_expression(p0, SourceLocation(1)),),
+            facts=(parse_expression("(goal byzantine-endgame-push-state 0)", SourceLocation(1)),),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
                 parse_expression("(disable-self)", SourceLocation(1)),
@@ -1686,8 +1687,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression(open_ground, SourceLocation(1)),
                 parse_expression(siege_normal, SourceLocation(1)),
                 parse_expression(committed, SourceLocation(1)),
+                parse_expression("(strategic-number sn-minimum-attack-group-size == 6)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-maximum-attack-group-size == 40)", SourceLocation(1)),
             ),
             actions=(
+                parse_expression(f"(set-strategic-number sn-number-attack-groups {plan.push_contract.attack_group_count})", SourceLocation(1)),
+                parse_expression(f"(set-strategic-number sn-percent-attack-soldiers {plan.push_contract.attack_soldier_percent})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
             ),
         ),
@@ -1704,15 +1709,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         NativeControlRule(
             "byzantine-endgame-push-release",
             facts=(
-                parse_expression(
-                    "(or (goal byzantine-endgame-push-state 2) "
-                    "(goal byzantine-endgame-push-state 3))",
-                    SourceLocation(1),
-                ),
-                parse_expression(f"(not {live_witness})", SourceLocation(1)),
+                parse_expression("(or (goal byzantine-endgame-push-state 2) (goal byzantine-endgame-push-state 3))", SourceLocation(1)),
+                parse_expression(cleared_witness, SourceLocation(1)),
             ),
             actions=(
-                *restore_attack_group_controls,
+                parse_expression("(set-strategic-number sn-number-attack-groups 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-attack-soldiers 75)", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 3)", SourceLocation(1)),
             ),
         ),
@@ -1729,16 +1731,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         NativeControlRule(
             "byzantine-endgame-push-recover",
             facts=(
-                parse_expression(
-                    "(or (goal byzantine-endgame-push-state 1) "
-                    "(or (goal byzantine-endgame-push-state 2) "
-                    "(goal byzantine-endgame-push-state 3)))",
-                    SourceLocation(1),
-                ),
+                parse_expression("(or (goal byzantine-endgame-push-state 1) (or (goal byzantine-endgame-push-state 2) (goal byzantine-endgame-push-state 3)))", SourceLocation(1)),
                 parse_expression("(goal byzantine-army-attack-ready 0)", SourceLocation(1)),
             ),
             actions=(
-                *restore_attack_group_controls,
+                parse_expression("(set-strategic-number sn-number-attack-groups 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-attack-soldiers 75)", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
             ),
         ),
@@ -1756,39 +1754,30 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             "byzantine-endgame-push-advance-release",
             facts=(parse_expression("(goal byzantine-endgame-push-state 4)", SourceLocation(1)),),
             actions=(
+                parse_expression("(set-strategic-number sn-number-attack-groups 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-attack-soldiers 75)", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
             ),
         ),
     ]
 
-    frontier_rules = (
-        (
-            "byzantine-endgame-frontier-defense",
-            0,
-            "byzantine-offensive-objective-class-defense",
-            1,
-        ),
-        (
-            "byzantine-endgame-frontier-production",
-            1,
-            "byzantine-offensive-objective-class-production",
-            2,
-        ),
-        (
-            "byzantine-endgame-frontier-town-center",
-            2,
-            "byzantine-offensive-objective-class-town-center",
-            3,
-        ),
+    frontier_steps = (
+        ("byzantine-endgame-frontier-siege", 0, "byzantine-offensive-objective-class-siege", 1),
+        ("byzantine-endgame-frontier-defense", 1, "byzantine-offensive-objective-class-defense", 2),
+        ("byzantine-endgame-frontier-production", 2, "byzantine-offensive-objective-class-production", 3),
+        ("byzantine-endgame-frontier-town-center", 3, "byzantine-offensive-objective-class-town-center", 3),
     )
-    for identity, frontier_value, class_token, next_value in frontier_rules:
+    for identity, frontier_value, class_token, next_value in frontier_steps:
         rules.append(
             NativeControlRule(
                 identity,
                 facts=(
+                    parse_expression("(goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+                    parse_expression("(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)", SourceLocation(1)),
                     parse_expression(f"(goal byzantine-endgame-frontier {frontier_value})", SourceLocation(1)),
                     parse_expression(f"(goal byzantine-offensive-objective-class {class_token})", SourceLocation(1)),
                     parse_expression("(goal byzantine-offensive-objective-claim 1)", SourceLocation(1)),
+                    parse_expression("(up-compare-goal byzantine-offensive-objective-search == 0)", SourceLocation(1)),
                 ),
                 actions=(
                     parse_expression(f"(set-goal byzantine-endgame-frontier {next_value})", SourceLocation(1)),
@@ -1797,25 +1786,10 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             )
         )
 
-    rules.append(
-        NativeControlRule(
-            "byzantine-endgame-frontier-close",
-            facts=(
-                parse_expression("(goal byzantine-endgame-frontier 3)", SourceLocation(1)),
-                parse_expression("(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)", SourceLocation(1)),
-                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression("(set-goal byzantine-endgame-push-state 4)", SourceLocation(1)),
-            ),
-        )
-    )
-
     return NativeControlPlan(
         states=(push_state, frontier_state),
         rules=tuple(rules),
     )
-
 
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
