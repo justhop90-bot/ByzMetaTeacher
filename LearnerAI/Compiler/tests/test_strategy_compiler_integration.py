@@ -332,6 +332,15 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         }
         for identity, native_ids in expected.items():
             self.assertIn(identity, target_rules)
+            facts = tuple(fact.source for fact in target_rules[identity].facts)
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 1)",
+                facts,
+            )
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 1)",
+                facts,
+            )
             actions = tuple(action.source for action in target_rules[identity].actions)
             self.assertIn("(up-set-target-point byzantine-offensive-objective-point)", actions)
             self.assertIn("(up-filter-distance c: -1 c: 40)", actions)
