@@ -1865,7 +1865,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 demand_owner = SemanticId(profile.profile_id, demand.identity)
                 states.append(
                     NativeControlState(
-                        demand.identity,
+                        f"demand-{demand.identity}",
                         GoalSlotRequest(
                             StorageRequestId(demand_owner, "lifecycle"),
                             role=GoalRole.LIFECYCLE_STATE,
