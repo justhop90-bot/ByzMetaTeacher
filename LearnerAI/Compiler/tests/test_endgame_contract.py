@@ -10,8 +10,12 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgamePlan,
 )
 from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
-from LearnerAI.Compiler.ir.strategy import StrategyProfile, lower_strategy_profile
-from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.ir.strategy import (
+    StrategyEnvelope,
+    StrategicObservationSpec,
+    StrategyProfile,
+    lower_strategy_profile,
+)
 
 
 class EndgameContractTests(unittest.TestCase):
@@ -71,14 +75,13 @@ class EndgameContractTests(unittest.TestCase):
             civ_id=self.effective.civ_id,
             patch_key=self.effective.patch.key,
             effective_snapshot_fingerprint=self.effective.fingerprint,
-            envelope=None,
+            envelope=StrategyEnvelope("1v1", "standard", ("arabia",)),
             postures=(),
             demands=(),
             transitions=(),
             provenance=(),
             observations=(
-                __import__("LearnerAI.Compiler.ir.strategy", fromlist=["StrategicObservationSpec"])
-                .StrategicObservationSpec(
+                StrategicObservationSpec(
                     identity="army-ready",
                     expression="(current-age >= imperial-age)",
                 ),
