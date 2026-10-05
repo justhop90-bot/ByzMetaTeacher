@@ -1977,10 +1977,7 @@ def build_byzantine_stock_strategy(
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),
-        attack_plan=_default_byzantine_attack_plan(
-            stock_profile_id,
-            push_contract=endgame_plan.push_contract,
-        ),
+        attack_plan=_default_byzantine_attack_plan(stock_profile_id),
         duc_plan=_default_byzantine_duc_plan(
             stock_profile_id,
             target_control=endgame_plan.target_control,
