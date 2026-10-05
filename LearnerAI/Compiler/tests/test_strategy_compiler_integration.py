@@ -646,11 +646,15 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             fact.source
             for fact in rules["byzantine-imperial-band-fortified-candidate"].facts
         )
-        self.assertIn("(unit-type-count-total mangonel-line >= 2)", fortified_candidate_facts)
-        self.assertIn("(unit-type-count-total trebuchet >= 2)", fortified_candidate_facts)
-        self.assertIn("(unit-type-count-total bombard-cannon >= 2)", fortified_candidate_facts)
-        self.assertNotIn("unit-type-count-total trebuchet-line", fortified_candidate_facts)
-        self.assertNotIn("unit-type-count-total bombard-cannon-line", fortified_candidate_facts)
+        fortified_siege_guard = next(
+            fact for fact in fortified_candidate_facts
+            if "unit-type-count-total mangonel-line" in fact
+        )
+        self.assertIn("(unit-type-count-total mangonel-line >= 2)", fortified_siege_guard)
+        self.assertIn("(unit-type-count-total trebuchet >= 2)", fortified_siege_guard)
+        self.assertIn("(unit-type-count-total bombard-cannon >= 2)", fortified_siege_guard)
+        self.assertNotIn("unit-type-count-total trebuchet-line", fortified_siege_guard)
+        self.assertNotIn("unit-type-count-total bombard-cannon-line", fortified_siege_guard)
 
         for identity in (
             "byzantine-imperial-band-floor-break-open",
