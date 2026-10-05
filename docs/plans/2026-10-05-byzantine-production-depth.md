@@ -56,9 +56,10 @@
 - Consumes: compiler-generated provider-depth policy.
 - Produces: deterministic checked-in runtime artifact and recorded evidence boundary.
 
-- [ ] Synchronize the canonical Byzantine artifact from the compiler output.
-- [ ] Record that production-depth scaling is standing-demand driven and queue semantics remain OPEN.
-- [ ] Add a regression note that the replay gap is shallow production infrastructure, not a request for larger unconditional premium-unit floors.
+- [x] Implement standing-demand provider depth in the typed compiler: 12 Castle/Imperial provider demands with sequential floor witnesses and no queue-depth inference.
+- [x] Synchronize `main/Byzantine.per` with equivalent root-local provider-depth lifecycles.
+- [x] Record that production-depth scaling is standing-demand driven and queue semantics remain OPEN.
+- [x] Add a regression note that the replay gap is shallow production infrastructure, not a request for larger unconditional premium-unit floors.
 
 ### Task 4: Full verification
 
