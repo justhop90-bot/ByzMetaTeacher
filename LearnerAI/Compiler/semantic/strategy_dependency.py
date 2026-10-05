@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from pathlib import Path
@@ -403,13 +404,30 @@ def build_feature_traces(
             ),
         )
     )
-    for demand in ordered_demands:
-        semantic_identity = _feature_semantic_identity(demand)
+    feature_bases = tuple(
+        (
+            str(
+                getattr(
+                    getattr(demand, "strategic_binding", None),
+                    "strategic_id",
+                    "",
+                )
+            )
+            or _feature_semantic_identity(demand),
+            _feature_semantic_identity(demand),
+        )
+        for demand in ordered_demands
+    )
+    feature_base_counts = Counter(base for base, _ in feature_bases)
+    for demand, (feature_base, semantic_identity) in zip(
+        ordered_demands,
+        feature_bases,
+    ):
         strategic_binding = getattr(demand, "strategic_binding", None)
         feature_id = (
-            str(strategic_binding.strategic_id)
-            if strategic_binding is not None
-            else semantic_identity
+            feature_base
+            if feature_base_counts[feature_base] == 1
+            else f"{feature_base}::{semantic_identity}"
         )
         root_stage = (
             FeatureStage.STRATEGY_IR
