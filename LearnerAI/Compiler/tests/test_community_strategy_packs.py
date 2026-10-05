@@ -202,7 +202,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         by_id = {item.identity: item for item in profile.demands}
 
         cataphract = by_id["imperial-cataphract-sustain"]
-        self.assertEqual(cataphract.target.minimum, 30)
+        self.assertEqual(cataphract.target.minimum, 18)
         self.assertEqual(
             tuple(item.observation_ref for item in cataphract.reason),
             (
@@ -314,8 +314,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             observations["strategy-production-barracks-replacement"],
             "(and (current-age >= imperial-age) "
             "(or (unit-type-count varangian-guard < 14) "
-            "(or (unit-type-count 359 < 18) "
-            "(unit-type-count 359 < 18))))",
+            "(unit-type-count 359 < 18)))",
         )
         self.assertIn(
             "strategy-production-barracks-replacement",
@@ -330,6 +329,26 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                 evidence.observation_ref
                 for evidence in by_id["imperial-barracks-depth-4"].reason
             ],
+        )
+
+        self.assertEqual(
+            observations["strategy-production-stable-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count cataphract < 18) "
+            "(unit-type-count 441 < 12)))",
+        )
+        self.assertEqual(
+            observations["strategy-production-range-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count 6 < 18) "
+            "(unit-type-count 492 < 14)))",
+        )
+        self.assertEqual(
+            observations["strategy-production-siege-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count trebuchet < 4) "
+            "(or (unit-type-count bombard-cannon < 4) "
+            "(unit-type-count-total mangonel-line < 4))))",
         )
 
     def test_imperial_attack_strategic_numbers_are_owned_by_endgame_push_control(self):
