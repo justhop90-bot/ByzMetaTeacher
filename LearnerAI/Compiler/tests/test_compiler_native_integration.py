@@ -94,6 +94,42 @@ class FakeBackend:
         return self.result
 
 class CompilerNativeIntegrationTests(unittest.TestCase):
+    def test_goal_state_reads_are_allowed_in_demand_requirements(self):
+        source = """
+        demand marker {
+            require (goal 7 1)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(goal 7 1)", output)
+
+    def test_up_compare_goal_reads_are_allowed_in_demand_requirements(self):
+        source = """
+        demand marker {
+            require (up-compare-goal 7 >= 1)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(up-compare-goal 7 >= 1)", output)
+
+    def test_goal_state_reads_remain_invalid_as_completion_witnesses(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (goal 7 1)
+            release (goal 7 1)
+        }
+        """
+        with self.assertRaisesRegex(Exception, "expected only"):
+            compile_source(source)
+
     @staticmethod
     def _attack_plan():
         lifecycle = (

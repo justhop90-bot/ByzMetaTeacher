@@ -96,7 +96,7 @@ def _validate_artifact_budget(text: str) -> None:
         if elements > MAX_RULE_ELEMENTS:
             raise CompileError(
                 f"EMITTER-RULE-ELEMENT-LIMIT: generated rule {index} has "
-                f"{elements} elements; DE limit is {MAX_RULE_ELEMENTS}"
+                f"{elements} elements; DE limit is {MAX_RULE_ELEMENTS}: {rule[:1800]}"
             )
 
 

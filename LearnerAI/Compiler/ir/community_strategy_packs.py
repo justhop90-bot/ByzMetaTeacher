@@ -515,7 +515,7 @@ def community_strategy_observations(
         ),
         (
             "stable",
-            "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
+            "(or (unit-type-count-total cataphract-line >= {threshold}) "
             "(or (unit-type-count-total knight-line >= {threshold}) "
             "(or (unit-type-count-total camel-rider-line >= {threshold}) "
             "(unit-type-count-total 441 >= {threshold}))))",
@@ -529,7 +529,7 @@ def community_strategy_observations(
         ),
         (
             "siege-workshop",
-            "(or (or (unit-type-count-total mangonel-line >= {threshold}) "
+            "(or (unit-type-count-total mangonel-line >= {threshold}) "
             "(or (unit-type-count-total trebuchet-line >= {threshold}) "
             "(unit-type-count-total bombard-cannon-line >= {threshold})))",
             "strategy-production-siege-depth",
@@ -574,22 +574,22 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-imperial-cataphract-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count cataphract < 12))",
+            "(and (current-age >= imperial-age) (unit-type-count cataphract < 18))",
             effective.unit_line("cataphract-line").provenance,
         ),
         _observation(
             "strategy-imperial-varangian-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count varangian-guard < 12))",
+            "(and (current-age >= imperial-age) (unit-type-count varangian-guard < 14))",
             effective.unit_line("varangian-guard-line").provenance,
         ),
         _observation(
             "strategy-imperial-ram-replacement",
-            "(and (current-age >= imperial-age) (or (unit-type-count 422 < 2) (or (unit-type-count 548 < 2) (unit-type-count 1258 < 2))))",
+            "(and (current-age >= imperial-age) (or (unit-type-count 422 < 8) (or (unit-type-count 548 < 8) (unit-type-count 1258 < 8))))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
             "strategy-imperial-trebuchet-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count trebuchet < 2))",
+            "(and (current-age >= imperial-age) (unit-type-count trebuchet < 8))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
@@ -1323,7 +1323,7 @@ def community_strategy_demands(
                 minimum=18,
                 age_guard="(current-age >= imperial-age)",
                 action_symbol="skirmisher-line",
-                witness_symbol="skirmisher-line",
+                witness_symbol="6",
                 release_symbol="6",
                 additional_requirements=("(unit-type-count 6 < 18)",),
             ),
@@ -1444,18 +1444,18 @@ def community_strategy_demands(
     # Band-specific Imperial scaling sits above the standing floor.
     # Each line uses mutually exclusive target tiers so one production line has
     # exactly one active upper target at a time.
-    imperial_band_open = "(up-compare-goal byzantine-imperial-band-state == 1)"
-    imperial_band_fortified = "(up-compare-goal byzantine-imperial-band-state == 2)"
-    imperial_band_trash = "(up-compare-goal byzantine-imperial-band-state == 3)"
+    imperial_band_open = "(goal byzantine-imperial-band-state 1)"
+    imperial_band_fortified = "(goal byzantine-imperial-band-state 2)"
+    imperial_band_trash = "(goal byzantine-imperial-band-state 3)"
     enemy_mounted_8 = (
         "(or (players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
-        "(players-unit-type-count any-enemy camel-rider-line >= 8))"
+        "(players-unit-type-count any-enemy camel-rider-line >= 8)))"
     )
     enemy_mounted_12 = (
         "(or (players-unit-type-count any-enemy knight-line >= 12) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 12) "
-        "(players-unit-type-count any-enemy camel-rider-line >= 12))"
+        "(players-unit-type-count any-enemy camel-rider-line >= 12)))"
     )
     enemy_ranged_8 = (
         "(or (players-unit-type-count any-enemy archer-line >= 8) "
@@ -1470,7 +1470,7 @@ def community_strategy_demands(
         "(players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
         "(or (players-unit-type-count any-enemy camel-rider-line >= 8) "
-        "(players-unit-type-count any-enemy mangonel-line >= 2)))"
+        "(players-unit-type-count any-enemy mangonel-line >= 2))))"
     )
 
     band_demands = (
@@ -1616,6 +1616,41 @@ def community_strategy_demands(
     ) in provider_depth_specs:
         building = _building(effective, building_name)
         standing_demand = standing_depth_observations[standing_observation_ref]
+        replacement_expression = (
+            next(
+                item.expression
+                for item in observations
+                if item.identity == replacement_reason_ref
+            )
+            if replacement_reason_ref is not None
+            else None
+        )
+        if building_name == "siege-workshop" and replacement_expression is not None:
+            standing_floor = standing_observation_ref.rsplit("-", 1)[-1]
+            standing_demand = (
+                f"(or (unit-type-count-total 550 >= {standing_floor}) "
+                f"(or (unit-type-count-total 331 >= {standing_floor}) "
+                f"(unit-type-count-total 36 >= {standing_floor})))"
+            )
+            replacement_expression = (
+                "(and (current-age >= imperial-age) "
+                "(or (unit-type-count 331 < 4) "
+                "(or (unit-type-count 36 < 4) "
+                "(unit-type-count-total 550 < 4))))"
+            )
+        elif building_name == "stable" and replacement_expression is not None:
+            standing_floor = standing_observation_ref.rsplit("-", 1)[-1]
+            standing_demand = (
+                f"(or (unit-type-count-total 40 >= {standing_floor}) "
+                f"(or (unit-type-count-total 38 >= {standing_floor}) "
+                f"(or (unit-type-count-total 329 >= {standing_floor}) "
+                f"(unit-type-count-total 441 >= {standing_floor}))))"
+            )
+            replacement_expression = (
+                "(and (current-age >= imperial-age) "
+                "(or (unit-type-count 40 < 18) "
+                "(unit-type-count 441 < 12)))"
+            )
         demands.append(
             _production_depth_demand(
                 identity=identity,
@@ -1632,15 +1667,7 @@ def community_strategy_demands(
                 age_guard=age_guard,
                 standing_demand=standing_demand,
                 replacement_reason_ref=replacement_reason_ref,
-                replacement_expression=(
-                    next(
-                        item.expression
-                        for item in observations
-                        if item.identity == replacement_reason_ref
-                    )
-                    if replacement_reason_ref is not None
-                    else None
-                ),
+                replacement_expression=replacement_expression,
             )
         )
 

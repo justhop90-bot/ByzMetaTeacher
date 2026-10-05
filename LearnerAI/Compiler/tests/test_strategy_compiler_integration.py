@@ -600,8 +600,21 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         open_candidate_facts = tuple(
             fact.source for fact in rules["byzantine-imperial-band-standing-open-candidate"].facts
         )
-        self.assertNotIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
-        self.assertNotIn("(goal byzantine-offensive-objective-claim 0)", open_candidate_facts)
+        self.assertIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
+
+        recovery_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-trash-open-candidate"].facts
+        )
+        self.assertIn("(goal byzantine-offensive-objective-claim 1)", recovery_candidate_facts)
+
+        fortified_clear_source = " ".join(
+            fact.source for fact in rules["byzantine-imperial-band-fortified-open-candidate"].facts
+        )
+        self.assertIn(
+            "(not (goal byzantine-offensive-objective-class "
+            "byzantine-offensive-objective-class-siege))",
+            fortified_clear_source,
+        )
 
         for identity in (
             "byzantine-imperial-band-floor-break-open",
@@ -633,16 +646,51 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             if item.identity == "byzantine-endgame-push-admit"
         )
         facts = tuple(fact.source for fact in rule.facts)
-        self.assertIn(
-            "(up-compare-goal byzantine-imperial-band-state >= 1)",
-            facts,
+        self.assertTrue(
+            any("(unit-type-count halberdier >= 18)" in fact for fact in facts)
         )
-        self.assertTrue(any("(unit-type-count halberdier >= 18)" in fact for fact in facts))
-        self.assertTrue(any("(unit-type-count 6 >= 18)" in fact for fact in facts))
-        self.assertTrue(any("(unit-type-count hussar >= 12)" in fact for fact in facts))
+        self.assertTrue(
+            any("(unit-type-count 6 >= 18)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count hussar >= 12)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count halberdier >= 24)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count 6 >= 24)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count hussar >= 16)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count halberdier >= 30)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count 6 >= 30)" in fact for fact in facts)
+        )
+        self.assertTrue(
+            any("(unit-type-count hussar >= 18)" in fact for fact in facts)
+        )
         self.assertTrue(
             any("(unit-type-count cataphract >= 12)" in fact for fact in facts)
+            or any("(unit-type-count varangian-guard >= 12)" in fact for fact in facts)
+            or any("(unit-type-count 492 >= 12)" in fact for fact in facts)
             or any("(goal byzantine-imperial-band-state 3)" in fact for fact in facts)
+        )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        generated_lines = tuple(
+            line
+            for line in output.splitlines()
+            if line.strip()
+        )
+        self.assertTrue(generated_lines)
+        self.assertLessEqual(
+            max(map(len, generated_lines)),
+            255,
+            "Imperial endgame admission rules must remain within the DE 255-character line limit",
         )
 
     def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
