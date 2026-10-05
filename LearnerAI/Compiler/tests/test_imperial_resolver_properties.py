@@ -148,6 +148,20 @@ class ImperialResolverPropertyTests(unittest.TestCase):
                         value >= threshold,
                     )
 
+
+    def test_open_and_trash_posture_do_not_require_objective_claim(self):
+        base = self.base()
+        without_claim = replace(base, offensive_objective=False)
+        self.assertTrue(ImperialResolver.open_field_eligible(without_claim))
+        trash = replace(
+            without_claim,
+            gold=800,
+            food=3000,
+            wood=3000,
+            current=ImperialBand.GOLD_STARVED_TRASH,
+        )
+        self.assertTrue(ImperialResolver.gold_starved_eligible(trash))
+
     def test_property_open_entry_thresholds_are_inclusive(self):
         base = self.base()
         for field, threshold in OPEN_ENTRY_THRESHOLDS.items():
