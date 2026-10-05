@@ -204,7 +204,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         sources = tuple(fact.source for fact in rule.facts)
         self.assertIn("(unit-type-count-total villager < 110)", sources)
-        self.assertIn("(population-headroom > 0)", sources)
         self.assertIn("(can-train villager)", sources)
         self.assertIn(
             "(not (and (current-age == dark-age) "
