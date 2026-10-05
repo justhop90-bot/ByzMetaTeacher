@@ -315,6 +315,24 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", output)
         self.assertIn("(set-strategic-number sn-native-36 0)", output)
 
+    def test_byzantine_endgame_closure_consumes_verified_campaign_state(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        state_ids = tuple(state.identifier for state in control.states)
+        self.assertIn("byzantine-endgame-mode", state_ids)
+        self.assertIn("byzantine-endgame-win-condition", state_ids)
+        rules = {rule.identity: rule for rule in control.rules}
+        self.assertIn("byzantine-endgame-mode-recovery", rules)
+        self.assertIn("byzantine-endgame-mode-resource-denial", rules)
+        self.assertIn("byzantine-endgame-mode-attrition", rules)
+        self.assertIn("byzantine-endgame-mode-breakthrough", rules)
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("byzantine-endgame-mode", output)
+        self.assertIn("byzantine-endgame-win-condition", output)
+        self.assertIn("Verified frontier ground creates forward-production pressure", output)
+
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
