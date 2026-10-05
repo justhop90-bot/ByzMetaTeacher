@@ -345,19 +345,16 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(up-set-target-object search-remote c: 0)",
                 "(up-get-object-data id 0)",
             ))
+            matching_outputs = tuple(
+                request
+                for request in duc.output_requests
+                if request.rule_identity == identity
+            )
+            self.assertEqual(len(matching_outputs), 1)
+            self.assertEqual(matching_outputs[0].command, "up-get-object-data")
             self.assertEqual(
-                tuple(
-                    request.request.request_id
-                    for request in duc.output_requests
-                    if request.rule_identity == identity
-                ),
-                (
-                    target_rules[identity].identity and next(
-                        request.request.request_id
-                        for request in duc.output_requests
-                        if request.rule_identity == identity
-                    ),
-                ),
+                matching_outputs[0].expression_index,
+                4 + len(native_ids),
             )
 
         misses = {
