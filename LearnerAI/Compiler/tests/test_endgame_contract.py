@@ -147,14 +147,14 @@ class EndgameContractTests(unittest.TestCase):
             tuple(action.source for action in admit.actions),
         )
         self.assertIn(
-            "(set-strategic-number sn-number-attack-groups 1)",
+            "(set-strategic-number sn-native-36 1)",
             tuple(action.source for action in admit.actions),
         )
         self.assertIn(
-            "(set-strategic-number sn-percent-attack-soldiers 100)",
+            "(set-strategic-number sn-native-227 100)",
             tuple(action.source for action in admit.actions),
         )
-        frontier = rules["byzantine-endgame-frontier-defense"]
+        frontier = rules["byzantine-endgame-frontier-witness-defense"]
         self.assertNotIn(
             "(goal byzantine-endgame-push-state 2)",
             tuple(fact.source for fact in frontier.facts),
