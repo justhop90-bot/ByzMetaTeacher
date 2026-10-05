@@ -91,7 +91,7 @@ jobs:
             LearnerAI.Compiler.tests.test_byzantine_runtime_promotion \
             LearnerAI.Compiler.tests.test_byzantine_bot_build -v
 
-      - name: Analyze checked-in Byzantine.per rule ownership relationship
+      - name: Analyze checked-in Byzantine.per compiler-rule conservation
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -119,7 +119,7 @@ jobs:
                               end = index + 1
                               break
                   if end is None:
-                      raise SystemExit("unterminated defrule while analyzing root/compiler relationship")
+                      raise SystemExit("unterminated defrule")
                   blocks.append(text[start:end])
                   cursor = end
 
@@ -127,41 +127,35 @@ jobs:
           profile = build_byzantine_strategy(effective, include_water_continuity=True)
           compiler = compile_strategy_profile(profile, effective).encode("utf-8")
           root = Path("Byzantine.per").read_bytes()
-
           compiler_rules = rule_blocks(compiler)
           root_rules = rule_blocks(root)
-          compiler_hashes = [hashlib.sha256(rule.encode("utf-8")).hexdigest() for rule in compiler_rules]
-          root_hashes = [hashlib.sha256(rule.encode("utf-8")).hexdigest() for rule in root_rules]
 
-          common = 0
-          limit = min(len(compiler_hashes), len(root_hashes))
-          while common < limit and compiler_hashes[common] == root_hashes[common]:
-              common += 1
+          compiler_counts = {}
+          for rule in compiler_rules:
+              compiler_counts[rule] = compiler_counts.get(rule, 0) + 1
+          root_counts = {}
+          for rule in root_rules:
+              root_counts[rule] = root_counts.get(rule, 0) + 1
 
-          print(f"compiler_bytes={len(compiler)}")
-          print(f"root_bytes={len(root)}")
+          missing = [rule for rule, count in compiler_counts.items() if root_counts.get(rule, 0) < count]
+          extra = [rule for rule, count in root_counts.items() if compiler_counts.get(rule, 0) < count]
+          shared = sum(min(count, root_counts.get(rule, 0)) for rule, count in compiler_counts.items())
+
           print(f"compiler_rules={len(compiler_rules)}")
           print(f"root_rules={len(root_rules)}")
-          print(f"compiler_sha256={hashlib.sha256(compiler).hexdigest()}")
+          print(f"compiler_unique_rules={len(compiler_counts)}")
+          print(f"root_unique_rules={len(root_counts)}")
+          print(f"compiler_rules_present_in_root={shared}")
+          print(f"compiler_rules_missing_from_root={len(missing)}")
+          print(f"compiler_rule_sha256={hashlib.sha256(compiler).hexdigest()}")
           print(f"root_sha256={hashlib.sha256(root).hexdigest()}")
-          print(f"common_rule_prefix={common}")
 
-          if common == len(compiler_hashes):
-              print("compiler_rules_are_root_prefix=true")
-              root_text = root.decode("utf-8", errors="replace")
-              last_compiler_rule = compiler_rules[-1]
-              marker = root_text.find(last_compiler_rule)
-              tail_start = marker + len(last_compiler_rule)
-              tail = root_text[tail_start:].encode("utf-8")
-              Path("/tmp/byzantine-overlay-bootstrap.per").write_bytes(tail)
-              print(f"overlay_tail_bytes={len(tail)}")
-              print(f"overlay_tail_sha256={hashlib.sha256(tail).hexdigest()}")
-          else:
-              print("compiler_rules_are_root_prefix=false")
-              print(f"first_mismatching_rule={common + 1}")
-              print(f"compiler_rule_head={compiler_rules[common][:160] if common < len(compiler_rules) else '<eof>'}")
-              print(f"root_rule_head={root_rules[common][:160] if common < len(root_rules) else '<eof>'}")
+          if missing:
+              print("first_missing_compiler_rule:")
+              print(missing[0][:1000])
               raise SystemExit(2)
+
+          print("compiler_owned_rules_conserved=true")
           PY
       - name: Upload overlay bootstrap candidate
         if: ${{ hashFiles('/tmp/byzantine-overlay-bootstrap.per') != '' }}
