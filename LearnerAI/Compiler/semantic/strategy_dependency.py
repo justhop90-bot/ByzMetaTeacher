@@ -135,6 +135,180 @@ class FeatureEdge:
         )
 
 
+
+@dataclass(frozen=True)
+class FeatureTraceDiagnostic:
+    code: str
+    feature_id: str
+    stage: FeatureStage
+    source_stage: FeatureStage
+    target_stage: FeatureStage
+    severity: DiagnosticSeverity
+    message: str
+    expected: str
+    observed: str | None
+    chain: tuple[str, ...]
+    locations: tuple[str, ...] = ()
+    rule_orders: tuple[int, ...] = ()
+
+
+@dataclass(frozen=True)
+class FeatureTrace:
+    feature_id: str
+    root_stage: FeatureStage
+    nodes: tuple[FeatureNode, ...]
+    edges: tuple[FeatureEdge, ...]
+    metadata: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def ordered_nodes(self) -> tuple[FeatureNode, ...]:
+        return tuple(sorted(
+            self.nodes,
+            key=lambda node: (
+                _FEATURE_STAGE_INDEX[node.stage],
+                node.identity,
+                node.node_id,
+            ),
+        ))
+
+    @property
+    def ordered_edges(self) -> tuple[FeatureEdge, ...]:
+        return tuple(sorted(self.edges, key=lambda edge: edge.order))
+
+    @property
+    def first_broken_edge(self) -> FeatureEdge | None:
+        return first_broken_edge(self)
+
+    @property
+    def status(self) -> FeatureNodeStatus:
+        broken = self.first_broken_edge
+        if broken is not None:
+            return FeatureNodeStatus.INVALID
+        if any(edge.status is FeatureEdgeStatus.UNKNOWN for edge in self.edges):
+            return FeatureNodeStatus.UNKNOWN
+        if any(edge.status is FeatureEdgeStatus.BLOCKED for edge in self.edges):
+            return FeatureNodeStatus.BLOCKED
+        statuses = {node.status for node in self.nodes}
+        if FeatureNodeStatus.INVALID in statuses:
+            return FeatureNodeStatus.INVALID
+        if FeatureNodeStatus.MISSING in statuses:
+            return FeatureNodeStatus.MISSING
+        if FeatureNodeStatus.BLOCKED in statuses:
+            return FeatureNodeStatus.BLOCKED
+        if FeatureNodeStatus.UNKNOWN in statuses:
+            return FeatureNodeStatus.UNKNOWN
+        if FeatureNodeStatus.OPEN in statuses:
+            return FeatureNodeStatus.OPEN
+        return FeatureNodeStatus.PASS
+
+    def diagnostic(self) -> FeatureTraceDiagnostic | None:
+        edge = self.first_broken_edge
+        if edge is None:
+            return None
+        stage_index = _FEATURE_STAGE_INDEX[edge.target]
+        chain = tuple(
+            node.node_id
+            for node in self.ordered_nodes
+            if _FEATURE_STAGE_INDEX[node.stage] <= stage_index
+        )
+        locations = tuple(sorted({
+            node.location
+            for node in self.ordered_nodes
+            if node.location is not None
+        }))
+        rule_orders = tuple(sorted({
+            rule_order
+            for node in self.ordered_nodes
+            if _FEATURE_STAGE_INDEX[node.stage] <= stage_index
+            for rule_order in node.rule_orders
+        }))
+        return FeatureTraceDiagnostic(
+            code=edge.diagnostic_code or "BYZ-TRACE-FIRST-BROKEN",
+            feature_id=self.feature_id,
+            stage=edge.target,
+            source_stage=edge.source,
+            target_stage=edge.target,
+            severity=DiagnosticSeverity.ERROR,
+            message=edge.message or (
+                f"feature {self.feature_id!r} violates contract {edge.contract!r}"
+            ),
+            expected=edge.expected_identity,
+            observed=edge.observed_identity,
+            chain=chain,
+            locations=locations,
+            rule_orders=rule_orders,
+        )
+
+
+class FeatureTraceBuilder:
+    """Mutable assembly surface for one immutable feature trace."""
+
+    def __init__(self, feature_id: str):
+        if not feature_id:
+            raise ValueError("feature_id must be non-empty")
+        self.feature_id = feature_id
+        self._nodes: dict[tuple[FeatureStage, str], FeatureNode] = {}
+        self._edges: dict[str, FeatureEdge] = {}
+
+    def add_node(self, node: FeatureNode) -> "FeatureTraceBuilder":
+        self._validate_feature_id(node.feature_id)
+        key = (node.stage, node.identity)
+        existing = self._nodes.get(key)
+        if existing is not None and existing != node:
+            raise ValueError(f"conflicting feature node {node.node_id}")
+        self._nodes[key] = node
+        return self
+
+    def add_edge(self, edge: FeatureEdge) -> "FeatureTraceBuilder":
+        self._validate_feature_id(edge.feature_id)
+        if _FEATURE_STAGE_INDEX[edge.target] <= _FEATURE_STAGE_INDEX[edge.source]:
+            raise ValueError("feature edges must move forward through stage order")
+        existing = self._edges.get(edge.edge_id)
+        if existing is not None and existing != edge:
+            raise ValueError(f"conflicting feature edge {edge.edge_id}")
+        self._edges[edge.edge_id] = edge
+        return self
+
+    def build(
+        self,
+        *,
+        root_stage: FeatureStage,
+        metadata: tuple[tuple[str, str], ...] = (),
+    ) -> FeatureTrace:
+        if self._nodes:
+            minimum_stage = min(
+                (node.stage for node in self._nodes.values()),
+                key=_FEATURE_STAGE_INDEX.__getitem__,
+            )
+            if _FEATURE_STAGE_INDEX[root_stage] > _FEATURE_STAGE_INDEX[minimum_stage]:
+                raise ValueError("root_stage cannot follow earliest feature evidence")
+        node_ids = {node.node_id for node in self._nodes.values()}
+        for edge in self._edges.values():
+            if edge.source_node_id is not None and edge.source_node_id not in node_ids:
+                raise ValueError(f"unknown source node {edge.source_node_id}")
+            if edge.target_node_id is not None and edge.target_node_id not in node_ids:
+                raise ValueError(f"unknown target node {edge.target_node_id}")
+        return FeatureTrace(
+            feature_id=self.feature_id,
+            root_stage=root_stage,
+            nodes=tuple(self._nodes.values()),
+            edges=tuple(self._edges.values()),
+            metadata=tuple(sorted(metadata)),
+        )
+
+    def _validate_feature_id(self, feature_id: str) -> None:
+        if feature_id != self.feature_id:
+            raise ValueError(
+                f"feature id mismatch: expected {self.feature_id!r}, got {feature_id!r}"
+            )
+
+
+def first_broken_edge(trace: FeatureTrace) -> FeatureEdge | None:
+    for edge in trace.ordered_edges:
+        if edge.status is FeatureEdgeStatus.BROKEN:
+            return edge
+    return None
+
 class StrategyDependencyProof(str, Enum):
     PROVEN = "PROVEN"
     CONDITIONAL = "CONDITIONAL"
@@ -692,6 +866,15 @@ def analyze_strategy_dependencies(
 
 
 __all__ = [
+    "FEATURE_STAGE_ORDER",
+    "FeatureEdge",
+    "FeatureEdgeStatus",
+    "FeatureNode",
+    "FeatureNodeStatus",
+    "FeatureStage",
+    "FeatureTrace",
+    "FeatureTraceBuilder",
+    "FeatureTraceDiagnostic",
     "StrategyDependencyCode",
     "StrategyDependencyEdge",
     "StrategyDependencyFinding",
@@ -699,4 +882,5 @@ __all__ = [
     "StrategyDependencyProof",
     "StrategyDependencyReport",
     "analyze_strategy_dependencies",
+    "first_broken_edge",
 ]
