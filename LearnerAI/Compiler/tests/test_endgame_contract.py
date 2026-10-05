@@ -112,17 +112,18 @@ class EndgameContractTests(unittest.TestCase):
         plan = profile.endgame_plan
         self.assertIsNotNone(plan)
         self.assertIsNotNone(plan.push_contract)
+        self.assertIsNone(plan.push_contract.frontier_witness_ref)
         compilation = lower_strategy_profile(profile, self.effective)
 
         self.assertIn(
             "byzantine-endgame-push-state",
             {state.identifier for state in compilation.control_plan.states},
         )
-        self.assertIn(
+        self.assertNotIn(
             "byzantine-endgame-frontier",
             {state.identifier for state in compilation.control_plan.states},
         )
-        self.assertIn(
+        self.assertNotIn(
             "byzantine-endgame-frontier-witness",
             {state.identifier for state in compilation.control_plan.states},
         )
@@ -131,12 +132,6 @@ class EndgameContractTests(unittest.TestCase):
             "byzantine-endgame-push-imperial-ready",
             "byzantine-endgame-push-admit",
             "byzantine-endgame-push-release",
-            "byzantine-endgame-frontier-witness-defense",
-            "byzantine-endgame-frontier-witness-production",
-            "byzantine-endgame-frontier-witness-town-center",
-            "byzantine-endgame-frontier-commit-defense",
-            "byzantine-endgame-frontier-commit-production-from-siege",
-            "byzantine-endgame-frontier-commit-town-center-from-production",
         ):
             self.assertIn(identity, rules)
 
@@ -154,14 +149,15 @@ class EndgameContractTests(unittest.TestCase):
             "(set-strategic-number sn-native-227 100)",
             tuple(action.source for action in admit.actions),
         )
-        frontier = rules["byzantine-endgame-frontier-witness-defense"]
-        self.assertNotIn(
-            "(goal byzantine-endgame-push-state 2)",
-            tuple(fact.source for fact in frontier.facts),
-        )
         self.assertIn(
-            "(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)",
-            tuple(fact.source for fact in frontier.facts),
+            "(attack-soldier-count <= 0)",
+            tuple(fact.source for fact in admit.facts),
+        )
+        self.assertTrue(
+            all(
+                "byzantine-offensive-objective-" not in fact.source
+                for fact in admit.facts
+            )
         )
 
     def test_endgame_runtime_recovery_requires_recovery_push_state(self):
