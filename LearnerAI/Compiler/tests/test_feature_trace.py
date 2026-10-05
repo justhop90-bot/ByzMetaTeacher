@@ -399,8 +399,8 @@ class FeatureTraceBuilderTests(unittest.TestCase):
             tuple(d.feature_id for d in report.first_broken_edge_diagnostics),
             (
                 "research-capped-ram",
-                "resource-camp-gold",
                 "research-pikeman",
+                "resource-camp-gold",
             ),
         )
 
