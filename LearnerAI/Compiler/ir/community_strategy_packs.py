@@ -42,6 +42,11 @@ from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
 from .camp_control import CampResource, default_byzantine_camp_controller
 
+_ENDGAME_CATAPHRACHT_TARGET = 30
+_ENDGAME_VARIANGIAN_TARGET = 24
+_ENDGAME_RAM_TARGET = 8
+_ENDGAME_TREBUCHET_TARGET = 8
+
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
     return (
@@ -1379,8 +1384,9 @@ def community_strategy_demands(
                 owner="endgame-replacement",
                 priority=_StrategicPriority.DEFENSE,
                 line="cataphract-line",
-                minimum=12,
+                minimum=_ENDGAME_CATAPHRACHT_TARGET,
                 reason_refs=(
+                    "strategy-imperial-spend-food",
                     "strategy-imperial-spend-gold",
                     "strategy-imperial-cataphract-replacement",
                 ),
@@ -1399,8 +1405,9 @@ def community_strategy_demands(
                 owner="endgame-replacement",
                 priority=_StrategicPriority.DEFENSE,
                 line="varangian-guard-line",
-                minimum=12,
+                minimum=_ENDGAME_VARIANGIAN_TARGET,
                 reason_refs=(
+                    "strategy-imperial-spend-food",
                     "strategy-imperial-spend-gold",
                     "strategy-enemy-infantry-pressure",
                     "strategy-imperial-varangian-replacement",
@@ -1424,7 +1431,7 @@ def community_strategy_demands(
                 owner="endgame-siege-replacement",
                 priority=_StrategicPriority.DEFENSE,
                 line="battering-ram-line",
-                minimum=4,
+                minimum=_ENDGAME_RAM_TARGET,
                 reason_refs=(
                     "strategy-imperial-spend-wood",
                     "strategy-imperial-ram-replacement",
@@ -1447,7 +1454,7 @@ def community_strategy_demands(
                 owner="endgame-siege-replacement",
                 priority=_StrategicPriority.DEFENSE,
                 line="trebuchet-line",
-                minimum=4,
+                minimum=_ENDGAME_TREBUCHET_TARGET,
                 reason_refs=(
                     "strategy-imperial-spend-wood",
                     "strategy-imperial-spend-gold",
