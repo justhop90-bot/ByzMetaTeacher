@@ -122,14 +122,21 @@ class EndgameContractTests(unittest.TestCase):
             "byzantine-endgame-frontier",
             {state.identifier for state in compilation.control_plan.states},
         )
+        self.assertIn(
+            "byzantine-endgame-frontier-witness",
+            {state.identifier for state in compilation.control_plan.states},
+        )
         rules = {rule.identity: rule for rule in compilation.control_plan.rules}
         for identity in (
             "byzantine-endgame-push-imperial-ready",
             "byzantine-endgame-push-admit",
             "byzantine-endgame-push-release",
-            "byzantine-endgame-frontier-defense",
-            "byzantine-endgame-frontier-production",
-            "byzantine-endgame-frontier-town-center",
+            "byzantine-endgame-frontier-witness-defense",
+            "byzantine-endgame-frontier-witness-production",
+            "byzantine-endgame-frontier-witness-town-center",
+            "byzantine-endgame-frontier-commit-defense",
+            "byzantine-endgame-frontier-commit-production-from-siege",
+            "byzantine-endgame-frontier-commit-town-center-from-production",
         ):
             self.assertIn(identity, rules)
 
