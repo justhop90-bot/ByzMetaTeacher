@@ -330,6 +330,12 @@ class EndgameContractTests(unittest.TestCase):
                 "(goal byzantine-offensive-objective-claim 0)",
             ),
         )
+        push_release = configured_rules["byzantine-endgame-push-release"]
+        push_release_facts = tuple(fact.source for fact in push_release.facts)
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
+            push_release_facts,
+        )
         for identity in (
             "byzantine-endgame-frontier-commit-defense",
             "byzantine-endgame-frontier-commit-production",
