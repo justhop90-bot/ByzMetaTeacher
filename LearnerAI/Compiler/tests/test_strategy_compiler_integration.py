@@ -240,6 +240,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-offensive-objective-search",
             "byzantine-offensive-enemy-player",
             "byzantine-offensive-objective-claim",
+            "byzantine-offensive-objective-target-latch",
+            "byzantine-offensive-objective-target-siege",
+            "byzantine-offensive-objective-target-defense",
+            "byzantine-offensive-objective-target-production",
+            "byzantine-offensive-objective-target-town-center",
             "byzantine-offensive-objective-witness-target",
             "byzantine-offensive-objective-release-reason",
             "byzantine-offensive-objective-release-search",
@@ -294,6 +299,91 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             output,
         )
 
+    def test_byzantine_endgame_objective_target_control_is_class_priority_and_fail_closed(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        duc = compilation.duc_plan
+        assert control is not None
+        assert duc is not None
+
+        admit = next(rule for rule in control.rules if rule.identity == "byzantine-endgame-objective-admit")
+        admit_facts = tuple(fact.source for fact in admit.facts)
+        admit_actions = tuple(action.source for action in admit.actions)
+        self.assertIn("(current-age >= castle-age)", admit_facts)
+        self.assertIn("(goal byzantine-army-attack-ready 1)", admit_facts)
+        self.assertIn("(goal byzantine-siege-approach byzantine-siege-approach-normal)", admit_facts)
+        self.assertIn("(set-goal byzantine-offensive-objective-claim 1)", admit_actions)
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-siege)",
+            admit_actions,
+        )
+
+        target_rules = {
+            rule.identity: rule
+            for rule in duc.rules
+            if rule.identity.startswith("byzantine-endgame-objective-target-")
+        }
+        expected = {
+            "byzantine-endgame-objective-target-siege": (36, 331, 42, 913),
+            "byzantine-endgame-objective-target-defense": (82, 235, 236, 952, 927),
+            "byzantine-endgame-objective-target-production": (49, 12, 87, 101, 104, 83),
+            "byzantine-endgame-objective-target-town-center": (109, 71, 141, 142),
+        }
+        for identity, native_ids in expected.items():
+            self.assertIn(identity, target_rules)
+            actions = tuple(action.source for action in target_rules[identity].actions)
+            self.assertIn("(up-set-target-point byzantine-offensive-objective-point)", actions)
+            self.assertIn("(up-filter-distance c: -1 c: 40)", actions)
+            remote = tuple(
+                int(action.split("c: ", 1)[1].split(" ", 1)[0])
+                for action in actions
+                if action.startswith("(up-find-remote c: ")
+            )
+            self.assertEqual(remote, native_ids)
+            self.assertEqual(actions[-2:], (
+                "(up-set-target-object search-remote c: 0)",
+                "(up-get-object-data id 0)",
+            ))
+            self.assertEqual(
+                tuple(
+                    request.request.request_id
+                    for request in duc.output_requests
+                    if request.rule_identity == identity
+                ),
+                (
+                    target_rules[identity].identity and next(
+                        request.request.request_id
+                        for request in duc.output_requests
+                        if request.rule_identity == identity
+                    ),
+                ),
+            )
+
+        misses = {
+            rule.identity: tuple(action.source for action in rule.actions)
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-objective-target-miss-")
+        }
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-tc-exhausted)",
+            misses["byzantine-endgame-objective-target-miss-town-center"],
+        )
+        enter_rules = {
+            rule.identity: tuple(fact.source for fact in rule.facts)
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-objective-enter-executing-")
+        }
+        self.assertIn(
+            "(up-compare-goal byzantine-offensive-objective-target-siege >= 1)",
+            enter_rules["byzantine-endgame-objective-enter-executing-siege"],
+        )
+        self.assertIn(
+            "(up-compare-goal byzantine-offensive-objective-target-town-center >= 1)",
+            enter_rules["byzantine-endgame-objective-enter-executing-town-center"],
+        )
+
     def test_byzantine_endgame_objective_witness_release_lifecycle(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
         control = compilation.control_plan
@@ -303,7 +393,15 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         rules = {rule.identity: rule for rule in control.rules}
         for identity in (
-            "byzantine-endgame-objective-enter-executing",
+            "byzantine-endgame-objective-admit",
+            "byzantine-endgame-objective-target-miss-siege",
+            "byzantine-endgame-objective-target-miss-defense",
+            "byzantine-endgame-objective-target-miss-production",
+            "byzantine-endgame-objective-target-miss-town-center",
+            "byzantine-endgame-objective-enter-executing-siege",
+            "byzantine-endgame-objective-enter-executing-defense",
+            "byzantine-endgame-objective-enter-executing-production",
+            "byzantine-endgame-objective-enter-executing-town-center",
             "byzantine-endgame-objective-executing-to-witness",
             "byzantine-endgame-objective-witness-live-rearm",
             "byzantine-endgame-objective-witness-failed-execution",
