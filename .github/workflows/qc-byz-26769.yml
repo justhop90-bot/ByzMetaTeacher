@@ -1,0 +1,57 @@
+name: Temporary Byzantine 26769 QC
+
+on:
+  push:
+    branches:
+      - fix/byz-imperial-siege-native-ids-20261005
+
+permissions:
+  contents: read
+
+jobs:
+  qc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Verify compiler emission
+        env:
+          PYTHONPATH: LearnerAI
+        run: |
+          python - <<'PY'
+          from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_strategy, compile_strategy_profile
+          from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+          effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+          profile = build_byzantine_strategy(effective)
+          output = compile_strategy_profile(profile, effective)
+          assert "(unit-type-count-total trebuchet >= 2)" in output
+          assert "(unit-type-count-total bombard-cannon >= 2)" in output
+          assert "unit-type-count-total trebuchet-line" not in output
+          assert "unit-type-count-total bombard-cannon-line" not in output
+          print("compiler emission native siege identifiers: PASS")
+          PY
+      - name: Verify checked-in artifact
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("Byzantine.per")
+          text = p.read_text(encoding="utf-8")
+          assert "unit-type-count-total trebuchet-line" not in text
+          assert "unit-type-count-total bombard-cannon-line" not in text
+          assert "(unit-type-count-total trebuchet >= 2)" in text
+          assert "(unit-type-count-total bombard-cannon >= 2)" in text
+          lines = text.splitlines()
+          assert "26769" not in lines[26768]
+          print("checked-in Byzantine.per native siege identifiers: PASS")
+          PY
+      - name: Native zero-findings on checked-in artifact
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/byzantine-native.json
+      - name: Full compiler regression suite
+        env:
+          PYTHONPATH: LearnerAI
+        run: python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
