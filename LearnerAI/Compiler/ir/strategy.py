@@ -1772,7 +1772,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             NativeControlRule(
                 identity,
                 facts=(
-                    parse_expression("(goal byzantine-endgame-push-state 2)", SourceLocation(1)),
                     parse_expression("(goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)", SourceLocation(1)),
                     parse_expression(f"(goal byzantine-endgame-frontier {frontier_value})", SourceLocation(1)),
                     parse_expression(f"(goal byzantine-offensive-objective-class {class_token})", SourceLocation(1)),
