@@ -1350,10 +1350,14 @@ def community_strategy_demands(
                 age_guard=age_guard,
                 standing_demand=standing_demand,
                 replacement_reason_ref=replacement_reason_ref,
-                replacement_expression=next(
-                    item.expression
-                    for item in observations
-                    if item.identity == replacement_reason_ref
+                replacement_expression=(
+                    next(
+                        item.expression
+                        for item in observations
+                        if item.identity == replacement_reason_ref
+                    )
+                    if replacement_reason_ref is not None
+                    else None
                 ),
             )
         )
