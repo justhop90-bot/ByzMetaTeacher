@@ -2925,16 +2925,37 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     cleared_witness = profile.observation(
         plan.push_contract.cleared_witness_ref
     ).expression
+    imperial_band_ready = "(up-compare-goal byzantine-imperial-band-state >= 1)"
+    imperial_floor_ready = (
+        "(and (unit-type-count halberdier >= 18) "
+        "(and (unit-type-count 6 >= 18) (unit-type-count hussar >= 12)))"
+    )
+    premium_ready = (
+        "(or (unit-type-count cataphract >= 12) "
+        "(or (unit-type-count varangian-guard >= 12) "
+        "(unit-type-count 492 >= 12)))"
+    )
+    gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
     military_ready = (
-        "(or (unit-type-count cataphract >= 4) "
-        "(or (unit-type-count varangian-guard >= 6) "
-        "(or (unit-type-count 492 >= 6) "
-        "(unit-type-count halberdier >= 6))))"
+        f"(and {imperial_band_ready} "
+        f"(and {imperial_floor_ready} "
+        f"(or {premium_ready} {gold_starved_exception})))"
+    )
+    standard_siege_ready = (
+        "(or (unit-type-count trebuchet >= 4) "
+        "(or (unit-type-count bombard-cannon >= 4) "
+        "(unit-type-count-total mangonel-line >= 4)))"
+    )
+    fortified_siege_ready = (
+        "(or (unit-type-count trebuchet >= 6) "
+        "(or (unit-type-count bombard-cannon >= 6) "
+        "(unit-type-count-total mangonel-line >= 6)))"
     )
     siege_ready = (
-        "(or (unit-type-count trebuchet >= 1) "
-        "(or (unit-type-count bombard-cannon >= 1) "
-        "(unit-type-count-total mangonel-line >= 1)))"
+        f"(or (and (goal byzantine-imperial-band-state 2) "
+        f"{fortified_siege_ready}) "
+        f"(and (not (goal byzantine-imperial-band-state 2)) "
+        f"{standard_siege_ready}))"
     )
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     frontier_witness = (
