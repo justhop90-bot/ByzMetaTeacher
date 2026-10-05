@@ -600,8 +600,25 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         open_candidate_facts = tuple(
             fact.source for fact in rules["byzantine-imperial-band-standing-open-candidate"].facts
         )
-        self.assertNotIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
-        self.assertNotIn("(goal byzantine-offensive-objective-claim 0)", open_candidate_facts)
+        self.assertIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
+
+        trash_open_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-trash-open-candidate"].facts
+        )
+        self.assertIn("(goal byzantine-offensive-objective-claim 1)", trash_open_candidate_facts)
+
+        fortified_open_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-fortified-open-candidate"].facts
+        )
+        self.assertIn(
+            "(not (goal byzantine-offensive-objective-class "
+            "byzantine-offensive-objective-class-siege))",
+            fortified_open_candidate_facts,
+        )
+        self.assertNotIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            fortified_open_candidate_facts,
+        )
 
         for identity in (
             "byzantine-imperial-band-floor-break-open",
@@ -610,6 +627,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-imperial-band-fortified-candidate",
             "byzantine-imperial-band-standing-open-candidate",
             "byzantine-imperial-band-standing-trash-candidate",
+            "byzantine-imperial-band-trash-open-candidate",
+            "byzantine-imperial-band-fortified-open-candidate",
             "byzantine-imperial-band-transition-open",
             "byzantine-imperial-band-transition-fortified",
             "byzantine-imperial-band-transition-trash",
@@ -678,6 +697,22 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
         self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
+        self.assertIn(
+            "(up-compare-goal byzantine-imperial-band-state != 2)",
+            admit_facts,
+        )
+        fortified_admit = rules["byzantine-endgame-push-admit-fortified"]
+        fortified_facts = tuple(fact.source for fact in fortified_admit.facts)
+        self.assertIn(
+            "(goal byzantine-imperial-band-state 2)",
+            fortified_facts,
+        )
+        self.assertIn(
+            "(or (unit-type-count trebuchet >= 6) "
+            "(or (unit-type-count bombard-cannon >= 6) "
+            "(unit-type-count-total mangonel-line >= 6)))",
+            fortified_facts,
+        )
 
         live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
         self.assertNotIn("sn-native-36", " ".join(live_actions))
@@ -735,7 +770,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             release_facts,
         )
         self.assertIn("(attack-soldier-count <= 0)", release_facts)
-        self.assertIn("(unit-type-count cataphract >= 4)", " ".join(release_facts))
+        self.assertIn("(unit-type-count cataphract >= 12)", " ".join(release_facts))
 
         release_actions = tuple(action.source for action in rules["byzantine-endgame-push-release"].actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 1)", release_actions)

@@ -21,7 +21,6 @@ FLOOR_THRESHOLDS = {
 FLOOR_RECOVERY_THRESHOLDS = {
     "food": 2000,
     "wood": 1700,
-    "gold": 1600,
 }
 
 OPEN_ENTRY_THRESHOLDS = {
@@ -128,31 +127,42 @@ class ImperialResolverPropertyTests(unittest.TestCase):
                             ImperialReason.FLOOR_BREAK,
                         )
 
-    def test_property_floor_recovery_resources_are_inclusive(self):
+    def test_floor_recovery_is_exactly_the_military_floor(self):
         base = self.base()
-        for field, threshold in FLOOR_RECOVERY_THRESHOLDS.items():
-            for value in around(threshold):
-                with self.subTest(field=field, value=value):
-                    case = replace(
-                        base,
-                        **{field: value},
-                    )
-                    decision = self.resolve(
-                        case,
-                        dwell_seconds=30,
-                        guard_seconds=20,
-                        rearm_seconds=0,
-                    )
-                    self.assertEqual(
-                        ImperialResolver.floor_recovered(case),
-                        value >= threshold,
-                    )
+        for field, threshold in FLOOR_THRESHOLDS.items():
+            below = replace(base, **{field: threshold - 1})
+            exact = replace(base, **{field: threshold})
+            self.assertFalse(ImperialResolver.floor_recovered(below))
+            self.assertTrue(ImperialResolver.floor_recovered(exact))
+
+    def test_gold_starved_trash_remains_reachable_at_low_gold(self):
+        base = replace(
+            self.base(),
+            current=ImperialBand.OPEN_FIELD,
+            gold=800,
+            food=3000,
+            wood=3000,
+        )
+        decision = self.resolve(
+            base,
+            dwell_seconds=60,
+            guard_seconds=30,
+            rearm_seconds=0,
+        )
+        self.assertEqual(
+            decision.destination,
+            ImperialBand.GOLD_STARVED_TRASH,
+        )
+        self.assertEqual(
+            decision.reason,
+            ImperialReason.GOLD_STARVED,
+        )
 
 
-    def test_open_and_trash_posture_do_not_require_objective_claim(self):
+    def test_open_and_trash_posture_require_offensive_objective_claim(self):
         base = self.base()
         without_claim = replace(base, offensive_objective=False)
-        self.assertTrue(ImperialResolver.open_field_eligible(without_claim))
+        self.assertFalse(ImperialResolver.open_field_eligible(without_claim))
         trash = replace(
             without_claim,
             gold=800,
@@ -160,7 +170,21 @@ class ImperialResolverPropertyTests(unittest.TestCase):
             wood=3000,
             current=ImperialBand.GOLD_STARVED_TRASH,
         )
-        self.assertTrue(ImperialResolver.gold_starved_eligible(trash))
+        self.assertFalse(ImperialResolver.gold_starved_eligible(trash))
+
+    def test_property_open_entry_requires_offensive_objective(self):
+        base = self.base()
+        without_objective = replace(base, offensive_objective=False)
+        decision = self.resolve(
+            without_objective,
+            dwell_seconds=30,
+            guard_seconds=20,
+            rearm_seconds=0,
+        )
+        self.assertNotEqual(
+            decision.destination,
+            ImperialBand.OPEN_FIELD,
+        )
 
     def test_property_open_entry_thresholds_are_inclusive(self):
         base = self.base()
@@ -383,7 +407,7 @@ class ImperialResolverPropertyTests(unittest.TestCase):
             (
                 "economic_collapse",
                 ImperialBand.OPEN_FIELD,
-                60,
+                30,
                 30,
                 ImperialBand.STANDING_FLOOR,
             ),

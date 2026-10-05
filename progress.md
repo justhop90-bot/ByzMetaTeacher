@@ -11,9 +11,12 @@
 - [x] Add Open Field / Fortified Push / Gold-Starved Trash scaling targets.
 - [x] Reconcile production-depth/replacement observations with trash backbone.
 - [x] Lower endgame attack admission onto the Imperial band and standing military package.
-- [ ] Finish focused regression adjustments and resolve any CI findings.
+- [x] Reconcile focused regression expectations with the frozen resolver precedence and band admission contract.
 - [ ] Regenerate canonical Byzantine.per and manifest.
 - [ ] Run native zero-findings on generated and checked-in artifacts.
 - [ ] Run full authoritative Compiler CI.
 - [ ] Merge the coherent military tranche to main.
 - [ ] Runtime playtest remains user-owned after merge.
+- [x] Repair verified native `players-military-population` registry coverage.
+- [x] Require offensive-objective ownership for Open Field and Trash-to-Open recovery.
+- [x] Permit Fortified handoff once siege is no longer required, including a still-owned non-siege objective.

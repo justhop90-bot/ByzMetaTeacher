@@ -234,7 +234,7 @@ class StrategyProductionVerticalTests(unittest.TestCase):
         artifact = compile_strategy_profile(stock_profile, self.effective)
         self.assertIn(
             "(or (unit-type-count-total crossbowman >= 6) "
-            "(unit-type-count-total skirmisher-line >= 6))",
+            "(unit-type-count-total 6 >= 6))",
             artifact,
         )
         self.assertNotIn(

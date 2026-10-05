@@ -45,6 +45,18 @@ class NativeFactRegistryTests(unittest.TestCase):
             adapter,
         )
 
+    def test_players_military_population_is_a_contracted_world_observation(self):
+        registry = default_de_registry()
+        mapping = registry._semantic_mappings.for_command("players-military-population")
+        self.assertIsNotNone(mapping)
+        assert mapping is not None
+        self.assertEqual(mapping.identity, "observation.threat.military-population")
+        self.assertEqual(mapping.status.value, "contracted")
+        self.assertEqual(mapping.native_command, "players-military-population")
+        self.assertEqual(mapping.native_kind, "Fact")
+        self.assertEqual(registry.require("players-military-population").min_args, 3)
+        self.assertEqual(registry.require("players-military-population").max_args, 3)
+
     def test_attack_soldier_count_is_a_contracted_world_observation(self):
         registry = default_de_registry()
         mapping = registry._semantic_mappings.for_command("attack-soldier-count")

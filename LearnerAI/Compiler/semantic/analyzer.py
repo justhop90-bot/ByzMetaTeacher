@@ -163,7 +163,14 @@ def _populate_expression_sources(
 
 def parse_expression(source: str, location=None) -> Expression:
     tokens = _tokens(source)
-    expr, end = _parse(tokens)
+    try:
+        expr, end = _parse(tokens)
+    except CompileError as exc:
+        if str(exc) == "unbalanced .per expression":
+            raise CompileError(
+                f"unbalanced .per expression: source={source!r}"
+            ) from exc
+        raise
     if end != len(tokens):
         raise CompileError("trailing tokens after .per expression")
     if expr.head in _LOGICAL_ARITY and len(expr.args) != _LOGICAL_ARITY[expr.head]:
@@ -234,6 +241,32 @@ def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     # remains forbidden in all other contexts because ordinary Strategic
     # Number state is an engine-control effect, not a generic observation.
     if _is_open_production_queue_capacity_control(expr):
+        return {"PERSISTENT_STATE"}
+
+    # Goal reads are native persistent-state reads. Their generic support state
+    # remains ENGINE_SEMANTICS_MAPPED, so only the read-only requirement-role
+    # seam may promote them to PERSISTENT_STATE. Witnesses/actions still pass
+    # through their normal support/context validators.
+    if expr.head in {"goal", "up-compare-goal"}:
+        native = registry.native(expr.head)
+        if native is None:
+            raise CompileError(
+                f"NATIVE-SUPPORT-005: native command '{expr.head}' is missing from the checked-in native schema"
+            )
+        assessment = registry.assess_support(expr.head)
+        if assessment.state is NativeSupportState.UNSUPPORTED:
+            raise CompileError(
+                f"{assessment.diagnostics[-1].code}: native command '{expr.head}' "
+                f"is {assessment.state.value}: {assessment.message}"
+            )
+        try:
+            registry.validate_native_signature(expr.head, len(expr.args))
+        except ValueError as exc:
+            raise CompileError(str(exc)) from exc
+        if native.command_type not in {"Fact", "Fact/Action"}:
+            raise CompileError(
+                f"NATIVE-SUPPORT-006: native command '{expr.head}' is not a read-only fact"
+            )
         return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
@@ -362,7 +395,13 @@ def analyze(
                 if requirement_index < len(demand.requirement_locations)
                 else demand.location
             )
-            expr = parse_expression(raw, location)
+            try:
+                expr = parse_expression(raw, location)
+            except CompileError as exc:
+                raise CompileError(
+                    f"{exc}: demand '{demand.name}' requirement[{requirement_index}] "
+                    f"source={raw!r}"
+                ) from exc
             _validate_context(
                 expr,
                 registry,

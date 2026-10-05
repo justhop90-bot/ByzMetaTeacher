@@ -21,6 +21,7 @@ from LearnerAI.Compiler.ir.endgame import (
     validate_endgame_plan,
 )
 from LearnerAI.Compiler.ir.civ_profile import Age, ByzantineProfile, resolve_effective_civ
+from LearnerAI.Compiler.ir.versioning import EvidenceKind, EvidenceRef
 from LearnerAI.Compiler.ir.strategy import (
     StrategyEnvelope,
     StrategicObservationSpec,
@@ -297,9 +298,22 @@ class EndgameContractTests(unittest.TestCase):
             tuple(fact.source for fact in recovery_release.facts),
         )
 
+        frontier_observation = StrategicObservationSpec(
+            "endgame-fortified-world-witness",
+            "(building-type-count castle >= 1)",
+            provenance=(
+                EvidenceRef(
+                    EvidenceKind.RUNTIME_VERIFIED,
+                    "tests",
+                    "imperial-resolver",
+                    "endgame-fortified-world-witness",
+                    self.effective.patch,
+                ),
+            ),
+        )
         configured_push = replace(
             plan.push_contract,
-            frontier_witness_ref="current-imperial-age",
+            frontier_witness_ref="endgame-fortified-world-witness",
         )
         configured_plan = replace(
             plan,
@@ -307,6 +321,7 @@ class EndgameContractTests(unittest.TestCase):
         )
         configured_profile = replace(
             profile,
+            observations=profile.observations + (frontier_observation,),
             endgame_plan=configured_plan,
         )
         configured_compilation = lower_strategy_profile(
@@ -328,7 +343,7 @@ class EndgameContractTests(unittest.TestCase):
         push_release = configured_rules["byzantine-endgame-push-release"]
         push_release_facts = tuple(fact.source for fact in push_release.facts)
         frontier_expression = configured_profile.observation(
-            "current-imperial-age"
+            "endgame-fortified-world-witness"
         ).expression
         self.assertIn(
             f"(not {frontier_expression})",

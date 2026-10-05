@@ -54,10 +54,6 @@ class ImperialResolver:
     FLOOR_ELITE_SKIRMISHER = 18
     FLOOR_HUSSAR = 12
 
-    FLOOR_FOOD = 2000
-    FLOOR_WOOD = 1700
-    FLOOR_GOLD = 1600
-
     OPEN_FOOD_IN = 2400
     OPEN_WOOD_IN = 2000
     OPEN_GOLD_IN = 2000
@@ -101,12 +97,7 @@ class ImperialResolver:
 
     @classmethod
     def floor_recovered(cls, value: ImperialResolverInput) -> bool:
-        return (
-            not cls.floor_broken(value)
-            and value.food >= cls.FLOOR_FOOD
-            and value.wood >= cls.FLOOR_WOOD
-            and value.gold >= cls.FLOOR_GOLD
-        )
+        return not cls.floor_broken(value)
 
     @classmethod
     def fortified_executable(cls, value: ImperialResolverInput) -> bool:
@@ -124,6 +115,7 @@ class ImperialResolver:
     def open_field_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
             cls.floor_recovered(value)
+            and value.offensive_objective
             and not value.fortification_threat
             and not value.fortified_objective_requires_siege
             and value.enemy_field_army >= 12
@@ -150,6 +142,7 @@ class ImperialResolver:
     def gold_starved_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
             cls.floor_recovered(value)
+            and value.offensive_objective
             and value.gold <= cls.TRASH_GOLD_IN
             and value.food >= cls.TRASH_FOOD_IN
             and value.wood >= cls.TRASH_WOOD_IN
@@ -352,7 +345,7 @@ class ImperialResolver:
 
             if (
                 value.gold >= cls.TRASH_GOLD_OUT
-                and cls.open_field_eligible(value)
+                and cls.gold_recovery_open_eligible(value)
                 and guard_seconds >= cls.GOLD_RECOVERY_DWELL
                 and not cls._cooldown_active(
                     ImperialBand.OPEN_FIELD,

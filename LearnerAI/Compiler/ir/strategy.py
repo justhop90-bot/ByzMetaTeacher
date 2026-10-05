@@ -1779,10 +1779,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     then ordinary band transitions. Timers only provide dwell/cooldown cadence;
     every transition re-checks its live resource and battlefield guard.
     """
-    if profile.profile_id not in {
-        "byzantine-land-castle-v1",
-        "byzantine-stock-v1",
-    }:
+    if profile.profile_id != "byzantine-stock-v1":
         return None
 
     from .imperial_resolver import ImperialBand
@@ -1886,7 +1883,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count 6 < 18)",
         "(unit-type-count hussar < 12)",
     )
-    floor_recovered = land(
+    floor_recovered_facts = (
         "(unit-type-count halberdier >= 18)",
         "(unit-type-count 6 >= 18)",
         "(unit-type-count hussar >= 12)",
@@ -1899,7 +1896,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count-total trebuchet-line >= 2)",
         "(unit-type-count-total bombard-cannon-line >= 2)",
     )
-    fortified_exec = land(
+    fortified_exec_facts = (
         "(goal byzantine-fortification-threat 1)",
         "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
         "(goal byzantine-offensive-objective-claim 1)",
@@ -1908,37 +1905,40 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(wood-amount >= 2400)",
         "(gold-amount >= 2600)",
     )
-    open_field_eligible = land(
+    open_field_facts = (
         "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
         "(gold-amount >= 2000)",
-        floor_recovered,
+        *floor_recovered_facts,
     )
-    trash_eligible = land(
+    trash_facts = (
         "(goal byzantine-fortification-threat 0)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2200)",
         "(gold-amount <= 800)",
-        floor_recovered,
+        *floor_recovered_facts,
     )
-    gold_recovery_open_eligible = land(
+    gold_recovery_open_facts = (
         "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
         "(gold-amount >= 1800)",
-        floor_recovered,
+        *floor_recovered_facts,
     )
     economic_collapse = lor(
         "(food-amount < 1800)",
         "(wood-amount < 1500)",
     )
     gold_recovered = "(gold-amount >= 1800)"
-    fortified_clear = land(
+    fortified_clear_facts = (
         "(goal byzantine-fortification-threat 0)",
-        "(goal byzantine-offensive-objective-claim 0)",
+        "(not (goal byzantine-offensive-objective-class "
+        "byzantine-offensive-objective-class-siege))",
     )
 
     def cooldown_clear(target: int) -> str:
@@ -1946,6 +1946,90 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             f"(up-compare-goal {rearm_band_name} != {target})",
             f"(timer-triggered {rearm_timer})",
         )
+
+    def candidate_clear_rules(
+        identity_prefix: str,
+        candidate_value: int,
+        failures: tuple[str, ...],
+        *,
+        state_guard: str | None = None,
+    ) -> tuple[NativeControlRule, ...]:
+        generated: list[NativeControlRule] = []
+        for index, failure in enumerate(failures, start=1):
+            identity = (
+                identity_prefix
+                if index == 1
+                else f"{identity_prefix}-{index:02d}"
+            )
+            facts = [
+                expr(f"(goal {candidate_name} {candidate_value})"),
+            ]
+            if state_guard is not None:
+                facts.append(expr(state_guard))
+            facts.append(expr(failure))
+            generated.append(
+                NativeControlRule(
+                    identity,
+                    facts=tuple(facts),
+                    actions=(
+                        expr(f"(set-goal {candidate_name} 0)"),
+                        expr(f"(disable-timer {guard_timer})"),
+                    ),
+                )
+            )
+        return tuple(generated)
+
+    open_clear_failures = (
+        "(goal byzantine-fortification-threat 1)",
+        "(goal byzantine-offensive-objective-claim 0)",
+        "(players-military-population any-enemy < 12)",
+        "(food-amount < 2400)",
+        "(wood-amount < 2000)",
+        "(gold-amount < 2000)",
+        "(unit-type-count halberdier < 18)",
+        "(unit-type-count 6 < 18)",
+        "(unit-type-count hussar < 12)",
+        "(food-amount < 2000)",
+        "(wood-amount < 1700)",
+        "(gold-amount < 1600)",
+    )
+    recovery_open_clear_failures = (
+        "(goal byzantine-fortification-threat 1)",
+        "(goal byzantine-offensive-objective-claim 0)",
+        "(players-military-population any-enemy < 12)",
+        "(food-amount < 2400)",
+        "(wood-amount < 2000)",
+        "(gold-amount < 1800)",
+        "(unit-type-count halberdier < 18)",
+        "(unit-type-count 6 < 18)",
+        "(unit-type-count hussar < 12)",
+        "(food-amount < 2000)",
+        "(wood-amount < 1700)",
+        "(gold-amount < 1600)",
+    )
+    trash_clear_failures = (
+        "(goal byzantine-fortification-threat 1)",
+        "(food-amount < 2400)",
+        "(wood-amount < 2200)",
+        "(gold-amount > 800)",
+        "(unit-type-count halberdier < 18)",
+        "(unit-type-count 6 < 18)",
+        "(unit-type-count hussar < 12)",
+        "(food-amount < 2000)",
+        "(wood-amount < 1700)",
+        "(gold-amount < 1600)",
+    )
+    fortified_clear_failures = (
+        "(goal byzantine-fortification-threat 0)",
+        "(up-compare-goal byzantine-siege-approach != 1)",
+        "(goal byzantine-offensive-objective-claim 0)",
+        "(unit-type-count-total mangonel-line < 2)",
+        "(unit-type-count-total trebuchet-line < 2)",
+        "(unit-type-count-total bombard-cannon-line < 2)",
+        "(food-amount < 2400)",
+        "(wood-amount < 2400)",
+        "(gold-amount < 2600)",
+    )
 
     rules: list[NativeControlRule] = [
         NativeControlRule(
@@ -2044,7 +2128,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "byzantine-imperial-band-fortified-candidate",
             facts=(
                 expr(f"(up-compare-goal {state_name} != {fortified})"),
-                expr(fortified_exec),
+                *(expr(part) for part in fortified_exec_facts),
                 expr(cooldown_clear(fortified)),
                 expr(
                     f"(or (up-compare-goal {state_name} != {standing}) "
@@ -2062,7 +2146,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "byzantine-imperial-band-economic-candidate",
             facts=(
                 expr(f"(up-compare-goal {state_name} != {standing})"),
-                expr(f"(not {fortified_exec})"),
+                *(expr(f"(not {part})") for part in fortified_exec_facts),
                 expr(economic_collapse),
                 expr(f"(up-compare-goal {candidate_name} != {candidate_standing})"),
             ),
@@ -2077,8 +2161,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {standing})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(floor_recovered),
-                expr(trash_eligible),
+                *(expr(part) for part in trash_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
             ),
@@ -2093,9 +2176,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {standing})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(floor_recovered),
-                expr(f"(not {trash_eligible})"),
-                expr(open_field_eligible),
+                *(expr(part) for part in open_field_facts),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2110,7 +2191,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {open_field})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(trash_eligible),
+                *(expr(part) for part in trash_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
             ),
@@ -2126,7 +2207,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(goal {state_name} {trash})"),
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(gold_recovered),
-                expr(gold_recovery_open_eligible),
+                *(expr(part) for part in gold_recovery_open_facts),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2141,8 +2222,8 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {fortified})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(fortified_clear),
-                expr(open_field_eligible),
+                *(expr(part) for part in fortified_clear_facts),
+                *(expr(part) for part in open_field_facts),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2157,9 +2238,8 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {fortified})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(fortified_clear),
-                expr(f"(not {open_field_eligible})"),
-                expr(trash_eligible),
+                *(expr(part) for part in fortified_clear_facts),
+                *(expr(part) for part in trash_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
             ),
@@ -2169,50 +2249,32 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(enable-timer {guard_timer} 20)"),
             ),
         ),
-        # Reject a candidate whose live guard disappeared before its dwell.
-        NativeControlRule(
+        *candidate_clear_rules(
             "byzantine-imperial-band-clear-fortified-candidate",
-            facts=(
-                expr(f"(goal {candidate_name} {fortified})"),
-                expr(f"(not {fortified_exec})"),
-            ),
-            actions=(
-                expr(f"(set-goal {candidate_name} 0)"),
-                expr(f"(disable-timer {guard_timer})"),
-            ),
+            fortified,
+            fortified_clear_failures,
         ),
-        NativeControlRule(
-            "byzantine-imperial-band-clear-economic-candidate",
-            facts=(
-                expr(f"(goal {candidate_name} {candidate_standing})"),
-                expr(f"(not {economic_collapse})"),
-            ),
-            actions=(
-                expr(f"(set-goal {candidate_name} 0)"),
-                expr(f"(disable-timer {guard_timer})"),
-            ),
-        ),
-        NativeControlRule(
+        *candidate_clear_rules(
             "byzantine-imperial-band-clear-trash-candidate",
-            facts=(
-                expr(f"(goal {candidate_name} {trash})"),
-                expr(f"(not {trash_eligible})"),
-            ),
-            actions=(
-                expr(f"(set-goal {candidate_name} 0)"),
-                expr(f"(disable-timer {guard_timer})"),
-            ),
+            trash,
+            trash_clear_failures,
         ),
-        NativeControlRule(
+        *candidate_clear_rules(
             "byzantine-imperial-band-clear-open-candidate",
-            facts=(
-                expr(f"(goal {candidate_name} {open_field})"),
-                expr(f"(not {open_field_eligible})"),
-            ),
-            actions=(
-                expr(f"(set-goal {candidate_name} 0)"),
-                expr(f"(disable-timer {guard_timer})"),
-            ),
+            open_field,
+            open_clear_failures,
+            state_guard=f"(up-compare-goal {state_name} != {trash})",
+        ),
+        *candidate_clear_rules(
+            "byzantine-imperial-band-clear-open-recovery-candidate",
+            open_field,
+            recovery_open_clear_failures,
+            state_guard=f"(goal {state_name} {trash})",
+        ),
+        *candidate_clear_rules(
+            "byzantine-imperial-band-clear-economic-candidate",
+            candidate_standing,
+            ("(not " + "(or (food-amount < 1800) (wood-amount < 1500))" + ")",),
         ),
         # Arm cooldown from the current scaling state immediately before release.
         NativeControlRule(
@@ -2256,7 +2318,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(up-compare-goal {candidate_name} == {fortified})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(fortified_exec),
+                *(expr(part) for part in fortified_exec_facts),
                 expr(cooldown_clear(fortified)),
             ),
             actions=(
@@ -2289,7 +2351,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {trash})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(trash_eligible),
+                *(expr(part) for part in trash_facts),
                 expr(cooldown_clear(trash)),
             ),
             actions=(
@@ -2306,12 +2368,31 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {open_field})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(open_field_eligible),
+                expr(f"(up-compare-goal {state_name} != {trash})"),
+                *(expr(part) for part in open_field_facts),
                 expr(cooldown_clear(open_field)),
             ),
             actions=(
                 expr(f"(set-goal {state_name} {open_field})"),
                 expr(f"(set-goal {reason_name} 60)"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 60)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-transition-open-recovery",
+            facts=(
+                expr(f"(goal {candidate_name} {open_field})"),
+                expr(f"(timer-triggered {guard_timer})"),
+                expr(f"(goal {state_name} {trash})"),
+                *(expr(part) for part in gold_recovery_open_facts),
+                expr(cooldown_clear(open_field)),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {open_field})"),
+                expr(f"(set-goal {reason_name} 50)"),
                 expr(f"(set-goal {candidate_name} 0)"),
                 expr(f"(disable-timer {guard_timer})"),
                 expr(f"(disable-timer {dwell_timer})"),
@@ -2924,9 +3005,10 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         plan.push_contract.cleared_witness_ref
     ).expression
     imperial_band_ready = "(up-compare-goal byzantine-imperial-band-state >= 1)"
-    imperial_floor_ready = (
-        "(and (unit-type-count halberdier >= 18) "
-        "(and (unit-type-count 6 >= 18) (unit-type-count hussar >= 12)))"
+    imperial_floor_ready_facts = (
+        "(unit-type-count halberdier >= 18)",
+        "(unit-type-count 6 >= 18)",
+        "(unit-type-count hussar >= 12)",
     )
     premium_ready = (
         "(or (unit-type-count cataphract >= 12) "
@@ -2934,10 +3016,10 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(unit-type-count 492 >= 12)))"
     )
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
-    military_ready = (
-        f"(and {imperial_band_ready} "
-        f"(and {imperial_floor_ready} "
-        f"(or {premium_ready} {gold_starved_exception})))"
+    premium_not_ready = (
+        "(and (unit-type-count cataphract < 12) "
+        "(and (unit-type-count varangian-guard < 12) "
+        "(unit-type-count 492 < 12)))"
     )
     standard_siege_ready = (
         "(or (unit-type-count trebuchet >= 4) "
@@ -2948,12 +3030,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(or (unit-type-count trebuchet >= 6) "
         "(or (unit-type-count bombard-cannon >= 6) "
         "(unit-type-count-total mangonel-line >= 6)))"
-    )
-    siege_ready = (
-        f"(or (and (goal byzantine-imperial-band-state 2) "
-        f"{fortified_siege_ready}) "
-        f"(and (not (goal byzantine-imperial-band-state 2)) "
-        f"{standard_siege_ready}))"
     )
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     frontier_witness = (
@@ -2992,10 +3068,60 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
-                parse_expression(siege_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression("(up-compare-goal byzantine-imperial-band-state != 2)", SourceLocation(1)),
+                parse_expression(standard_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-admit-fortified",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
+                parse_expression(fortified_siege_ready, SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-admit-trash",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 3)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+                parse_expression(standard_siege_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
@@ -3034,7 +3160,76 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression(f"(not {military_ready})", SourceLocation(1)),
+                parse_expression("(up-compare-goal byzantine-imperial-band-state < 1)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-halberdier-floor",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(unit-type-count halberdier < 18)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-elite-skirmisher-floor",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(unit-type-count 6 < 18)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-hussar-floor",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(unit-type-count hussar < 12)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-premium",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(up-compare-goal byzantine-imperial-band-state != 3)", SourceLocation(1)),
+                parse_expression(premium_not_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
@@ -3047,7 +3242,36 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-endgame-push-state 3)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression(cleared_witness, SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
+                *(
+                    (
+                        parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
+                    )
+                    if frontier_witness is not None
+                    else ()
+                ),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-release-trash",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 3)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression(cleared_witness, SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 3)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
                 *(
                     (
                         parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
@@ -3066,7 +3290,27 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recovery-release-trash",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 3)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
             ),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),

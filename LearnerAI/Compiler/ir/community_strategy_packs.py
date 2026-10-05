@@ -515,10 +515,11 @@ def community_strategy_observations(
         ),
         (
             "stable",
-            "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
-            "(or (unit-type-count-total knight-line >= {threshold}) "
+            "(or "
+            "(or (unit-type-count-total cataphract-line >= {threshold}) "
+            "(unit-type-count-total knight-line >= {threshold})) "
             "(or (unit-type-count-total camel-rider-line >= {threshold}) "
-            "(unit-type-count-total 441 >= {threshold}))))",
+            "(unit-type-count-total 441 >= {threshold})))",
             "strategy-production-stable-depth",
         ),
         (
@@ -529,9 +530,11 @@ def community_strategy_observations(
         ),
         (
             "siege-workshop",
-            "(or (or (unit-type-count-total mangonel-line >= {threshold}) "
-            "(or (unit-type-count-total trebuchet-line >= {threshold}) "
-            "(unit-type-count-total bombard-cannon-line >= {threshold})))",
+            "(or "
+            "(or (unit-type-count-total 280 > {threshold_minus_one}) "
+            "(unit-type-count-total 550 > {threshold_minus_one})) "
+            "(or (unit-type-count-total 331 >= {threshold}) "
+            "(unit-type-count-total 36 >= {threshold})))",
             "strategy-production-siege-depth",
         ),
     )
@@ -853,7 +856,10 @@ def community_strategy_observations(
         thresholds = (6, 12, 18) if provider != "siege-workshop" else (2, 4, 6)
         for threshold in thresholds:
             identity = f"{base_identity}-{threshold}"
-            expression = expression_template.format(threshold=threshold)
+            expression = expression_template.format(
+                threshold=threshold,
+                threshold_minus_one=threshold - 1,
+            )
             observations.append(
                 _observation(
                     identity,
@@ -1450,12 +1456,12 @@ def community_strategy_demands(
     enemy_mounted_8 = (
         "(or (players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
-        "(players-unit-type-count any-enemy camel-rider-line >= 8))"
+        "(players-unit-type-count any-enemy camel-rider-line >= 8)))"
     )
     enemy_mounted_12 = (
         "(or (players-unit-type-count any-enemy knight-line >= 12) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 12) "
-        "(players-unit-type-count any-enemy camel-rider-line >= 12))"
+        "(players-unit-type-count any-enemy camel-rider-line >= 12)))"
     )
     enemy_ranged_8 = (
         "(or (players-unit-type-count any-enemy archer-line >= 8) "
@@ -1470,7 +1476,7 @@ def community_strategy_demands(
         "(players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
         "(or (players-unit-type-count any-enemy camel-rider-line >= 8) "
-        "(players-unit-type-count any-enemy mangonel-line >= 2)))"
+        "(players-unit-type-count any-enemy mangonel-line >= 2))))"
     )
 
     band_demands = (
@@ -1616,6 +1622,26 @@ def community_strategy_demands(
     ) in provider_depth_specs:
         building = _building(effective, building_name)
         standing_demand = standing_depth_observations[standing_observation_ref]
+        replacement_expression = (
+            "(or (unit-type-count 40 < 18) "
+            "(unit-type-count 441 < 12))"
+            if replacement_reason_ref == "strategy-production-stable-replacement"
+            else (
+                "(or (unit-type-count 331 < 4) "
+                "(or (unit-type-count 36 < 4) "
+                "(unit-type-count-total mangonel-line < 4)))"
+                if replacement_reason_ref == "strategy-production-siege-replacement"
+                else (
+                next(
+                    item.expression
+                    for item in observations
+                    if item.identity == replacement_reason_ref
+                    )
+                    if replacement_reason_ref is not None
+                    else None
+                )
+            )
+        )
         demands.append(
             _production_depth_demand(
                 identity=identity,
@@ -1632,15 +1658,7 @@ def community_strategy_demands(
                 age_guard=age_guard,
                 standing_demand=standing_demand,
                 replacement_reason_ref=replacement_reason_ref,
-                replacement_expression=(
-                    next(
-                        item.expression
-                        for item in observations
-                        if item.identity == replacement_reason_ref
-                    )
-                    if replacement_reason_ref is not None
-                    else None
-                ),
+                replacement_expression=replacement_expression,
             )
         )
 

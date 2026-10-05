@@ -38,6 +38,18 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 22)
 
+    def test_native_goal_reads_remain_invalid_as_witnesses(self):
+        source = """
+        demand bad-witness {
+            require (can-build castle)
+            action (build castle)
+            witness (goal 420 1)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "expected only ACTION, OBSERVATION, TIMING, WITNESS"):
+            compile_source(source)
+
     def test_compiler_owned_strategic_number_is_allocated_and_emitted(self):
         source = """
         demand castle-posture {

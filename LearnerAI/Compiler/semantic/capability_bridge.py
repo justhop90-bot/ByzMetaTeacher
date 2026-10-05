@@ -84,6 +84,33 @@ def _predicate(expr: Expression, registry: PrimitiveRegistry) -> PredicateNode:
             )
         return Predicate(all_of=(children[0],), negated=True)
 
+    if expr.head in {"goal", "up-compare-goal"}:
+        native = registry.native(expr.head)
+        if native is None:
+            raise CompileError(
+                f"capability bridge: native Goal read '{expr.head}' is missing "
+                "from the checked-in native schema"
+            )
+        assessment = registry.assess_support(expr.head)
+        if assessment.state.value == "UNSUPPORTED":
+            raise CompileError(
+                f"capability bridge: native Goal read '{expr.head}' is unsupported"
+            )
+        try:
+            registry.validate_native_signature(expr.head, len(expr.args))
+        except ValueError as exc:
+            raise CompileError(str(exc)) from exc
+        if native.command_type not in {"Fact", "Fact/Action"}:
+            raise CompileError(
+                f"capability bridge: native Goal read '{expr.head}' is not a fact"
+            )
+        return PredicateAtom(
+            kind=PredicateKind.STRATEGY,
+            primitive=expr.head,
+            arguments=tuple(expr.args),
+            expression=expr,
+        )
+
     primitive = registry.require(expr.head)
     kind = _ROLE_TO_KIND.get(primitive.role)
     if kind is None:

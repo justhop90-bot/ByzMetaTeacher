@@ -192,7 +192,8 @@ def _validate_leaf(
         expected = _LOGICAL_ARITY[head]
         if len(expression.args) != expected:
             raise ValueError(
-                f"logical operator '{head}' requires {expected} operands"
+                f"logical operator '{head}' requires {expected} operands: "
+                f"source={expression.source!r}"
             )
         for child in expression.args:
             if not isinstance(child, Expression):
