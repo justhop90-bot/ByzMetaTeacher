@@ -290,7 +290,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         profile = build_byzantine_strategy(self.effective)
         canonical = compile_strategy_profile(profile, self.effective)
         for fragment in (
-            "(set-goal demand-economy-lumber-camp-floor-2 0)",
+            "(set-goal demand-economy-wood-camp-floor-2 0)",
             "(set-goal demand-economy-gold-camp-floor-2 0)",
             "(set-goal demand-economy-stone-camp-floor-1 0)",
             "(set-goal demand-adaptive-outpost 0)",
@@ -301,6 +301,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
     def test_feudal_research_yields_to_castle_feasibility(self):
         profile = build_byzantine_strategy(self.effective)
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
 
         for identity in ("research-double-bit-axe", "research-horse-collar"):
             requirements = tuple(profile.demand(identity).execution.requirements)
