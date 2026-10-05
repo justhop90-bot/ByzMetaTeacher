@@ -20,6 +20,8 @@ from .endgame import (
     EndgameMode,
     EndgamePolicyRule,
     EndgamePlan,
+    EndgameFrontierState,
+    EndgamePushContract,
     EndgamePushState,
     EndgameRuntimeState,
     EndgameWinCondition,
