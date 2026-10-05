@@ -1846,6 +1846,29 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         )
     )
+    conversion_contract = plan.conversion_contract
+    if conversion_contract is not None:
+        for demand in profile.demands:
+            if not demand.identity.startswith("imperial-forward-production-"):
+                continue
+            building_token = demand.capability_intent.entity_id
+            if not isinstance(building_token, str):
+                continue
+            rules.append(
+                NativeControlRule(
+                    f"byzantine-endgame-conversion-admit-{demand.identity}",
+                    facts=(
+                        parse_expression(f"(goal {frontier_verified} 1)", SourceLocation(1)),
+                        parse_expression(f"(goal demand-{demand.name} 0)", SourceLocation(1)),
+                        parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                        parse_expression(f"(can-build {building_token})", SourceLocation(1)),
+                    ),
+                    actions=(
+                        parse_expression(f"(set-goal demand-{demand.name} 1)", SourceLocation(1)),
+                    ),
+                )
+            )
+
     rules.extend(
         (
             NativeControlRule(
