@@ -559,6 +559,35 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
+            "strategy-endgame-ground-conversion",
+            "(and (current-age >= imperial-age) "
+            "(goal byzantine-endgame-frontier >= 1) "
+            "(goal byzantine-endgame-push-state 1))",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/strategy.py",
+                    revision="main",
+                    locator="byzantine-endgame-frontier-commit-*",
+                    patch=effective.patch,
+                ),
+            ),
+        ),
+        _observation(
+            "strategy-endgame-resource-denial",
+            "(and (current-age >= imperial-age) "
+            "(goal byzantine-endgame-frontier >= 1))",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/strategy.py",
+                    revision="main",
+                    locator="byzantine-endgame-frontier-commit-*",
+                    patch=effective.patch,
+                ),
+            ),
+        ),
+        _observation(
             "strategy-imperial-trebuchet-replacement",
             "(and (current-age >= imperial-age) (unit-type-count trebuchet < 2))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
@@ -1485,6 +1514,34 @@ def community_strategy_demands(
             ),
         )
     )
+
+    # Closure/conversion begins only after the compiler-owned frontier has
+    # already been advanced by a separately verified campaign witness. These
+    # demands raise construction pressure; construction placement remains owned
+    # by the existing builder lifecycle.
+    conversion = default_byzantine_endgame_plan().conversion_contract
+    if conversion is not None:
+        for index, building_name in enumerate(conversion.forward_production_buildings):
+            building = _building(effective, building_name)
+            demands.append(
+                _build_demand(
+                    identity=f"imperial-forward-production-{index}-{_slug(building_name)}",
+                    owner="endgame-conversion",
+                    posture=_StrategyPosture.CASTLE_POWER,
+                    priority=_StrategicPriority.SUPPORT,
+                    reason_ref="strategy-endgame-ground-conversion",
+                    reason_label="Verified frontier ground creates forward-production pressure",
+                    building=building,
+                    requirements=(
+                        "(current-age >= imperial-age)",
+                        "(goal byzantine-endgame-frontier >= 1)",
+                        "(can-build " + _slug(building_name) + ")",
+                        "(or (building-type-count-total " + _slug(building_name) + " < 5) "
+                        "(building-type-count-total siege-workshop < 5))",
+                    ),
+                    initial_state=LifecycleState.RELEASED,
+                )
+            )
 
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
