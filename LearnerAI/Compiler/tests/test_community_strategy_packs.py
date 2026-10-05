@@ -192,7 +192,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             [item.observation_ref for item in ram.reason],
         )
         self.assertIn(
-            "(unit-type-count-total ram-line < 8)",
+            "(unit-type-count-total battering-ram-line < 8)",
             ram.execution.requirements,
         )
 
