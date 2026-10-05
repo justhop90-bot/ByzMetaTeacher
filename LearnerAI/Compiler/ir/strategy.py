@@ -1892,8 +1892,8 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     siege_floor = lor(
         "(unit-type-count-total mangonel-line >= 2)",
-        "(unit-type-count-total trebuchet-line >= 2)",
-        "(unit-type-count-total bombard-cannon-line >= 2)",
+        "(unit-type-count-total trebuchet >= 2)",
+        "(unit-type-count-total bombard-cannon >= 2)",
     )
     fortified_exec_facts = (
         "(goal byzantine-fortification-threat 1)",
@@ -2014,8 +2014,8 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(up-compare-goal byzantine-siege-approach != 1)",
         "(goal byzantine-offensive-objective-claim 0)",
         "(unit-type-count-total mangonel-line < 2)",
-        "(unit-type-count-total trebuchet-line < 2)",
-        "(unit-type-count-total bombard-cannon-line < 2)",
+        "(unit-type-count-total trebuchet < 2)",
+        "(unit-type-count-total bombard-cannon < 2)",
         "(food-amount < 2400)",
         "(wood-amount < 2400)",
         "(gold-amount < 2600)",

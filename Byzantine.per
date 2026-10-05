@@ -26766,7 +26766,7 @@
     (goal byzantine-fortification-threat 1)
     (goal byzantine-siege-approach byzantine-siege-approach-fortified)
     (goal byzantine-offensive-objective-claim 1)
-    (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet-line >= 2) (unit-type-count-total bombard-cannon-line >= 2)))
+    (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet >= 2) (unit-type-count-total bombard-cannon >= 2)))
     (food-amount >= 2400)
     (wood-amount >= 2400)
     (gold-amount >= 2600)
@@ -26785,7 +26785,7 @@
     (not (goal byzantine-fortification-threat 1))
     (not (goal byzantine-siege-approach byzantine-siege-approach-fortified))
     (not (goal byzantine-offensive-objective-claim 1))
-    (not (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet-line >= 2) (unit-type-count-total bombard-cannon-line >= 2))))
+    (not (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet >= 2) (unit-type-count-total bombard-cannon >= 2))))
     (not (food-amount >= 2400))
     (not (wood-amount >= 2400))
     (not (gold-amount >= 2600))
@@ -26979,7 +26979,7 @@
 ; Native control rule: byzantine-imperial-band-clear-fortified-candidate-05
 (defrule
     (goal byzantine-imperial-band-candidate 2)
-    (unit-type-count-total trebuchet-line < 2)
+    (unit-type-count-total trebuchet < 2)
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -26988,7 +26988,7 @@
 ; Native control rule: byzantine-imperial-band-clear-fortified-candidate-06
 (defrule
     (goal byzantine-imperial-band-candidate 2)
-    (unit-type-count-total bombard-cannon-line < 2)
+    (unit-type-count-total bombard-cannon < 2)
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -27397,7 +27397,7 @@
     (goal byzantine-fortification-threat 1)
     (goal byzantine-siege-approach byzantine-siege-approach-fortified)
     (goal byzantine-offensive-objective-claim 1)
-    (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet-line >= 2) (unit-type-count-total bombard-cannon-line >= 2)))
+    (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet >= 2) (unit-type-count-total bombard-cannon >= 2)))
     (food-amount >= 2400)
     (wood-amount >= 2400)
     (gold-amount >= 2600)
