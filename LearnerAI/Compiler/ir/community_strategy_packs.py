@@ -1463,14 +1463,9 @@ def community_strategy_demands(
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 12) "
         "(players-unit-type-count any-enemy camel-rider-line >= 12)))"
     )
-    enemy_ranged_8 = (
-        "(or (players-unit-type-count any-enemy archer-line >= 8) "
-        "(players-unit-type-count any-enemy crossbow-line >= 8))"
-    )
-    enemy_ranged_12 = (
-        "(or (players-unit-type-count any-enemy archer-line >= 12) "
-        "(players-unit-type-count any-enemy crossbow-line >= 12))"
-    )
+    # archer-line already includes Archer, Crossbowman, and Arbalest.
+    enemy_ranged_8 = "(players-unit-type-count any-enemy archer-line >= 8)"
+    enemy_ranged_12 = "(players-unit-type-count any-enemy archer-line >= 12)"
     enemy_mobile_or_siege = (
         "(or "
         "(players-unit-type-count any-enemy knight-line >= 8) "
