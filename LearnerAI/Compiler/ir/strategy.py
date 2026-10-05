@@ -401,6 +401,7 @@ class StrategyProfile:
     camp_controller: "ByzantineCampControllerPlan | None" = None
     role_separation_plan: "NativeRoleSeparationPlan | None" = None
     endgame_plan: "EndgamePlan | None" = None
+    endgame_plan: "EndgamePlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
