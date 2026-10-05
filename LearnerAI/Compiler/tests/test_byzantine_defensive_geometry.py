@@ -285,6 +285,10 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "(unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)",
             imperial_section,
         )
+        self.assertNotIn(
+            "(unit-type-count-total arbalester-line >= bt-imperial-timing-backbone-floor)",
+            imperial_section,
+        )
         self.assertIn(
             "(unit-type-count-total 359 >= bt-imperial-timing-halberdier-floor)",
             imperial_section,
