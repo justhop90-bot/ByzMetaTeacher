@@ -481,6 +481,8 @@ _IMPERIAL_MILITARY_RESEARCH_PACK = (
     ("research-scale-mail-armor", "military", "feudal-age", "scale-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
     ("research-chain-mail-armor", "military", "castle-age", "chain-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
     ("research-plate-mail-armor", "military", "imperial-age", "plate-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
+    ("research-capped-ram", "siege", "imperial-age", "capped-ram", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
+    ("research-siege-ram", "siege", "imperial-age", "siege-ram", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
 )
 
 
@@ -1233,6 +1235,50 @@ def community_strategy_demands(
         )
     )
 
+    # Castle seed floors exist to bootstrap upgrade research; they are intentionally
+    # small and persistent rather than enemy-triggered. This prevents a circular
+    # research -> unit-count -> research deadlock on standard land.
+    demands.extend(
+        (
+            _training_demand(
+                effective=effective,
+                identity="castle-spearman-seed",
+                owner="military-bootstrap",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-castle-age",
+                reason_label="Bootstrap the Spearman line so Pikeman/Halberdier research remains reachable",
+                line="spearman-line",
+                minimum=6,
+                age_guard="(current-age >= castle-age)",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-skirmisher-seed",
+                owner="military-bootstrap",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-castle-age",
+                reason_label="Bootstrap the Skirmisher line so Elite Skirmisher research remains reachable",
+                line="skirmisher-line",
+                minimum=6,
+                age_guard="(current-age >= castle-age)",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-scout-cavalry-seed",
+                owner="military-bootstrap",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-castle-age",
+                reason_label="Bootstrap Scout/Light Cavalry so Husbandry/Hussar research remains reachable",
+                line="scout-cavalry-line",
+                minimum=6,
+                age_guard="(current-age >= castle-age)",
+            ),
+        )
+    )
+
     for identity, owner, age, tech_name, priority, resources in _RESEARCH_PACK:
         demand = _research_demand(
             effective=effective,
@@ -1278,6 +1324,8 @@ def community_strategy_demands(
         "research-ring-archer-armor": ("(current-age >= imperial-age)", "(unit-type-count 6 >= 18)"),
         "research-plate-barding-armor": ("(current-age >= imperial-age)", "(unit-type-count 441 >= 12)"),
         "research-plate-mail-armor": ("(current-age >= imperial-age)", "(unit-type-count 359 >= 12)"),
+        "research-capped-ram": ("(current-age >= imperial-age)", "(unit-type-count-total ram-line >= 2)"),
+        "research-siege-ram": ("(current-age >= imperial-age)", "(unit-type-count-total ram-line >= 4)"),
     }
     for identity, owner, age, tech_name, priority, resources in _IMPERIAL_MILITARY_RESEARCH_PACK:
         age_guard, unit_gate = imperial_research_gates[identity]
