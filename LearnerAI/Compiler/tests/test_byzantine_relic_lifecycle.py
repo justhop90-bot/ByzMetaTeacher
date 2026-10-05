@@ -64,10 +64,9 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
         acquire = rules["byzantine-relic-control-acquire"]
         acquire_sources = tuple(item.source for item in (*acquire.facts, *acquire.actions))
         self.assertIn("(up-gaia-type-count-total c: 285 > 0)", acquire_sources)
-        self.assertIn("(up-modify-sn sn-focus-player-number c:= 0)", acquire_sources)
         self.assertIn("(up-find-remote c: 285 c: 1)", acquire_sources)
         self.assertIn("(up-set-target-object search-remote c: 0)", acquire_sources)
-        self.assertIn("(up-find-local c: monk c: 1)", acquire_sources)
+        self.assertIn("(up-find-local c: 125 c: 1)", acquire_sources)
         self.assertIn(
             "(up-target-objects 0 0 -1 stance-defensive)",
             acquire_sources,
@@ -82,6 +81,15 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
         control = compilation.control_plan
         self.assertIsNotNone(control)
         assert control is not None
+        focus_control = next(
+            rule for rule in control.rules
+            if rule.identity == "byzantine-relic-control-focus-gaia"
+        )
+        self.assertIn(
+            "(set-strategic-number sn-focus-player-number 0)",
+            tuple(item.source for item in focus_control.actions),
+        )
+
         pickup_control = next(
             rule for rule in control.rules
             if rule.identity == "byzantine-relic-control-pickup-witness"
@@ -93,9 +101,7 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
 
         return_rule = rules["byzantine-relic-control-return"]
         return_sources = tuple(item.source for item in (*return_rule.facts, *return_rule.actions))
-        self.assertIn(
-            return_sources,
-        )
+        self.assertIn("(up-full-reset-search)", return_sources)
         self.assertIn("(up-find-local c: 104 c: 1)", return_sources)
         self.assertIn("(up-find-local c: 286 c: 1)", return_sources)
         self.assertIn(
