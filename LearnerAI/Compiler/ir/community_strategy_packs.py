@@ -29,6 +29,8 @@ from .strategy import (
     StrategicObservationSpec as _StrategicObservationSpec,
     CapabilityRecoveryContract as _CapabilityRecoveryContract,
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
+)
+from .endgame import (
     EndgameMode as _EndgameMode,
     EndgamePolicyRule as _EndgamePolicyRule,
     EndgamePlan as _EndgamePlan,
