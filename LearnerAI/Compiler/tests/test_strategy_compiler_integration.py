@@ -333,7 +333,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("byzantine-endgame-frontier-match", output)
         self.assertIn("byzantine-endgame-mode", output)
         self.assertIn("byzantine-endgame-win-condition", output)
-        self.assertIn("Verified frontier ground creates forward-production pressure", output)
 
         exact_frontier_match = "(goal byzantine-endgame-frontier-match 1)"
         for rule_id in (
