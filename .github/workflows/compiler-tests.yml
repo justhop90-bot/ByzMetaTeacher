@@ -91,7 +91,7 @@ jobs:
             LearnerAI.Compiler.tests.test_byzantine_runtime_promotion \
             LearnerAI.Compiler.tests.test_byzantine_bot_build -v
 
-      - name: Analyze checked-in Byzantine.per overlay relationship
+      - name: Analyze checked-in Byzantine.per rule ownership relationship
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -99,50 +99,68 @@ jobs:
           from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
           import hashlib
 
+          def rule_blocks(payload: bytes) -> list[str]:
+              text = payload.decode("utf-8", errors="replace")
+              blocks = []
+              cursor = 0
+              while True:
+                  start = text.find("(defrule", cursor)
+                  if start < 0:
+                      return blocks
+                  depth = 0
+                  end = None
+                  for index in range(start, len(text)):
+                      char = text[index]
+                      if char == "(":
+                          depth += 1
+                      elif char == ")":
+                          depth -= 1
+                          if depth == 0:
+                              end = index + 1
+                              break
+                  if end is None:
+                      raise SystemExit("unterminated defrule while analyzing root/compiler relationship")
+                  blocks.append(text[start:end])
+                  cursor = end
+
           effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
           profile = build_byzantine_strategy(effective, include_water_continuity=True)
           compiler = compile_strategy_profile(profile, effective).encode("utf-8")
           root = Path("Byzantine.per").read_bytes()
 
-          compiler_text = compiler.decode("utf-8", errors="replace")
-          root_text = root.decode("utf-8", errors="replace")
-          compiler_lines = compiler_text.splitlines(keepends=True)
-          root_lines = root_text.splitlines(keepends=True)
+          compiler_rules = rule_blocks(compiler)
+          root_rules = rule_blocks(root)
+          compiler_hashes = [hashlib.sha256(rule.encode("utf-8")).hexdigest() for rule in compiler_rules]
+          root_hashes = [hashlib.sha256(rule.encode("utf-8")).hexdigest() for rule in root_rules]
+
+          common = 0
+          limit = min(len(compiler_hashes), len(root_hashes))
+          while common < limit and compiler_hashes[common] == root_hashes[common]:
+              common += 1
 
           print(f"compiler_bytes={len(compiler)}")
           print(f"root_bytes={len(root)}")
+          print(f"compiler_rules={len(compiler_rules)}")
+          print(f"root_rules={len(root_rules)}")
           print(f"compiler_sha256={hashlib.sha256(compiler).hexdigest()}")
           print(f"root_sha256={hashlib.sha256(root).hexdigest()}")
+          print(f"common_rule_prefix={common}")
 
-          compiler_body = compiler_lines[7:] if len(compiler_lines) >= 7 else compiler_lines
-          root_body = root_lines[7:] if len(root_lines) >= 7 else root_lines
-          body_prefix = root_body[:len(compiler_body)] == compiler_body
-          print(f"header_normalized_prefix={body_prefix}")
-          print(f"compiler_body_lines={len(compiler_body)}")
-          print(f"root_body_lines={len(root_body)}")
-
-          if body_prefix:
-              overlay = b"".join(root_body[len(compiler_body):])
-              print("append_only_overlay_after_header=true")
-              print(f"overlay_bytes={len(overlay)}")
-              print(f"overlay_sha256={hashlib.sha256(overlay).hexdigest()}")
-              Path("/tmp/byzantine-overlay-bootstrap.per").write_bytes(overlay)
+          if common == len(compiler_hashes):
+              print("compiler_rules_are_root_prefix=true")
+              root_text = root.decode("utf-8", errors="replace")
+              last_compiler_rule = compiler_rules[-1]
+              marker = root_text.find(last_compiler_rule)
+              tail_start = marker + len(last_compiler_rule)
+              tail = root_text[tail_start:].encode("utf-8")
+              Path("/tmp/byzantine-overlay-bootstrap.per").write_bytes(tail)
+              print(f"overlay_tail_bytes={len(tail)}")
+              print(f"overlay_tail_sha256={hashlib.sha256(tail).hexdigest()}")
           else:
-              mismatch = next(
-                  (
-                      i
-                      for i, (left, right) in enumerate(
-                          zip(compiler_body, root_body),
-                          start=8,
-                      )
-                      if left != right
-                  ),
-                  min(len(compiler_body), len(root_body)) + 8,
-              )
-              print("append_only_overlay_after_header=false")
-              print(f"first_mismatching_line={mismatch}")
-              print(f"compiler_line={compiler_body[mismatch-8].rstrip() if mismatch-8 < len(compiler_body) else '<eof>'}")
-              print(f"root_line={root_body[mismatch-8].rstrip() if mismatch-8 < len(root_body) else '<eof>'}")
+              print("compiler_rules_are_root_prefix=false")
+              print(f"first_mismatching_rule={common + 1}")
+              print(f"compiler_rule_head={compiler_rules[common][:160] if common < len(compiler_rules) else '<eof>'}")
+              print(f"root_rule_head={root_rules[common][:160] if common < len(root_rules) else '<eof>'}")
               raise SystemExit(2)
           PY
       - name: Upload overlay bootstrap candidate
