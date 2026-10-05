@@ -21,7 +21,6 @@ FLOOR_THRESHOLDS = {
 FLOOR_RECOVERY_THRESHOLDS = {
     "food": 2000,
     "wood": 1700,
-    "gold": 1600,
 }
 
 OPEN_ENTRY_THRESHOLDS = {
@@ -133,20 +132,34 @@ class ImperialResolverPropertyTests(unittest.TestCase):
         for field, threshold in FLOOR_RECOVERY_THRESHOLDS.items():
             for value in around(threshold):
                 with self.subTest(field=field, value=value):
-                    case = replace(
-                        base,
-                        **{field: value},
-                    )
-                    decision = self.resolve(
-                        case,
-                        dwell_seconds=30,
-                        guard_seconds=20,
-                        rearm_seconds=0,
-                    )
+                    case = replace(base, **{field: value})
                     self.assertEqual(
                         ImperialResolver.floor_recovered(case),
                         value >= threshold,
                     )
+
+    def test_gold_starved_trash_remains_reachable_at_low_gold(self):
+        base = replace(
+            self.base(),
+            current=ImperialBand.OPEN_FIELD,
+            gold=800,
+            food=3000,
+            wood=3000,
+        )
+        decision = self.resolve(
+            base,
+            dwell_seconds=60,
+            guard_seconds=30,
+            rearm_seconds=0,
+        )
+        self.assertEqual(
+            decision.destination,
+            ImperialBand.GOLD_STARVED_TRASH,
+        )
+        self.assertEqual(
+            decision.reason,
+            ImperialReason.GOLD_STARVED,
+        )
 
 
     def test_open_and_trash_posture_require_offensive_objective_claim(self):
