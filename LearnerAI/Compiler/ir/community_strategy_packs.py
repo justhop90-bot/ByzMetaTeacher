@@ -381,7 +381,7 @@ def community_strategy_observations(
             "stable",
             "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
             "(unit-type-count-total knight-line >= {threshold})) "
-            "(unit-type-count-total camel-line >= {threshold}))",
+            "(unit-type-count-total camel-rider-line >= {threshold}))",
             "strategy-production-stable-depth",
         ),
         (
