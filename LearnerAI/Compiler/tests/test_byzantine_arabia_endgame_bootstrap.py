@@ -79,6 +79,14 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         self.assertNotIn("(unit-type-count 6 >= 18)", release)
         self.assertNotIn("(unit-type-count hussar >= 12)", release)
 
+    def test_endgame_recovery_no_longer_reasserts_exact_trash_floors(self):
+        self.assertNotIn("byzantine-endgame-push-recover-halberdier-floor", self.output)
+        self.assertNotIn("byzantine-endgame-push-recover-elite-skirmisher-floor", self.output)
+        self.assertNotIn("byzantine-endgame-push-recover-hussar-floor", self.output)
+        self.assertNotIn("byzantine-endgame-push-recover-premium", self.output)
+        self.assertIn("byzantine-endgame-push-recover-army-package", self.output)
+        self.assertIn("byzantine-endgame-push-recover-siege-package", self.output)
+
 
 if __name__ == "__main__":
     unittest.main()
