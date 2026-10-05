@@ -2024,6 +2024,7 @@ def build_byzantine_stock_strategy(
         duc_plan=_default_byzantine_duc_plan(
             stock_profile_id,
             target_control=endgame_plan.target_control,
+            objective_control=endgame_plan.objective_control,
         ),
         water_execution_plan=community_water_execution_plan(),
         map_profile=default_byzantine_map_profiles(),
