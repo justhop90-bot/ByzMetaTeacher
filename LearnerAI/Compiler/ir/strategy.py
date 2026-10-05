@@ -1679,9 +1679,21 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-push-admit",
+            "byzantine-endgame-push-imperial-ready",
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 0)", SourceLocation(1)),
+                parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-strategic-number sn-number-attack-groups 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-percent-attack-soldiers 75)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-admit",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                 parse_expression(current_attack_ready, SourceLocation(1)),
                 parse_expression(open_ground, SourceLocation(1)),
@@ -1693,13 +1705,13 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             actions=(
                 parse_expression(f"(set-strategic-number sn-number-attack-groups {plan.push_contract.attack_group_count})", SourceLocation(1)),
                 parse_expression(f"(set-strategic-number sn-percent-attack-soldiers {plan.push_contract.attack_soldier_percent})", SourceLocation(1)),
-                parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
             "byzantine-endgame-push-live-witness",
             facts=(
-                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(goal byzantine-endgame-push-state 2)", SourceLocation(1)),
                 parse_expression(live_witness, SourceLocation(1)),
             ),
             actions=(
