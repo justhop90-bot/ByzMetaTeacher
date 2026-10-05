@@ -212,7 +212,7 @@ class EndgameContractTests(unittest.TestCase):
         for demand in profile.demands:
             if not demand.identity.startswith("imperial-forward-production-"):
                 continue
-            rule = rules[demand and f"byzantine-endgame-conversion-admit-{demand.identity}"]
+            rule = rules[f"byzantine-endgame-conversion-admit-{demand.identity}"]
             sources = tuple(fact.source for fact in rule.facts) + tuple(action.source for action in rule.actions)
             self.assertIn(f"(goal demand-{demand.identity} 0)", sources)
             self.assertIn(f"(set-goal demand-{demand.identity} 1)", sources)
