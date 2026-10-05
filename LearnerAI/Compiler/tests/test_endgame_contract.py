@@ -12,6 +12,7 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgamePushContract,
     EndgameTargetCandidate,
     EndgameTargetControlContract,
+    EndgameConversionContract,
     EndgameTargetQueryKind,
 )
 from LearnerAI.Compiler.ir.civ_profile import Age, ByzantineProfile, resolve_effective_civ
@@ -202,6 +203,16 @@ class EndgameContractTests(unittest.TestCase):
                 for fact in admit.facts
             )
         )
+
+    def test_endgame_conversion_contract_is_bounded_and_typed(self):
+        contract = EndgameConversionContract(
+            identity="conversion",
+            frontier_required=EndgameFrontierState.DEFENSE,
+            forward_production_buildings=("barracks", "stable", "siege-workshop"),
+            resource_denial_native_ids=(932,),
+        )
+        self.assertEqual(contract.frontier_required, EndgameFrontierState.DEFENSE)
+        self.assertEqual(contract.resource_denial_native_ids, (932,))
 
     def test_endgame_runtime_recovery_requires_recovery_push_state(self):
         with self.assertRaises(ValueError):
