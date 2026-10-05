@@ -202,7 +202,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(
             "(not (and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 21) "
-            "(can-research-with-escrow feudal-age))))",
+            "(and (building-type-count-total lumber-camp >= 1) "
+            "(and (building-type-count-total mining-camp >= 1) "
+            "(can-research-with-escrow feudal-age)))))",
             demand.execution.requirements,
         )
         self.assertIn(
