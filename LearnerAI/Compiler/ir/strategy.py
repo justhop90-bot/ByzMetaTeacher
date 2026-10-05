@@ -1811,6 +1811,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     endgame_mode = "byzantine-endgame-mode"
     endgame_win = "byzantine-endgame-win-condition"
     frontier_verified = "byzantine-endgame-frontier-verified"
+    frontier_match = "byzantine-endgame-frontier-match"
     states = [push_state, push_timer, *sn_states]
     states.extend(
         (
@@ -1820,6 +1821,16 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     StorageRequestId(
                         SemanticId(profile.profile_id, frontier_verified),
                         frontier_verified,
+                    ),
+                    role=GoalRole.PERSISTENT_STATE,
+                ),
+            ),
+            NativeControlState(
+                frontier_match,
+                GoalSlotRequest(
+                    StorageRequestId(
+                        SemanticId(profile.profile_id, frontier_match),
+                        frontier_match,
                     ),
                     role=GoalRole.PERSISTENT_STATE,
                 ),
@@ -1846,14 +1857,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         )
     )
-    verified_frontier_match = (
-        "(or (and (goal byzantine-endgame-frontier 1) "
-        "(goal byzantine-endgame-frontier-verified 1)) "
-        "(or (and (goal byzantine-endgame-frontier 2) "
-        "(goal byzantine-endgame-frontier-verified 2)) "
-        "(and (goal byzantine-endgame-frontier 3) "
-        "(goal byzantine-endgame-frontier-verified 3))))"
-    )
+    verified_frontier_match = f"(goal {frontier_match} 1)"
     conversion_contract = plan.conversion_contract
     if conversion_contract is not None:
         for demand in profile.demands:
@@ -2016,6 +2020,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     actions=(
                         parse_expression(f"(set-goal {frontier_name} {next_value})", SourceLocation(1)),
                         parse_expression(f"(set-goal {frontier_verified} {next_value})", SourceLocation(1)),
+                        parse_expression(f"(set-goal {frontier_match} 1)", SourceLocation(1)),
                         parse_expression("(set-goal byzantine-endgame-push-state 4)", SourceLocation(1)),
                         parse_expression(f"(set-goal {frontier_witness_name} 0)", SourceLocation(1)),
                     ),
