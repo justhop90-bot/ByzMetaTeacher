@@ -150,7 +150,7 @@ class ImperialResolver:
     @classmethod
     def gold_starved_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
-            cls.floor_recovered(value)
+            not cls.floor_broken(value)
             and value.gold <= cls.TRASH_GOLD_IN
             and value.food >= cls.TRASH_FOOD_IN
             and value.wood >= cls.TRASH_WOOD_IN
@@ -353,7 +353,7 @@ class ImperialResolver:
 
             if (
                 value.gold >= cls.TRASH_GOLD_OUT
-                and cls.open_field_eligible(value)
+                and cls.gold_recovery_open_eligible(value)
                 and guard_seconds >= cls.GOLD_RECOVERY_DWELL
                 and not cls._cooldown_active(
                     ImperialBand.OPEN_FIELD,
