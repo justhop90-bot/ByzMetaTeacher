@@ -1,20 +1,41 @@
 # Byzantine Core v1 canonical build
 
-The Core v1 build is the compiler-produced artifact path. It is separate from the currently checked-in `Byzantine.per` runtime artifact because `main` contains narrow runtime repairs that are not yet represented as compiler policy.
+The canonical build is a four-stage artifact pipeline:
 
-Build the canonical compiler artifact with:
+```
+Byzantine strategy
+    -> compiler artifact
+    -> runtime assembly
+    -> runtime promotion
+    -> Byzantine.per
+```
+
+Build with:
 
 ```bash
 PYTHONPATH=LearnerAI python tools/build_byzantine_bot.py
 ```
 
-This writes:
+The builder produces and verifies:
 
-- `dist/byzantine/Byzantine.per`
-- `dist/byzantine/Byzantine.manifest.json`
+- `dist/byzantine/Byzantine.compiler.per`
+- `dist/byzantine/Byzantine.compiler.manifest.json`
+- `dist/byzantine/Byzantine.runtime.per`
+- `dist/byzantine/Byzantine.runtime.manifest.json`
+- `Byzantine.per`
+- `Byzantine.manifest.json`
 
-The builder resolves the pinned Byzantine profile, materializes the current effective civilization snapshot, calls the canonical `build_byzantine_strategy()` entry point, compiles it twice, and refuses to write the artifact when the two compilations differ.
+Runtime assembly consumes the compiler artifact plus the explicitly declared:
 
-The manifest records the profile/civilization/patch identity, effective snapshot fingerprint, artifact SHA-256, source Git revision, build input identity, rule/line counts, artifact byte length, and the native parser revision used by the authoritative CI acceptance workflow.
+```
+runtime/byzantine/Byzantine.runtime-overlay.per
+runtime/byzantine/Byzantine.runtime-overlay.json
+```
 
-This proves compiler reproducibility. It does not prove that the generated artifact is already behaviorally equivalent to the hand-repaired checked-in `Byzantine.per`, and it does not prove DE runtime behavior. Those remain separate gates in the Core v1 roadmap.
+The assembler verifies both input hashes, rejects duplicate emitted rule bodies between compiler and overlay, and writes the runtime manifest deterministically. Promotion then byte-copies the verified runtime artifact into the canonical root artifact and verifies byte identity again.
+
+The builder fails closed when the runtime overlay or its manifest is missing. This is intentional: the current repository has not yet extracted a canonical runtime overlay from the checked-in `Byzantine.per`. The old behavior in which `dist/byzantine/Byzantine.per` could be green while root `Byzantine.per` remained a separate hand-repaired artifact is no longer an accepted artifact contract.
+
+The manifests record exact SHA-256 values, canonical paths, compiler source revision, effective Byzantine snapshot identity, assembly lineage, and promotion provenance. The semantic verifier checks the complete compiler -> runtime -> promotion hash chain.
+
+This proves static artifact lineage and reproducibility. It does not prove DE runtime behavior, queue timing, DUC object liveness, native Strategic Number mutation, or any other runtime-only property that remains OPEN evidence.
