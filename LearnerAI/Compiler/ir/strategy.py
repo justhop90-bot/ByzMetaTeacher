@@ -1809,7 +1809,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
     contract = plan.objective_control
     owner = SemanticId(profile.profile_id, "byzantine-endgame-objective")
     witness_target_request = GoalSlotRequest(
-        StorageRequestId(owner, "objective-witness-target"),
+        StorageRequestId(owner, "up-get-object-data"),
         role=GoalRole.NATIVE_OUTPUT,
     )
 
@@ -1919,7 +1919,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             GoalSlotRequest(
                 StorageRequestId(
                     SemanticId(profile.profile_id, "endgame-objective-target:siege"),
-                    "target-object-id",
+                    "up-get-object-data",
                 ),
                 role=GoalRole.NATIVE_OUTPUT,
             ),
@@ -1929,7 +1929,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             GoalSlotRequest(
                 StorageRequestId(
                     SemanticId(profile.profile_id, "endgame-objective-target:defense"),
-                    "target-object-id",
+                    "up-get-object-data",
                 ),
                 role=GoalRole.NATIVE_OUTPUT,
             ),
@@ -1939,7 +1939,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             GoalSlotRequest(
                 StorageRequestId(
                     SemanticId(profile.profile_id, "endgame-objective-target:production"),
-                    "target-object-id",
+                    "up-get-object-data",
                 ),
                 role=GoalRole.NATIVE_OUTPUT,
             ),
@@ -1949,7 +1949,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             GoalSlotRequest(
                 StorageRequestId(
                     SemanticId(profile.profile_id, "endgame-objective-target:town-center"),
-                    "target-object-id",
+                    "up-get-object-data",
                 ),
                 role=GoalRole.NATIVE_OUTPUT,
             ),
@@ -3966,7 +3966,7 @@ def _default_byzantine_duc_plan(
         target_output = GoalSlotRequest(
             StorageRequestId(
                 SemanticId(profile_id, "byzantine-endgame-objective"),
-                "objective-witness-target",
+                "up-get-object-data",
             ),
             role=GoalRole.NATIVE_OUTPUT,
         )
