@@ -10,6 +10,9 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgamePlan,
     EndgameFrontierState,
     EndgamePushContract,
+    EndgameTargetCandidate,
+    EndgameTargetControlContract,
+    EndgameTargetQueryKind,
 )
 from LearnerAI.Compiler.ir.civ_profile import Age, ByzantineProfile, resolve_effective_civ
 from LearnerAI.Compiler.ir.strategy import (
@@ -18,7 +21,10 @@ from LearnerAI.Compiler.ir.strategy import (
     StrategyProfile,
     lower_strategy_profile,
 )
-from LearnerAI.Compiler.ir.community_strategy_packs import build_byzantine_stock_strategy
+from LearnerAI.Compiler.ir.community_strategy_packs import (
+    build_byzantine_stock_strategy,
+    default_byzantine_endgame_target_control,
+)
 
 
 class EndgameContractTests(unittest.TestCase):
@@ -107,6 +113,39 @@ class EndgameContractTests(unittest.TestCase):
                 frontier=contract.frontier,
             )
 
+    def test_frontier_target_control_is_typed_bounded_and_ordered(self):
+        contract = default_byzantine_endgame_target_control()
+        self.assertEqual(contract.search_radius, 40)
+        self.assertEqual(
+            tuple(candidate.frontier for candidate in contract.candidates),
+            (
+                *([EndgameFrontierState.SIEGE] * 4),
+                *([EndgameFrontierState.DEFENSE] * 5),
+                *([EndgameFrontierState.PRODUCTION] * 5),
+                *([EndgameFrontierState.TOWN_CENTER] * 4),
+            ),
+        )
+        self.assertEqual(
+            tuple(candidate.native_id for candidate in contract.candidates[:4]),
+            (36, 331, 42, 913),
+        )
+        self.assertEqual(contract.candidates[0].query_kind, EndgameTargetQueryKind.OBJECT_TYPE)
+        self.assertEqual(contract.candidates[3].query_kind, EndgameTargetQueryKind.OBJECT_CLASS)
+        with self.assertRaises(ValueError):
+            EndgameTargetControlContract(
+                identity="bad",
+                anchor_goal="byzantine-offensive-objective-point",
+                search_radius=41,
+                candidates=(
+                    EndgameTargetCandidate(
+                        identity="siege",
+                        frontier=EndgameFrontierState.SIEGE,
+                        query_kind=EndgameTargetQueryKind.OBJECT_TYPE,
+                        native_id=36,
+                    ),
+                ),
+            )
+
     def test_byzantine_stock_lowers_endgame_push_and_frontier_control(self):
         profile = build_byzantine_stock_strategy(self.effective)
         plan = profile.endgame_plan
@@ -119,7 +158,7 @@ class EndgameContractTests(unittest.TestCase):
             "byzantine-endgame-push-state",
             {state.identifier for state in compilation.control_plan.states},
         )
-        self.assertNotIn(
+        self.assertIn(
             "byzantine-endgame-frontier",
             {state.identifier for state in compilation.control_plan.states},
         )
