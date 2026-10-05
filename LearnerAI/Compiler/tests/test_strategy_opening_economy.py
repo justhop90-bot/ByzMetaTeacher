@@ -257,11 +257,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             demand = profile.demand(f"economy-stone-camp-floor-{floor}")
             self.assertEqual(demand.initial_state.name, "RELEASED")
             self.assertIn(
-                "(and (current-age >= feudal-age) "
-                "(goal demand-castle-commitment 1) "
-                "(resource-found stone))",
+                "(and (current-age >= feudal-age) (resource-found stone))",
                 demand.execution.requirements,
             )
+            self.assertIsNotNone(demand.opportunity_cost)
+            self.assertEqual(demand.opportunity_cost.owner, "castle-trajectory")
 
     def test_feudal_research_yields_to_castle_feasibility(self):
         profile = build_byzantine_strategy(self.effective)
