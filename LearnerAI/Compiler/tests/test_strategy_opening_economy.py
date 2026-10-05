@@ -234,6 +234,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 ),
                 resource,
             )
+            self.assertEqual(demand.initial_state.name, "RELEASED")
 
     def test_adaptive_outpost_starts_released_and_reopens_from_pressure(self):
         profile = build_byzantine_strategy(self.effective)
