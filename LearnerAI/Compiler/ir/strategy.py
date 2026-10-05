@@ -2352,15 +2352,18 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         plan.push_contract.cleared_witness_ref
     ).expression
     military_ready = (
-        "(or (unit-type-count cataphract >= 4) "
-        "(or (unit-type-count varangian-guard >= 6) "
-        "(or (unit-type-count 492 >= 6) "
-        "(unit-type-count halberdier >= 6))))"
+        "(unit-type-count halberdier >= 18)"
+    )
+    military_ready_es = (
+        "(unit-type-count skirmisher-line >= 18)"
+    )
+    military_ready_hussar = (
+        "(unit-type-count hussar >= 12)"
     )
     siege_ready = (
-        "(or (unit-type-count trebuchet >= 1) "
-        "(or (unit-type-count bombard-cannon >= 1) "
-        "(unit-type-count-total mangonel-line >= 1)))"
+        "(or (unit-type-count trebuchet >= 4) "
+        "(or (unit-type-count bombard-cannon >= 4) "
+        "(unit-type-count-total mangonel-line >= 4)))"
     )
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     frontier_witness = (
@@ -2400,6 +2403,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
                 parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(military_ready_es, SourceLocation(1)),
+                parse_expression(military_ready_hussar, SourceLocation(1)),
                 parse_expression(siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
@@ -2442,6 +2447,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression(f"(not {military_ready})", SourceLocation(1)),
+                parse_expression(f"(not {military_ready_es})", SourceLocation(1)),
+                parse_expression(f"(not {military_ready_hussar})", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
@@ -2455,6 +2462,9 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression(cleared_witness, SourceLocation(1)),
                 parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(military_ready_es, SourceLocation(1)),
+                parse_expression(military_ready_hussar, SourceLocation(1)),
+                parse_expression(siege_ready, SourceLocation(1)),
                 *(
                     (
                         parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
@@ -2474,6 +2484,9 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(military_ready_es, SourceLocation(1)),
+                parse_expression(military_ready_hussar, SourceLocation(1)),
+                parse_expression(siege_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
