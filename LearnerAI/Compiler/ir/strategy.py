@@ -1164,7 +1164,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
         return None
 
     from ..ast import SourceLocation
-    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
+    from ..runtime_binding import GoalSlotRequest, GoalSpanRequest, StrategicNumberRequest
     from .recurrent import TimerRequest
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
@@ -3417,9 +3417,6 @@ def _default_byzantine_duc_plan(
             )
 
     if profile_id == "byzantine-stock-v1" and objective_control is not None:
-        from .endgame import EndgameObjectiveClass
-        from .model import GoalRole
-
         witness_specs = (
             (
                 "byzantine-endgame-objective-witness-siege-search",
