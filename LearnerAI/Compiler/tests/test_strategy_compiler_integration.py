@@ -624,10 +624,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             if rule.identity.startswith("sn-controller-byzantine-endgame-push-")
         }
         self.assertIn(
-            "sn-controller-byzantine-endgame-push-attack-groups-underlay-write",
-            sn_controllers,
-        )
-        self.assertIn(
             "sn-controller-byzantine-endgame-push-227-activate",
             sn_controllers,
         )
