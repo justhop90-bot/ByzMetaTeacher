@@ -51,6 +51,15 @@ class EndgameObjectiveClass(str, Enum):
     TOWN_CENTER = "town-center"
 
 
+class EndgameObjectiveReleaseReason(str, Enum):
+    NONE = "none"
+    COMPLETED = "completed"
+    LOST_OUT_OF_BOUNDS = "lost-out-of-bounds"
+    FAILED_EXECUTION = "failed-execution"
+    FORTIFICATION_ABORT = "fortification-abort"
+    TC_EXHAUSTED = "tc-exhausted"
+
+
 class EndgameFrontierState(str, Enum):
     SIEGE = "SIEGE"
     DEFENSE = "DEFENSE"
@@ -152,6 +161,10 @@ class EndgameObjectiveControlContract:
     search_goal: str = "byzantine-offensive-objective-search"
     enemy_player_goal: str = "byzantine-offensive-enemy-player"
     claim_goal: str = "byzantine-offensive-objective-claim"
+    witness_target_goal: str = "byzantine-offensive-objective-witness-target"
+    release_reason_goal: str = "byzantine-offensive-objective-release-reason"
+    release_search_goal: str = "byzantine-offensive-objective-release-search"
+    release_search_radius: int = 60
     timer_name: str = "byzantine-offensive-objective-timer"
 
     def __post_init__(self) -> None:
@@ -163,10 +176,25 @@ class EndgameObjectiveControlContract:
             self.search_goal,
             self.enemy_player_goal,
             self.claim_goal,
+            self.witness_target_goal,
+            self.release_reason_goal,
+            self.release_search_goal,
             self.timer_name,
         )
         if any(not isinstance(item, str) or not item.strip() for item in fields):
             raise ValueError("endgame objective control identifiers must be non-empty strings")
+        control_identifiers = fields[1:]
+        if len(control_identifiers) != len(set(control_identifiers)):
+            raise ValueError("endgame objective control identifiers must be unique")
+
+        if not isinstance(self.release_search_radius, int) or isinstance(
+            self.release_search_radius, bool
+        ):
+            raise TypeError("endgame objective release_search_radius must be an integer")
+        if not 41 <= self.release_search_radius <= 80:
+            raise ValueError(
+                "endgame objective release_search_radius must be in 41..80"
+            )
 
     @property
     def state_constants(self) -> tuple[tuple[str, int], ...]:
@@ -183,8 +211,15 @@ class EndgameObjectiveControlContract:
         )
 
     @property
+    def release_reason_constants(self) -> tuple[tuple[str, int], ...]:
+        return tuple(
+            (f"{self.release_reason_goal}-{reason.value}", index)
+            for index, reason in enumerate(EndgameObjectiveReleaseReason)
+        )
+
+    @property
     def constants(self) -> tuple[tuple[str, int], ...]:
-        return self.state_constants + self.class_constants
+        return self.state_constants + self.class_constants + self.release_reason_constants
 
 
 @dataclass(frozen=True)

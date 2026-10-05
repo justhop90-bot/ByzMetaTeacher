@@ -25,6 +25,18 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertIn("castle-cataphract-floor", resolved.demand_ids)
         self.assertIn("castle-mangonel-floor", resolved.demand_ids)
         self.assertIn("imperial-bombard-floor", resolved.demand_ids)
+        for identity in (
+            "imperial-halberdier-floor",
+            "imperial-elite-skirmisher-floor",
+            "imperial-hussar-floor",
+            "research-pikeman",
+            "research-elite-skirmisher",
+            "research-husbandry",
+            "research-halberdier",
+            "research-hussar",
+            "research-bracer",
+        ):
+            self.assertIn(identity, resolved.demand_ids)
         self.assertIn("water-fishing-continuity", resolved.demand_ids)
 
     def test_stock_profile_contains_complete_research_witnesses(self):
@@ -44,6 +56,21 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "research-gold-shaft-mining",
             "research-heavy-plow",
             "research-fletching",
+            "research-forging",
+            "research-pikeman",
+            "research-elite-skirmisher",
+            "research-husbandry",
+            "research-iron-casting",
+            "research-padded-archer-armor",
+            "research-leather-archer-armor",
+            "research-halberdier",
+            "research-hussar",
+            "research-bracer",
+            "research-ring-archer-armor",
+            "research-plate-barding-armor",
+            "research-scale-mail-armor",
+            "research-chain-mail-armor",
+            "research-plate-mail-armor",
         ):
             self.assertIn(f"{identity}-pending", observations)
             self.assertIn(f"{identity}-complete", observations)
@@ -132,6 +159,14 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             observation_by_id["strategy-production-stable-depth-6"],
         )
         self.assertIn(
+            "(unit-type-count-total 441 >= 6)",
+            observation_by_id["strategy-production-stable-depth-6"],
+        )
+        self.assertIn(
+            "(unit-type-count-total 6 >= 6)",
+            observation_by_id["strategy-production-range-depth-6"],
+        )
+        self.assertIn(
             "(unit-type-count-total camel-rider-line >= 6)",
             observation_by_id["strategy-production-stable-depth-6"],
         )
@@ -167,7 +202,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         by_id = {item.identity: item for item in profile.demands}
 
         cataphract = by_id["imperial-cataphract-sustain"]
-        self.assertEqual(cataphract.target.minimum, 30)
+        self.assertEqual(cataphract.target.minimum, 18)
         self.assertEqual(
             tuple(item.observation_ref for item in cataphract.reason),
             (
@@ -200,8 +235,8 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         profile = build_byzantine_stock_strategy(self.effective)
         by_id = {item.identity: item for item in profile.demands}
         expected = {
-            "imperial-cataphract-sustain": 30,
-            "imperial-varangian-sustain": 24,
+            "imperial-cataphract-sustain": 18,
+            "imperial-varangian-sustain": 14,
             "imperial-ram-sustain": 8,
             "imperial-trebuchet-sustain": 8,
         }
@@ -216,6 +251,59 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                 demand.identity,
             )
 
+
+    def test_imperial_trash_backbone_has_exact_standing_floors(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        expected = {
+            "imperial-halberdier-floor": ("halberdier", 18),
+            "imperial-elite-skirmisher-floor": ("6", 18),
+            "imperial-hussar-floor": ("hussar", 12),
+        }
+        for identity, (witness, minimum) in expected.items():
+            demand = by_id[identity]
+            self.assertIn(f"(unit-type-count {witness} >= {minimum})", demand.execution.witness)
+            action_unit = (
+                demand.execution.action.removeprefix("(train ").removesuffix(")")
+            )
+            self.assertIn(
+                f"(unit-type-count-total {action_unit} < {minimum})",
+                demand.execution.requirements,
+            )
+
+    def test_imperial_band_scaling_is_mutually_exclusive_and_exact(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        checks = {
+            "imperial-open-halberdier-standard": ("(goal byzantine-imperial-band-state 1)", 24),
+            "imperial-open-halberdier-pressure": ("(goal byzantine-imperial-band-state 1)", 30),
+            "imperial-open-halberdier-severe": ("(goal byzantine-imperial-band-state 1)", 36),
+            "imperial-open-elite-skirmisher-standard": ("(goal byzantine-imperial-band-state 1)", 24),
+            "imperial-open-elite-skirmisher-pressure": ("(goal byzantine-imperial-band-state 1)", 30),
+            "imperial-open-elite-skirmisher-severe": ("(goal byzantine-imperial-band-state 1)", 36),
+            "imperial-open-hussar-standard": ("(goal byzantine-imperial-band-state 1)", 16),
+            "imperial-open-hussar-mobile": ("(goal byzantine-imperial-band-state 1)", 20),
+            "imperial-fortified-halberdier": ("(goal byzantine-imperial-band-state 2)", 24),
+            "imperial-fortified-elite-skirmisher": ("(goal byzantine-imperial-band-state 2)", 20),
+            "imperial-fortified-hussar": ("(goal byzantine-imperial-band-state 2)", 10),
+            "imperial-trash-halberdier-standard": ("(goal byzantine-imperial-band-state 3)", 30),
+            "imperial-trash-halberdier-high": ("(goal byzantine-imperial-band-state 3)", 36),
+            "imperial-trash-elite-skirmisher-standard": ("(goal byzantine-imperial-band-state 3)", 30),
+            "imperial-trash-elite-skirmisher-high": ("(goal byzantine-imperial-band-state 3)", 36),
+            "imperial-trash-hussar-standard": ("(goal byzantine-imperial-band-state 3)", 18),
+            "imperial-trash-hussar-high": ("(goal byzantine-imperial-band-state 3)", 24),
+        }
+        for identity, (band_guard, minimum) in checks.items():
+            demand = by_id[identity]
+            self.assertIn(band_guard, demand.execution.requirements)
+            self.assertIn(f"< {minimum})", " ".join(demand.execution.requirements))
+            self.assertEqual(demand.execution.action.count("(train "), 1)
+
+    def test_imperial_package_excludes_unavailable_blacksmith_techs(self):
+        identities = {d.identity for d in build_byzantine_stock_strategy(self.effective).demands}
+        self.assertNotIn("research-blast-furnace", identities)
+        self.assertNotIn("research-bloodlines", identities)
+
     def test_imperial_provider_depth_reopens_after_attrition_floor_loss(self):
         profile = build_byzantine_stock_strategy(self.effective)
         by_id = {item.identity: item for item in profile.demands}
@@ -228,8 +316,8 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertEqual(
             observations["strategy-production-barracks-replacement"],
             "(and (current-age >= imperial-age) "
-            "(or (unit-type-count varangian-guard < 12) "
-            "(unit-type-count 359 < 12)))",
+            "(or (unit-type-count varangian-guard < 14) "
+            "(unit-type-count 359 < 18)))",
         )
         self.assertIn(
             "strategy-production-barracks-replacement",
@@ -244,6 +332,26 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                 evidence.observation_ref
                 for evidence in by_id["imperial-barracks-depth-4"].reason
             ],
+        )
+
+        self.assertEqual(
+            observations["strategy-production-stable-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count cataphract < 18) "
+            "(unit-type-count 441 < 12)))",
+        )
+        self.assertEqual(
+            observations["strategy-production-range-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count 6 < 18) "
+            "(unit-type-count 492 < 14)))",
+        )
+        self.assertEqual(
+            observations["strategy-production-siege-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count trebuchet < 4) "
+            "(or (unit-type-count bombard-cannon < 4) "
+            "(unit-type-count-total mangonel-line < 4))))",
         )
 
     def test_imperial_attack_strategic_numbers_are_owned_by_endgame_push_control(self):

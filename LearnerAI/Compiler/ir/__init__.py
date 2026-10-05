@@ -25,6 +25,8 @@ from .endgame import (
     EndgameTargetCandidate,
     EndgameTargetControlContract,
     EndgameTargetQueryKind,
+    EndgameObjectiveControlContract,
+    EndgameObjectiveReleaseReason,
     EndgamePushState,
     EndgameRuntimeState,
     EndgameWinCondition,

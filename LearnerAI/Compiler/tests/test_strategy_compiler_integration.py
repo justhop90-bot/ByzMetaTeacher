@@ -240,6 +240,15 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-offensive-objective-search",
             "byzantine-offensive-enemy-player",
             "byzantine-offensive-objective-claim",
+            "byzantine-fortification-threat",
+            "byzantine-offensive-objective-target-latch",
+            "byzantine-offensive-objective-target-siege",
+            "byzantine-offensive-objective-target-defense",
+            "byzantine-offensive-objective-target-production",
+            "byzantine-offensive-objective-target-town-center",
+            "byzantine-offensive-objective-witness-target",
+            "byzantine-offensive-objective-release-reason",
+            "byzantine-offensive-objective-release-search",
             "byzantine-offensive-objective-timer",
         ):
             self.assertIn(expected, state_ids)
@@ -248,6 +257,12 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertEqual(constants["byzantine-offensive-objective-state-idle"], 0)
         self.assertEqual(constants["byzantine-offensive-objective-state-witness"], 6)
         self.assertEqual(constants["byzantine-offensive-objective-class-town-center"], 4)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-none"], 0)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-completed"], 1)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-lost-out-of-bounds"], 2)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-failed-execution"], 3)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-fortification-abort"], 4)
+        self.assertEqual(constants["byzantine-offensive-objective-release-reason-tc-exhausted"], 5)
 
         initialize = next(
             rule for rule in control.rules
@@ -257,6 +272,15 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(set-goal byzantine-offensive-objective-claim 0)",
             tuple(action.source for action in initialize.actions),
         )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason 0)",
+            tuple(action.source for action in initialize.actions),
+        )
+        states_by_id = {state.identifier: state for state in control.states}
+        self.assertEqual(states_by_id["byzantine-offensive-objective-witness-target"].request.role.value, "NATIVE_OUTPUT")
+        self.assertEqual(states_by_id["byzantine-offensive-objective-release-search"].request.width, 4)
+        self.assertEqual(states_by_id["byzantine-offensive-objective-release-search"].request.role.value, "NATIVE_OUTPUT")
+        self.assertEqual(states_by_id["byzantine-offensive-objective-release-reason"].request.role.value, "PERSISTENT_STATE")
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
         self.assertIn(
@@ -276,6 +300,241 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             output,
         )
 
+    def test_byzantine_endgame_objective_target_control_is_class_priority_and_fail_closed(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        duc = compilation.duc_plan
+        assert control is not None
+        assert duc is not None
+
+        admit = next(rule for rule in control.rules if rule.identity == "byzantine-endgame-objective-admit")
+        admit_facts = tuple(fact.source for fact in admit.facts)
+        admit_actions = tuple(action.source for action in admit.actions)
+        self.assertIn("(current-age >= castle-age)", admit_facts)
+        self.assertIn(
+            "(goal byzantine-endgame-push-state 1)",
+            admit_facts,
+        )
+        self.assertIn("(goal byzantine-army-attack-ready 1)", admit_facts)
+        self.assertIn("(goal byzantine-siege-approach byzantine-siege-approach-normal)", admit_facts)
+        self.assertIn("(set-goal byzantine-offensive-objective-claim 1)", admit_actions)
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-siege)",
+            admit_actions,
+        )
+
+        target_rules = {
+            rule.identity: rule
+            for rule in duc.rules
+            if rule.identity.startswith("byzantine-endgame-objective-target-")
+        }
+        expected = {
+            "byzantine-endgame-objective-target-siege": (36, 331, 42, 913),
+            "byzantine-endgame-objective-target-defense": (82, 235, 236, 952, 927),
+            "byzantine-endgame-objective-target-production": (49, 12, 87, 101, 104, 83),
+            "byzantine-endgame-objective-target-town-center": (109, 71, 141, 142),
+        }
+        for identity, native_ids in expected.items():
+            self.assertIn(identity, target_rules)
+            facts = tuple(fact.source for fact in target_rules[identity].facts)
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 1)",
+                facts,
+            )
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 1)",
+                facts,
+            )
+            actions = tuple(action.source for action in target_rules[identity].actions)
+            self.assertIn("(up-set-target-point byzantine-offensive-objective-point)", actions)
+            self.assertIn("(up-filter-distance c: -1 c: 40)", actions)
+            remote = tuple(
+                int(action.split("c: ", 1)[1].split(" ", 1)[0])
+                for action in actions
+                if action.startswith("(up-find-remote c: ")
+            )
+            self.assertEqual(remote, native_ids)
+            self.assertEqual(actions[-2:], (
+                "(up-set-target-object search-remote c: 0)",
+                "(up-get-object-data id 0)",
+            ))
+            matching_outputs = tuple(
+                request
+                for request in duc.output_requests
+                if request.rule_identity == identity
+            )
+            self.assertEqual(len(matching_outputs), 1)
+            self.assertEqual(matching_outputs[0].command, "up-get-object-data")
+            self.assertEqual(
+                matching_outputs[0].expression_index,
+                4 + len(native_ids),
+            )
+
+        misses = {
+            rule.identity: tuple(action.source for action in rule.actions)
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-objective-target-miss-")
+        }
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-tc-exhausted)",
+            misses["byzantine-endgame-objective-target-miss-town-center"],
+        )
+        enter_rules = {
+            rule.identity: tuple(fact.source for fact in rule.facts)
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-objective-enter-executing-")
+        }
+        self.assertIn(
+            "(up-compare-goal byzantine-offensive-objective-target-siege >= 1)",
+            enter_rules["byzantine-endgame-objective-enter-executing-siege"],
+        )
+        self.assertIn(
+            "(up-compare-goal byzantine-offensive-objective-target-town-center >= 1)",
+            enter_rules["byzantine-endgame-objective-enter-executing-town-center"],
+        )
+
+    def test_byzantine_endgame_objective_witness_release_lifecycle(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        duc = compilation.duc_plan
+        assert control is not None
+        assert duc is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for identity in (
+            "byzantine-endgame-objective-admit",
+            "byzantine-endgame-objective-target-miss-siege",
+            "byzantine-endgame-objective-target-miss-defense",
+            "byzantine-endgame-objective-target-miss-production",
+            "byzantine-endgame-objective-target-miss-town-center",
+            "byzantine-endgame-objective-enter-executing-siege",
+            "byzantine-endgame-objective-enter-executing-defense",
+            "byzantine-endgame-objective-enter-executing-production",
+            "byzantine-endgame-objective-enter-executing-town-center",
+            "byzantine-endgame-objective-executing-to-witness",
+            "byzantine-endgame-objective-witness-live-rearm",
+            "byzantine-endgame-objective-witness-failed-execution",
+            "byzantine-endgame-objective-witness-town-center-exhausted",
+            "byzantine-endgame-objective-witness-lost-out-of-bounds",
+            "byzantine-endgame-objective-fortification-abort",
+        ):
+            self.assertIn(identity, rules)
+
+        release_actions = {
+            identity: tuple(action.source for action in rules[identity].actions)
+            for identity in (
+                "byzantine-endgame-objective-witness-failed-execution",
+                "byzantine-endgame-objective-witness-town-center-exhausted",
+                "byzantine-endgame-objective-witness-lost-out-of-bounds",
+                "byzantine-endgame-objective-fortification-abort",
+            )
+        }
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-failed-execution)",
+            release_actions["byzantine-endgame-objective-witness-failed-execution"],
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-tc-exhausted)",
+            release_actions["byzantine-endgame-objective-witness-town-center-exhausted"],
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-lost-out-of-bounds)",
+            release_actions["byzantine-endgame-objective-witness-lost-out-of-bounds"],
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-release-reason "
+            "byzantine-offensive-objective-release-reason-fortification-abort)",
+            release_actions["byzantine-endgame-objective-fortification-abort"],
+        )
+
+        witness_search = tuple(
+            rule for rule in duc.rules
+            if rule.identity.startswith("byzantine-endgame-objective-witness-")
+            and rule.identity.endswith("-search")
+        )
+        self.assertEqual(len(witness_search), 4)
+        for rule in witness_search:
+            facts = tuple(fact.source for fact in rule.facts)
+            actions = tuple(action.source for action in rule.actions)
+            self.assertIn(
+                "(goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-witness)",
+                facts,
+            )
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 1)",
+                facts,
+            )
+            self.assertIn(
+                "(up-filter-distance c: 0 c: 60)",
+                actions,
+            )
+            self.assertIn("(up-find-remote", " ".join(actions))
+            self.assertNotIn("up-modify-sn sn-focus-player-number", " ".join(actions))
+            self.assertNotIn("(up-target-objects", " ".join(actions))
+
+        consumer = next(
+            rule for rule in duc.rules
+            if rule.identity == "byzantine-endgame-objective-witness-consume"
+        )
+        self.assertIn(
+            "(up-set-target-object search-remote c: 0)",
+            tuple(fact.source for fact in consumer.facts),
+        )
+        consumer_actions = tuple(action.source for action in consumer.actions)
+        self.assertEqual(
+            consumer_actions,
+            (
+                "(up-get-object-data id 0)",
+                "(up-get-search-state byzantine-offensive-objective-release-search)",
+                "(up-reset-search 0 0 1 1)",
+            ),
+        )
+        output_sites = {
+            (request.rule_identity, request.section, request.expression_index, request.command)
+            for request in duc.output_requests
+            if request.rule_identity == "byzantine-endgame-objective-witness-consume"
+        }
+        self.assertEqual(
+            output_sites,
+            {
+                (
+                    "byzantine-endgame-objective-witness-consume",
+                    "ACTION",
+                    0,
+                    "up-get-object-data",
+                ),
+                (
+                    "byzantine-endgame-objective-witness-consume",
+                    "ACTION",
+                    1,
+                    "up-get-search-state",
+                ),
+            },
+        )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn(
+            "; Native DUC rule: byzantine-endgame-objective-witness-consume",
+            output,
+        )
+        self.assertIn(
+            "(up-get-search-state ",
+            output,
+        )
+        self.assertNotIn(
+            "(set-goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-executing)",
+            output.split("; Native DUC execution plan", 1)[1].split(
+                "; Native attack lifecycle plan", 1
+            )[0],
+        )
+
     def test_byzantine_stock_lowers_frontier_target_control_through_duc(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
 
@@ -287,7 +546,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             rule for rule in plan.rules
             if rule.identity.startswith("byzantine-endgame-target-")
         )
-        self.assertEqual(len(target_rules), 18)
+        self.assertEqual(len(target_rules), 19)
         for rule in target_rules:
             sources = tuple(fact.source for fact in rule.facts)
             self.assertIn("(goal byzantine-offensive-objective-claim 0)", sources)
@@ -313,6 +572,79 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-filter-distance c: -1 c: 40)", output)
         self.assertIn("; Native DUC rule: byzantine-endgame-target-", output)
 
+
+    def test_byzantine_stock_lowers_imperial_band_controller_and_attack_floor(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        for expected in (
+            "byzantine-imperial-band-state",
+            "byzantine-imperial-band-candidate",
+            "byzantine-imperial-band-rearm",
+            "byzantine-imperial-band-reason",
+            "byzantine-imperial-band-dwell-timer",
+            "byzantine-imperial-band-guard-timer",
+            "byzantine-imperial-band-rearm-timer",
+        ):
+            self.assertIn(expected, state_ids)
+
+        constants = dict(control.constants)
+        self.assertEqual(constants["bt-imp-band-standing"], 0)
+        self.assertEqual(constants["bt-imp-band-open"], 1)
+        self.assertEqual(constants["bt-imp-band-fortified"], 2)
+        self.assertEqual(constants["bt-imp-band-trash"], 3)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        open_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-standing-open-candidate"].facts
+        )
+        self.assertNotIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
+        self.assertNotIn("(goal byzantine-offensive-objective-claim 0)", open_candidate_facts)
+
+        for identity in (
+            "byzantine-imperial-band-floor-break-open",
+            "byzantine-imperial-band-floor-break-fortified",
+            "byzantine-imperial-band-floor-break-trash",
+            "byzantine-imperial-band-fortified-candidate",
+            "byzantine-imperial-band-standing-open-candidate",
+            "byzantine-imperial-band-standing-trash-candidate",
+            "byzantine-imperial-band-transition-open",
+            "byzantine-imperial-band-transition-fortified",
+            "byzantine-imperial-band-transition-trash",
+            "byzantine-imperial-band-transition-economic",
+        ):
+            self.assertIn(identity, rules)
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("(defconst bt-imp-band-standing 0)", output)
+        self.assertIn("(enable-timer byzantine-imperial-band-guard-timer 15)", output)
+        self.assertIn("(enable-timer byzantine-imperial-band-dwell-timer 90)", output)
+        self.assertIn("(enable-timer byzantine-imperial-band-rearm-timer 45)", output)
+
+    def test_byzantine_endgame_push_requires_imperial_trash_floor_and_band(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item for item in control.rules
+            if item.identity == "byzantine-endgame-push-admit"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn(
+            "(up-compare-goal byzantine-imperial-band-state >= 1)",
+            facts,
+        )
+        self.assertTrue(any("(unit-type-count halberdier >= 18)" in fact for fact in facts))
+        self.assertTrue(any("(unit-type-count 6 >= 18)" in fact for fact in facts))
+        self.assertTrue(any("(unit-type-count hussar >= 12)" in fact for fact in facts))
+        self.assertTrue(
+            any("(unit-type-count cataphract >= 12)" in fact for fact in facts)
+            or any("(goal byzantine-imperial-band-state 3)" in fact for fact in facts)
+        )
+
     def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
 
@@ -334,27 +666,74 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("byzantine-endgame-push-pulse-expiry", rules)
         self.assertIn("byzantine-endgame-push-release", rules)
 
+        admit_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-admit"].facts)
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            admit_facts,
+        )
         admit_actions = tuple(action.source for action in rules["byzantine-endgame-push-admit"].actions)
-        self.assertIn("(set-strategic-number sn-native-36 1)", admit_actions)
-        self.assertIn("(set-strategic-number sn-native-227 100)", admit_actions)
+        self.assertNotIn("sn-native-36", " ".join(admit_actions))
+        self.assertNotIn("sn-native-227", " ".join(admit_actions))
         ready_actions = tuple(action.source for action in rules["byzantine-endgame-push-imperial-ready"].actions)
         self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
         self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
 
         live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
-        self.assertIn("(set-strategic-number sn-native-36 0)", live_actions)
-        self.assertIn("(set-strategic-number sn-native-227 75)", live_actions)
+        self.assertNotIn("sn-native-36", " ".join(live_actions))
+        self.assertNotIn("sn-native-227", " ".join(live_actions))
         self.assertIn("(disable-timer byzantine-endgame-push-timer)", live_actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 3)", live_actions)
 
         expiry_actions = tuple(action.source for action in rules["byzantine-endgame-push-pulse-expiry"].actions)
-        self.assertIn("(set-strategic-number sn-native-36 0)", expiry_actions)
+        self.assertNotIn("sn-native-36", " ".join(expiry_actions))
+        self.assertNotIn("sn-native-227", " ".join(expiry_actions))
         self.assertIn("(disable-timer byzantine-endgame-push-timer)", expiry_actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 3)", expiry_actions)
 
+        sn_controllers = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("sn-controller-byz-push-")
+        }
+        self.assertIn(
+            "sn-controller-byz-push-227-activate",
+            sn_controllers,
+        )
+        for identity in (
+            "sn-controller-byz-push-36-activate",
+            "sn-controller-byz-push-227-activate",
+        ):
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 2)",
+                " ".join(fact.source for fact in sn_controllers[identity].facts),
+            )
+
+        for identity in (
+            "sn-controller-byz-push-36-release",
+            "sn-controller-byz-push-227-release",
+        ):
+            release_facts = tuple(fact.source for fact in sn_controllers[identity].facts)
+            joined_release_facts = " ".join(release_facts)
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 3)",
+                joined_release_facts,
+            )
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 5)",
+                joined_release_facts,
+            )
+            self.assertNotIn(
+                "(timer-triggered byzantine-endgame-push-timer)",
+                joined_release_facts,
+            )
+
         release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
         self.assertIn("(goal byzantine-endgame-push-state 3)", release_facts)
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            release_facts,
+        )
         self.assertIn("(attack-soldier-count <= 0)", release_facts)
         self.assertIn("(unit-type-count cataphract >= 4)", " ".join(release_facts))
 
@@ -363,7 +742,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", output)
-        self.assertIn("(set-strategic-number sn-native-36 0)", output)
+        self.assertIn(
+            "; Native control rule: sn-controller-byz-push-227-activate",
+            output,
+        )
 
     def test_byzantine_endgame_closure_consumes_verified_campaign_state(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
