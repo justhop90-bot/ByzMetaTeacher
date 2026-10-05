@@ -1770,6 +1770,503 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     )
 
 
+
+def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
+    """Lower the four-state Imperial military band resolver into native Goal/Timer state.
+
+    The native controller mirrors the pure ImperialResolver policy:
+    floor break first, fortified escalation second, economic recovery third,
+    then ordinary band transitions. Timers only provide dwell/cooldown cadence;
+    every transition re-checks its live resource and battlefield guard.
+    """
+    if profile.profile_id not in {
+        "byzantine-land-castle-v1",
+        "byzantine-stock-v1",
+    }:
+        return None
+
+    from .imperial_resolver import ImperialBand
+    from ..runtime_binding import GoalSlotRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .recurrent import TimerRequest
+
+    owner = SemanticId(profile.profile_id, "byzantine-imperial-band")
+    state_name = "byzantine-imperial-band-state"
+    candidate_name = "byzantine-imperial-band-candidate"
+    rearm_band_name = "byzantine-imperial-band-rearm"
+    reason_name = "byzantine-imperial-band-reason"
+    dwell_timer = "byzantine-imperial-band-dwell-timer"
+    guard_timer = "byzantine-imperial-band-guard-timer"
+    rearm_timer = "byzantine-imperial-band-rearm-timer"
+
+    states = (
+        NativeControlState(
+            state_name,
+            GoalSlotRequest(
+                StorageRequestId(owner, state_name),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            candidate_name,
+            GoalSlotRequest(
+                StorageRequestId(owner, candidate_name),
+                role=GoalRole.EXECUTION_MEMORY,
+            ),
+        ),
+        NativeControlState(
+            rearm_band_name,
+            GoalSlotRequest(
+                StorageRequestId(owner, rearm_band_name),
+                role=GoalRole.EXECUTION_MEMORY,
+            ),
+        ),
+        NativeControlState(
+            reason_name,
+            GoalSlotRequest(
+                StorageRequestId(owner, reason_name),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            dwell_timer,
+            TimerRequest(
+                StorageRequestId(owner, f"timer:{dwell_timer}"),
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key=f"{profile.profile_id}:{dwell_timer}",
+            ),
+        ),
+        NativeControlState(
+            guard_timer,
+            TimerRequest(
+                StorageRequestId(owner, f"timer:{guard_timer}"),
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key=f"{profile.profile_id}:{guard_timer}",
+            ),
+        ),
+        NativeControlState(
+            rearm_timer,
+            TimerRequest(
+                StorageRequestId(owner, f"timer:{rearm_timer}"),
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key=f"{profile.profile_id}:{rearm_timer}",
+            ),
+        ),
+    )
+
+    def expr(source: str):
+        return parse_expression(source, SourceLocation(1))
+
+    standing = int(ImperialBand.STANDING_FLOOR)
+    open_field = int(ImperialBand.OPEN_FIELD)
+    fortified = int(ImperialBand.FORTIFIED_PUSH)
+    trash = int(ImperialBand.GOLD_STARVED_TRASH)
+    candidate_standing = 4
+
+    floor_broken = (
+        "(or (unit-type-count halberdier < 18) "
+        "(or (unit-type-count skirmisher-line < 18) "
+        "(unit-type-count hussar < 12)))"
+    )
+    floor_recovered = (
+        "(and (unit-type-count halberdier >= 18) "
+        "(and (unit-type-count skirmisher-line >= 18) "
+        "(and (unit-type-count hussar >= 12) "
+        "(and (food-amount >= 2000) "
+        "(and (wood-amount >= 1700) (gold-amount >= 1600))))))"
+    )
+    fortified_exec = (
+        "(and (goal byzantine-fortification-threat 1) "
+        "(and (goal byzantine-siege-approach byzantine-siege-approach-fortified) "
+        "(and (goal byzantine-offensive-objective-claim 1) "
+        "(and (up-compare-goal byzantine-army-role-siege-size >= 2) "
+        "(and (food-amount >= 2400) "
+        "(and (wood-amount >= 2400) (gold-amount >= 2600))))))"
+    )
+    open_field_eligible = (
+        "(and "
+        "(goal byzantine-offensive-objective-claim 1) "
+        "(and (goal byzantine-fortification-threat 0) "
+        "(and (players-military-population any-enemy >= 12) "
+        "(and (food-amount >= 2400) "
+        "(and (wood-amount >= 2000) "
+        "(and (gold-amount >= 2000) "
+        f"{floor_recovered})))))"
+    )
+    trash_eligible = (
+        "(and (goal byzantine-fortification-threat 0) "
+        "(and (food-amount >= 2400) "
+        "(and (wood-amount >= 2200) "
+        "(and (gold-amount <= 800) "
+        f"{floor_recovered})))"
+    )
+    economic_collapse = (
+        "(or (food-amount < 1800) (wood-amount < 1500)"
+    )
+    gold_recovered = "(gold-amount >= 1800)"
+    fortified_clear = (
+        "(and (goal byzantine-fortification-threat 0) "
+        "(goal byzantine-offensive-objective-claim 0))"
+    )
+
+    def cooldown_clear(target: int) -> str:
+        return (
+            f"(or (up-compare-goal {rearm_band_name} != {target}) "
+            f"(timer-triggered {rearm_timer}))"
+        )
+
+    rules: list[NativeControlRule] = [
+        NativeControlRule(
+            "byzantine-imperial-band-initialize",
+            facts=(
+                expr(f"(goal {state_name} {standing})"),
+                expr(f"(goal {candidate_name} 0)"),
+                expr(f"(goal {rearm_band_name} 0)"),
+                expr(f"(goal {reason_name} 0)"),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {standing})"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(set-goal {rearm_band_name} 0)"),
+                expr(f"(set-goal {reason_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {rearm_timer})"),
+                expr(f"(enable-timer {dwell_timer} 30)"),
+                expr("(disable-self)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-rearm-clear",
+            facts=(expr(f"(timer-triggered {rearm_timer})"),),
+            actions=(
+                expr(f"(disable-timer {rearm_timer})"),
+                expr(f"(set-goal {rearm_band_name} 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-floor-break",
+            facts=(
+                expr(f"(up-compare-goal {state_name} != {standing})"),
+                expr(floor_broken),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {standing})"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(set-goal {reason_name} 10)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 30)"),
+            ),
+        ),
+        # Fortified escalation can preempt an incomplete ordinary dwell.
+        NativeControlRule(
+            "byzantine-imperial-band-fortified-candidate",
+            facts=(
+                expr(f"(up-compare-goal {state_name} != {fortified})"),
+                expr(fortified_exec),
+                expr(cooldown_clear(fortified)),
+                expr(
+                    f"(or (up-compare-goal {state_name} != {standing}) "
+                    f"(timer-triggered {dwell_timer}))"
+                ),
+                expr(f"(up-compare-goal {candidate_name} != {fortified})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {fortified})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 15)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-economic-candidate",
+            facts=(
+                expr(f"(up-compare-goal {state_name} != {standing})"),
+                expr(f"(not {fortified_exec})"),
+                expr(economic_collapse),
+                expr(f"(up-compare-goal {candidate_name} != {candidate_standing})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {candidate_standing})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-standing-trash-candidate",
+            facts=(
+                expr(f"(goal {state_name} {standing})"),
+                expr(f"(timer-triggered {dwell_timer})"),
+                expr(floor_recovered),
+                expr(trash_eligible),
+                expr(cooldown_clear(trash)),
+                expr(f"(up-compare-goal {candidate_name} != {trash})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {trash})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-standing-open-candidate",
+            facts=(
+                expr(f"(goal {state_name} {standing})"),
+                expr(f"(timer-triggered {dwell_timer})"),
+                expr(floor_recovered),
+                expr(f"(not {trash_eligible})"),
+                expr(open_field_eligible),
+                expr(cooldown_clear(open_field)),
+                expr(f"(up-compare-goal {candidate_name} != {open_field})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {open_field})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 20)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-open-trash-candidate",
+            facts=(
+                expr(f"(goal {state_name} {open_field})"),
+                expr(f"(timer-triggered {dwell_timer})"),
+                expr(trash_eligible),
+                expr(cooldown_clear(trash)),
+                expr(f"(up-compare-goal {candidate_name} != {trash})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {trash})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-trash-open-candidate",
+            facts=(
+                expr(f"(goal {state_name} {trash})"),
+                expr(f"(timer-triggered {dwell_timer})"),
+                expr(gold_recovered),
+                expr(open_field_eligible),
+                expr(cooldown_clear(open_field)),
+                expr(f"(up-compare-goal {candidate_name} != {open_field})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {open_field})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-fortified-open-candidate",
+            facts=(
+                expr(f"(goal {state_name} {fortified})"),
+                expr(f"(timer-triggered {dwell_timer})"),
+                expr(fortified_clear),
+                expr(open_field_eligible),
+                expr(cooldown_clear(open_field)),
+                expr(f"(up-compare-goal {candidate_name} != {open_field})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {open_field})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 20)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-fortified-trash-candidate",
+            facts=(
+                expr(f"(goal {state_name} {fortified})"),
+                expr(f"(timer-triggered {dwell_timer})"),
+                expr(fortified_clear),
+                expr(f"(not {open_field_eligible})"),
+                expr(trash_eligible),
+                expr(cooldown_clear(trash)),
+                expr(f"(up-compare-goal {candidate_name} != {trash})"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} {trash})"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(enable-timer {guard_timer} 20)"),
+            ),
+        ),
+        # Reject a candidate whose live guard disappeared before its dwell.
+        NativeControlRule(
+            "byzantine-imperial-band-clear-fortified-candidate",
+            facts=(
+                expr(f"(goal {candidate_name} {fortified})"),
+                expr(f"(not {fortified_exec})"),
+                expr(f"(not (timer-triggered {guard_timer}))"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-clear-economic-candidate",
+            facts=(
+                expr(f"(goal {candidate_name} {candidate_standing})"),
+                expr(f"(not {economic_collapse})"),
+                expr(f"(not (timer-triggered {guard_timer}))"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-clear-trash-candidate",
+            facts=(
+                expr(f"(goal {candidate_name} {trash})"),
+                expr(f"(not {trash_eligible})"),
+                expr(f"(not (timer-triggered {guard_timer}))"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-clear-open-candidate",
+            facts=(
+                expr(f"(goal {candidate_name} {open_field})"),
+                expr(f"(not {open_field_eligible})"),
+                expr(f"(not (timer-triggered {guard_timer}))"),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+            ),
+        ),
+        # Arm cooldown from the current scaling state immediately before release.
+        NativeControlRule(
+            "byzantine-imperial-band-arm-open-rearm",
+            facts=(
+                expr(f"(goal {state_name} {open_field})"),
+                expr(f"(up-compare-goal {candidate_name} != {open_field})"),
+                expr(f"(timer-triggered {guard_timer})"),
+            ),
+            actions=(
+                expr(f"(set-goal {rearm_band_name} {open_field})"),
+                expr(f"(enable-timer {rearm_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-arm-fortified-rearm",
+            facts=(
+                expr(f"(goal {state_name} {fortified})"),
+                expr(f"(up-compare-goal {candidate_name} != {fortified})"),
+                expr(f"(timer-triggered {guard_timer})"),
+            ),
+            actions=(
+                expr(f"(set-goal {rearm_band_name} {fortified})"),
+                expr(f"(enable-timer {rearm_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-arm-trash-rearm",
+            facts=(
+                expr(f"(goal {state_name} {trash})"),
+                expr(f"(up-compare-goal {candidate_name} != {trash})"),
+                expr(f"(timer-triggered {guard_timer})"),
+            ),
+            actions=(
+                expr(f"(set-goal {rearm_band_name} {trash})"),
+                expr(f"(enable-timer {rearm_timer} 45)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-transition-fortified",
+            facts=(
+                expr(f"(up-compare-goal {candidate_name} == {fortified})"),
+                expr(f"(timer-triggered {guard_timer})"),
+                expr(fortified_exec),
+                expr(cooldown_clear(fortified)),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {fortified})"),
+                expr(f"(set-goal {reason_name} 20)"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 45)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-transition-economic",
+            facts=(
+                expr(f"(goal {candidate_name} {candidate_standing})"),
+                expr(f"(timer-triggered {guard_timer})"),
+                expr(economic_collapse),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {standing})"),
+                expr(f"(set-goal {reason_name} 30)"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-transition-trash",
+            facts=(
+                expr(f"(goal {candidate_name} {trash})"),
+                expr(f"(timer-triggered {guard_timer})"),
+                expr(trash_eligible),
+                expr(cooldown_clear(trash)),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {trash})"),
+                expr(f"(set-goal {reason_name} 40)"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 90)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-transition-open",
+            facts=(
+                expr(f"(goal {candidate_name} {open_field})"),
+                expr(f"(timer-triggered {guard_timer})"),
+                expr(open_field_eligible),
+                expr(cooldown_clear(open_field)),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {open_field})"),
+                expr(f"(set-goal {reason_name} 60)"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 60)"),
+            ),
+        ),
+    ]
+
+    constants = (
+        ("bt-imp-band-standing", standing),
+        ("bt-imp-band-open", open_field),
+        ("bt-imp-band-fortified", fortified),
+        ("bt-imp-band-trash", trash),
+        ("bt-imp-band-reason-floor", 10),
+        ("bt-imp-band-reason-fortified", 20),
+        ("bt-imp-band-reason-economic", 30),
+        ("bt-imp-band-reason-trash", 40),
+        ("bt-imp-band-reason-gold-recovery", 50),
+        ("bt-imp-band-reason-open", 60),
+        ("bt-imp-band-reason-clear", 70),
+        ("bt-imp-band-reason-hold-dwell", 90),
+        ("bt-imp-band-reason-hold-cooldown", 91),
+    )
+
+    return NativeControlPlan(
+        states=states,
+        rules=tuple(rules),
+        constants=constants,
+    )
+
 def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
     """Lower persistent state ownership for the late-objective controller.
 
@@ -2727,6 +3224,7 @@ def _strategy_control_plan(profile: StrategyProfile):
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
     endgame_objective_plan = _byzantine_endgame_objective_control_plan(profile)
+    imperial_band_plan = _byzantine_imperial_band_control_plan(profile)
     endgame_push_plan = _byzantine_endgame_push_control_plan(profile)
     water_plan = None
     if profile.water_execution_plan is not None:
@@ -2778,6 +3276,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         attack_lifecycle_plan,
         endgame_objective_plan,
         endgame_push_plan,
+        imperial_band_plan,
         water_plan,
         opening_plan,
         economy_plan,
