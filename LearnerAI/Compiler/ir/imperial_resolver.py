@@ -54,10 +54,6 @@ class ImperialResolver:
     FLOOR_ELITE_SKIRMISHER = 18
     FLOOR_HUSSAR = 12
 
-    FLOOR_FOOD = 2000
-    FLOOR_WOOD = 1700
-    FLOOR_GOLD = 1600
-
     OPEN_FOOD_IN = 2400
     OPEN_WOOD_IN = 2000
     OPEN_GOLD_IN = 2000
@@ -101,12 +97,7 @@ class ImperialResolver:
 
     @classmethod
     def floor_recovered(cls, value: ImperialResolverInput) -> bool:
-        return (
-            not cls.floor_broken(value)
-            and value.food >= cls.FLOOR_FOOD
-            and value.wood >= cls.FLOOR_WOOD
-            and value.gold >= cls.FLOOR_GOLD
-        )
+        return not cls.floor_broken(value)
 
     @classmethod
     def fortified_executable(cls, value: ImperialResolverInput) -> bool:
