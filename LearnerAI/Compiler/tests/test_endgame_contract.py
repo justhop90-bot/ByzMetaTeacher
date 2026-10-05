@@ -27,18 +27,18 @@ class EndgameContractTests(unittest.TestCase):
             identity="byzantine-endgame-v1",
             rules=(
                 EndgamePolicyRule(
-                    identity="resource-denial",
-                    mode=EndgameMode.RESOURCE_DENIAL,
-                    win_condition=EndgameWinCondition.RESOURCE_CONTROL,
-                    observation_refs=("enemy-gold-access",),
-                    priority=80,
-                ),
-                EndgamePolicyRule(
                     identity="breakthrough",
                     mode=EndgameMode.BREAKTHROUGH,
                     win_condition=EndgameWinCondition.CAPABILITY_COLLAPSE,
                     observation_refs=("army-ready",),
                     priority=100,
+                ),
+                EndgamePolicyRule(
+                    identity="resource-denial",
+                    mode=EndgameMode.RESOURCE_DENIAL,
+                    win_condition=EndgameWinCondition.RESOURCE_CONTROL,
+                    observation_refs=("enemy-gold-access",),
+                    priority=80,
                 ),
             ),
             objective_priority=("siege", "defense", "production", "economy", "town-center"),
@@ -47,6 +47,12 @@ class EndgameContractTests(unittest.TestCase):
             tuple(rule.identity for rule in plan.rules),
             ("breakthrough", "resource-denial"),
         )
+        with self.assertRaises(ValueError):
+            EndgamePlan(
+                identity="byzantine-endgame-v1",
+                rules=tuple(reversed(plan.rules)),
+                objective_priority=plan.objective_priority,
+            )
         self.assertEqual(
             plan.push_states,
             (
@@ -68,6 +74,25 @@ class EndgameContractTests(unittest.TestCase):
                 frontier_valid=True,
                 recovery_required=True,
             )
+
+    def test_endgame_plan_rejects_unknown_observation(self):
+        plan = EndgamePlan(
+            identity="byzantine-endgame-v1",
+            rules=(
+                EndgamePolicyRule(
+                    identity="breakthrough",
+                    mode=EndgameMode.BREAKTHROUGH,
+                    win_condition=EndgameWinCondition.CAPABILITY_COLLAPSE,
+                    observation_refs=("missing-observation",),
+                    priority=100,
+                ),
+            ),
+            objective_priority=("siege", "defense", "production", "town-center"),
+        )
+        with self.assertRaises(ValueError):
+            from LearnerAI.Compiler.ir.endgame import validate_endgame_plan
+
+            validate_endgame_plan(plan)
 
     def test_endgame_plan_can_be_attached_to_and_lowered_with_strategy_profile(self):
         base = StrategyProfile(
