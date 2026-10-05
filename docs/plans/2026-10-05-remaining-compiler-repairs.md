@@ -8,6 +8,10 @@
 
 **Tech Stack:** Python 3.11-3.13, unittest, existing compiler IR/semantic validators, GitHub Actions, JSON Schema Draft 2020-12.
 
+> **Execution status at branch head:** Task 1 FeatureTrace production population implemented; Task 2 report persistence integrated; Task 3 artifact lineage was revised after CI proved the old prefix/suffix overlay model false. The authoritative runtime is a woven `Byzantine.per`; compiler-owned `defrule` bodies must be conserved verbatim inside it. Task 4 canonical builder now uses that conservation contract. Focused artifact-lineage tests have passed 30/30 on the branch. A fresh full CI run is queued for the current head and has not completed, so this tranche is **not yet merge-ready**.
+
+> **Important correction:** the earlier overlay-only assembly design is obsolete. Do not restore it. The root artifact is not ordered as compiler output plus suffix; current evidence showed compiler output and root diverge at the first rule. The compiler therefore owns rule bodies and provenance, while runtime ordering remains with the woven runtime artifact.
+
 ## Global Constraints
 
 - Use current `main` as authority. FeatureTrace PR #427 is merged at `beeb391511609223cb6008343e9ab8dc3f3bd1f8`; workflow #4728 passed.
