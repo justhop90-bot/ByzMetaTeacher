@@ -1818,8 +1818,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
 
     frontier_commit_steps = (
         ("byzantine-endgame-frontier-commit-defense", 0, 1),
-        ("byzantine-endgame-frontier-commit-production", 1, 2),
-        ("byzantine-endgame-frontier-commit-town-center", 2, 3),
+        ("byzantine-endgame-frontier-commit-production-from-siege", 0, 2),
+        ("byzantine-endgame-frontier-commit-production-from-defense", 1, 2),
+        ("byzantine-endgame-frontier-commit-town-center-from-siege", 0, 3),
+        ("byzantine-endgame-frontier-commit-town-center-from-defense", 1, 3),
+        ("byzantine-endgame-frontier-commit-town-center-from-production", 2, 3),
         ("byzantine-endgame-frontier-commit-town-center-final", 3, 3),
     )
     for identity, current_frontier, next_frontier in frontier_commit_steps:
