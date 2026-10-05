@@ -95,7 +95,14 @@ class EndgameContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             EndgameObjectiveControlContract(
                 identity="bad",
-                release_search_radius=0,
+                release_search_radius=40,
+            )
+
+        with self.assertRaises(ValueError):
+            EndgameObjectiveControlContract(
+                identity="bad",
+                state_goal="same",
+                class_goal="same",
             )
 
     def test_endgame_plan_requires_deterministic_policy_order(self):
