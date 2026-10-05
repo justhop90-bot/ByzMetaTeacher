@@ -1628,6 +1628,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .recurrent import TimerRequest
     from .strategic_number import StrategicNumberOrigin
 
     push_state_name = "byzantine-endgame-push-state"
