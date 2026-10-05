@@ -1910,6 +1910,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     open_field_eligible = land(
         "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
@@ -1925,6 +1926,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     gold_recovery_open_eligible = land(
         "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
@@ -1938,7 +1940,10 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     gold_recovered = "(gold-amount >= 1800)"
     fortified_clear = land(
         "(goal byzantine-fortification-threat 0)",
-        "(goal byzantine-offensive-objective-claim 0)",
+        lor(
+            "(goal byzantine-offensive-objective-claim 0)",
+            "(not (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege))",
+        ),
     )
 
     def cooldown_clear(target: int) -> str:
@@ -2923,21 +2928,44 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     cleared_witness = profile.observation(
         plan.push_contract.cleared_witness_ref
     ).expression
-    imperial_band_ready = "(up-compare-goal byzantine-imperial-band-state >= 1)"
     imperial_floor_ready = (
         "(and (unit-type-count halberdier >= 18) "
         "(and (unit-type-count 6 >= 18) (unit-type-count hussar >= 12)))"
+    )
+    open_band_ready = (
+        "(and (goal byzantine-imperial-band-state 1) "
+        "(and (unit-type-count halberdier >= 24) "
+        "(and (unit-type-count 6 >= 24) (unit-type-count hussar >= 16)))"
+        ")"
+    )
+    fortified_band_ready = (
+        "(and (goal byzantine-imperial-band-state 2) "
+        "(and (unit-type-count halberdier >= 24) "
+        "(and (unit-type-count 6 >= 20) (unit-type-count hussar >= 10)))"
+        ")"
+    )
+    trash_band_ready = (
+        "(and (goal byzantine-imperial-band-state 3) "
+        "(and (unit-type-count halberdier >= 30) "
+        "(and (unit-type-count 6 >= 30) (unit-type-count hussar >= 18)))"
+        ")"
+    )
+    band_package_ready = (
+        f"(or {open_band_ready} "
+        f"(or {fortified_band_ready} {trash_band_ready}))"
     )
     premium_ready = (
         "(or (unit-type-count cataphract >= 12) "
         "(or (unit-type-count varangian-guard >= 12) "
         "(unit-type-count 492 >= 12)))"
     )
-    gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
+    gold_layer_ready = (
+        "(or (goal byzantine-imperial-band-state 3) "
+        f"{premium_ready})"
+    )
     military_ready = (
-        f"(and {imperial_band_ready} "
         f"(and {imperial_floor_ready} "
-        f"(or {premium_ready} {gold_starved_exception})))"
+        f"(and {band_package_ready} {gold_layer_ready}))"
     )
     standard_siege_ready = (
         "(or (unit-type-count trebuchet >= 4) "
