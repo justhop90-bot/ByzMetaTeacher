@@ -653,7 +653,7 @@ def community_strategy_demands(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
-    observations = community_strategy_observations(effective)
+    observations = list(community_strategy_observations(effective))
 
     demands: list[_StrategicDemandSpec] = []
 
