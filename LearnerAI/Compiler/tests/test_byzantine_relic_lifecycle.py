@@ -1,0 +1,116 @@
+import unittest
+
+from Compiler.clients.basilisk import ByzantineProfile, build_byzantine_strategy, compile_strategy_profile, lower_strategy_profile
+from Compiler.ir.civ_profile import resolve_effective_civ
+from Compiler.ir.native_duc import NativeDucLifecycleStage
+
+
+class ByzantineRelicLifecycleTests(unittest.TestCase):
+    def setUp(self):
+        self.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        self.profile = build_byzantine_strategy(self.effective)
+
+    def test_relic_lifecycle_is_compiler_owned_and_complete(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+        plan = compilation.duc_plan
+        self.assertIsNotNone(plan)
+        assert plan is not None
+
+        rules = {
+            rule.identity: rule
+            for rule in plan.rules
+            if rule.identity.startswith("byzantine-relic-control-")
+        }
+        self.assertEqual(
+            tuple(rules),
+            (
+                "byzantine-relic-control-init",
+                "byzantine-relic-control-acquire",
+                "byzantine-relic-control-pickup-witness",
+                "byzantine-relic-control-return",
+                "byzantine-relic-control-release-witness",
+                "byzantine-relic-control-recovery",
+                "byzantine-relic-control-expiry",
+            ),
+        )
+
+        self.assertIn(
+            NativeDucLifecycleStage.ADMISSIBILITY,
+            rules["byzantine-relic-control-acquire"].lifecycle,
+        )
+        self.assertIn(
+            NativeDucLifecycleStage.TARGET,
+            rules["byzantine-relic-control-acquire"].lifecycle,
+        )
+        self.assertIn(
+            NativeDucLifecycleStage.DISPATCH,
+            rules["byzantine-relic-control-acquire"].lifecycle,
+        )
+        self.assertIn(
+            NativeDucLifecycleStage.PICKUP_WITNESS,
+            rules["byzantine-relic-control-pickup-witness"].lifecycle,
+        )
+        self.assertIn(
+            NativeDucLifecycleStage.RETURN,
+            rules["byzantine-relic-control-return"].lifecycle,
+        )
+        self.assertIn(
+            NativeDucLifecycleStage.RELEASE_WITNESS,
+            rules["byzantine-relic-control-release-witness"].lifecycle,
+        )
+        self.assertIn(
+            NativeDucLifecycleStage.RECOVERY,
+            rules["byzantine-relic-control-recovery"].lifecycle,
+        )
+
+        acquire = rules["byzantine-relic-control-acquire"]
+        acquire_sources = tuple(item.source for item in (*acquire.facts, *acquire.actions))
+        self.assertIn("(up-gaia-type-count-total c: relic > 0)", acquire_sources)
+        self.assertIn("(up-modify-sn sn-focus-player-number c:= 0)", acquire_sources)
+        self.assertIn("(up-find-remote c: relic c: 1)", acquire_sources)
+        self.assertIn("(up-set-target-object search-remote c: 0)", acquire_sources)
+        self.assertIn("(up-find-local c: monk c: 1)", acquire_sources)
+        self.assertIn(
+            "(up-target-objects 0 action-default -1 stance-defensive)",
+            acquire_sources,
+        )
+
+        pickup = rules["byzantine-relic-control-pickup-witness"]
+        self.assertIn(
+            "(unit-type-count-total monk-with-relic >= 1)",
+            tuple(item.source for item in pickup.facts),
+        )
+
+        return_rule = rules["byzantine-relic-control-return"]
+        return_sources = tuple(item.source for item in (*return_rule.facts, *return_rule.actions))
+        self.assertIn(
+            "(up-modify-sn sn-focus-player-number c:= my-player-number)",
+            return_sources,
+        )
+        self.assertIn("(up-find-remote c: monastery c: 1)", return_sources)
+        self.assertIn("(up-find-local c: monk-with-relic c: 1)", return_sources)
+        self.assertIn(
+            "(up-target-objects 0 action-default -1 stance-defensive)",
+            return_sources,
+        )
+
+    def test_relic_lifecycle_compiles_deterministically(self):
+        first = compile_strategy_profile(self.profile, self.effective)
+        second = compile_strategy_profile(self.profile, self.effective)
+        self.assertEqual(first, second)
+
+        required = (
+            "(defconst byzantine-relic-control-state",
+            "(defconst byzantine-relic-control-timer",
+            "(defconst sn-relic-return-distance",
+            "(defconst sn-relic-defend-priority",
+            "; Native DUC rule: byzantine-relic-control-acquire",
+            "; Native DUC rule: byzantine-relic-control-pickup-witness",
+            "; Native DUC rule: byzantine-relic-control-return",
+            "(unit-type-count-total monk-with-relic >= 1)",
+            "(up-find-remote c: relic c: 1)",
+            "(up-find-local c: monk-with-relic c: 1)",
+            "(up-modify-sn sn-focus-player-number c:= my-player-number)",
+        )
+        missing = tuple(fragment for fragment in required if fragment not in first)
+        self.assertEqual(missing, ())
