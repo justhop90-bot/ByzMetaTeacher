@@ -1626,9 +1626,9 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
 def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
     """Lower persistent state ownership for the late-objective controller.
 
-    Prompt 1 establishes storage, symbolic state values, and the cadence timer.
-    Target discovery, attack dispatch, witness, and frontier transitions remain
-    separate lowering stages.
+    Prompt 1 establishes the objective state contract. Prompt 3 owns the
+    execution-to-witness transition, fresh target witness, release reasons,
+    and fail-closed reassessment. Timers remain cadence only.
     """
     if profile.profile_id not in {
         "byzantine-land-castle-v1",
@@ -1647,6 +1647,10 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
 
     contract = plan.objective_control
     owner = SemanticId(profile.profile_id, "byzantine-endgame-objective")
+    witness_target_request = GoalSlotRequest(
+        StorageRequestId(owner, "objective-witness-target"),
+        role=GoalRole.NATIVE_OUTPUT,
+    )
 
     states = (
         NativeControlState(
@@ -1700,6 +1704,11 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
                 StorageRequestId(owner, "objective-claim"),
                 role=GoalRole.PERSISTENT_STATE,
             ),
+        ),
+        NativeControlState(
+            contract.witness_target_goal,
+            witness_target_request,
+        ),
         NativeControlState(
             contract.release_reason_goal,
             GoalSlotRequest(
@@ -1719,7 +1728,6 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
                 role=GoalRole.NATIVE_OUTPUT,
             ),
         ),
-        ),
         NativeControlState(
             contract.timer_name,
             TimerRequest(
@@ -1729,31 +1737,191 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             ),
         ),
     )
-    rules = (
+
+    objective_state = contract.state_goal
+    objective_class = contract.class_goal
+    claim = contract.claim_goal
+    witness_target = contract.witness_target_goal
+    release_reason = contract.release_reason_goal
+    timer = contract.timer_name
+    siege = f"{objective_state}-siege"
+    defense = f"{objective_state}-defense"
+    production = f"{objective_state}-production"
+    town_center = f"{objective_state}-town-center"
+    executing = f"{objective_state}-executing"
+    witness = f"{objective_state}-witness"
+    class_none = f"{objective_class}-none"
+    class_town_center = f"{objective_class}-town-center"
+    reason_none = f"{release_reason}-none"
+    reason_failed = f"{release_reason}-failed-execution"
+    reason_lost = f"{release_reason}-lost-out-of-bounds"
+    reason_fortification = f"{release_reason}-fortification-abort"
+    reason_tc_exhausted = f"{release_reason}-tc-exhausted"
+
+    def expr(source: str):
+        return parse_expression(source, SourceLocation(1))
+
+    def objective_class_active():
+        return parse_expression(
+            f"(or (goal {objective_state} {siege}) "
+            f"(or (goal {objective_state} {defense}) "
+            f"(or (goal {objective_state} {production}) "
+            f"(goal {objective_state} {town_center}))))",
+            SourceLocation(1),
+        )
+
+    def clear_objective(reason: str) -> NativeControlRule:
+        return NativeControlRule(
+            f"byzantine-endgame-objective-release-{reason}",
+            facts=(),
+            actions=(),
+        )
+
+    rules = [
         NativeControlRule(
             "byzantine-endgame-objective-initialize",
             facts=(
-                parse_expression(f"(goal {contract.state_goal} 0)", SourceLocation(1)),
-                parse_expression(f"(goal {contract.class_goal} 0)", SourceLocation(1)),
-                parse_expression(f"(goal {contract.claim_goal} 0)", SourceLocation(1)),
+                expr(f"(goal {objective_state} 0)"),
+                expr(f"(goal {objective_class} 0)"),
+                expr(f"(goal {claim} 0)"),
             ),
             actions=(
-                parse_expression(f"(set-goal {contract.state_goal} 0)", SourceLocation(1)),
-                parse_expression(f"(set-goal {contract.class_goal} 0)", SourceLocation(1)),
-                parse_expression(f"(set-goal {contract.enemy_player_goal} 0)", SourceLocation(1)),
-                parse_expression(f"(set-goal {contract.claim_goal} 0)", SourceLocation(1)),
-                 parse_expression(f"(set-goal {contract.release_reason_goal} 0)", SourceLocation(1)),
-                parse_expression(f"(disable-timer {contract.timer_name})", SourceLocation(1)),
-                parse_expression("(disable-self)", SourceLocation(1)),
+                expr(f"(set-goal {objective_state} 0)"),
+                expr(f"(set-goal {objective_class} 0)"),
+                expr(f"(set-goal {contract.enemy_player_goal} 0)"),
+                expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {witness_target} 0)"),
+                expr(f"(set-goal {release_reason} 0)"),
+                expr(f"(disable-timer {timer})"),
+                expr("(disable-self)"),
             ),
         ),
-    )
+        NativeControlRule(
+            "byzantine-endgame-objective-clear-release-reason-on-new-claim",
+            facts=(
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {release_reason} != {reason_none})"),
+            ),
+            actions=(
+                expr(f"(set-goal {release_reason} 0)"),
+                expr(f"(set-goal {witness_target} 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-fortification-abort",
+            facts=(
+                objective_class_active(),
+                expr(f"(goal {claim} 1)"),
+                expr("(goal byzantine-fortification-threat 1)"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer})"),
+                expr(f"(set-goal {release_reason} {reason_fortification})"),
+                expr(f"(set-goal {witness_target} 0)"),
+                expr(f"(set-goal {objective_class} {class_none})"),
+                expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {objective_state} 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing",
+            facts=(
+                objective_class_active(),
+                expr(f"(goal {claim} 1)"),
+                expr("(attack-soldier-count > 0)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-executing-to-witness",
+            facts=(
+                expr(f"(goal {objective_state} {executing})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(timer-triggered {timer})"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer})"),
+                expr(f"(set-goal {witness_target} 0)"),
+                expr(f"(set-goal {objective_state} {witness})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-witness-live-rearm",
+            facts=(
+                expr(f"(goal {objective_state} {witness})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {witness_target} >= 1)"),
+                expr("(attack-soldier-count > 0)"),
+            ),
+            actions=(
+                expr(f"(set-goal {witness_target} 0)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-witness-failed-execution",
+            facts=(
+                expr(f"(goal {objective_state} {witness})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {witness_target} >= 1)"),
+                expr("(attack-soldier-count <= 0)"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer})"),
+                expr(f"(set-goal {release_reason} {reason_failed})"),
+                expr(f"(set-goal {witness_target} 0)"),
+                expr(f"(set-goal {objective_class} {class_none})"),
+                expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {objective_state} 0)"),
+                expr("(set-goal byzantine-army-attack-ready 0)"),
+                expr("(set-goal byzantine-army-reinforcement 1)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-witness-town-center-exhausted",
+            facts=(
+                expr(f"(goal {objective_state} {witness})"),
+                expr(f"(goal {objective_class} {class_town_center})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(goal {witness_target} 0)"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer})"),
+                expr(f"(set-goal {release_reason} {reason_tc_exhausted})"),
+                expr(f"(set-goal {objective_class} {class_none})"),
+                expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {objective_state} 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-witness-lost-out-of-bounds",
+            facts=(
+                expr(f"(goal {objective_state} {witness})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(not (goal {objective_class} {class_town_center}))"),
+                expr(f"(goal {witness_target} 0)"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer})"),
+                expr(f"(set-goal {release_reason} {reason_lost})"),
+                expr(f"(set-goal {witness_target} 0)"),
+                expr(f"(set-goal {objective_class} {class_none})"),
+                expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {objective_state} 0)"),
+            ),
+        ),
+    ]
+
     return NativeControlPlan(
         states=states,
-        rules=rules,
+        rules=tuple(rules),
         constants=contract.constants,
     )
-
 
 def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     """Lower the bounded Imperial attack-group lifecycle.
