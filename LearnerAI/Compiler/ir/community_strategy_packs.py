@@ -825,6 +825,42 @@ def community_strategy_observations(
             )
         )
 
+    for identity, tech_name in (
+        ("research-pikeman", "Pikeman"),
+        ("research-elite-skirmisher", "Elite Skirmisher"),
+        ("research-light-cavalry", "Light Cavalry"),
+        ("research-husbandry", "Husbandry"),
+        ("research-scale-mail", "Scale Mail Armor"),
+        ("research-chain-mail", "Chain Mail Armor"),
+        ("research-forging", "Forging"),
+        ("research-iron-casting", "Iron Casting"),
+        ("research-padded-archer-armor", "Padded Archer Armor"),
+        ("research-leather-archer-armor", "Leather Archer Armor"),
+        ("research-ring-archer-armor", "Ring Archer Armor"),
+        ("research-bracer", "Bracer"),
+        ("research-plate-mail", "Plate Mail Armor"),
+        ("research-scale-barding", "Scale Barding Armor"),
+        ("research-chain-barding", "Chain Barding Armor"),
+        ("research-plate-barding", "Plate Barding Armor"),
+        ("research-halberdier", "Halberdier"),
+        ("research-hussar", "Hussar"),
+    ):
+        tech = _tech(effective, tech_name)
+        observations.append(
+            _observation(
+                f"{identity}-complete",
+                f"(research-completed {int(tech.id)})",
+                tech.provenance,
+            )
+        )
+        observations.append(
+            _observation(
+                f"{identity}-pending",
+                f"(not (research-completed {int(tech.id)}))",
+                tech.provenance,
+            )
+        )
+
     replacement_depth_observations = (
         (
             "strategy-production-barracks-replacement",
