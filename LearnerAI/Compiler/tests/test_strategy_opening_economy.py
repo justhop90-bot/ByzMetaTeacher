@@ -216,8 +216,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             demand.execution.requirements,
         )
         self.assertEqual(demand.execution.action, "(train villager)")
-        self.assertIsNotNone(demand.production_lifecycle)
-        self.assertEqual(demand.production_lifecycle.unit, "villager")
+        compilation = lower_strategy_profile(profile, self.effective)
+        lowered = next(
+            item
+            for item in compilation.demands
+            if item.identity.local_name == "civilian-villager-continuity"
+        )
+        self.assertIsNotNone(lowered.production_lifecycle)
+        self.assertEqual(lowered.production_lifecycle.unit, "villager")
 
     def test_camp_floor_two_requires_a_remote_resource_front(self):
         profile = build_byzantine_strategy(self.effective)
