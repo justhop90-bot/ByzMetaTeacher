@@ -3207,7 +3207,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-push-recover-halberdier-floor",
+            "byzantine-endgame-push-recover-army-package",
             facts=(
                 parse_expression(
                     "(or (goal byzantine-endgame-push-state 1) "
@@ -3216,15 +3216,20 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(unit-type-count halberdier < 18)", SourceLocation(1)),
+                parse_expression("(not " + attack_package_ready + ")", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-push-recover-elite-skirmisher-floor",
+            "byzantine-endgame-push-recover-siege-package",
             facts=(
                 parse_expression(
                     "(or (goal byzantine-endgame-push-state 1) "
@@ -3233,45 +3238,16 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(unit-type-count 6 < 18)", SourceLocation(1)),
+                parse_expression("(not " + standard_siege_ready + ")", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
-            ),
-        ),
-        NativeControlRule(
-            "byzantine-endgame-push-recover-hussar-floor",
-            facts=(
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
                 parse_expression(
-                    "(or (goal byzantine-endgame-push-state 1) "
-                    "(or (goal byzantine-endgame-push-state 2) "
-                    "(goal byzantine-endgame-push-state 3)))",
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
                     SourceLocation(1),
                 ),
-                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(unit-type-count hussar < 12)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
-                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
-            ),
-        ),
-        NativeControlRule(
-            "byzantine-endgame-push-recover-premium",
-            facts=(
-                parse_expression(
-                    "(or (goal byzantine-endgame-push-state 1) "
-                    "(or (goal byzantine-endgame-push-state 2) "
-                    "(goal byzantine-endgame-push-state 3)))",
-                    SourceLocation(1),
-                ),
-                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(up-compare-goal byzantine-imperial-band-state != 3)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
-                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
