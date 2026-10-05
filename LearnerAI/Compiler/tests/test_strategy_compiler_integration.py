@@ -532,7 +532,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             rule for rule in plan.rules
             if rule.identity.startswith("byzantine-endgame-target-")
         )
-        self.assertEqual(len(target_rules), 18)
+        self.assertEqual(len(target_rules), 19)
         for rule in target_rules:
             sources = tuple(fact.source for fact in rule.facts)
             self.assertIn("(goal byzantine-offensive-objective-claim 0)", sources)
