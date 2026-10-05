@@ -26,7 +26,7 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
         ):
             self.assertIn(identity, demands)
             demand = demands[identity]
-            self.assertEqual(demand.target.unit_id, line)
+            self.assertEqual(demand.target.entity_id, line)
             self.assertEqual(demand.target.minimum, minimum)
             self.assertIn("(current-age >= castle-age)", demand.execution.requirements)
             self.assertIn(
