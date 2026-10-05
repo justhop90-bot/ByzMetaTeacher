@@ -763,8 +763,6 @@ def community_strategy_demands(
                     count_guard,
                     f"(can-build {_slug(building.name)})",
                 ]
-            if resource is CampResource.STONE:
-                requirements.append("(goal demand-castle-commitment 1)")
             building_token = _slug(building.name)
             action = f"(build {building_token})"
             witness = f"(building-type-count {_slug(building.name)} >= {floor})"
