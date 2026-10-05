@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.dev/schema/byzantine/compiler-artifact-manifest-1.json",
+  "title": "Byzantine Compiler Artifact Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "artifact_kind",
+    "artifact",
+    "compiler",
+    "strategy",
+    "effective_civ",
+    "native_parser",
+    "determinism"
+  ],
+  "properties": {
+    "schema": {
+      "const": "byzantine-compiler-artifact-1"
+    },
+    "artifact_kind": {
+      "const": "compiler"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "manifest_path",
+        "sha256",
+        "byte_length",
+        "line_count",
+        "rule_count"
+      ],
+      "properties": {
+        "path": {
+          "const": "dist/byzantine/Byzantine.compiler.per"
+        },
+        "manifest_path": {
+          "const": "dist/byzantine/Byzantine.compiler.manifest.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the exact UTF-8 bytes at artifact.path."
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rule_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "compiler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_revision",
+        "entrypoint"
+      ],
+      "properties": {
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "entrypoint": {
+          "const": "compile_strategy_profile"
+        }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_entrypoint",
+        "strategy_entrypoint",
+        "profile_id"
+      ],
+      "properties": {
+        "profile_entrypoint": {
+          "const": "ByzantineProfile.for_update_185872"
+        },
+        "strategy_entrypoint": {
+          "const": "build_byzantine_strategy"
+        },
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "effective_civ": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "civilization",
+        "civ_id",
+        "patch_key",
+        "snapshot_fingerprint"
+      ],
+      "properties": {
+        "civilization": {
+          "const": "Byzantines"
+        },
+        "civ_id": {
+          "const": 13
+        },
+        "patch_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshot_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "native_parser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "revision"
+      ],
+      "properties": {
+        "name": {
+          "const": "aoe2-ai-parser"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compile_repeat_equal",
+        "hash_recomputed"
+      ],
+      "properties": {
+        "compile_repeat_equal": {
+          "const": true
+        },
+        "hash_recomputed": {
+          "const": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "artifact_kind": {
+            "const": "compiler"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "artifact",
+          "compiler",
+          "strategy",
+          "effective_civ"
+        ],
+        "properties": {
+          "artifact": {
+            "properties": {
+              "path": {
+                "const": "dist/byzantine/Byzantine.compiler.per"
+              },
+              "manifest_path": {
+                "const": "dist/byzantine/Byzantine.compiler.manifest.json"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "x-semantic-constraints": [
+    "artifact.sha256 must equal SHA256(artifact.path) using exact file bytes",
+    "artifact.manifest_path must resolve to this manifest",
+    "compiler.source_revision must equal the checked-out Git HEAD used for compilation",
+    "effective_civ.snapshot_fingerprint must equal the compiler-produced effective civilization snapshot fingerprint",
+    "native_parser.revision must equal the parser revision used by authoritative acceptance CI"
+  ]
+}

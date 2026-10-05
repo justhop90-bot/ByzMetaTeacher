@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.dev/schema/byzantine/promoted-runtime-manifest-1.json",
+  "title": "Promoted Byzantine Runtime Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "artifact_kind",
+    "source_runtime",
+    "promoted_artifact",
+    "promotion",
+    "compiler_source_revision"
+  ],
+  "properties": {
+    "schema": {
+      "const": "byzantine-promoted-runtime-1"
+    },
+    "artifact_kind": {
+      "const": "promoted-runtime"
+    },
+    "source_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_kind",
+        "path",
+        "manifest_path",
+        "sha256",
+        "manifest_sha256"
+      ],
+      "properties": {
+        "artifact_kind": {
+          "const": "runtime"
+        },
+        "path": {
+          "const": "dist/byzantine/Byzantine.runtime.per"
+        },
+        "manifest_path": {
+          "const": "dist/byzantine/Byzantine.runtime.manifest.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "artifact_kind": {
+                "const": "runtime"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "path": {
+                "const": "dist/byzantine/Byzantine.runtime.per"
+              },
+              "manifest_path": {
+                "const": "dist/byzantine/Byzantine.runtime.manifest.json"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "promoted_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_kind",
+        "path",
+        "manifest_path",
+        "sha256",
+        "byte_length",
+        "line_count",
+        "rule_count"
+      ],
+      "properties": {
+        "artifact_kind": {
+          "const": "promoted-runtime"
+        },
+        "path": {
+          "const": "Byzantine.per"
+        },
+        "manifest_path": {
+          "const": "Byzantine.manifest.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rule_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "artifact_kind": {
+                "const": "promoted-runtime"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "path": {
+                "const": "Byzantine.per"
+              },
+              "manifest_path": {
+                "const": "Byzantine.manifest.json"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "mode",
+        "atomic",
+        "source_matches_destination"
+      ],
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "mode": {
+          "const": "byte-copy"
+        },
+        "atomic": {
+          "const": true
+        },
+        "source_matches_destination": {
+          "const": true
+        }
+      }
+    },
+    "compiler_source_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "artifact_kind": {
+            "const": "promoted-runtime"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source_runtime": {
+            "required": [
+              "artifact_kind"
+            ],
+            "properties": {
+              "artifact_kind": {
+                "const": "runtime"
+              },
+              "path": {
+                "const": "dist/byzantine/Byzantine.runtime.per"
+              },
+              "manifest_path": {
+                "const": "dist/byzantine/Byzantine.runtime.manifest.json"
+              }
+            }
+          },
+          "promoted_artifact": {
+            "required": [
+              "artifact_kind"
+            ],
+            "properties": {
+              "artifact_kind": {
+                "const": "promoted-runtime"
+              },
+              "path": {
+                "const": "Byzantine.per"
+              },
+              "manifest_path": {
+                "const": "Byzantine.manifest.json"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "x-semantic-constraints": [
+    "source_runtime.sha256 must equal the runtime manifest artifact.sha256",
+    "source_runtime.manifest_sha256 must equal SHA256(source_runtime.manifest_path)",
+    "promoted_artifact.sha256 must equal SHA256(promoted_artifact.path)",
+    "promoted_artifact.sha256 must equal source_runtime.sha256",
+    "compiler_source_revision must equal the runtime manifest compiler_source_revision",
+    "source_runtime bytes and promoted_artifact bytes must be identical",
+    "promotion.source_matches_destination is valid only after byte identity is verified"
+  ]
+}
