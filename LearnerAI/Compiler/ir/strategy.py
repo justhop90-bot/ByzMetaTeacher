@@ -3529,8 +3529,8 @@ def _default_byzantine_duc_plan(
     boundaries.
     """
     from ..semantic.analyzer import parse_expression
-    from ..runtime_binding import GoalSlotRequest
-    from .model import GoalRole, SemanticId, StorageRequestId
+    from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
+    from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
     from .native_duc import (
         NativeDucLifecycleStage,
         NativeDucOutputRequest,
