@@ -3234,6 +3234,134 @@ def _default_byzantine_duc_plan(
                 )
             )
 
+    objective_dispatch_base = len(rules)
+    objective_dispatch_specs = (
+        (
+            "byzantine-endgame-objective-dispatch-siege",
+            "byzantine-offensive-objective-state-siege",
+            "byzantine-offensive-objective-class-siege",
+            "siege",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-defense",
+            "byzantine-offensive-objective-state-defense",
+            "byzantine-offensive-objective-class-defense",
+            "defense",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-production",
+            "byzantine-offensive-objective-state-production",
+            "byzantine-offensive-objective-class-production",
+            "production",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-town-center",
+            "byzantine-offensive-objective-state-town-center",
+            "byzantine-offensive-objective-class-town-center",
+            "town-center",
+        ),
+    )
+    objective_dispatch_common_facts = (
+        parse_expression(
+            "(goal byzantine-offensive-objective-claim 1)",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(goal byzantine-army-attack-ready 1)",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(up-compare-goal byzantine-army-role-state >= byzantine-army-role-committed)",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(up-compare-goal byzantine-army-role-state <= byzantine-army-role-raid-split)",
+            SourceLocation(1),
+        ),
+    )
+    objective_attack_action = (
+        "(up-target-objects 1 "
+        "action-attack-move -1 -1)"
+    )
+    for offset, (identity, state_value, class_value, class_token) in enumerate(
+        objective_dispatch_specs
+    ):
+        target_output = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, f"endgame-objective-target:{class_token}"),
+                "target-object-id",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        rules.append(
+            NativeDucRule(
+                identity=identity,
+                order=objective_dispatch_base + offset,
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-state "
+                        f"{state_value})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-class "
+                        f"{class_value})",
+                        SourceLocation(1),
+                    ),
+                    *objective_dispatch_common_facts,
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(up-filter-include cmdid-military -1 -1 -1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-find-local c: -1 c: 240)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-remove-objects search-local 19 != 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-remove-objects search-local 1 == 125)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data id 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        objective_attack_action,
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-reset-search 0 0 1 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(
+                    NativeDucLifecycleStage.TARGET,
+                    NativeDucLifecycleStage.DISPATCH,
+                ),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=identity,
+                section="ACTION",
+                expression_index=4,
+                request=target_output,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+
+    relic_base = len(rules)
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
 
