@@ -17,6 +17,10 @@ from Compiler.semantic.rule_execution import RuleExecutionReport, RuleReachabili
 from Compiler.semantic.persistent_state import PersistentStateReport
 from Compiler.semantic.strategy_dependency import (
     StrategyDependencyCode,
+    FeatureNode,
+    FeatureNodeStatus,
+    FeatureStage,
+    FeatureTraceBuilder,
     StrategyDependencyProof,
     analyze_strategy_dependencies,
 )
@@ -224,6 +228,30 @@ class StrategyDependencyTests(unittest.TestCase):
             codes,
         )
         self.assertEqual(report.to_json(), report.to_json())
+
+
+    def test_analyzer_attaches_feature_traces_to_report(self):
+        demand = _demand()
+        builder = FeatureTraceBuilder("research-pikeman")
+        builder.add_node(FeatureNode(
+            feature_id="research-pikeman",
+            stage=FeatureStage.STRATEGY_IR,
+            identity="research-pikeman",
+            status=FeatureNodeStatus.PASS,
+        ))
+        trace = builder.build(root_stage=FeatureStage.STRATEGY_IR)
+
+        report = analyze_strategy_dependencies(
+            (demand,),
+            self._graph(demand),
+            ValidationReport(()),
+            RuleExecutionReport((), (), RuleReachabilityReport((), (), (), ())),
+            self._empty_state(),
+            feature_traces=(trace,),
+        )
+
+        self.assertEqual(report.feature_traces, (trace,))
+        self.assertIs(report.feature_trace("research-pikeman"), trace)
 
     def test_json_is_deterministic(self):
         demand = _demand()
