@@ -664,6 +664,8 @@ def community_strategy_demands(
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
 
+    demands: list[_StrategicDemandSpec] = []
+
     provider = _provider_for_line(effective, "villager-line")
     villager_demand = _StrategicDemandSpec(
         identity="civilian-villager-continuity",
@@ -720,8 +722,6 @@ def community_strategy_demands(
         recovery=_CapabilityRecoveryContract(),
     )
     demands.append(villager_demand)
-
-    demands: list[_StrategicDemandSpec] = []
 
     camp_specs = (
         (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
