@@ -129,6 +129,7 @@ class EndgamePushContract:
     attack_soldier_percent: int
     minimum_group_size: int
     maximum_group_size: int
+    active_window_seconds: int
     live_witness_ref: str
     cleared_witness_ref: str
     frontier: tuple[EndgameFrontierState, ...]
@@ -148,6 +149,7 @@ class EndgamePushContract:
                 self.attack_soldier_percent,
                 self.minimum_group_size,
                 self.maximum_group_size,
+                self.active_window_seconds,
             )
         ):
             raise TypeError("endgame push contract numeric fields must be integers")
@@ -157,6 +159,8 @@ class EndgamePushContract:
             raise ValueError("endgame attack soldier percent must be in 0..100")
         if not 1 <= self.minimum_group_size <= self.maximum_group_size <= 32767:
             raise ValueError("endgame attack group size bounds are invalid")
+        if not 1 <= self.active_window_seconds <= 300:
+            raise ValueError("endgame attack-group active window must be in 1..300 seconds")
         if not self.live_witness_ref.strip():
             raise ValueError("endgame push contract requires a live witness reference")
         if not self.cleared_witness_ref.strip():
