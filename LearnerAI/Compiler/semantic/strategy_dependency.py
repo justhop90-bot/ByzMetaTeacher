@@ -291,8 +291,15 @@ class FeatureTraceBuilder:
         return FeatureTrace(
             feature_id=self.feature_id,
             root_stage=root_stage,
-            nodes=tuple(self._nodes.values()),
-            edges=tuple(self._edges.values()),
+            nodes=tuple(sorted(
+                self._nodes.values(),
+                key=lambda node: (
+                    _FEATURE_STAGE_INDEX[node.stage],
+                    node.identity,
+                    node.node_id,
+                ),
+            )),
+            edges=tuple(sorted(self._edges.values(), key=lambda edge: edge.order)),
             metadata=tuple(sorted(metadata)),
         )
 
