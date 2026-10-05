@@ -619,7 +619,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             if rule.identity.startswith("sn-controller-byzantine-endgame-push-")
         }
         self.assertIn(
-            "sn-controller-byzantine-endgame-push-36-write",
+            "sn-controller-byzantine-endgame-push-attack-groups-underlay-write",
             sn_controllers,
         )
         self.assertIn(
@@ -637,6 +637,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
         self.assertIn("(goal byzantine-endgame-push-state 3)", release_facts)
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            release_facts,
+        )
         self.assertIn("(attack-soldier-count <= 0)", release_facts)
         self.assertIn("(unit-type-count cataphract >= 4)", " ".join(release_facts))
 
