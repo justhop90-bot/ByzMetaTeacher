@@ -1,8 +1,8 @@
 """Typed Byzantine end-game strategy and runtime contract.
 
-The end-game layer owns strategic intent and state shape only. It does not emit
-native attack, production, construction, DUC, Strategic Number, or timer
-actions. Existing execution subsystems remain the owners of those behaviors.
+The end-game layer owns typed strategic policy and persistent control state.
+Native execution remains owned by the existing attack, DUC, production,
+construction, Strategic Number, and timer subsystems.
 """
 from __future__ import annotations
 
@@ -38,6 +38,89 @@ class EndgameFrontierState(str, Enum):
     PRODUCTION = "PRODUCTION"
     TOWN_CENTER = "TOWN_CENTER"
 
+
+class EndgameTargetQueryKind(str, Enum):
+    OBJECT_TYPE = "OBJECT_TYPE"
+    OBJECT_CLASS = "OBJECT_CLASS"
+
+
+@dataclass(frozen=True)
+class EndgameTargetCandidate:
+    identity: str
+    frontier: EndgameFrontierState
+    query_kind: EndgameTargetQueryKind
+    native_id: int
+    priority: int = 0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.identity, str) or not self.identity.strip():
+            raise ValueError("endgame target candidate identity must not be empty")
+        if not isinstance(self.frontier, EndgameFrontierState):
+            raise TypeError("endgame target candidate frontier must be EndgameFrontierState")
+        if not isinstance(self.query_kind, EndgameTargetQueryKind):
+            raise TypeError("endgame target candidate query_kind must be EndgameTargetQueryKind")
+        if not isinstance(self.native_id, int) or isinstance(self.native_id, bool):
+            raise TypeError("endgame target candidate native_id must be an integer")
+        if not 0 <= self.native_id <= 32767:
+            raise ValueError("endgame target candidate native_id must be in 0..32767")
+        if not isinstance(self.priority, int) or isinstance(self.priority, bool):
+            raise TypeError("endgame target candidate priority must be an integer")
+
+
+@dataclass(frozen=True)
+class EndgameTargetControlContract:
+    identity: str
+    anchor_goal: str
+    search_radius: int
+    candidates: tuple[EndgameTargetCandidate, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.identity, str) or not self.identity.strip():
+            raise ValueError("endgame target control identity must not be empty")
+        if not isinstance(self.anchor_goal, str) or not self.anchor_goal.strip():
+            raise ValueError("endgame target control anchor_goal must not be empty")
+        if not isinstance(self.search_radius, int) or isinstance(self.search_radius, bool):
+            raise TypeError("endgame target control search_radius must be an integer")
+        if not 1 <= self.search_radius <= 40:
+            raise ValueError("endgame target control search_radius must be in 1..40")
+        if not isinstance(self.candidates, tuple) or not self.candidates:
+            raise ValueError("endgame target control requires candidates")
+        if any(not isinstance(candidate, EndgameTargetCandidate) for candidate in self.candidates):
+            raise TypeError("endgame target control candidates must use EndgameTargetCandidate")
+        identities = tuple(candidate.identity for candidate in self.candidates)
+        if len(identities) != len(set(identities)):
+            raise ValueError("endgame target candidate identities must be unique")
+        expected_frontiers = (
+            EndgameFrontierState.SIEGE,
+            EndgameFrontierState.DEFENSE,
+            EndgameFrontierState.PRODUCTION,
+            EndgameFrontierState.TOWN_CENTER,
+        )
+        compressed = tuple(dict.fromkeys(candidate.frontier for candidate in self.candidates))
+        if compressed != expected_frontiers:
+            raise ValueError(
+                "endgame target candidates must use the canonical siege/defense/"
+                "production/town-center frontier order"
+            )
+        for frontier in expected_frontiers:
+            frontier_candidates = tuple(
+                candidate for candidate in self.candidates if candidate.frontier is frontier
+            )
+            if not frontier_candidates:
+                raise ValueError(
+                    f"endgame target control requires candidates for {frontier.value}"
+                )
+            expected_order = tuple(
+                sorted(
+                    frontier_candidates,
+                    key=lambda candidate: (-candidate.priority, candidate.identity),
+                )
+            )
+            if frontier_candidates != expected_order:
+                raise ValueError(
+                    f"endgame target candidates for {frontier.value} must be in "
+                    "deterministic priority order"
+                )
 
 @dataclass(frozen=True)
 class EndgamePushContract:
@@ -142,6 +225,7 @@ class EndgamePlan:
     rules: tuple[EndgamePolicyRule, ...]
     objective_priority: tuple[str, ...]
     push_contract: EndgamePushContract | None = None
+    target_control: EndgameTargetControlContract | None = None
     push_states: tuple[EndgamePushState, ...] = (
         EndgamePushState.FORMING,
         EndgamePushState.READY,
@@ -168,6 +252,12 @@ class EndgamePlan:
             self.push_contract, EndgamePushContract
         ):
             raise TypeError("endgame plan push_contract must be EndgamePushContract or None")
+        if self.target_control is not None and not isinstance(
+            self.target_control, EndgameTargetControlContract
+        ):
+            raise TypeError(
+                "endgame plan target_control must be EndgameTargetControlContract or None"
+            )
 
         if not isinstance(self.objective_priority, tuple):
             raise TypeError("endgame plan objective_priority must be a tuple")
