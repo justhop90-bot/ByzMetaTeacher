@@ -2160,7 +2160,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(goal {state_name} {fortified})"),
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(fortified_clear),
-                expr(f"(not {open_field_eligible})"),
                 *expr_facts(trash_eligible_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
@@ -2173,10 +2172,34 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         ),
         # Reject a candidate whose live guard disappeared before its dwell.
         NativeControlRule(
-            "byzantine-imperial-band-clear-fortified-candidate",
+            "byzantine-imperial-band-clear-fortified-core",
             facts=(
                 expr(f"(goal {candidate_name} {fortified})"),
-                expr(f"(goal byzantine-fortification-threat 0)"),
+                expr(
+                    lor(
+                        "(goal byzantine-fortification-threat 0)",
+                        "(not (goal byzantine-siege-approach byzantine-siege-approach-fortified))",
+                        "(goal byzantine-offensive-objective-claim 0)",
+                    )
+                ),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-clear-fortified-resources",
+            facts=(
+                expr(f"(goal {candidate_name} {fortified})"),
+                expr(
+                    lor(
+                        siege_floor.replace(">= 2", "< 2"),
+                        "(food-amount < 2400)",
+                        "(wood-amount < 2400)",
+                        "(gold-amount < 2600)",
+                    )
+                ),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
@@ -2198,7 +2221,17 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "byzantine-imperial-band-clear-trash-candidate",
             facts=(
                 expr(f"(goal {candidate_name} {trash})"),
-                expr(f"(not {trash_eligible})"),
+                expr(
+                    lor(
+                        "(goal byzantine-fortification-threat 1)",
+                        "(food-amount < 2400)",
+                        "(wood-amount < 2200)",
+                        "(gold-amount > 800)",
+                        "(food-amount < 2000)",
+                        "(wood-amount < 1700)",
+                        "(gold-amount < 1600)",
+                    )
+                ),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
@@ -2206,10 +2239,36 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byzantine-imperial-band-clear-open-candidate",
+            "byzantine-imperial-band-clear-open-core-candidate",
             facts=(
                 expr(f"(goal {candidate_name} {open_field})"),
-                expr(f"(not {open_field_eligible})"),
+                expr(
+                    lor(
+                        "(goal byzantine-fortification-threat 1)",
+                        "(goal byzantine-offensive-objective-claim 0)",
+                        "(players-military-population any-enemy < 12)",
+                    )
+                ),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-clear-open-resources",
+            facts=(
+                expr(f"(goal {candidate_name} {open_field})"),
+                expr(
+                    lor(
+                        "(food-amount < 2400)",
+                        "(wood-amount < 2000)",
+                        "(gold-amount < 2000)",
+                        "(food-amount < 2000)",
+                        "(wood-amount < 1700)",
+                        "(gold-amount < 1600)",
+                    )
+                ),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
