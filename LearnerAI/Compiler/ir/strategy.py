@@ -1663,7 +1663,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         )
 
-    sn_states = tuple(_native_sn_state(native_id) for native_id in (36, 227, 16, 26))
+    sn_states = tuple(_native_sn_state(native_id) for native_id in (16, 26))
 
     live_witness = profile.observation(
         plan.push_contract.live_witness_ref
