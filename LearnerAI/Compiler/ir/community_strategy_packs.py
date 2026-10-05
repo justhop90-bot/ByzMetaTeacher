@@ -1284,8 +1284,6 @@ def community_strategy_demands(
          (Resource.FOOD,), ("(unit-type-count-total spearman-line >= 6)",)),
         ("research-chain-mail", "military", "castle-age", "Chain Mail Armor", _StrategicPriority.SUPPORT,
          (Resource.FOOD, Resource.GOLD), ("(unit-type-count-total spearman-line >= 6)",)),
-        ("research-pikeman", "military", "castle-age", "Pikeman", _StrategicPriority.DEFENSE,
-         (Resource.FOOD, Resource.WOOD), ("(unit-type-count-total spearman-line >= 6)",)),
         ("research-forging", "military", "castle-age", "Forging", _StrategicPriority.SUPPORT,
          (Resource.FOOD,), ("(unit-type-count-total spearman-line >= 6)",)),
         ("research-iron-casting", "military", "castle-age", "Iron Casting", _StrategicPriority.SUPPORT,
