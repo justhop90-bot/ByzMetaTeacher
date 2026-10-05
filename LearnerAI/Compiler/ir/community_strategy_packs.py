@@ -37,6 +37,9 @@ from .endgame import (
     EndgameWinCondition as _EndgameWinCondition,
     EndgameFrontierState as _EndgameFrontierState,
     EndgamePushContract as _EndgamePushContract,
+    EndgameTargetCandidate as _EndgameTargetCandidate,
+    EndgameTargetControlContract as _EndgameTargetControlContract,
+    EndgameTargetQueryKind as _EndgameTargetQueryKind,
 )
 from .versioning import EvidenceKind, EvidenceRef
 from .map_profile import default_byzantine_map_profiles
@@ -1695,6 +1698,34 @@ def community_strategy_demands(
     return tuple(demands)
 
 
+def default_byzantine_endgame_target_control() -> _EndgameTargetControlContract:
+    return _EndgameTargetControlContract(
+        identity="byzantine-endgame-target-v1",
+        anchor_goal="byzantine-offensive-objective-point",
+        search_radius=40,
+        candidates=(
+            _EndgameTargetCandidate("siege-bombard-cannon", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_TYPE, 36, 100),
+            _EndgameTargetCandidate("siege-trebuchet-packed", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_TYPE, 331, 95),
+            _EndgameTargetCandidate("siege-trebuchet", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_TYPE, 42, 90),
+            _EndgameTargetCandidate("siege-weapon-class", _EndgameFrontierState.SIEGE, _EndgameTargetQueryKind.OBJECT_CLASS, 913, 10),
+            _EndgameTargetCandidate("defense-castle", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_TYPE, 82, 100),
+            _EndgameTargetCandidate("defense-keep", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_TYPE, 235, 95),
+            _EndgameTargetCandidate("defense-bombard-tower", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_TYPE, 236, 90),
+            _EndgameTargetCandidate("defense-tower-class", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_CLASS, 952, 10),
+            _EndgameTargetCandidate("defense-wall-class", _EndgameFrontierState.DEFENSE, _EndgameTargetQueryKind.OBJECT_CLASS, 927, 5),
+            _EndgameTargetCandidate("production-siege-workshop", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 49, 100),
+            _EndgameTargetCandidate("production-barracks", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 12, 95),
+            _EndgameTargetCandidate("production-archery-range", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 87, 90),
+            _EndgameTargetCandidate("production-stable", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 101, 85),
+            _EndgameTargetCandidate("production-monastery", _EndgameFrontierState.PRODUCTION, _EndgameTargetQueryKind.OBJECT_TYPE, 104, 80),
+            _EndgameTargetCandidate("town-center-feudal", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 109, 100),
+            _EndgameTargetCandidate("town-center-castle", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 71, 95),
+            _EndgameTargetCandidate("town-center-imperial", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 141, 90),
+            _EndgameTargetCandidate("town-center-fortified", _EndgameFrontierState.TOWN_CENTER, _EndgameTargetQueryKind.OBJECT_TYPE, 142, 85),
+        ),
+    )
+
+
 def default_byzantine_endgame_plan() -> _EndgamePlan:
     return _EndgamePlan(
         identity="byzantine-endgame-v1",
@@ -1728,6 +1759,7 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
             ),
         ),
         objective_priority=("siege", "defense", "production", "town-center"),
+        target_control=default_byzantine_endgame_target_control(),
         push_contract=_EndgamePushContract(
             identity="byzantine-endgame-push-v1",
             attack_group_count=1,
@@ -1945,8 +1977,14 @@ def build_byzantine_stock_strategy(
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),
-        attack_plan=_default_byzantine_attack_plan(stock_profile_id),
-        duc_plan=_default_byzantine_duc_plan(stock_profile_id),
+        attack_plan=_default_byzantine_attack_plan(
+            stock_profile_id,
+            push_contract=endgame_plan.push_contract,
+        ),
+        duc_plan=_default_byzantine_duc_plan(
+            stock_profile_id,
+            target_control=endgame_plan.target_control,
+        ),
         water_execution_plan=community_water_execution_plan(),
         map_profile=default_byzantine_map_profiles(),
         opening_selector=default_byzantine_opening_selector(),
@@ -1967,5 +2005,6 @@ __all__ = [
     "community_strategy_observations",
     "community_strategy_sn_modes",
     "default_byzantine_endgame_plan",
+    "default_byzantine_endgame_target_control",
     "community_water_execution_plan",
 ]
