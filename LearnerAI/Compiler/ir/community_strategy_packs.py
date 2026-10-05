@@ -1450,12 +1450,12 @@ def community_strategy_demands(
     enemy_mounted_8 = (
         "(or (players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
-        "(players-unit-type-count any-enemy camel-rider-line >= 8))"
+        "(players-unit-type-count any-enemy camel-rider-line >= 8))))"
     )
     enemy_mounted_12 = (
         "(or (players-unit-type-count any-enemy knight-line >= 12) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 12) "
-        "(players-unit-type-count any-enemy camel-rider-line >= 12))"
+        "(players-unit-type-count any-enemy camel-rider-line >= 12))))"
     )
     enemy_ranged_8 = (
         "(or (players-unit-type-count any-enemy archer-line >= 8) "
@@ -1470,7 +1470,7 @@ def community_strategy_demands(
         "(players-unit-type-count any-enemy knight-line >= 8) "
         "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
         "(or (players-unit-type-count any-enemy camel-rider-line >= 8) "
-        "(players-unit-type-count any-enemy mangonel-line >= 2)))"
+        "(players-unit-type-count any-enemy mangonel-line >= 2))))"
     )
 
     band_demands = (
