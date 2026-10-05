@@ -14,6 +14,7 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgameTargetControlContract,
     EndgameConversionContract,
     EndgameTargetQueryKind,
+    validate_endgame_plan,
 )
 from LearnerAI.Compiler.ir.civ_profile import Age, ByzantineProfile, resolve_effective_civ
 from LearnerAI.Compiler.ir.strategy import (
@@ -263,6 +264,50 @@ class EndgameContractTests(unittest.TestCase):
             validate_endgame_plan(
                 plan,
                 observation_ids=("strategy-imperial-spend-gold", "live"),
+            )
+
+    def test_frontier_witness_requires_external_world_provenance(self):
+        plan = EndgamePlan(
+            identity="byzantine-endgame-v1",
+            rules=(
+                EndgamePolicyRule(
+                    identity="breakthrough",
+                    mode=EndgameMode.BREAKTHROUGH,
+                    win_condition=EndgameWinCondition.CAPABILITY_COLLAPSE,
+                    observation_refs=(),
+                    priority=100,
+                ),
+            ),
+            objective_priority=("siege", "defense", "production", "town-center"),
+            push_contract=EndgamePushContract(
+                identity="push",
+                attack_group_count=1,
+                attack_soldier_percent=100,
+                minimum_group_size=6,
+                maximum_group_size=40,
+                active_window_seconds=20,
+                live_witness_ref="live",
+                cleared_witness_ref="cleared",
+                frontier=(
+                    EndgameFrontierState.SIEGE,
+                    EndgameFrontierState.DEFENSE,
+                    EndgameFrontierState.PRODUCTION,
+                    EndgameFrontierState.TOWN_CENTER,
+                ),
+                frontier_witness_ref="frontier",
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "external world-state provenance"):
+            validate_endgame_plan(
+                plan,
+                observation_ids=("live", "cleared", "frontier"),
+                frontier_witness_provenance={"frontier": ()},
+            )
+        with self.assertRaisesRegex(ValueError, "engine/world evidence"):
+            validate_endgame_plan(
+                plan,
+                observation_ids=("live", "cleared", "frontier"),
+                frontier_witness_provenance={"frontier": (object(),)},
             )
 
     def test_endgame_plan_rejects_unknown_observation(self):
