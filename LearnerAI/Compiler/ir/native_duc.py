@@ -33,8 +33,8 @@ class NativeDucRule:
     order: int
     facts: tuple[Expression, ...]
     actions: tuple[Expression, ...]
-    lifecycle: tuple[NativeDucLifecycleStage, ...] = ()
     location: SourceLocation | None = None
+    lifecycle: tuple[NativeDucLifecycleStage, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.identity.strip():
