@@ -16,6 +16,125 @@ from .persistent_state import PersistentStateDiagnosticCode, PersistentStateRepo
 from .rule_execution import RuleExecutionReport
 
 
+class FeatureStage(str, Enum):
+    INPUT = "INPUT"
+    EFFECTIVE_CIV = "EFFECTIVE_CIV"
+    STRATEGY_PROFILE = "STRATEGY_PROFILE"
+    RESOLVED_PROFILE = "RESOLVED_PROFILE"
+    STRATEGY_IR = "STRATEGY_IR"
+    SEMANTIC_IR = "SEMANTIC_IR"
+    SEMANTIC_VALIDATION = "SEMANTIC_VALIDATION"
+    CAPABILITY_GRAPH = "CAPABILITY_GRAPH"
+    OPERATIONAL_PLAN = "OPERATIONAL_PLAN"
+    CONTROL_PLAN = "CONTROL_PLAN"
+    STORAGE_BINDING = "STORAGE_BINDING"
+    NATIVE_LOWERING = "NATIVE_LOWERING"
+    EMISSION = "EMISSION"
+    ARTIFACT_ANALYSIS = "ARTIFACT_ANALYSIS"
+    NATIVE_VALIDATION = "NATIVE_VALIDATION"
+    RUNTIME_ASSEMBLY = "RUNTIME_ASSEMBLY"
+    RUNTIME_PROMOTION = "RUNTIME_PROMOTION"
+    RUNTIME = "RUNTIME"
+
+
+FEATURE_STAGE_ORDER: tuple[FeatureStage, ...] = (
+    FeatureStage.INPUT,
+    FeatureStage.EFFECTIVE_CIV,
+    FeatureStage.STRATEGY_PROFILE,
+    FeatureStage.RESOLVED_PROFILE,
+    FeatureStage.STRATEGY_IR,
+    FeatureStage.SEMANTIC_IR,
+    FeatureStage.SEMANTIC_VALIDATION,
+    FeatureStage.CAPABILITY_GRAPH,
+    FeatureStage.OPERATIONAL_PLAN,
+    FeatureStage.CONTROL_PLAN,
+    FeatureStage.STORAGE_BINDING,
+    FeatureStage.NATIVE_LOWERING,
+    FeatureStage.EMISSION,
+    FeatureStage.ARTIFACT_ANALYSIS,
+    FeatureStage.NATIVE_VALIDATION,
+    FeatureStage.RUNTIME_ASSEMBLY,
+    FeatureStage.RUNTIME_PROMOTION,
+    FeatureStage.RUNTIME,
+)
+
+_FEATURE_STAGE_INDEX = {
+    stage: index for index, stage in enumerate(FEATURE_STAGE_ORDER)
+}
+
+
+class FeatureNodeStatus(str, Enum):
+    PASS = "PASS"
+    MISSING = "MISSING"
+    INVALID = "INVALID"
+    BLOCKED = "BLOCKED"
+    OPEN = "OPEN"
+    UNKNOWN = "UNKNOWN"
+
+
+class FeatureEdgeStatus(str, Enum):
+    SATISFIED = "SATISFIED"
+    BROKEN = "BROKEN"
+    BLOCKED = "BLOCKED"
+    UNKNOWN = "UNKNOWN"
+
+
+@dataclass(frozen=True)
+class FeatureNode:
+    feature_id: str
+    stage: FeatureStage
+    identity: str
+    status: FeatureNodeStatus
+    fingerprint: str | None = None
+    source_unit: str | None = None
+    location: str | None = None
+    rule_orders: tuple[int, ...] = ()
+    artifact_sha256: str | None = None
+    evidence: tuple[str, ...] = ()
+    diagnostic_codes: tuple[str, ...] = ()
+
+    @property
+    def node_id(self) -> str:
+        return (
+            f"feature:{self.feature_id}:"
+            f"{self.stage.value.lower()}:{self.identity}"
+        )
+
+
+@dataclass(frozen=True)
+class FeatureEdge:
+    feature_id: str
+    source: FeatureStage
+    target: FeatureStage
+    contract: str
+    expected_identity: str
+    observed_identity: str | None
+    status: FeatureEdgeStatus
+    diagnostic_code: str | None = None
+    message: str | None = None
+    source_node_id: str | None = None
+    target_node_id: str | None = None
+    evidence: tuple[str, ...] = ()
+
+    @property
+    def edge_id(self) -> str:
+        return (
+            f"feature-edge:{self.feature_id}:"
+            f"{self.source.value.lower()}->"
+            f"{self.target.value.lower()}:"
+            f"{self.contract}"
+        )
+
+    @property
+    def order(self) -> tuple[int, int, str, str]:
+        return (
+            _FEATURE_STAGE_INDEX[self.source],
+            _FEATURE_STAGE_INDEX[self.target],
+            self.contract,
+            self.expected_identity,
+        )
+
+
 class StrategyDependencyProof(str, Enum):
     PROVEN = "PROVEN"
     CONDITIONAL = "CONDITIONAL"
@@ -42,6 +161,7 @@ class StrategyDependencyCode(str, Enum):
     RELIC_RETURN_PATH_MISSING = "SDDR-052"
     RELIC_RECOVERY_PATH_MISSING = "SDDR-053"
     RELIC_RELEASE_WITNESS_OPEN = "SDDR-054"
+    FEATURE_FIRST_BROKEN_EDGE = "SDDR-060"
 
 
 @dataclass(frozen=True)
