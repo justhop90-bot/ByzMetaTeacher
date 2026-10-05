@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from .native_attack import NativeAttackLifecyclePlan
     from .native_duc import NativeDucPlan
     from .recurrent import TimerRequest
+    from .strategic_number import StrategicNumberOrigin
     from .water import WaterExecutionPlan
     from .map_profile import MapProfile
     from .opening import OpeningSelectorPlan
@@ -1139,7 +1140,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
         return None
 
     from ..ast import SourceLocation
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest
     from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
@@ -2340,6 +2341,19 @@ def _byzantine_relic_control_plan(profile_id: str):
             stability_key=f"{profile_id}:byzantine-relic-control-timer",
         ),
     )
+    focus_player = NativeControlState(
+        "sn-focus-player-number",
+        StrategicNumberRequest(
+            StorageRequestId(owner, "sn-focus-player-number"),
+            why_not_goal=(
+                "Native DUC focus-player selector used to make the remote relic "
+                "search operate against Gaia. SN 251 is DE-documented."
+            ),
+            stability_key=f"{profile_id}:strategic-number:251",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=251,
+        ),
+    )
 
     def expr(source: str):
         return parse_expression(source, SourceLocation(1))
@@ -2364,6 +2378,16 @@ def _byzantine_relic_control_plan(profile_id: str):
             actions=(
                 expr(f"(set-goal {state_name} 0)"),
                 expr(f"(disable-timer {timer_name})"),
+                expr("(set-strategic-number sn-focus-player-number 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-focus-gaia",
+            facts=(
+                expr(f"(goal {state_name} 0)"),
+            ),
+            actions=(
+                expr("(set-strategic-number sn-focus-player-number 0)"),
             ),
         ),
         NativeControlRule(
