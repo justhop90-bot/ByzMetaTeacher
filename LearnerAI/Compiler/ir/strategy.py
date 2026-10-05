@@ -714,6 +714,10 @@ def _validate_endgame_plan(
     validate_endgame_plan(
         plan,
         observation_ids=tuple(item.identity for item in profile.observations),
+        frontier_witness_provenance={
+            item.identity: item.provenance
+            for item in profile.observations
+        },
     )
 
 
