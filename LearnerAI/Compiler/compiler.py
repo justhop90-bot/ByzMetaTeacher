@@ -810,6 +810,7 @@ def compile_source_with_report(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
+    strategy_report: Path | None = None,
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
