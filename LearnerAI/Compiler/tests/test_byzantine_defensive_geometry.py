@@ -22,6 +22,44 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         self.assertIn("(up-build place-point 0 c: keep)", self.per)
         self.assertIn("(up-build place-point 0 c: bombard-tower)", self.per)
 
+    def test_attack_reset_now_has_only_the_army_recovery_owners(self):
+        self.assertEqual(
+            self.per.count("(up-reset-attack-now)"),
+            4,
+        )
+
+        reset_sites = (
+            (
+                "(goal byzantine-army-overmatch-state byzantine-army-overmatch-triggered)",
+                "(goal byzantine-army-reinforcement 0)",
+            ),
+            (
+                "(goal byzantine-army-reposition-state byzantine-army-reposition-idle)",
+                "(town-under-attack)",
+            ),
+            (
+                "(goal byzantine-army-reposition-state byzantine-army-reposition-idle)",
+                "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
+            ),
+            (
+                "(timer-triggered byzantine-army-stale-timer)",
+                "(attack-soldier-count <= 3)",
+            ),
+        )
+
+        remaining = self.per
+        for first_fact, second_fact in reset_sites:
+            reset_index = remaining.index("(up-reset-attack-now)")
+            prior = remaining[max(0, reset_index - 2200):reset_index]
+            self.assertIn(first_fact, prior)
+            self.assertIn(second_fact, prior)
+            remaining = remaining[reset_index + len("(up-reset-attack-now)") :]
+
+        self.assertNotIn(
+            "(goal byzantine-army-role-recovery-request 1)\n=>\n    (up-reset-attack-now)",
+            self.per,
+        )
+
     def test_static_defense_has_a_single_stone_spend_channel(self):
         self.assertIn(
             "(defconst byzantine-bombard-tower-target 713)",
