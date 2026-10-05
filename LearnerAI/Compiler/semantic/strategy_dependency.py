@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Iterable
@@ -15,6 +15,306 @@ from .capability_validation import CapabilityDiagnosticCode, ValidationReport
 from .persistent_state import PersistentStateDiagnosticCode, PersistentStateReport
 from .rule_execution import RuleExecutionReport
 
+
+class FeatureStage(str, Enum):
+    INPUT = "INPUT"
+    EFFECTIVE_CIV = "EFFECTIVE_CIV"
+    STRATEGY_PROFILE = "STRATEGY_PROFILE"
+    RESOLVED_PROFILE = "RESOLVED_PROFILE"
+    STRATEGY_IR = "STRATEGY_IR"
+    SEMANTIC_IR = "SEMANTIC_IR"
+    SEMANTIC_VALIDATION = "SEMANTIC_VALIDATION"
+    CAPABILITY_GRAPH = "CAPABILITY_GRAPH"
+    OPERATIONAL_PLAN = "OPERATIONAL_PLAN"
+    CONTROL_PLAN = "CONTROL_PLAN"
+    STORAGE_BINDING = "STORAGE_BINDING"
+    NATIVE_LOWERING = "NATIVE_LOWERING"
+    EMISSION = "EMISSION"
+    ARTIFACT_ANALYSIS = "ARTIFACT_ANALYSIS"
+    NATIVE_VALIDATION = "NATIVE_VALIDATION"
+    RUNTIME_ASSEMBLY = "RUNTIME_ASSEMBLY"
+    RUNTIME_PROMOTION = "RUNTIME_PROMOTION"
+    RUNTIME = "RUNTIME"
+
+
+FEATURE_STAGE_ORDER: tuple[FeatureStage, ...] = (
+    FeatureStage.INPUT,
+    FeatureStage.EFFECTIVE_CIV,
+    FeatureStage.STRATEGY_PROFILE,
+    FeatureStage.RESOLVED_PROFILE,
+    FeatureStage.STRATEGY_IR,
+    FeatureStage.SEMANTIC_IR,
+    FeatureStage.SEMANTIC_VALIDATION,
+    FeatureStage.CAPABILITY_GRAPH,
+    FeatureStage.OPERATIONAL_PLAN,
+    FeatureStage.CONTROL_PLAN,
+    FeatureStage.STORAGE_BINDING,
+    FeatureStage.NATIVE_LOWERING,
+    FeatureStage.EMISSION,
+    FeatureStage.ARTIFACT_ANALYSIS,
+    FeatureStage.NATIVE_VALIDATION,
+    FeatureStage.RUNTIME_ASSEMBLY,
+    FeatureStage.RUNTIME_PROMOTION,
+    FeatureStage.RUNTIME,
+)
+
+_FEATURE_STAGE_INDEX = {
+    stage: index for index, stage in enumerate(FEATURE_STAGE_ORDER)
+}
+
+
+class FeatureNodeStatus(str, Enum):
+    PASS = "PASS"
+    MISSING = "MISSING"
+    INVALID = "INVALID"
+    BLOCKED = "BLOCKED"
+    OPEN = "OPEN"
+    UNKNOWN = "UNKNOWN"
+
+
+class FeatureEdgeStatus(str, Enum):
+    SATISFIED = "SATISFIED"
+    BROKEN = "BROKEN"
+    BLOCKED = "BLOCKED"
+    UNKNOWN = "UNKNOWN"
+
+
+@dataclass(frozen=True)
+class FeatureNode:
+    feature_id: str
+    stage: FeatureStage
+    identity: str
+    status: FeatureNodeStatus
+    fingerprint: str | None = None
+    source_unit: str | None = None
+    location: str | None = None
+    rule_orders: tuple[int, ...] = ()
+    artifact_sha256: str | None = None
+    evidence: tuple[str, ...] = ()
+    diagnostic_codes: tuple[str, ...] = ()
+
+    @property
+    def node_id(self) -> str:
+        return (
+            f"feature:{self.feature_id}:"
+            f"{self.stage.value.lower()}:{self.identity}"
+        )
+
+
+@dataclass(frozen=True)
+class FeatureEdge:
+    feature_id: str
+    source: FeatureStage
+    target: FeatureStage
+    contract: str
+    expected_identity: str
+    observed_identity: str | None
+    status: FeatureEdgeStatus
+    diagnostic_code: str | None = None
+    message: str | None = None
+    source_node_id: str | None = None
+    target_node_id: str | None = None
+    evidence: tuple[str, ...] = ()
+
+    @property
+    def edge_id(self) -> str:
+        return (
+            f"feature-edge:{self.feature_id}:"
+            f"{self.source.value.lower()}->"
+            f"{self.target.value.lower()}:"
+            f"{self.contract}"
+        )
+
+    @property
+    def order(self) -> tuple[int, int, str, str]:
+        return (
+            _FEATURE_STAGE_INDEX[self.source],
+            _FEATURE_STAGE_INDEX[self.target],
+            self.contract,
+            self.expected_identity,
+        )
+
+
+
+@dataclass(frozen=True)
+class FeatureTraceDiagnostic:
+    code: str
+    feature_id: str
+    stage: FeatureStage
+    source_stage: FeatureStage
+    target_stage: FeatureStage
+    severity: DiagnosticSeverity
+    message: str
+    expected: str
+    observed: str | None
+    chain: tuple[str, ...]
+    locations: tuple[str, ...] = ()
+    rule_orders: tuple[int, ...] = ()
+
+
+@dataclass(frozen=True)
+class FeatureTrace:
+    feature_id: str
+    root_stage: FeatureStage
+    nodes: tuple[FeatureNode, ...]
+    edges: tuple[FeatureEdge, ...]
+    metadata: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def ordered_nodes(self) -> tuple[FeatureNode, ...]:
+        return tuple(sorted(
+            self.nodes,
+            key=lambda node: (
+                _FEATURE_STAGE_INDEX[node.stage],
+                node.identity,
+                node.node_id,
+            ),
+        ))
+
+    @property
+    def ordered_edges(self) -> tuple[FeatureEdge, ...]:
+        return tuple(sorted(self.edges, key=lambda edge: edge.order))
+
+    @property
+    def first_broken_edge(self) -> FeatureEdge | None:
+        return first_broken_edge(self)
+
+    @property
+    def status(self) -> FeatureNodeStatus:
+        broken = self.first_broken_edge
+        if broken is not None:
+            return FeatureNodeStatus.INVALID
+        if any(edge.status is FeatureEdgeStatus.UNKNOWN for edge in self.edges):
+            return FeatureNodeStatus.UNKNOWN
+        if any(edge.status is FeatureEdgeStatus.BLOCKED for edge in self.edges):
+            return FeatureNodeStatus.BLOCKED
+        statuses = {node.status for node in self.nodes}
+        if FeatureNodeStatus.INVALID in statuses:
+            return FeatureNodeStatus.INVALID
+        if FeatureNodeStatus.MISSING in statuses:
+            return FeatureNodeStatus.MISSING
+        if FeatureNodeStatus.BLOCKED in statuses:
+            return FeatureNodeStatus.BLOCKED
+        if FeatureNodeStatus.UNKNOWN in statuses:
+            return FeatureNodeStatus.UNKNOWN
+        if FeatureNodeStatus.OPEN in statuses:
+            return FeatureNodeStatus.OPEN
+        return FeatureNodeStatus.PASS
+
+    def diagnostic(self) -> FeatureTraceDiagnostic | None:
+        edge = self.first_broken_edge
+        if edge is None:
+            return None
+        stage_index = _FEATURE_STAGE_INDEX[edge.target]
+        chain = tuple(
+            node.node_id
+            for node in self.ordered_nodes
+            if _FEATURE_STAGE_INDEX[node.stage] <= stage_index
+        )
+        locations = tuple(sorted({
+            node.location
+            for node in self.ordered_nodes
+            if node.location is not None
+        }))
+        rule_orders = tuple(sorted({
+            rule_order
+            for node in self.ordered_nodes
+            if _FEATURE_STAGE_INDEX[node.stage] <= stage_index
+            for rule_order in node.rule_orders
+        }))
+        return FeatureTraceDiagnostic(
+            code=edge.diagnostic_code or "BYZ-TRACE-FIRST-BROKEN",
+            feature_id=self.feature_id,
+            stage=edge.target,
+            source_stage=edge.source,
+            target_stage=edge.target,
+            severity=DiagnosticSeverity.ERROR,
+            message=edge.message or (
+                f"feature {self.feature_id!r} violates contract {edge.contract!r}"
+            ),
+            expected=edge.expected_identity,
+            observed=edge.observed_identity,
+            chain=chain,
+            locations=locations,
+            rule_orders=rule_orders,
+        )
+
+
+class FeatureTraceBuilder:
+    """Mutable assembly surface for one immutable feature trace."""
+
+    def __init__(self, feature_id: str):
+        if not feature_id:
+            raise ValueError("feature_id must be non-empty")
+        self.feature_id = feature_id
+        self._nodes: dict[tuple[FeatureStage, str], FeatureNode] = {}
+        self._edges: dict[str, FeatureEdge] = {}
+
+    def add_node(self, node: FeatureNode) -> "FeatureTraceBuilder":
+        self._validate_feature_id(node.feature_id)
+        key = (node.stage, node.identity)
+        existing = self._nodes.get(key)
+        if existing is not None and existing != node:
+            raise ValueError(f"conflicting feature node {node.node_id}")
+        self._nodes[key] = node
+        return self
+
+    def add_edge(self, edge: FeatureEdge) -> "FeatureTraceBuilder":
+        self._validate_feature_id(edge.feature_id)
+        if _FEATURE_STAGE_INDEX[edge.target] <= _FEATURE_STAGE_INDEX[edge.source]:
+            raise ValueError("feature edges must move forward through stage order")
+        existing = self._edges.get(edge.edge_id)
+        if existing is not None and existing != edge:
+            raise ValueError(f"conflicting feature edge {edge.edge_id}")
+        self._edges[edge.edge_id] = edge
+        return self
+
+    def build(
+        self,
+        *,
+        root_stage: FeatureStage,
+        metadata: tuple[tuple[str, str], ...] = (),
+    ) -> FeatureTrace:
+        if self._nodes:
+            minimum_stage = min(
+                (node.stage for node in self._nodes.values()),
+                key=_FEATURE_STAGE_INDEX.__getitem__,
+            )
+            if _FEATURE_STAGE_INDEX[root_stage] > _FEATURE_STAGE_INDEX[minimum_stage]:
+                raise ValueError("root_stage cannot follow earliest feature evidence")
+        node_ids = {node.node_id for node in self._nodes.values()}
+        for edge in self._edges.values():
+            if edge.source_node_id is not None and edge.source_node_id not in node_ids:
+                raise ValueError(f"unknown source node {edge.source_node_id}")
+            if edge.target_node_id is not None and edge.target_node_id not in node_ids:
+                raise ValueError(f"unknown target node {edge.target_node_id}")
+        return FeatureTrace(
+            feature_id=self.feature_id,
+            root_stage=root_stage,
+            nodes=tuple(sorted(
+                self._nodes.values(),
+                key=lambda node: (
+                    _FEATURE_STAGE_INDEX[node.stage],
+                    node.identity,
+                    node.node_id,
+                ),
+            )),
+            edges=tuple(sorted(self._edges.values(), key=lambda edge: edge.order)),
+            metadata=tuple(sorted(metadata)),
+        )
+
+    def _validate_feature_id(self, feature_id: str) -> None:
+        if feature_id != self.feature_id:
+            raise ValueError(
+                f"feature id mismatch: expected {self.feature_id!r}, got {feature_id!r}"
+            )
+
+
+def first_broken_edge(trace: FeatureTrace) -> FeatureEdge | None:
+    for edge in trace.ordered_edges:
+        if edge.status is FeatureEdgeStatus.BROKEN:
+            return edge
+    return None
 
 class StrategyDependencyProof(str, Enum):
     PROVEN = "PROVEN"
@@ -42,6 +342,7 @@ class StrategyDependencyCode(str, Enum):
     RELIC_RETURN_PATH_MISSING = "SDDR-052"
     RELIC_RECOVERY_PATH_MISSING = "SDDR-053"
     RELIC_RELEASE_WITNESS_OPEN = "SDDR-054"
+    FEATURE_FIRST_BROKEN_EDGE = "SDDR-060"
 
 
 @dataclass(frozen=True)
@@ -89,6 +390,7 @@ class StrategyDependencyReport:
     findings: tuple[StrategyDependencyFinding, ...]
     runtime_open_dependencies: int = 0
     artifact_sha256: str | None = None
+    feature_traces: tuple[FeatureTrace, ...] = ()
 
     @property
     def errors(self):
@@ -98,19 +400,55 @@ class StrategyDependencyReport:
     def warnings(self):
         return tuple(x for x in self.findings if x.severity is DiagnosticSeverity.WARNING)
 
+    @property
+    def first_broken_edge_diagnostics(self) -> tuple[FeatureTraceDiagnostic, ...]:
+        diagnostics = tuple(
+            diagnostic
+            for trace in self.feature_traces
+            if (diagnostic := trace.diagnostic()) is not None
+        )
+        return tuple(sorted(
+            diagnostics,
+            key=lambda diagnostic: (
+                _FEATURE_STAGE_INDEX[diagnostic.target_stage],
+                diagnostic.feature_id,
+                diagnostic.code,
+                diagnostic.source_stage.value,
+            ),
+        ))
+
+    def feature_trace(self, feature_id: str) -> FeatureTrace | None:
+        for trace in self.feature_traces:
+            if trace.feature_id == feature_id:
+                return trace
+        return None
+
+    def with_feature_traces(
+        self,
+        feature_traces: Iterable[FeatureTrace],
+    ) -> "StrategyDependencyReport":
+        traces = tuple(feature_traces)
+        feature_ids = tuple(trace.feature_id for trace in traces)
+        if len(feature_ids) != len(set(feature_ids)):
+            raise ValueError("feature_traces must have unique feature_id values")
+        ordered = tuple(sorted(traces, key=lambda trace: trace.feature_id))
+        return replace(self, feature_traces=ordered)
+
     def with_artifact(self, artifact: str | bytes) -> "StrategyDependencyReport":
         payload = artifact.encode() if isinstance(artifact, str) else artifact
-        return StrategyDependencyReport(
-            self.schema_version, self.demands, self.capabilities, self.providers,
-            self.rules, self.persistent_states, self.nodes, self.edges,
-            self.findings, self.runtime_open_dependencies,
-            hashlib.sha256(payload).hexdigest(),
+        return replace(
+            self,
+            artifact_sha256=hashlib.sha256(payload).hexdigest(),
         )
 
     def to_json(self) -> str:
         return json.dumps({
             "schema_version": self.schema_version,
             "artifact_sha256": self.artifact_sha256,
+            "feature_traces": [asdict(x) for x in self.feature_traces],
+            "first_broken_edge_diagnostics": [
+                asdict(x) for x in self.first_broken_edge_diagnostics
+            ],
             "summary": {
                 "demands": self.demands,
                 "capabilities": self.capabilities,
@@ -219,6 +557,7 @@ def analyze_strategy_dependencies(
     persistent_state_report: PersistentStateReport,
     persistent_control_report=None,
     duc_plan=None,
+    feature_traces: Iterable[FeatureTrace] = (),
 ) -> StrategyDependencyReport:
     """Correlate existing compiler reports; never reparses or invents semantics."""
     if not isinstance(capability_graph, CapabilityGraph):
@@ -554,7 +893,7 @@ def analyze_strategy_dependencies(
         for provider in capability_graph.providers
     )
     _ = demands, persistent_control_report
-    return StrategyDependencyReport(
+    report = StrategyDependencyReport(
         schema_version=1,
         demands=len(capability_graph.demands),
         capabilities=len(capability_graph.capabilities),
@@ -569,9 +908,19 @@ def analyze_strategy_dependencies(
         findings=ordered,
         runtime_open_dependencies=runtime_open,
     )
+    return report.with_feature_traces(feature_traces)
 
 
 __all__ = [
+    "FEATURE_STAGE_ORDER",
+    "FeatureEdge",
+    "FeatureEdgeStatus",
+    "FeatureNode",
+    "FeatureNodeStatus",
+    "FeatureStage",
+    "FeatureTrace",
+    "FeatureTraceBuilder",
+    "FeatureTraceDiagnostic",
     "StrategyDependencyCode",
     "StrategyDependencyEdge",
     "StrategyDependencyFinding",
@@ -579,4 +928,5 @@ __all__ = [
     "StrategyDependencyProof",
     "StrategyDependencyReport",
     "analyze_strategy_dependencies",
+    "first_broken_edge",
 ]

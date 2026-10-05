@@ -113,6 +113,15 @@ from .rule_execution import (
 )
 
 from .strategy_dependency import (
+    FEATURE_STAGE_ORDER,
+    FeatureEdge,
+    FeatureEdgeStatus,
+    FeatureNode,
+    FeatureNodeStatus,
+    FeatureStage,
+    FeatureTrace,
+    FeatureTraceBuilder,
+    FeatureTraceDiagnostic,
     StrategyDependencyCode,
     StrategyDependencyEdge,
     StrategyDependencyFinding,
@@ -120,6 +129,7 @@ from .strategy_dependency import (
     StrategyDependencyProof,
     StrategyDependencyReport,
     analyze_strategy_dependencies,
+    first_broken_edge,
 )
 
 from .persistent_control import (
