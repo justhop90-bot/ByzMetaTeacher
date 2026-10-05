@@ -1831,7 +1831,7 @@ def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
             36,
             2,
             minimum_age=Age.CASTLE,
-            maximum_age=Age.IMPERIAL,
+            maximum_age=Age.CASTLE,
             postures=(_StrategyPosture.CASTLE_POWER,),
             priority=5,
         ),
