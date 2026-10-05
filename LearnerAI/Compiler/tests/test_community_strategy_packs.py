@@ -313,6 +313,26 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     f"(unit-type-count 6 >= {minimum})",
                 )
 
+    def test_imperial_ranged_pressure_uses_native_archer_line(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+
+        ranged_requirements = []
+        for demand in by_id.values():
+            if demand.identity.startswith("imperial-"):
+                ranged_requirements.extend(demand.execution.requirements)
+
+        joined = " ".join(ranged_requirements)
+        self.assertIn(
+            "(players-unit-type-count any-enemy archer-line >= 8)",
+            joined,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy archer-line >= 12)",
+            joined,
+        )
+        self.assertNotIn("crossbow-line", joined)
+
     def test_imperial_package_excludes_unavailable_blacksmith_techs(self):
         identities = {d.identity for d in build_byzantine_stock_strategy(self.effective).demands}
         self.assertNotIn("research-blast-furnace", identities)
