@@ -287,6 +287,7 @@ def _training_demand(
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
     invalidate_ref: str | None = None,
+    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
@@ -321,6 +322,7 @@ def _training_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
+                *additional_requirements,
                 f"(can-train-with-escrow {train_target})",
                 f"(unit-type-count-total {train_target} < {minimum})",
             ),
@@ -638,6 +640,13 @@ def community_strategy_observations(
                 )
             )
 
+    observations.append(
+        _observation(
+            "strategy-villager-continuity",
+            "(unit-type-count-total villager < 110)",
+            _airef_provenance(effective, "commands/commands-details.html#unit-type-count-total"),
+        )
+    )
     return tuple(observations)
 
 
@@ -654,6 +663,63 @@ def community_strategy_demands(
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
+
+    provider = _provider_for_line(effective, "villager-line")
+    villager_demand = _StrategicDemandSpec(
+        identity="civilian-villager-continuity",
+        owner="economy",
+        production_arbitration_group="production",
+        posture=_StrategyPosture.BOOM,
+        priority=_StrategicPriority.CORE,
+        reason=(
+            _persistent(
+                "Villager production remains the P0 economic continuity floor",
+                "strategy-villager-continuity",
+            ),
+        ),
+        admissibility=(
+            _persistent(
+                "Villager production remains admissible until the age bank is issuable",
+                "strategy-villager-continuity",
+            ),
+        ),
+        invalidation=(),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.TRAIN,
+            "unit-line",
+            "villager-line",
+            provider,
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.CURRENT_QUEUED,
+            "unit-line",
+            "villager-line",
+            minimum=110,
+        ),
+        opportunity_cost=None,
+        execution=_ExecutionDemandTemplate(
+            requirements=(
+                "(current-age >= dark-age)",
+                "(can-train villager)",
+                "(unit-type-count-total villager < 110)",
+                "(not (and (current-age == dark-age) "
+                "(and (unit-type-count-total villager >= 21) "
+                "(and (building-type-count-total lumber-camp >= 1) "
+                "(and (building-type-count-total mining-camp >= 1) "
+                "(can-research-with-escrow feudal-age))))))",
+                "(not (and (current-age == feudal-age) "
+                "(and (unit-type-count-total villager >= 28) "
+                "(and (building-type-count-total blacksmith >= 1) "
+                "(and (building-type-count-total market >= 1) "
+                "(can-research-with-escrow castle-age))))))",
+            ),
+            action="(train villager)",
+            witness="(unit-type-count villager >= 110)",
+            release="(unit-type-count villager >= 110)",
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+    demands.append(villager_demand)
 
     demands: list[_StrategicDemandSpec] = []
 
