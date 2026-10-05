@@ -1,63 +1,53 @@
-"""Deterministic canonical Byzantine Core v1 build contract tests."""
+"""Canonical Byzantine build lineage contract tests."""
 
 from __future__ import annotations
 
-import hashlib
-import json
-import tempfile
 import unittest
-from pathlib import Path
 
-from tools.build_byzantine_bot import NATIVE_PARSER_REVISION, build
+from tools.build_byzantine_bot import (
+    NATIVE_PARSER_REVISION,
+    ByzantineProfile,
+    build_byzantine_strategy,
+    compile_strategy_profile,
+)
+from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 
 
 class ByzantineBotBuildTests(unittest.TestCase):
-    def test_canonical_build_is_byte_deterministic_and_manifest_matches(self):
-        with tempfile.TemporaryDirectory() as first_root, tempfile.TemporaryDirectory() as second_root:
-            first_artifact, first_manifest = build(Path(first_root))
-            second_artifact, second_manifest = build(Path(second_root))
+    def test_strategy_compilation_is_byte_deterministic(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        profile = build_byzantine_strategy(effective, include_water_continuity=True)
+        first = compile_strategy_profile(profile, effective)
+        second = compile_strategy_profile(profile, effective)
+        self.assertEqual(first, second)
+        self.assertGreater(first.count("(defrule"), 0)
+        self.assertGreater(len(first.encode("utf-8")), 0)
+        self.assertEqual(len(NATIVE_PARSER_REVISION), 40)
 
-            first_bytes = first_artifact.read_bytes()
-            second_bytes = second_artifact.read_bytes()
-            self.assertEqual(first_bytes, second_bytes)
+    def test_canonical_build_fails_closed_without_declared_runtime_overlay(self):
+        import tempfile
+        from pathlib import Path
 
-            first_data = json.loads(first_manifest.read_text(encoding="utf-8"))
-            second_data = json.loads(second_manifest.read_text(encoding="utf-8"))
-            self.assertEqual(first_data, second_data)
+        from tools import build_byzantine_bot
 
-            expected_sha = hashlib.sha256(first_bytes).hexdigest()
-            self.assertEqual(first_data["artifact_sha256"], expected_sha)
-            self.assertEqual(first_data["artifact_sha256"], second_data["artifact_sha256"])
-            self.assertTrue(first_data["determinism"]["second_compile_equal"])
-            self.assertEqual(first_data["native_parser_revision"], NATIVE_PARSER_REVISION)
-            self.assertEqual(
-                first_data["build_input_identity"]["profile_entrypoint"],
-                "ByzantineProfile.for_update_185872",
+        original_root = build_byzantine_bot.ROOT
+        original_overlay = Path("runtime/byzantine/Byzantine.runtime-overlay.per")
+        try:
+            self.assertFalse(
+                original_overlay.is_file(),
+                "main is expected to remain fail-closed until the canonical overlay is extracted",
             )
-            self.assertEqual(
-                first_data["build_input_identity"]["strategy_entrypoint"],
-                "build_byzantine_strategy",
-            )
-            self.assertEqual(
-                first_data["build_input_identity"]["compiler_entrypoint"],
-                "compile_strategy_profile",
-            )
-            self.assertEqual(
-                first_data["build_input_identity"]["effective_snapshot_fingerprint"],
-                first_data["effective_snapshot_fingerprint"],
-            )
-            self.assertEqual(
-                first_data["build_input_identity"]["profile_id"],
-                first_data["profile_id"],
-            )
-            self.assertEqual(
-                first_data["build_input_identity"]["patch_key"],
-                first_data["patch_key"],
-            )
-            self.assertEqual(len(first_data["compiler_source_revision"]), 40)
-            self.assertGreater(first_data["artifact_line_count"], 0)
-            self.assertGreater(first_data["artifact_rule_count"], 0)
-            self.assertGreater(first_data["artifact_byte_length"], 0)
+            with self.assertRaisesRegex(RuntimeError, r"BYZ-ASSEMBLY-003"):
+                build_byzantine_bot.build(Path("dist/byzantine"))
+        finally:
+            build_byzantine_bot.ROOT = original_root
+
+    def test_canonical_builder_no_longer_uses_old_dist_artifact_name(self):
+        from pathlib import Path
+
+        source = Path("tools/build_byzantine_bot.py").read_text(encoding="utf-8")
+        self.assertNotIn('output_dir / "Byzantine.per"', source)
+        self.assertIn('output_dir / "Byzantine.compiler.per"', source)
 
 
 if __name__ == "__main__":
