@@ -1433,10 +1433,11 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     } or profile.attack_plan is None:
         return None
 
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .strategic_number import StrategicNumberOrigin
 
     owner = SemanticId(profile.profile_id, "byzantine-attack-phase")
     state_name = "byzantine-attack-phase"
@@ -1655,6 +1656,28 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         ),
     )
 
+    def _native_sn_state(native_id: int) -> NativeControlState:
+        state_name = f"sn-native-{native_id}"
+        owner = SemanticId(profile.profile_id, state_name)
+        return NativeControlState(
+            state_name,
+            StrategicNumberRequest(
+                StorageRequestId(owner, f"strategic-number:{state_name}"),
+                why_not_goal=(
+                    f"Endgame push requires the documented native Strategic Number {native_id}; "
+                    "the physical slot remains the shared native owner."
+                ),
+                stability_key=f"{profile.profile_id}:{state_name}",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=native_id,
+            ),
+        )
+
+    sn_states = tuple(
+        _native_sn_state(native_id)
+        for native_id in (36, 227, 16, 26)
+    )
+
     live_witness = profile.observation(
         plan.push_contract.live_witness_ref
     ).expression
@@ -1693,8 +1716,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
             ),
             actions=(
-                parse_expression("(set-strategic-number sn-number-attack-groups 0)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-percent-attack-soldiers 75)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
             ),
         ),
@@ -1707,8 +1730,8 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression(open_ground, SourceLocation(1)),
                 parse_expression(siege_normal, SourceLocation(1)),
                 parse_expression(committed, SourceLocation(1)),
-                parse_expression("(strategic-number sn-minimum-attack-group-size == 6)", SourceLocation(1)),
-                parse_expression("(strategic-number sn-maximum-attack-group-size == 40)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-16 == 6)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-26 == 40)", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(set-strategic-number sn-number-attack-groups {plan.push_contract.attack_group_count})", SourceLocation(1)),
@@ -1842,7 +1865,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         )
 
     return NativeControlPlan(
-        states=(push_state, frontier_state, frontier_witness_state),
+        states=(
+            push_state,
+            frontier_state,
+            frontier_witness_state,
+            *sn_states,
+        ),
         rules=tuple(rules),
     )
 
