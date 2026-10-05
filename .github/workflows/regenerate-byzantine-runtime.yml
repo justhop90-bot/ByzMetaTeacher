@@ -1,0 +1,118 @@
+name: Regenerate Byzantine runtime overlay
+
+on:
+  push:
+    branches:
+      - sync/byzantine-per-endgame-runtime-overlay-20261005
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: sync/byzantine-per-endgame-runtime-overlay-20261005
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+
+      - name: Canonical compiler build
+        env:
+          PYTHONPATH: LearnerAI
+        run: python tools/build_byzantine_bot.py
+
+      - name: Full compiler regression suite
+        env:
+          PYTHONPATH: LearnerAI
+        run: python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
+
+      - name: Patch checked-in runtime overlay from corrected resolver policy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("Byzantine.per")
+          text = path.read_text(encoding="utf-8")
+          marker = "; COMPILER-OWNED IMPERIAL ENDGAME OVERLAY"
+          if marker not in text:
+              raise SystemExit("missing compiler-owned Imperial overlay marker")
+
+          head, tail = text.split(marker, 1)
+          before = tail
+
+          ge_count = before.count("    (gold-amount >= 1600)")
+          lt_count = before.count("    (gold-amount < 1600)")
+          if ge_count != 3 or lt_count != 0:
+              raise SystemExit(
+                  f"unexpected stale gold-floor shape before patch: >=1600={ge_count}, <1600={lt_count}"
+              )
+
+          tail = tail.replace("    (gold-amount >= 1600)\n", "")
+
+          if "(gold-amount <= 800)" not in tail:
+              raise SystemExit("gold-starved trash admission disappeared")
+          if "byzantine-imperial-band-transition-trash" not in tail:
+              raise SystemExit("trash transition disappeared")
+          if "(unit-type-count halberdier < 18)" not in tail:
+              raise SystemExit("18 Halberdier floor disappeared")
+          if "(unit-type-count 6 < 18)" not in tail:
+              raise SystemExit("18 Elite Skirmisher floor disappeared")
+          if "(unit-type-count hussar < 12)" not in tail:
+              raise SystemExit("12 Hussar floor disappeared")
+
+          path.write_text(head + marker + tail, encoding="utf-8")
+          print(f"removed stale >=1600 guards from runtime overlay: {ge_count}")
+          PY
+
+      - name: Validate corrected generated and checked-in contracts
+        env:
+          PYTHONPATH: LearnerAI
+        run: |
+          python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/generated-native.json
+          python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/checked-in-native.json
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path("Byzantine.per").read_text(encoding="utf-8")
+          generated = Path("dist/byzantine/Byzantine.per").read_text(encoding="utf-8")
+          tail = root.split("; COMPILER-OWNED IMPERIAL ENDGAME OVERLAY", 1)[1]
+
+          assert "(gold-amount >= 1600)" not in tail
+          assert "(gold-amount < 1600)" not in tail
+          assert "(gold-amount <= 800)" in tail
+          for needle in (
+              "byzantine-imperial-band-state",
+              "byzantine-imperial-band-transition-open",
+              "byzantine-imperial-band-transition-fortified",
+              "byzantine-imperial-band-transition-trash",
+              "(unit-type-count halberdier < 18)",
+              "(unit-type-count 6 < 18)",
+              "(unit-type-count hussar < 12)",
+              "imperial-open-halberdier-standard",
+              "imperial-fortified-hussar",
+              "imperial-trash-hussar-high",
+          ):
+              assert needle in tail, needle
+
+          generated_band = generated.split("; Native control rule: byzantine-imperial-band-initialize", 1)[1]
+          assert "(gold-amount >= 1600)" not in generated_band
+          assert "(gold-amount < 1600)" not in generated_band
+          print("generated and checked-in Imperial Trash policy: PASS")
+          PY
+
+      - name: Remove temporary workflow and commit regenerated artifact
+        run: |
+          rm .github/workflows/regenerate-byzantine-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Byzantine.per .github/workflows/regenerate-byzantine-runtime.yml
+          git commit -m "sync: regenerate Byzantine.per after Imperial resolver fix"
+          git push origin HEAD:sync/byzantine-per-endgame-runtime-overlay-20261005
