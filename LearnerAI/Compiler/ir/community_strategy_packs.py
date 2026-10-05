@@ -1850,6 +1850,7 @@ def build_byzantine_stock_strategy(
 
     base = build_byzantine_castle_strategy(effective)
     stock_profile_id = "byzantine-stock-v1"
+    endgame_plan = default_byzantine_endgame_plan()
     observations = list(base.observations)
     observed = {item.identity for item in observations}
     for observation in community_strategy_observations(effective):
@@ -1926,7 +1927,10 @@ def build_byzantine_stock_strategy(
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),
-        attack_plan=_default_byzantine_attack_plan(stock_profile_id),
+        attack_plan=_default_byzantine_attack_plan(
+            stock_profile_id,
+            push_contract=endgame_plan.push_contract,
+        ),
         duc_plan=_default_byzantine_duc_plan(stock_profile_id),
         water_execution_plan=community_water_execution_plan(),
         map_profile=default_byzantine_map_profiles(),
@@ -1934,7 +1938,7 @@ def build_byzantine_stock_strategy(
         economy_controller=default_byzantine_economy_controller(),
         camp_controller=default_byzantine_camp_controller(),
         role_separation_plan=default_byzantine_role_separation_plan(stock_profile_id),
-        endgame_plan=default_byzantine_endgame_plan(),
+        endgame_plan=endgame_plan,
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
