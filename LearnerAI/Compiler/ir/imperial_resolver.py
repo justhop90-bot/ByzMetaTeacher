@@ -134,6 +134,20 @@ class ImperialResolver:
         )
 
     @classmethod
+    def gold_recovery_open_eligible(cls, value: ImperialResolverInput) -> bool:
+        """Allow the agreed 1800-gold Trash->Open recovery band."""
+        return (
+            cls.floor_recovered(value)
+            and value.offensive_objective
+            and not value.fortification_threat
+            and not value.fortified_objective_requires_siege
+            and value.enemy_field_army >= 12
+            and value.food >= cls.OPEN_FOOD_IN
+            and value.wood >= cls.OPEN_WOOD_IN
+            and value.gold >= cls.TRASH_GOLD_OUT
+        )
+
+    @classmethod
     def gold_starved_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
             cls.floor_recovered(value)
