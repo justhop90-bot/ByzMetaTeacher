@@ -699,7 +699,11 @@ def community_strategy_demands(
             demands.append(
                 _StrategicDemandSpec(
                     identity=f"economy-{label}-camp-floor-{floor}",
-                    owner="economy-camps",
+                    owner=(
+                        "castle-trajectory"
+                        if resource is CampResource.STONE
+                        else "economy-camps"
+                    ),
                     posture=_StrategyPosture.BOOM,
                     priority=(
                         _StrategicPriority.SUPPORT
