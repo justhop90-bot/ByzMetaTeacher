@@ -811,8 +811,7 @@ def community_strategy_observations(
             "strategy-production-barracks-replacement",
             "(and (current-age >= imperial-age) "
             "(or (unit-type-count varangian-guard < 14) "
-            "(or (unit-type-count 359 < 18) "
-            "(unit-type-count 359 < 18))))",
+            "(unit-type-count 359 < 18)))",
         ),
         (
             "strategy-production-stable-replacement",
@@ -829,7 +828,9 @@ def community_strategy_observations(
         (
             "strategy-production-siege-replacement",
             "(and (current-age >= imperial-age) "
-            "(unit-type-count trebuchet < 4))",
+            "(or (unit-type-count trebuchet < 4) "
+            "(or (unit-type-count bombard-cannon < 4) "
+            "(unit-type-count-total mangonel-line < 4))))",
         ),
     )
     for identity, expression in replacement_depth_observations:
