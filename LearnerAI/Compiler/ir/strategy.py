@@ -3008,21 +3008,17 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         plan.push_contract.cleared_witness_ref
     ).expression
     imperial_band_ready = "(up-compare-goal byzantine-imperial-band-state >= 1)"
-    imperial_floor_ready = (
-        "(and (unit-type-count halberdier >= 18) "
-        "(and (unit-type-count 6 >= 18) (unit-type-count hussar >= 12)))"
+    imperial_floor_ready_facts = (
+        "(unit-type-count halberdier >= 18)",
+        "(unit-type-count 6 >= 18)",
+        "(unit-type-count hussar >= 12)",
     )
     premium_ready = (
         "(or (unit-type-count cataphract >= 12) "
         "(or (unit-type-count varangian-guard >= 12) "
-        "(unit-type-count 492 >= 12)))"
+        "(or (unit-type-count 492 >= 12)))"
     )
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
-    military_ready = (
-        f"(and {imperial_band_ready} "
-        f"(and {imperial_floor_ready} "
-        f"(or {premium_ready} {gold_starved_exception})))"
-    )
     standard_siege_ready_facts = (
         "(unit-type-count trebuchet >= 4)",
         "(unit-type-count bombard-cannon >= 4)",
@@ -3070,7 +3066,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
                 parse_expression("(up-compare-goal byzantine-imperial-band-state != 2)", SourceLocation(1)),
                 *(
                     parse_expression(fact, SourceLocation(1))
@@ -3091,7 +3092,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
                 parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
                 *(
                     parse_expression(fact, SourceLocation(1))
