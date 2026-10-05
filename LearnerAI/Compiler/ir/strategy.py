@@ -3838,7 +3838,7 @@ def _default_byzantine_duc_plan(
             output = GoalSlotRequest(
                 StorageRequestId(
                     SemanticId(profile_id, f"endgame-objective-target:{class_token}"),
-                    "target-object-id",
+                    "up-get-object-data",
                 ),
                 role=GoalRole.NATIVE_OUTPUT,
             )
