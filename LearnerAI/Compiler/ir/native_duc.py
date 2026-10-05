@@ -7,9 +7,22 @@ native expressions into the normal binder/emitter boundary.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 from ..ast import Expression, SourceLocation
 from .model import GoalSlotRequest, GoalSpanRequest
+
+
+class NativeDucLifecycleStage(str, Enum):
+    """Compiler-owned lifecycle stage attached to a native DUC rule."""
+
+    ADMISSIBILITY = "ADMISSIBILITY"
+    TARGET = "TARGET"
+    DISPATCH = "DISPATCH"
+    PICKUP_WITNESS = "PICKUP_WITNESS"
+    RETURN = "RETURN"
+    RELEASE_WITNESS = "RELEASE_WITNESS"
+    RECOVERY = "RECOVERY"
 
 
 @dataclass(frozen=True)
@@ -20,6 +33,7 @@ class NativeDucRule:
     order: int
     facts: tuple[Expression, ...]
     actions: tuple[Expression, ...]
+    lifecycle: tuple[NativeDucLifecycleStage, ...] = ()
     location: SourceLocation | None = None
 
     def __post_init__(self) -> None:
@@ -33,6 +47,10 @@ class NativeDucRule:
             )
         if not isinstance(self.facts, tuple) or not isinstance(self.actions, tuple):
             raise TypeError("native DUC rule facts/actions must be tuples")
+        if not isinstance(self.lifecycle, tuple):
+            raise TypeError("native DUC rule lifecycle must be a tuple")
+        if len(self.lifecycle) != len(set(self.lifecycle)):
+            raise ValueError("native DUC rule lifecycle stages must be unique")
 
 
 @dataclass(frozen=True)
@@ -150,6 +168,7 @@ class NativeDucPlan:
 
 
 __all__ = [
+    "NativeDucLifecycleStage",
     "NativeDucGoalInputRequest",
     "NativeDucOutputRequest",
     "NativeDucPlan",
