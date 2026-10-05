@@ -2606,7 +2606,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             actions=(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression("(up-find-local c: 104 c: 1)", SourceLocation(1)),
-                parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
+                parse_expression("(up-set-target-object search-local c: 0)", SourceLocation(1)),
                 parse_expression("(up-find-local c: 286 c: 1)", SourceLocation(1)),
                 parse_expression(
                     "(up-target-objects 0 0 -1 stance-defensive)",
