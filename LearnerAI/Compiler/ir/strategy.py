@@ -2995,15 +2995,17 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         plan.push_contract.cleared_witness_ref
     ).expression
     imperial_band_ready = "(up-compare-goal byzantine-imperial-band-state >= 1)"
+    # Native semantic validation does not currently expose military-population
+    # as an executable control fact, so use existing unit-count witnesses while
+    # preserving the same mature-force intent.
     attack_package_ready = (
-        "(and (military-population >= 15) "
         "(or (unit-type-count cataphract >= 8) "
         "(or (unit-type-count varangian-guard >= 8) "
         "(or (unit-type-count knight >= 8) "
         "(or (unit-type-count camel-rider >= 8) "
         "(or (unit-type-count halberdier >= 8) "
         "(or (unit-type-count 6 >= 8) "
-        "(unit-type-count hussar >= 8))))))))"
+        "(unit-type-count hussar >= 8)))))))"
     )
     imperial_floor_ready_facts = (attack_package_ready,)
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
