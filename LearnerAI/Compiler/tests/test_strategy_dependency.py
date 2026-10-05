@@ -297,6 +297,9 @@ class StrategyDependencyTests(unittest.TestCase):
             graph,
             bindings,
             artifact,
+            verified_stage_identities=frozenset({
+                "test:research-pikeman",
+            }),
         )
 
         self.assertEqual(len(traces), 1)
