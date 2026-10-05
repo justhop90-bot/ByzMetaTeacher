@@ -1674,7 +1674,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     military_ready = (
         "(or (unit-type-count cataphract >= 4) "
         "(or (unit-type-count varangian-guard >= 6) "
-        "(or (unit-type-count arbalest >= 6) "
+        "(or (unit-type-count 492 >= 6) "
         "(unit-type-count halberdier >= 6))))"
     )
     siege_ready = (
