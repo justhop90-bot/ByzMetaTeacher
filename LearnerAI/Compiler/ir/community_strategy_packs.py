@@ -498,7 +498,7 @@ def community_strategy_observations(
         ),
         (
             "siege-workshop",
-            "(unit-type-count-total siege-weapon-class >= {threshold})",
+            "(unit-type-count-total mangonel-line >= {threshold})",
             "strategy-production-siege-depth",
         ),
     )
