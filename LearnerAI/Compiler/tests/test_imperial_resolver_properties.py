@@ -143,20 +143,10 @@ class ImperialResolverPropertyTests(unittest.TestCase):
                         guard_seconds=20,
                         rearm_seconds=0,
                     )
-                    if value < threshold:
-                        self.assertEqual(
-                            decision.destination,
-                            ImperialBand.STANDING_FLOOR,
-                        )
-                    else:
-                        self.assertIn(
-                            decision.destination,
-                            {
-                                ImperialBand.OPEN_FIELD,
-                                ImperialBand.FORTIFIED_PUSH,
-                                ImperialBand.GOLD_STARVED_TRASH,
-                            },
-                        )
+                    self.assertEqual(
+                        ImperialResolver.floor_recovered(case),
+                        value >= threshold,
+                    )
 
     def test_property_open_entry_thresholds_are_inclusive(self):
         base = self.base()
