@@ -1804,6 +1804,80 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         ),
     ]
 
+    endgame_mode = "byzantine-endgame-mode"
+    endgame_win = "byzantine-endgame-win-condition"
+    states.extend(
+        (
+            NativeControlState(
+                endgame_mode,
+                GoalSlotRequest(
+                    StorageRequestId(
+                        SemanticId(profile.profile_id, endgame_mode),
+                        endgame_mode,
+                    ),
+                    role=GoalRole.PERSISTENT_STATE,
+                ),
+            ),
+            NativeControlState(
+                endgame_win,
+                GoalSlotRequest(
+                    StorageRequestId(
+                        SemanticId(profile.profile_id, endgame_win),
+                        endgame_win,
+                    ),
+                    role=GoalRole.PERSISTENT_STATE,
+                ),
+            ),
+        )
+    )
+    rules.extend(
+        (
+            NativeControlRule(
+                "byzantine-endgame-mode-recovery",
+                facts=(parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),),
+                actions=(
+                    parse_expression(f"(set-goal {endgame_mode} 3)", SourceLocation(1)),
+                    parse_expression(f"(set-goal {endgame_win} 3)", SourceLocation(1)),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-endgame-mode-resource-denial",
+                facts=(
+                    parse_expression("(goal byzantine-endgame-frontier >= 1)", SourceLocation(1)),
+                    parse_expression(profile.observation("strategy-endgame-resource-denial").expression, SourceLocation(1)),
+                    parse_expression(profile.observation("strategy-enemy-pressure").expression, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {endgame_mode} 2)", SourceLocation(1)),
+                    parse_expression(f"(set-goal {endgame_win} 1)", SourceLocation(1)),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-endgame-mode-attrition",
+                facts=(
+                    parse_expression("(goal byzantine-endgame-frontier >= 1)", SourceLocation(1)),
+                    parse_expression(profile.observation("strategy-endgame-ground-conversion").expression, SourceLocation(1)),
+                    parse_expression(profile.observation("strategy-imperial-spend-gold").expression, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {endgame_mode} 1)", SourceLocation(1)),
+                    parse_expression(f"(set-goal {endgame_win} 2)", SourceLocation(1)),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-endgame-mode-breakthrough",
+                facts=(
+                    parse_expression(profile.observation("strategy-imperial-spend-gold").expression, SourceLocation(1)),
+                    parse_expression(profile.observation("strategy-enemy-castle").expression, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {endgame_mode} 0)", SourceLocation(1)),
+                    parse_expression(f"(set-goal {endgame_win} 0)", SourceLocation(1)),
+                ),
+            ),
+        )
+    )
+
     states = [push_state, push_timer, *sn_states]
 
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
