@@ -2315,7 +2315,7 @@ def build_land_castle_strategy(
 
 def _byzantine_relic_control_plan(profile_id: str):
     """Lower relic acquisition state into the shared persistent-control plane."""
-    if profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}:
+    if profile_id != "byzantine-stock-v1":
         return None
 
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
