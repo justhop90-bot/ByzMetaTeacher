@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from ..ast import Expression
+
 from ..errors import CompileError
 from ..ir import (
     LifecycleState,
@@ -34,6 +36,24 @@ MAX_RULES = 10_000
 MAX_RULE_ELEMENTS = 32
 MAX_LINE_LENGTH = 255
 INITIALIZATION_CHUNK = 30
+
+# Semantic unit-line names are compiler-owned identities. These aliases are
+# lowered only when an expression is rendered into runtime .per syntax.
+_NATIVE_RUNTIME_UNIT_LINE_ALIASES = {
+    "camel-rider-line": "camel-line",
+}
+
+
+def _render_runtime_expression(expression: Expression) -> str:
+    parts = [expression.head]
+    for argument in expression.args:
+        if isinstance(argument, Expression):
+            parts.append(_render_runtime_expression(argument))
+        else:
+            token = str(argument)
+            parts.append(_NATIVE_RUNTIME_UNIT_LINE_ALIASES.get(token, token))
+    return "(" + " ".join(parts) + ")"
+
 
 
 def _claim_name(conflict_class: str) -> str:
