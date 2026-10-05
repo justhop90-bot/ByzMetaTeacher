@@ -665,6 +665,11 @@ def community_strategy_demands(
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
+    opening_pressure = (
+        "(or (players-unit-type-count any-enemy knight >= 3) "
+        "(or (players-unit-type-count any-enemy archer-line >= 4) "
+        "(players-unit-type-count any-enemy militia-line >= 5)))"
+    )
     demands: list[_StrategicDemandSpec] = []
 
     villager_provider = _provider_for_line(effective, "villager-line")
