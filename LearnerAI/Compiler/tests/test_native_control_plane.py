@@ -4,7 +4,9 @@ from Compiler.ast import Expression, SourceLocation
 from Compiler.compiler import compile_source
 from Compiler.ir import (
     GoalRole,
+    GoalSpanKind,
     GoalSlotRequest,
+    GoalSpanRequest,
     SemanticId,
     StorageRequestId,
     StrategicNumberOrigin,
@@ -106,6 +108,38 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         self.assertIn("(up-timer-status cooldown == timer-running)", output)
 
 
+
+    def test_native_control_accepts_goal_span_storage(self):
+        from Compiler.primitives.registry import default_de_registry
+
+        owner = SemanticId("control.fixture", "span")
+        plan = NativeControlPlan(
+            states=(
+                NativeControlState(
+                    "point",
+                    GoalSpanRequest(
+                        StorageRequestId(owner, "point"),
+                        width=2,
+                        shape=GoalSpanKind.POINT_PAIR,
+                        contract_id="up-get-point.Point",
+                        start_min=41,
+                        start_max=15998,
+                        role=GoalRole.EXECUTION_MEMORY,
+                    ),
+                ),
+            ),
+            rules=(
+                NativeControlRule(
+                    "use-point-state",
+                    facts=(
+                        Expression("(goal point 0)", "goal", ("point", "0")),
+                    ),
+                    actions=(),
+                ),
+            ),
+        )
+        report = validate_native_control_plan(plan, default_de_registry())
+        self.assertIn("point", report.state_identifiers)
 
     def test_native_strategic_number_reference_binds_exact_documented_id(self):
         owner = SemanticId("control.fixture", "native-sn")
