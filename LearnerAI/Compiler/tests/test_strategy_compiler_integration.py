@@ -345,8 +345,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             self.assertIn(exact_frontier_match, facts)
 
         conversion_demands = tuple(
-            demand for demand in compilation.demands
-            if demand.name.startswith("imperial-forward-production-")
+            demand for demand in self.stock_profile.demands
+            if demand.identity.startswith("imperial-forward-production-")
         )
         self.assertTrue(conversion_demands)
         self.assertTrue(
