@@ -644,14 +644,18 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "sn-controller-byzantine-endgame-push-227-release",
         ):
             release_facts = tuple(fact.source for fact in sn_controllers[identity].facts)
+            joined_release_facts = " ".join(release_facts)
             self.assertIn(
                 "(goal byzantine-endgame-push-state 3)",
-                release_facts[0],
+                joined_release_facts,
             )
-
             self.assertIn(
-                "(goal byzantine-endgame-push-state 2)",
-                tuple(fact.source for fact in sn_controllers[identity].facts),
+                "(goal byzantine-endgame-push-state 5)",
+                joined_release_facts,
+            )
+            self.assertNotIn(
+                "(timer-triggered byzantine-endgame-push-timer)",
+                joined_release_facts,
             )
 
         release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
