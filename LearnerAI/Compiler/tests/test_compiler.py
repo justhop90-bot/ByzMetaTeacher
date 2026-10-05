@@ -38,6 +38,27 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 22)
 
+    def test_runtime_expression_lowers_camel_rider_line_alias(self):
+        source = """
+        demand camel-line-observation {
+            require (unit-type-count-total camel-rider-line < 3)
+            require (players-unit-type-count any-enemy camel-rider-line >= 8)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn(
+            "(unit-type-count-total camel-line < 3)",
+            output,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy camel-line >= 8)",
+            output,
+        )
+        self.assertNotIn("camel-rider-line", output)
+
     def test_native_goal_reads_remain_invalid_as_witnesses(self):
         source = """
         demand bad-witness {
