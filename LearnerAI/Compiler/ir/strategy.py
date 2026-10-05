@@ -2896,6 +2896,15 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         ),
     )
 
+    def lor(*parts: str) -> str:
+        if not parts:
+            raise ValueError("endgame military alternative requires at least one fact")
+        result = parts[-1]
+        for part in reversed(parts[:-1]):
+            result = f"(or {part} {result})"
+        return result
+
+
     def _native_sn_state(native_id: int) -> NativeControlState:
         state_name = f"sn-native-{native_id}"
         owner = SemanticId(profile.profile_id, state_name)
