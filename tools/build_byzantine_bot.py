@@ -23,11 +23,8 @@ from LearnerAI.Compiler.artifacts.lineage import (  # noqa: E402
     COMPILER_ARTIFACT,
     COMPILER_MANIFEST,
     PROMOTED_ARTIFACT,
-    WovenRuntimeLineageResult,
     verify_woven_runtime_lineage,
 )
-from tools.assemble_byzantine_runtime import assemble_byzantine_runtime  # noqa: E402
-from tools.promote_byzantine_runtime import promote_byzantine_runtime  # noqa: E402
 
 NATIVE_PARSER_REVISION = "3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
 DEFAULT_OUTPUT_DIR = Path("dist/byzantine")
