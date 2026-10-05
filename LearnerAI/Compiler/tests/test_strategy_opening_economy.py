@@ -192,26 +192,23 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ((Resource.FOOD, 800), (Resource.GOLD, 200)),
         )
 
-    def test_age_bank_controller_preserves_villager_continuity_until_maturity(self):
+    def test_villager_continuity_is_a_production_lifecycle_demand(self):
         profile = build_byzantine_strategy(self.effective)
-        compilation = lower_strategy_profile(profile, self.effective)
-        control = compilation.control_plan
-        assert control is not None
+        demand = profile.demand("civilian-villager-continuity")
 
-        rule = next(
-            rule for rule in control.rules
-            if rule.identity == "age-bank-villager-production"
-        )
-        sources = tuple(fact.source for fact in rule.facts)
-        self.assertIn("(unit-type-count-total villager < 110)", sources)
-        self.assertIn("(can-train villager)", sources)
+        self.assertEqual(demand.owner, "economy")
+        self.assertEqual(demand.production_arbitration_group, "production")
+        self.assertEqual(demand.capability_intent.kind.name, "TRAIN")
+        self.assertEqual(demand.capability_intent.entity_id, "villager-line")
+        self.assertIn("(can-train villager)", demand.execution.requirements)
+        self.assertIn("(unit-type-count-total villager < 110)", demand.execution.requirements)
         self.assertIn(
             "(not (and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 21) "
             "(and (building-type-count-total lumber-camp >= 1) "
             "(and (building-type-count-total mining-camp >= 1) "
             "(can-research-with-escrow feudal-age))))))",
-            sources,
+            demand.execution.requirements,
         )
         self.assertIn(
             "(not (and (current-age == feudal-age) "
@@ -219,12 +216,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(and (building-type-count-total blacksmith >= 1) "
             "(and (building-type-count-total market >= 1) "
             "(can-research-with-escrow castle-age))))))",
-            sources,
+            demand.execution.requirements,
         )
-        self.assertEqual(
-            tuple(action.source for action in rule.actions),
-            ("(train villager)",),
-        )
+        self.assertEqual(demand.execution.action, "(train villager)")
+        self.assertIsNotNone(demand.production_lifecycle)
+        self.assertEqual(demand.production_lifecycle.unit, "villager")
 
     def test_camp_floor_two_requires_a_remote_resource_front(self):
         profile = build_byzantine_strategy(self.effective)
