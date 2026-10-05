@@ -1626,16 +1626,30 @@ def community_strategy_demands(
             else None
         )
         if building_name == "siege-workshop" and replacement_expression is not None:
+            standing_floor = standing_observation_ref.rsplit("-", 1)[-1]
             standing_demand = (
-                f"(or (unit-type-count-total 550 >= {standing_observation_ref.rsplit('-', 1)[-1]}) "
-                f"(or (unit-type-count-total 331 >= {standing_observation_ref.rsplit('-', 1)[-1]}) "
-                f"(unit-type-count-total 36 >= {standing_observation_ref.rsplit('-', 1)[-1]})))"
+                f"(or (unit-type-count-total 550 >= {standing_floor}) "
+                f"(or (unit-type-count-total 331 >= {standing_floor}) "
+                f"(unit-type-count-total 36 >= {standing_floor})))"
             )
             replacement_expression = (
                 "(and (current-age >= imperial-age) "
                 "(or (unit-type-count 331 < 4) "
                 "(or (unit-type-count 36 < 4) "
                 "(unit-type-count-total 550 < 4))))"
+            )
+        elif building_name == "stable" and replacement_expression is not None:
+            standing_floor = standing_observation_ref.rsplit("-", 1)[-1]
+            standing_demand = (
+                f"(or (unit-type-count-total 40 >= {standing_floor}) "
+                f"(or (unit-type-count-total 38 >= {standing_floor}) "
+                f"(or (unit-type-count-total 329 >= {standing_floor}) "
+                f"(unit-type-count-total 441 >= {standing_floor}))))"
+            )
+            replacement_expression = (
+                "(and (current-age >= imperial-age) "
+                "(or (unit-type-count 40 < 18) "
+                "(unit-type-count 441 < 12)))"
             )
         demands.append(
             _production_depth_demand(
