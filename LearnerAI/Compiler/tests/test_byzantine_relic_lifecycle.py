@@ -95,10 +95,10 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
         return_rule = rules["byzantine-relic-control-return"]
         return_sources = tuple(item.source for item in (*return_rule.facts, *return_rule.actions))
         self.assertIn(
-            "(up-modify-sn sn-focus-player-number c:= my-player-number)",
+            "(set-strategic-number sn-focus-player-number 0)",
             return_sources,
         )
-        self.assertIn("(up-find-remote c: monastery c: 1)", return_sources)
+        self.assertIn("(up-find-local c: monastery c: 1)", return_sources)
         self.assertIn("(up-find-local c: monk-with-relic c: 1)", return_sources)
         self.assertIn(
             "(up-target-objects 0 action-default -1 stance-defensive)",
