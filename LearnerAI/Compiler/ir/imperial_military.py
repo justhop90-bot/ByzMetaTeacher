@@ -76,10 +76,16 @@ class ImperialMilitaryPlan:
         if self.siege_entry_floor != 2:
             raise ValueError("fortified siege entry floor must remain 2")
 
-    @property
-    def floor_recovery_ready(self):
+    def floor_recovery_ready(
+        self,
+        halberdiers: int,
+        elite_skirmishers: int,
+        hussars: int,
+        food: int,
+        wood: int,
+        gold: int,
+    ) -> bool:
         return (
-            lambda halberdiers, elite_skirmishers, hussars, food, wood, gold:
             halberdiers >= self.floor[0]
             and elite_skirmishers >= self.floor[1]
             and hussars >= self.floor[2]
@@ -173,26 +179,6 @@ class ImperialMilitaryDecision:
     cooldown_blocked: bool = False
 
 
-def _candidate_ready(
-    state: ImperialMilitaryInput,
-    destination: ImperialMilitaryBand,
-    required_guard: int,
-    *,
-    allow_rearm: bool = False,
-) -> bool:
-    if state.candidate_band is not destination:
-        return False
-    if state.guard_seconds < required_guard:
-        return False
-    if (
-        not allow_rearm
-        and state.rearm_band is destination
-        and state.rearm_seconds < default_imperial_military_plan().rearm[destination]
-    ):
-        return False
-    return True
-
-
 def _cooldown_blocks(
     state: ImperialMilitaryInput,
     destination: ImperialMilitaryBand,
@@ -242,7 +228,10 @@ def resolve_imperial_military(
         )
 
     # P2: persistent economic collapse can force floor recovery after its dwell.
-    economic_collapse = state.food < plan.open_exit_resources[0] or state.wood < plan.open_exit_resources[1]
+    economic_collapse = (
+        state.food < plan.open_exit_resources[0]
+        or state.wood < plan.open_exit_resources[1]
+    )
     if economic_collapse and state.current is not ImperialMilitaryBand.STANDING_FLOOR:
         if state.economic_collapse_seconds >= plan.economic_collapse_dwell:
             return ImperialMilitaryDecision(
