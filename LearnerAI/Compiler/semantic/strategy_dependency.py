@@ -427,7 +427,7 @@ def analyze_strategy_dependencies(
                        x.rule_order if x.rule_order is not None else -1, x.node_id),
     ))
     runtime_open = sum(
-        provider.action is not None and provider.admissibility is not None
+        provider.action is not None and getattr(provider, "admissibility", None) is not None
         for provider in capability_graph.providers
     )
     _ = demands, persistent_control_report
