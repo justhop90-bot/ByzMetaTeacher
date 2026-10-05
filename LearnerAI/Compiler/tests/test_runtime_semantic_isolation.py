@@ -130,6 +130,39 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
         )
         self.assertEqual(duplicates, {}, f"Timer slots have multiple owners: {duplicates}")
         self.assertEqual(out_of_range, [], f"Timer slots out of native range: {out_of_range}")
+        self.assertIn(
+            "(defconst byzantine-offensive-objective-timer 8)",
+            self.runtime,
+        )
+        self.assertIn(
+            "(defconst byzantine-remote-resource-productivity-timer 22)",
+            self.runtime,
+        )
+        self.assertIn("(defconst bt-offensive-objective-witness-seconds 20)", self.runtime)
+        self.assertIn("(defconst bt-resource-productivity-seconds 30)", self.runtime)
+
+    def test_endgame_runtime_states_are_compiler_compatible(self) -> None:
+        from Compiler.ir.endgame import EndgamePushState
+
+        compiler_states = {state.value for state in EndgamePushState}
+        emitted_states = {
+            int(match.group(1))
+            for match in re.finditer(
+                r"\(set-goal byzantine-endgame-push-state (\d+)\)",
+                self.runtime,
+            )
+        }
+        self.assertTrue(compiler_states.issuperset(emitted_states))
+        self.assertIn(4, compiler_states)
+        state_match = re.search(
+            r"\(defconst byzantine-endgame-push-state (\d+)\)",
+            self.runtime,
+        )
+        self.assertIsNotNone(state_match)
+        assert state_match is not None
+        runtime_storage_id = int(state_match.group(1))
+        self.assertGreaterEqual(runtime_storage_id, 1)
+        self.assertLessEqual(runtime_storage_id, 16_000)
 
     def test_strategic_number_writer_ownership_is_explicit(self) -> None:
         writers_by_id: dict[int, set[str]] = {}
