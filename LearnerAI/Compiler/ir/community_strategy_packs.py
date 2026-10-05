@@ -10,6 +10,7 @@ from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, Resource, UnitLineId
+from .model import LifecycleState
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -121,6 +122,7 @@ def _build_demand(
     release: str | None = None,
     opportunity_cost: _OpportunityCostPolicy | None = None,
     invalidate_ref: str | None = None,
+    initial_state: LifecycleState = LifecycleState.ACTIVE,
 ) -> _StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
@@ -155,6 +157,7 @@ def _build_demand(
             release=release,
         ),
         recovery=_CapabilityRecoveryContract(),
+        initial_state=initial_state,
     )
 
 
@@ -654,10 +657,77 @@ def community_strategy_demands(
 
     demands: list[_StrategicDemandSpec] = []
 
+    villager_provider = _provider_for_line(effective, "villager-line")
+    observations.append(
+        _observation(
+            "strategy-villager-continuity",
+            "(unit-type-count-total villager < 110)",
+            _airef_provenance(effective, "commands/commands-details.html#unit-type-count-total"),
+        )
+    )
+    villager_demand = _StrategicDemandSpec(
+        identity="civilian-villager-continuity",
+        owner="economy",
+        production_arbitration_group="production",
+        posture=_StrategyPosture.BOOM,
+        priority=_StrategicPriority.CORE,
+        reason=(_persistent(
+            "Villager production remains the P0 economic continuity floor",
+            "strategy-villager-continuity",
+        ),),
+        admissibility=(_persistent(
+            "Villager production remains admissible until the age bank is issuable",
+            "strategy-villager-continuity",
+        ),),
+        invalidation=(),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.TRAIN,
+            "unit-line",
+            "villager-line",
+            villager_provider,
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.CURRENT_QUEUED,
+            "unit-line",
+            "villager-line",
+            minimum=110,
+        ),
+        opportunity_cost=None,
+        execution=_ExecutionDemandTemplate(
+            requirements=(
+                "(current-age >= dark-age)",
+                "(can-train villager)",
+                "(not (and (current-age == dark-age) "
+                "(and (unit-type-count-total villager >= 21) "
+                "(can-research-with-escrow feudal-age))))",
+                "(not (and (current-age == feudal-age) "
+                "(and (unit-type-count-total villager >= 28) "
+                "(and (building-type-count-total blacksmith >= 1) "
+                "(and (building-type-count-total market >= 1) "
+                "(can-research-with-escrow castle-age))))))",
+            ),
+            action="(train villager)",
+            witness="(unit-type-count villager >= 110)",
+            release="(unit-type-count villager >= 110)",
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+    demands.append(villager_demand)
+
     camp_specs = (
         (CampResource.WOOD, lumber_camp, 6, "sn-lumber-camp-max-distance"),
         (CampResource.GOLD, mining_camp, 5, "sn-mining-camp-max-distance"),
         (CampResource.STONE, mining_camp, 5, "sn-mining-camp-max-distance"),
+    )
+    stone_camp_policy = _OpportunityCostPolicy(
+        owner="castle-trajectory",
+        protected_floors=(
+            _ProtectedResourceFloor(Resource.STONE, 650),
+        ),
+        emergency_override_postures=(
+            _StrategyPosture.FLUSH,
+            _StrategyPosture.RUSH,
+        ),
     )
     for resource, building, max_count, distance_sn in camp_specs:
         label = resource.value
@@ -676,20 +746,26 @@ def community_strategy_demands(
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
-            if floor >= 3:
+            if floor >= 2:
                 requirements = [
                     active_expression,
                     remote_expression,
                     count_guard,
                     f"(can-build {_slug(building.name)})",
                 ]
+            if resource is CampResource.STONE:
+                requirements.append("(goal demand-castle-commitment 1)")
             building_token = _slug(building.name)
             action = f"(build {building_token})"
             witness = f"(building-type-count {_slug(building.name)} >= {floor})"
             demands.append(
                 _StrategicDemandSpec(
                     identity=f"economy-{label}-camp-floor-{floor}",
-                    owner="economy-camps",
+                    owner=(
+                        "castle-trajectory"
+                        if resource is CampResource.STONE
+                        else "economy-camps"
+                    ),
                     posture=_StrategyPosture.BOOM,
                     priority=(
                         _StrategicPriority.SUPPORT
@@ -721,7 +797,11 @@ def community_strategy_demands(
                         "building",
                         int(building.id),
                     ),
-                    opportunity_cost=None,
+                    opportunity_cost=(
+                        stone_camp_policy
+                        if resource is CampResource.STONE
+                        else None
+                    ),
                     execution=_ExecutionDemandTemplate(
                         requirements=tuple(requirements),
                         action=action,
@@ -904,7 +984,19 @@ def community_strategy_demands(
                 reason_ref="strategy-enemy-pressure",
                 reason_label="Sustained enemy pressure justifies one defensive observation point",
                 building=outpost,
-                requirements=(" (can-build outpost)".strip(),),
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    next(
+                        item.expression
+                        for item in observations
+                        if item.identity == "strategy-enemy-pressure"
+                    ),
+                    "(or (dropsite-min-distance gold >= 7) "
+                    "(or (dropsite-min-distance stone >= 7) "
+                    "(dropsite-min-distance wood >= 7)))",
+                    "(can-build outpost)",
+                ),
+                initial_state=LifecycleState.RELEASED,
             ),
         )
     )
