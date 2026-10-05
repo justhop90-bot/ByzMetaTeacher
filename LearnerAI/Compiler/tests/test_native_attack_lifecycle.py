@@ -3,9 +3,12 @@ import unittest
 from Compiler.ast import Expression
 from Compiler.ir.native_attack import (
     AttackLifecycleObservation,
+    NativeAttackGoalInputRequest,
     NativeAttackLifecyclePlan,
     NativeAttackRule,
 )
+from Compiler.ir.model import GoalRole, SemanticId, StorageRequestId
+from Compiler.runtime_binding import GoalSlotRequest
 from Compiler.ir.strategic_number_arbitration import StrategicNumberActionAttachment
 from Compiler.primitives import default_de_registry, default_native_contract_catalog
 from Compiler.primitives.engine_semantics import (
@@ -201,6 +204,54 @@ class NativeAttackIrTests(unittest.TestCase):
         self.assertEqual(
             bound.strategic_number_action_attachments[0].action_index,
             1,
+        )
+
+    def test_binding_strategic_number_attachments_preserves_goal_inputs(self):
+        goal_request = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId("test", "attack"),
+                "attack-goal",
+            ),
+            role=GoalRole.PERSISTENT_STATE,
+        )
+        goal_input = NativeAttackGoalInputRequest(
+            identity="attack-goal-input",
+            rule_identity="attack-first",
+            section="FACT",
+            expression_index=0,
+            argument_index=0,
+            request=goal_request,
+        )
+        attachment = StrategicNumberActionAttachment(
+            identity="attack-surge-attachment",
+            controller_identity="attack-surge",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="sn-controller-attack-surge-active",
+        )
+        rule = NativeAttackRule(
+            identity="attack-first",
+            order=10,
+            facts=(_expr("(goal 0 1)", "goal", "0", "1"),),
+            actions=(_expr("(attack-now)", "attack-now"),),
+            lifecycle=LIFECYCLE,
+        )
+        plan = NativeAttackLifecyclePlan(
+            rules=(rule,),
+            goal_input_requests=(goal_input,),
+        )
+        bound = plan.bind_strategic_number_action_attachments(
+            (attachment,),
+            owned_actions={"attack-surge": ("attack-first", 0)},
+        )
+        self.assertEqual(
+            bound.goal_input_requests,
+            (goal_input,),
+        )
+        self.assertEqual(
+            bound.strategic_number_action_attachments[0].owned_rule_identity,
+            "attack-first",
         )
 
     def test_action_attachment_requires_exact_owned_rule(self):
