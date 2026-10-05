@@ -3,6 +3,7 @@
 ; Compiler: AoE2 .per Compiler 0.4
 ; Direct community-meta adaptation of the compiled Byzantine artifact.
 ; Compiler-backed runtime witness; checked-in artifact is synchronized with canonical strategy policy.
+; Runtime-test synchronization: current compiler endgame-push contract + 2026-09-22 Byzantine Varangian pressure repair.
 ;============================================================
 
 ; Demand goal constants
@@ -1023,6 +1024,7 @@
 ; Compiler-owned Imperial endgame synchronization layer.
 (defconst halberdier 429)
 (defconst byzantine-imperial-band-state 16000)
+(defconst byzantine-endgame-push-state 16190)
 (defconst byzantine-imperial-band-candidate 16001)
 (defconst byzantine-imperial-band-rearm 16002)
 (defconst byzantine-imperial-band-reason 16003)
@@ -8072,7 +8074,9 @@
 (defrule
     (current-age == castle-age)
     (goal demand-castle-varangian-guard-floor 0)
-    (players-unit-type-count any-enemy knight >= 3)
+    (or
+        (players-unit-type-count any-enemy knight >= 3)
+        (players-unit-type-count any-enemy militia-line >= 5))
     (unit-type-count-total varangian-guard-line < bt-castle-varangian-floor)
 =>
     (set-goal demand-castle-varangian-guard-floor 1)
@@ -10799,10 +10803,7 @@
 (defrule
     (goal byzantine-army-reposition-state byzantine-army-reposition-idle)
     (goal byzantine-army-attack-ready 2)
-    (or
-        (town-under-attack)
-        (town-under-attack)
-    )
+    (town-under-attack)
 =>
     (up-reset-attack-now)
     (set-goal byzantine-army-attack-ready 0)
@@ -11824,6 +11825,338 @@
     (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
 )
 
+
+; ----------------------------------------------------------------
+; LATEST COMPILER CROSS-REF: IMPERIAL ENDGAME PUSH CONTRACT
+; Source policy: byzantine-endgame-push-v1
+; Runtime binding adaptation:
+;   compiler SN 16/26 -> sn-minimum-attack-group-size / sn-maximum-attack-group-size
+;   compiler imperial band state -> existing 16000 runtime GoalSlot
+; Witness contract: attack-soldier-count, not timer expiry.
+; ----------------------------------------------------------------
+
+(defrule
+    (goal byzantine-endgame-push-state 0)
+=>
+    (set-goal byzantine-endgame-push-state 0)
+    (disable-timer byzantine-endgame-push-timer)
+    (disable-self)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 0)
+    (current-age >= imperial-age)
+    (goal byzantine-offensive-objective-claim 0)
+=>
+    (set-strategic-number sn-minimum-attack-group-size 6)
+    (set-strategic-number sn-maximum-attack-group-size 40)
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 1)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 1)
+    (current-age >= imperial-age)
+    (goal byzantine-offensive-objective-claim 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
+    (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    )
+    (or
+        (unit-type-count-total trebuchet >= 4)
+        (or
+            (unit-type-count-total bombard-cannon >= 4)
+            (or
+                (unit-type-count-total mangonel-line >= 4)
+                (unit-type-count-total battering-ram-line >= 4)
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 1)
+    (goal byzantine-army-attack-ready 1)
+    (not     (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    ))
+=>
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-staging)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 1)
+    (current-age >= imperial-age)
+    (goal byzantine-offensive-objective-claim 0)
+    (attack-soldier-count <= 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
+    (up-compare-goal byzantine-imperial-band-state != 2)
+    (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    )
+    (or
+        (unit-type-count-total trebuchet >= 4)
+        (or
+            (unit-type-count-total bombard-cannon >= 4)
+            (or
+                (unit-type-count-total mangonel-line >= 4)
+                (unit-type-count-total battering-ram-line >= 4)
+            )
+        )
+    )
+    (strategic-number sn-minimum-attack-group-size >= 6)
+    (strategic-number sn-maximum-attack-group-size >= 40)
+=>
+    (enable-timer byzantine-endgame-push-timer 20)
+    (set-goal byzantine-endgame-push-state 2)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 1)
+    (current-age >= imperial-age)
+    (goal byzantine-offensive-objective-claim 0)
+    (attack-soldier-count <= 0)
+    (up-compare-goal byzantine-imperial-band-state == 2)
+    (goal byzantine-army-attack-ready 1)
+    (or
+        (unit-type-count-total trebuchet >= 6)
+        (or
+            (unit-type-count-total bombard-cannon >= 6)
+            (or
+                (unit-type-count-total mangonel-line >= 6)
+                (unit-type-count-total battering-ram-line >= 6)
+            )
+        )
+    )
+    (strategic-number sn-minimum-attack-group-size >= 6)
+    (strategic-number sn-maximum-attack-group-size >= 40)
+=>
+    (enable-timer byzantine-endgame-push-timer 20)
+    (set-goal byzantine-endgame-push-state 2)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 1)
+    (current-age >= imperial-age)
+    (goal byzantine-offensive-objective-claim 0)
+    (attack-soldier-count <= 0)
+    (goal byzantine-imperial-band-state 3)
+    (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    )
+    (or
+        (unit-type-count-total trebuchet >= 4)
+        (or
+            (unit-type-count-total bombard-cannon >= 4)
+            (or
+                (unit-type-count-total mangonel-line >= 4)
+                (unit-type-count-total battering-ram-line >= 4)
+            )
+        )
+    )
+    (strategic-number sn-minimum-attack-group-size >= 6)
+    (strategic-number sn-maximum-attack-group-size >= 40)
+=>
+    (enable-timer byzantine-endgame-push-timer 20)
+    (set-goal byzantine-endgame-push-state 2)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 2)
+    (attack-soldier-count > 0)
+=>
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 3)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 2)
+    (timer-triggered byzantine-endgame-push-timer)
+=>
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 3)
+)
+
+(defrule
+    (or
+        (goal byzantine-endgame-push-state 1)
+        (or
+            (goal byzantine-endgame-push-state 2)
+            (goal byzantine-endgame-push-state 3)
+        )
+    )
+    (goal byzantine-offensive-objective-claim 0)
+    (up-compare-goal byzantine-imperial-band-state < 1)
+=>
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 5)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-staging)
+)
+
+(defrule
+    (or
+        (goal byzantine-endgame-push-state 1)
+        (or
+            (goal byzantine-endgame-push-state 2)
+            (goal byzantine-endgame-push-state 3)
+        )
+    )
+    (goal byzantine-offensive-objective-claim 0)
+    (not     (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    ))
+=>
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 5)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-staging)
+)
+
+(defrule
+    (or
+        (goal byzantine-endgame-push-state 1)
+        (or
+            (goal byzantine-endgame-push-state 2)
+            (goal byzantine-endgame-push-state 3)
+        )
+    )
+    (goal byzantine-offensive-objective-claim 0)
+    (not     (or
+        (unit-type-count-total trebuchet >= 4)
+        (or
+            (unit-type-count-total bombard-cannon >= 4)
+            (or
+                (unit-type-count-total mangonel-line >= 4)
+                (unit-type-count-total battering-ram-line >= 4)
+            )
+        )
+    ))
+=>
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 5)
+    (set-goal byzantine-army-attack-ready 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-staging)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 3)
+    (goal byzantine-offensive-objective-claim 0)
+    (attack-soldier-count <= 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
+    (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (disable-timer byzantine-endgame-push-timer)
+    (set-goal byzantine-endgame-push-state 1)
+)
+
+(defrule
+    (goal byzantine-endgame-push-state 5)
+    (goal byzantine-offensive-objective-claim 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
+    (or
+        (unit-type-count-total cataphract-line >= 8)
+        (or
+            (unit-type-count-total varangian-guard-line >= 8)
+            (or
+                (unit-type-count-total knight-line >= 8)
+                (or
+                    (unit-type-count-total 359 >= 8)
+                    (or
+                        (unit-type-count-total hussar >= 8)
+                        (unit-type-count-total arbalest >= 8)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-endgame-push-state 0)
+)
 
 ; Ordinary open-ground attack remains behind the tactical admission gate.
 ; When no DUC objective owns the package, this path uses the native attack-group
@@ -23812,7 +24145,9 @@
 (defrule
     (goal demand-castle-varangian-guard-floor 0)
     (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
-    (players-unit-type-count any-enemy knight >= 3)
+    (or
+        (players-unit-type-count any-enemy knight >= 3)
+        (players-unit-type-count any-enemy militia-line >= 5))
 =>
     (set-goal demand-castle-varangian-guard-floor 1)
 )
@@ -23857,7 +24192,9 @@
 (defrule
     (goal demand-castle-varangian-guard-floor 1)
     (goal byzantine-army-plan-phase 1)
-    (goal counter-package-mounted_pressure_castle 1)
+    (or
+        (goal counter-package-mounted_pressure_castle 1)
+        (goal counter-package-infantry_pressure_castle 1))
     (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
     (goal production-retry-barrier-castle-varangian-guard-floor 0)
     (not (up-pending-objects c: 2703 >= 1))
