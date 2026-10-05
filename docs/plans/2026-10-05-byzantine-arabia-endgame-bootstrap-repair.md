@@ -65,13 +65,13 @@ Interfaces:
 - Produces byzantine-army-attack-ready=1 and byzantine-siege-approach=normal only when the mature package is witnessed.
 
 - [x] Add regression coverage for ram siege admission, mature-force admission, readiness writers, and recovery behavior.
-- [x] Replace exact 18/18/12 attack admission with the mature-force package.
+- [x] Replace exact 18/18/12 attack admission with the mature-force package using only semantically executable unit-count witnesses.
 - [x] Count ram-line as qualifying siege.
 - [x] Add writers for attack-ready and normal siege approach.
 - [x] Replace exact-floor recovery rules with army-package/siege-package recovery.
 - [ ] Run the focused unittest and inspect the emitted control section for stale exact-floor rules.
 
-Expected behavior: a strong, actually witnessed Imperial army can enter the existing objective/role/group lifecycle without waiting for an artificial simultaneous 18/18/12 snapshot.
+Expected behavior: a strong, actually witnessed Imperial army can enter the existing objective/role/group lifecycle without waiting for an artificial simultaneous 18/18/12 snapshot. The implementation does not add a military-population semantic adapter; that native fact remains outside this control plane until such an adapter is formally supported.
 
 ### Task 4: Canonical artifact and acceptance
 
