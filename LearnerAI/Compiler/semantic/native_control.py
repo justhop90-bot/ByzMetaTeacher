@@ -61,7 +61,6 @@ _CONTROL_COMMANDS = frozenset(
         "timer-triggered",
         "up-set-timer",
         "up-timer-status",
-        "train",
         "disable-self",
         "up-jump-rule",
     }
