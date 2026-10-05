@@ -2622,7 +2622,9 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
                 parse_expression("(goal byzantine-relic-control-state 2)", SourceLocation(1)),
                 parse_expression("(up-gaia-type-count-total c: 285 == 0)", SourceLocation(1)),
             ),
-            actions=(),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+            ),
             lifecycle=(NativeDucLifecycleStage.RELEASE_WITNESS,),
         ),
         NativeDucRule(
@@ -2632,7 +2634,9 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
                 parse_expression("(goal byzantine-relic-control-state 2)", SourceLocation(1)),
                 parse_expression("(up-gaia-type-count-total c: 285 >= 1)", SourceLocation(1)),
             ),
-            actions=(),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+            ),
             lifecycle=(NativeDucLifecycleStage.RECOVERY,),
         ),
     )
