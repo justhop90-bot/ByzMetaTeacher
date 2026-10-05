@@ -270,6 +270,11 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                 f"(unit-type-count-total {action_unit} < {minimum})",
                 demand.execution.requirements,
             )
+            if identity == "imperial-elite-skirmisher-floor":
+                self.assertEqual(
+                    demand.execution.release,
+                    f"(unit-type-count 6 >= {minimum})",
+                )
 
     def test_imperial_band_scaling_is_mutually_exclusive_and_exact(self):
         profile = build_byzantine_stock_strategy(self.effective)
@@ -298,6 +303,15 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertIn(band_guard, demand.execution.requirements)
             self.assertIn(f"< {minimum})", " ".join(demand.execution.requirements))
             self.assertEqual(demand.execution.action.count("(train "), 1)
+            if "elite-skirmisher" in identity:
+                self.assertEqual(
+                    demand.execution.witness,
+                    f"(unit-type-count skirmisher-line >= {minimum})",
+                )
+                self.assertEqual(
+                    demand.execution.release,
+                    f"(unit-type-count 6 >= {minimum})",
+                )
 
     def test_imperial_package_excludes_unavailable_blacksmith_techs(self):
         identities = {d.identity for d in build_byzantine_stock_strategy(self.effective).demands}
