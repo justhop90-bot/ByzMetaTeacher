@@ -2547,6 +2547,12 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             )
         )
 
+    if profile_id != "byzantine-stock-v1":
+        return NativeDucPlan(
+            rules=tuple(rules),
+            output_requests=tuple(outputs),
+        )
+
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
 
