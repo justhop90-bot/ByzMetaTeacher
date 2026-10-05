@@ -412,8 +412,6 @@ def validate_endgame_plan(
         allowed = {
             EvidenceKind.ENGINE_DATA,
             EvidenceKind.RUNTIME_VERIFIED,
-            EvidenceKind.AIREF,
-            EvidenceKind.OFFICIAL_PATCH,
         }
         if not any(getattr(item, "kind", None) in allowed for item in provenance):
             raise ValueError(
