@@ -201,15 +201,21 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIsNotNone(lowered.production_lifecycle)
         self.assertEqual(lowered.production_lifecycle.unit, "villager")
 
-    def test_checked_in_runtime_contains_compiler_owned_villager_demand(self):
+    def test_checked_in_runtime_preserves_maturity_aware_villager_production(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
-        self.assertIn("; Action issuance: civilian-villager-continuity", runtime)
-        start = runtime.index("; Action issuance: civilian-villager-continuity")
-        end = runtime.index("; Pending diagnostics: civilian-villager-continuity", start)
+        start = runtime.index("; Persistent civilian production")
+        end = runtime.index("; Pending diagnostics: early-defensive-spears", start)
         block = runtime[start:end]
         self.assertIn("(can-train villager)", block)
         self.assertIn("(unit-type-count-total villager < 110)", block)
+        self.assertIn("(unit-type-count-total villager >= 21)", block)
+        self.assertIn(
+            "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
+            block,
+        )
+        self.assertIn("(building-type-count-total blacksmith >= 1)", block)
+        self.assertIn("(building-type-count-total market >= 1)", block)
 
     def test_castle_age_transition_is_compiler_owned_and_protected(self):
         profile = build_byzantine_strategy(self.effective)
