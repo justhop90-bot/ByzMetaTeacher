@@ -49,6 +49,13 @@ _ACTION_TYPES = {
 
 
 def _predicate(expr: Expression, registry: PrimitiveRegistry) -> PredicateNode:
+    if expr.head in {"goal", "up-compare-goal"}:
+        return PredicateAtom(
+            kind=PredicateKind.STRATEGY,
+            primitive=expr.head,
+            arguments=tuple(expr.args),
+            expression=expr,
+        )
     if expr.head in _LOGICAL_HEADS:
         children = tuple(
             _predicate(child, registry)
