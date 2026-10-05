@@ -642,6 +642,16 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             fortified_open_candidate_facts,
         )
 
+        fortified_candidate_facts = tuple(
+            fact.source
+            for fact in rules["byzantine-imperial-band-fortified-candidate"].facts
+        )
+        self.assertIn("(unit-type-count-total mangonel-line >= 2)", fortified_candidate_facts)
+        self.assertIn("(unit-type-count-total trebuchet >= 2)", fortified_candidate_facts)
+        self.assertIn("(unit-type-count-total bombard-cannon >= 2)", fortified_candidate_facts)
+        self.assertNotIn("unit-type-count-total trebuchet-line", fortified_candidate_facts)
+        self.assertNotIn("unit-type-count-total bombard-cannon-line", fortified_candidate_facts)
+
         for identity in (
             "byzantine-imperial-band-floor-break-open",
             "byzantine-imperial-band-floor-break-fortified",
