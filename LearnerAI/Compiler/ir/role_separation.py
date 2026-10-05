@@ -328,8 +328,10 @@ def default_byzantine_role_separation_plan(
             (
                 _expr("(goal byzantine-fortification-threat 1)"),
                 _expr(
-                    "(or (goal 411 3) "
-                    "(goal 411 4))"
+                    "(or (goal byzantine-offensive-objective-state "
+                    "byzantine-offensive-objective-state-production) "
+                    "(goal byzantine-offensive-objective-state "
+                    "byzantine-offensive-objective-state-town-center))"
                 ),
             ),
             "A fortified threat makes raid splitting inadmissible.",
@@ -759,7 +761,8 @@ def default_byzantine_role_separation_plan(
             "role-raid-admission",
             (
                 f"(goal {state_name} byzantine-army-role-committed)",
-                "(goal 411 3)",
+                "(goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-production)",
                 "(goal byzantine-fortification-threat 0)",
                 f"(up-compare-goal {screen_size_name} >= bt-role-screen-floor)",
                 f"(up-compare-goal {main_size_name} >= bt-role-main-floor)",
@@ -864,8 +867,10 @@ def default_byzantine_role_separation_plan(
             "role-raid-release-siege-objective",
             (
                 f"(goal {state_name} byzantine-army-role-raid-split)",
-                "(or (goal 411 1) "
-                "(goal 411 2))",
+                "(or (goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-siege) "
+                "(goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-defense))",
             ),
             (
                 f"(set-goal {state_name} byzantine-army-role-forming)",
