@@ -459,8 +459,6 @@ _RESEARCH_PACK = (
 )
 
 
-def community_strategy_observation
-
 _IMPERIAL_MILITARY_RESEARCH_PACK = (
     ("research-forging", "military", "feudal-age", "forging", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
     ("research-pikeman", "military", "castle-age", "pikeman", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
@@ -470,7 +468,7 @@ _IMPERIAL_MILITARY_RESEARCH_PACK = (
     ("research-padded-archer-armor", "military", "feudal-age", "padded-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
     ("research-leather-archer-armor", "military", "castle-age", "leather-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
     ("research-halberdier", "military", "imperial-age", "halberdier", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
-    ("research-hussar", "military", "imperial-age", "hussar", _StrategicPriority.SUPPORT, (Resource.FOOD, GOLD)),
+    ("research-hussar", "military", "imperial-age", "hussar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-bracer", "military", "imperial-age", "bracer", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
     ("research-ring-archer-armor", "military", "imperial-age", "ring-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
     ("research-plate-barding-armor", "military", "imperial-age", "plate-barding-armor", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
@@ -478,7 +476,6 @@ _IMPERIAL_MILITARY_RESEARCH_PACK = (
     ("research-chain-mail-armor", "military", "castle-age", "chain-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
     ("research-plate-mail-armor", "military", "imperial-age", "plate-mail-armor", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
 )
-
 
 
 def community_strategy_observations(
@@ -506,8 +503,7 @@ def community_strategy_observations(
     production_depth_observations = (
         (
             "barracks",
-            "(or (or (unit-type-count-total varangian-guard-line >= {threshold}) "
-            "(unit-type-count-total 359 >= {threshold})) "
+            "(or (unit-type-count-total varangian-guard-line >= {threshold}) "
             "(unit-type-count-total 359 >= {threshold}))",
             "strategy-production-barracks-depth",
         ),
@@ -516,20 +512,20 @@ def community_strategy_observations(
             "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
             "(or (unit-type-count-total knight-line >= {threshold}) "
             "(or (unit-type-count-total camel-rider-line >= {threshold}) "
-            "(unit-type-count 441 >= {threshold})))",
+            "(unit-type-count-total 441 >= {threshold}))))",
             "strategy-production-stable-depth",
         ),
         (
             "archery-range",
-            "(or (or (unit-type-count-total crossbowman >= {threshold}) "
-            "(unit-type-count 6 >= {threshold}))",
+            "(or (unit-type-count-total crossbowman >= {threshold}) "
+            "(unit-type-count-total 6 >= {threshold}))",
             "strategy-production-range-depth",
         ),
         (
             "siege-workshop",
             "(or (or (unit-type-count-total mangonel-line >= {threshold}) "
-            "(unit-type-count-total trebuchet-line >= {threshold})) "
-            "(unit-type-count-total bombard-cannon-line >= {threshold}))",
+            "(or (unit-type-count-total trebuchet-line >= {threshold}) "
+            "(unit-type-count-total bombard-cannon-line >= {threshold})))",
             "strategy-production-siege-depth",
         ),
     )
