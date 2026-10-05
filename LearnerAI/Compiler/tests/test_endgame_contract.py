@@ -56,7 +56,7 @@ class EndgameContractTests(unittest.TestCase):
             ("byzantine-offensive-objective-state-idle", 0),
         )
         self.assertEqual(
-            contract.constants[-1],
+            contract.class_constants[-1],
             ("byzantine-offensive-objective-class-town-center", 4),
         )
 
@@ -93,7 +93,7 @@ class EndgameContractTests(unittest.TestCase):
             ),
         )
         self.assertEqual(
-            contract.constants[-1],
+            contract.release_reason_constants[-1],
             ("byzantine-offensive-objective-release-reason-tc-exhausted", 5),
         )
         with self.assertRaises(ValueError):
@@ -266,14 +266,9 @@ class EndgameContractTests(unittest.TestCase):
             "(set-goal byzantine-endgame-push-state 2)",
             tuple(action.source for action in admit.actions),
         )
-        self.assertIn(
-            "(set-strategic-number sn-native-36 1)",
-            tuple(action.source for action in admit.actions),
-        )
-        self.assertIn(
-            "(set-strategic-number sn-native-227 100)",
-            tuple(action.source for action in admit.actions),
-        )
+        admit_actions = tuple(action.source for action in admit.actions)
+        self.assertNotIn("sn-native-36", " ".join(admit_actions))
+        self.assertNotIn("sn-native-227", " ".join(admit_actions))
         self.assertIn(
             "(attack-soldier-count <= 0)",
             tuple(fact.source for fact in admit.facts),
