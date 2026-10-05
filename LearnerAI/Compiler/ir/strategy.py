@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .counter_strategy import CounterPackage
     from .native_attack import NativeAttackLifecyclePlan
     from .native_duc import NativeDucPlan
+    from .recurrent import TimerRequest
     from .water import WaterExecutionPlan
     from .map_profile import MapProfile
     from .opening import OpeningSelectorPlan
@@ -1609,6 +1610,8 @@ def _strategy_control_plan(profile: StrategyProfile):
         from .camp_control import lower_byzantine_camp_controller
         camp_plan = lower_byzantine_camp_controller(profile.camp_controller, profile)
 
+    relic_plan = _byzantine_relic_control_plan(profile.profile_id)
+
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
         for state in (assertion_plan.states if assertion_plan is not None else ())
@@ -1638,6 +1641,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         opening_plan,
         economy_plan,
         camp_plan,
+        relic_plan,
     )
 
 
@@ -2305,7 +2309,39 @@ def build_land_castle_strategy(
     )
 
 
-def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
+
+
+def _byzantine_relic_control_plan(profile_id: str):
+    """Lower relic acquisition state into the shared persistent-control plane."""
+    if profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}:
+        return None
+
+    from ..runtime_binding import GoalSlotRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlState
+    from .recurrent import TimerRequest
+
+    owner = SemanticId(profile_id, "byzantine-relic-control")
+    state_name = "byzantine-relic-control-state"
+    timer_name = "byzantine-relic-control-timer"
+    state = NativeControlState(
+        state_name,
+        GoalSlotRequest(
+            StorageRequestId(owner, "relic-control-state"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    timer = NativeControlState(
+        timer_name,
+        TimerRequest(
+            StorageRequestId(owner, f"timer:{timer_name}"),
+            initialization_policy="DISABLE_BEFORE_FIRST_USE",
+            stability_key=f"{profile_id}:byzantine-relic-control-timer",
+        ),
+    )
+    return NativeControlPlan(states=(state, timer), rules=())
+\n\ndef _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
     Strategy policy selects only decision-grade observed pressure. DUC then
