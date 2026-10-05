@@ -8,13 +8,19 @@ on:
       - main
     paths:
       - "LearnerAI/Compiler/**"
+      - "schemas/byzantine/**"
+      - "runtime/byzantine/**"
       - ".github/workflows/compiler-tests.yml"
       - "Byzantine.per"
+      - "Byzantine.manifest.json"
   pull_request:
     paths:
       - "LearnerAI/Compiler/**"
+      - "schemas/byzantine/**"
+      - "runtime/byzantine/**"
       - ".github/workflows/compiler-tests.yml"
       - "Byzantine.per"
+      - "Byzantine.manifest.json"
   workflow_dispatch:
 
 concurrency:
@@ -65,6 +71,21 @@ jobs:
           merge-multiple: false
       - name: Compare Python and OS snapshots
         run: python LearnerAI/Compiler/tests/compare_native_support_replays.py --root snapshots
+
+  artifact-lineage:
+    name: Byzantine artifact-lineage verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: LearnerAI
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Run focused Byzantine artifact-lineage tests
+        run: |
+          python -m unittest LearnerAI.Compiler.tests.test_artifact_lineage -v
 
   test:
     name: Compiler tests + native zero-findings
@@ -370,6 +391,7 @@ jobs:
     needs:
       - test
       - compare-cross-platform-native-support
+      - artifact-lineage
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -379,13 +401,15 @@ jobs:
         run: |
           test_result="${{ needs.test.result }}"
           replay_result="${{ needs['compare-cross-platform-native-support'].result }}"
+          lineage_result="${{ needs['artifact-lineage'].result }}"
           {
             echo "## Compiler verification gate"
             echo ""
             echo "- Compiler tests + native zero-findings: ${test_result}"
             echo "- Cross-platform native-support comparison: ${replay_result}"
+            echo "- Byzantine artifact-lineage verification: ${lineage_result}"
             echo "- Native parser: pinned commit 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
-            if [ "${test_result}" = "success" ] && [ "${replay_result}" = "success" ]; then
+            if [ "${test_result}" = "success" ] && [ "${replay_result}" = "success" ] && [ "${lineage_result}" = "success" ]; then
               echo "- Result: PASSED"
             else
               echo "- Result: FAILED"
@@ -400,5 +424,9 @@ jobs:
           fi
           if [ "${{ needs['compare-cross-platform-native-support'].result }}" != "success" ]; then
             echo "Cross-platform native-support comparison did not pass."
+            exit 1
+          fi
+          if [ "${{ needs['artifact-lineage'].result }}" != "success" ]; then
+            echo "Byzantine artifact-lineage verification did not pass."
             exit 1
           fi
