@@ -54,6 +54,19 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         marker = f"(goal demand-economy-lumber-camp-floor-{floor} 1)"
         return [rule for rule in self.rules if marker in rule]
 
+    def test_first_lumber_camp_has_native_direct_build_fallback(self):
+        rules = self._active_rules(1)
+        fallback = next(
+            rule for rule in rules
+            if "(build lumber-camp)" in rule
+            and "(up-build place-point 0 c: lumber-camp)" not in rule
+        )
+        self.assertIn("(unit-type-count-total villager >= 15)", fallback)
+        self.assertIn("(resource-found wood)", fallback)
+        self.assertIn("(can-build lumber-camp)", fallback)
+        self.assertIn("(building-type-count-total lumber-camp < 1)", fallback)
+        self.assertIn("(goal action-claim-build-pass-singleton 0)", fallback)
+
     def test_point_search_constants_are_unique_and_bound_to_unused_goal_slots(self):
         expected = {
             "byzantine-dark-wood-camp-point-1": 15000,
@@ -93,8 +106,14 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             ),
         ):
             rules = self._active_rules(floor)
-            self.assertEqual(len(rules), 2, f"floor {floor} must split search and execution")
-            search_rule, execution_rule = rules
+            search_rule = next(
+                rule for rule in rules
+                if "(up-find-resource c: wood c: 1)" in rule
+            )
+            execution_rule = next(
+                rule for rule in rules
+                if "(up-build place-point 0 c: lumber-camp)" in rule
+            )
 
             self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
             self.assertIn(f"(up-get-search-state {state})", search_rule)
@@ -105,7 +124,6 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             self.assertIn(f"(up-get-point position-object {point})", execution_rule)
             self.assertIn(f"(up-set-target-point {point})", execution_rule)
             self.assertIn("(up-build place-point 0 c: lumber-camp)", execution_rule)
-            self.assertNotIn("(build lumber-camp)", execution_rule)
             self.assertNotIn(
                 f"(dropsite-min-distance wood > {old_distance})",
                 execution_rule,
