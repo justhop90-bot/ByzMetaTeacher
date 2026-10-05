@@ -1909,7 +1909,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(gold-amount >= 2600)",
     )
     open_field_eligible = land(
-        "(goal byzantine-offensive-objective-claim 1)",
         "(goal byzantine-fortification-threat 0)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
@@ -1925,7 +1924,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         floor_recovered,
     )
     gold_recovery_open_eligible = land(
-        "(goal byzantine-offensive-objective-claim 1)",
         "(goal byzantine-fortification-threat 0)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
