@@ -531,8 +531,8 @@ def community_strategy_observations(
         (
             "siege-workshop",
             "(or "
-            "(or (unit-type-count-total 280 >= {threshold}) "
-            "(unit-type-count-total 550 >= {threshold})) "
+            "(or (unit-type-count-total 280 > 3) "
+            "(unit-type-count-total 550 > 3)) "
             "(or (unit-type-count-total 331 >= {threshold}) "
             "(unit-type-count-total 36 >= {threshold})))",
             "strategy-production-siege-depth",
