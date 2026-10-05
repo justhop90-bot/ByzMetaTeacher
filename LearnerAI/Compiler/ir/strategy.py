@@ -1700,6 +1700,25 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
                 StorageRequestId(owner, "objective-claim"),
                 role=GoalRole.PERSISTENT_STATE,
             ),
+        NativeControlState(
+            contract.release_reason_goal,
+            GoalSlotRequest(
+                StorageRequestId(owner, "objective-release-reason"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            contract.release_search_goal,
+            GoalSpanRequest(
+                StorageRequestId(owner, "objective-release-search"),
+                width=4,
+                shape=GoalSpanKind.EXTENDED_4,
+                contract_id="up-get-search-state.OutputGoalId",
+                start_min=41,
+                start_max=15996,
+                role=GoalRole.NATIVE_OUTPUT,
+            ),
+        ),
         ),
         NativeControlState(
             contract.timer_name,
@@ -1723,6 +1742,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
                 parse_expression(f"(set-goal {contract.class_goal} 0)", SourceLocation(1)),
                 parse_expression(f"(set-goal {contract.enemy_player_goal} 0)", SourceLocation(1)),
                 parse_expression(f"(set-goal {contract.claim_goal} 0)", SourceLocation(1)),
+                 parse_expression(f"(set-goal {contract.release_reason_goal} 0)", SourceLocation(1)),
                 parse_expression(f"(disable-timer {contract.timer_name})", SourceLocation(1)),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
