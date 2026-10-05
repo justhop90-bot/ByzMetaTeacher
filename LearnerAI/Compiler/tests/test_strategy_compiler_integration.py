@@ -226,6 +226,56 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_byzantine_stock_lowers_objective_control_state_and_ownership(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        self.assertIsNotNone(control)
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        for expected in (
+            "byzantine-offensive-objective-state",
+            "byzantine-offensive-objective-class",
+            "byzantine-offensive-objective-point",
+            "byzantine-offensive-objective-search",
+            "byzantine-offensive-enemy-player",
+            "byzantine-offensive-objective-claim",
+            "byzantine-offensive-objective-timer",
+        ):
+            self.assertIn(expected, state_ids)
+
+        constants = dict(control.constants)
+        self.assertEqual(constants["byzantine-offensive-objective-state-idle"], 0)
+        self.assertEqual(constants["byzantine-offensive-objective-state-witness"], 6)
+        self.assertEqual(constants["byzantine-offensive-objective-class-town-center"], 4)
+
+        initialize = next(
+            rule for rule in control.rules
+            if rule.identity == "byzantine-endgame-objective-initialize"
+        )
+        self.assertIn(
+            "(set-goal byzantine-offensive-objective-claim 0)",
+            tuple(action.source for action in initialize.actions),
+        )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn(
+            "(defconst byzantine-offensive-objective-state-idle 0)",
+            output,
+        )
+        self.assertIn(
+            "(defconst byzantine-offensive-objective-class-town-center 4)",
+            output,
+        )
+        self.assertIn(
+            "(defconst byzantine-offensive-objective-claim ",
+            output,
+        )
+        self.assertNotIn(
+            "(up-target-objects 1 action-attack-move -1 -1)",
+            output,
+        )
+
     def test_byzantine_stock_lowers_frontier_target_control_through_duc(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
 
