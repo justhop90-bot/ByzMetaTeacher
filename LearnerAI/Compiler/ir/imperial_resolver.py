@@ -124,6 +124,7 @@ class ImperialResolver:
     def open_field_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
             cls.floor_recovered(value)
+            and value.offensive_objective
             and not value.fortification_threat
             and not value.fortified_objective_requires_siege
             and value.enemy_field_army >= 12
@@ -352,7 +353,7 @@ class ImperialResolver:
 
             if (
                 value.gold >= cls.TRASH_GOLD_OUT
-                and cls.open_field_eligible(value)
+                and cls.gold_recovery_open_eligible(value)
                 and guard_seconds >= cls.GOLD_RECOVERY_DWELL
                 and not cls._cooldown_active(
                     ImperialBand.OPEN_FIELD,
