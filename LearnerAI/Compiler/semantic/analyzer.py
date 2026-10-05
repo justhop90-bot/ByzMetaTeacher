@@ -388,7 +388,13 @@ def analyze(
                 if requirement_index < len(demand.requirement_locations)
                 else demand.location
             )
-            expr = parse_expression(raw, location)
+            try:
+                expr = parse_expression(raw, location)
+            except CompileError as exc:
+                raise CompileError(
+                    f"{exc}: demand '{demand.name}' requirement[{requirement_index}] "
+                    f"source={raw!r}"
+                ) from exc
             _validate_context(
                 expr,
                 registry,
