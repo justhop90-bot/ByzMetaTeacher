@@ -1542,6 +1542,17 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
+    attack_ready_name = "byzantine-army-attack-ready"
+    attack_ready = NativeControlState(
+        attack_ready_name,
+        GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile.profile_id, "byzantine-army-attack-ready"),
+                "attack-ready",
+            ),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
 
     current_age = "(current-age >= castle-age)"
     allocation = "(goal strategy-posture 4)"
@@ -1697,7 +1708,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             ),
         ),
     )
-    return NativeControlPlan(states=(state,), rules=rules)
+    return NativeControlPlan(states=(state, attack_ready), rules=rules)
 
 
 def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
