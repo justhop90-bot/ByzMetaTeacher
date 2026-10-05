@@ -1604,7 +1604,6 @@ def _age_bank_villager_control_plan():
                 "age-bank-villager-production",
                 facts=(
                     fact("(unit-type-count-total villager < 110)"),
-                    fact("(population-headroom > 0)"),
                     fact("(can-train villager)"),
                     fact(
                         "(not (and (current-age == dark-age) "
