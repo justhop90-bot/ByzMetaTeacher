@@ -1928,7 +1928,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             "byzantine-endgame-objective-clear-release-reason-on-new-claim",
             facts=(
                 expr(f"(goal {claim} 1)"),
-                expr(f"(up-compare-goal {release_reason} != {reason_none})"),
+                expr(f"(up-compare-goal {release_reason} != 0)"),
             ),
             actions=(
                 expr(f"(set-goal {release_reason} 0)"),
