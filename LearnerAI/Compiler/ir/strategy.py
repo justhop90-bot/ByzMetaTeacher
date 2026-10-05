@@ -3298,29 +3298,28 @@ def _default_byzantine_duc_plan(
                         "(up-compare-goal "
                         "byzantine-offensive-objective-search >= 1)",
                         SourceLocation(1),
-                    ),
-                         ,
-                    actions=(
+                        ),
+                        actions=(
                     parse_expression(
                         "(up-set-target-object search-remote c: 0)",
                         SourceLocation(1),
-                    ),
+                        ),
                     parse_expression(
                         objective_attack_action,
                         SourceLocation(1),
-                    ),
+                        ),
                     parse_expression(
                         "(up-reset-search 0 0 1 1)",
                         SourceLocation(1),
+                        ),
                     ),
-                        "),
-                        lifecycle=(
-                        NativeDucLifecycleStage.TARGET,
-                        NativeDucLifecycleStage.DISPATCH,
-                        ),
-                        ),
-                     )
-                    
+                lifecycle=(
+                    NativeDucLifecycleStage.TARGET,
+                    NativeDucLifecycleStage.DISPATCH,
+                 ),
+                )
+        )
+        
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
 
