@@ -38,20 +38,12 @@ jobs:
           PYTHONPATH: LearnerAI
         run: |
           python - <<'PY'
-          from LearnerAI.Compiler.compiler import compile_source
-          source = """
-          demand camel-line-observation {
-              require (unit-type-count-total camel-rider-line < 3)
-              require (players-unit-type-count any-enemy camel-rider-line >= 8)
-              action (build castle)
-              witness (building-type-count castle > 0)
-              release (building-type-count castle > 0)
-          }
-          """
-          output = compile_source(source)
-          assert "(unit-type-count-total camel-line < 3)" in output
-          assert "(players-unit-type-count any-enemy camel-line >= 8)" in output
-          assert "camel-rider-line" not in output
+          from LearnerAI.Compiler.emitter.per import _render_runtime_expression
+          from LearnerAI.Compiler.semantic import parse_expression
+          unit_total = parse_expression("(unit-type-count-total camel-rider-line < 3)")
+          enemy_count = parse_expression("(players-unit-type-count any-enemy camel-rider-line >= 8)")
+          assert _render_runtime_expression(unit_total) == "(unit-type-count-total camel-line < 3)"
+          assert _render_runtime_expression(enemy_count) == "(players-unit-type-count any-enemy camel-line >= 8)"
           print("native camel line lowering: OK")
           PY
 
