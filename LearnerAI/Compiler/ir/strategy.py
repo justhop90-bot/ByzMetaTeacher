@@ -3037,6 +3037,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             facts=(parse_expression("(goal byzantine-endgame-push-state 0)", SourceLocation(1)),),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
         ),
@@ -3125,7 +3130,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression(attack_package_ready, SourceLocation(1)),
                 parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
                 parse_expression(fortified_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
@@ -3280,7 +3285,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression(attack_package_ready, SourceLocation(1)),
                 *(
                     (
                         parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
@@ -3328,7 +3333,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression(attack_package_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
