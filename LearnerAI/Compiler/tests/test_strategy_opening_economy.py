@@ -167,6 +167,56 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
         )
 
+    def test_villager_continuity_is_a_production_lifecycle_demand(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+
+        self.assertEqual(demand.owner, "economy")
+        self.assertEqual(demand.production_arbitration_group, "production")
+        self.assertEqual(demand.capability_intent.kind.name, "TRAIN")
+        self.assertEqual(demand.capability_intent.entity_id, "villager-line")
+        self.assertIn("(can-train villager)", demand.execution.requirements)
+        self.assertIn(
+            "(not (and (current-age == dark-age) "
+            "(and (unit-type-count-total villager >= 21) "
+            "(can-research-with-escrow feudal-age))))",
+            demand.execution.requirements,
+        )
+        self.assertIn(
+            "(not (and (current-age == feudal-age) "
+            "(and (unit-type-count-total villager >= 28) "
+            "(and (building-type-count-total blacksmith >= 1) "
+            "(and (building-type-count-total market >= 1) "
+            "(can-research-with-escrow castle-age))))))",
+            demand.execution.requirements,
+        )
+        self.assertEqual(demand.execution.action, "(train villager)")
+
+        compilation = lower_strategy_profile(profile, self.effective)
+        lowered = next(
+            item
+            for item in compilation.demands
+            if item.identity.local_name == "civilian-villager-continuity"
+        )
+        self.assertIsNotNone(lowered.production_lifecycle)
+        self.assertEqual(lowered.production_lifecycle.unit, "villager")
+
+    def test_checked_in_runtime_preserves_maturity_aware_villager_production(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+        start = runtime.index("; Persistent civilian production")
+        end = runtime.index("; Pending diagnostics: early-defensive-spears", start)
+        block = runtime[start:end]
+        self.assertIn("(can-train villager)", block)
+        self.assertIn("(unit-type-count-total villager < 110)", block)
+        self.assertIn("(unit-type-count-total villager >= 21)", block)
+        self.assertIn(
+            "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
+            block,
+        )
+        self.assertIn("(building-type-count-total blacksmith >= 1)", block)
+        self.assertIn("(building-type-count-total market >= 1)", block)
+
     def test_castle_age_transition_is_compiler_owned_and_protected(self):
         profile = build_byzantine_strategy(self.effective)
         transition = profile.demand("castle-age-transition")
