@@ -124,6 +124,7 @@ class EndgameContractTests(unittest.TestCase):
         )
         rules = {rule.identity: rule for rule in compilation.control_plan.rules}
         for identity in (
+            "byzantine-endgame-push-imperial-ready",
             "byzantine-endgame-push-admit",
             "byzantine-endgame-push-release",
             "byzantine-endgame-frontier-defense",
@@ -134,6 +135,10 @@ class EndgameContractTests(unittest.TestCase):
 
         rules = {rule.identity: rule for rule in compilation.control_plan.rules}
         admit = rules["byzantine-endgame-push-admit"]
+        self.assertIn(
+            "(set-goal byzantine-endgame-push-state 2)",
+            tuple(action.source for action in admit.actions),
+        )
         self.assertIn(
             "(set-strategic-number sn-number-attack-groups 1)",
             tuple(action.source for action in admit.actions),
