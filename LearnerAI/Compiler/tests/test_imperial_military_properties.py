@@ -264,7 +264,12 @@ class ImperialMilitaryPropertyTests(unittest.TestCase):
                     expected = ImperialMilitaryBand.OPEN_FIELD
 
                 before = replace(case, guard_seconds=guard_boundary - 1)
-                exact = replace(case, guard_seconds=guard_boundary)
+                if target == "clear":
+                    before = replace(case, fortified_clear_seconds=guard_boundary - 1)
+                    exact = replace(case, fortified_clear_seconds=guard_boundary)
+                else:
+                    before = replace(case, guard_seconds=guard_boundary)
+                    exact = replace(case, guard_seconds=guard_boundary)
 
                 self.assertNotEqual(
                     resolve_imperial_military(before).destination,
