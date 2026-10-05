@@ -597,6 +597,12 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertEqual(constants["bt-imp-band-trash"], 3)
 
         rules = {rule.identity: rule for rule in control.rules}
+        open_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-standing-open-candidate"].facts
+        )
+        self.assertNotIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
+        self.assertNotIn("(goal byzantine-offensive-objective-claim 0)", open_candidate_facts)
+
         for identity in (
             "byzantine-imperial-band-floor-break-open",
             "byzantine-imperial-band-floor-break-fortified",
