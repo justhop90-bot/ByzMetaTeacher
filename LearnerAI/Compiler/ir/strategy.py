@@ -1553,6 +1553,35 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
+    military_owner = SemanticId(profile.profile_id, "byzantine-military-shared-state")
+    reinforcement = NativeControlState(
+        "byzantine-army-reinforcement",
+        GoalSlotRequest(
+            StorageRequestId(military_owner, "army-reinforcement"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    siege_approach = NativeControlState(
+        "byzantine-siege-approach",
+        GoalSlotRequest(
+            StorageRequestId(military_owner, "siege-approach"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    siege_scale = NativeControlState(
+        "byzantine-siege-scale",
+        GoalSlotRequest(
+            StorageRequestId(military_owner, "siege-scale"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    overmatch_state = NativeControlState(
+        "byzantine-army-overmatch-state",
+        GoalSlotRequest(
+            StorageRequestId(military_owner, "army-overmatch-state"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
 
     current_age = "(current-age >= castle-age)"
     allocation = "(goal strategy-posture 4)"
@@ -1708,7 +1737,28 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
             ),
         ),
     )
-    return NativeControlPlan(states=(state, attack_ready), rules=rules)
+    return NativeControlPlan(
+        states=(
+            state,
+            attack_ready,
+            reinforcement,
+            siege_approach,
+            siege_scale,
+            overmatch_state,
+        ),
+        rules=rules,
+        constants=(
+            ("byzantine-siege-approach-normal", 0),
+            ("byzantine-siege-approach-fortified", 1),
+            ("byzantine-siege-approach-staging", 2),
+            ("byzantine-siege-approach-escorted", 3),
+            ("byzantine-siege-approach-breach", 4),
+            ("byzantine-siege-scale-standard", 1),
+            ("byzantine-siege-scale-fortified", 2),
+            ("byzantine-army-overmatch-none", 0),
+            ("byzantine-army-overmatch-triggered", 1),
+        ),
+    )
 
 
 def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
