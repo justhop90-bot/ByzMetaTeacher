@@ -754,6 +754,7 @@ def compile_package_with_report(
             effective_rules,
             persistent_state_report,
             persistent_control_report,
+            duc_plan=duc_plan,
         )
         duc_errors = tuple(
             item
@@ -901,6 +902,20 @@ def compile_source_with_report(
             duc_report=duc_report,
             persistent_control_report=persistent_control_report,
         )
+        strategy_capability_graph = project_capability_graph(ir, registry)
+        strategy_capability_report = validate_capability_graph(
+            strategy_capability_graph,
+            registry,
+        )
+        strategy_dependency_report = analyze_strategy_dependencies(
+            ir,
+            strategy_capability_graph,
+            strategy_capability_report,
+            effective_rules,
+            persistent_state_report,
+            persistent_control_report,
+            duc_plan=duc_plan,
+        )
         duc_errors = tuple(
             item
             for item in getattr(rule_report, "errors", ())
@@ -926,6 +941,9 @@ def compile_source_with_report(
             result,
             rule_report.diagnostics,
         )
+        strategy_dependency_report = strategy_dependency_report.with_artifact(artifact_result)
+        if strategy_report is not None:
+            strategy_dependency_report.write_json(strategy_report)
         staged.write_bytes(artifact_result.encode("utf-8"))
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
