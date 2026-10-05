@@ -813,9 +813,9 @@ def community_strategy_demands(
                         release=witness,
                     ),
                     initial_state=(
-                        LifecycleState.RELEASED
-                        if resource is CampResource.STONE
-                        else LifecycleState.ACTIVE
+                        LifecycleState.ACTIVE
+                        if floor == 1 and resource is not CampResource.STONE
+                        else LifecycleState.RELEASED
                     ),
                     provenance=_airef_provenance(
                         effective,
