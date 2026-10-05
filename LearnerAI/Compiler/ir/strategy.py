@@ -3602,6 +3602,97 @@ def _default_byzantine_duc_plan(
             )
 
     if profile_id == "byzantine-stock-v1" and objective_control is not None:
+        target_specs = (
+            (
+                "byzantine-endgame-objective-target-siege",
+                "byzantine-offensive-objective-state-siege",
+                "byzantine-offensive-objective-class-siege",
+                (36, 331, 42, 913),
+                "siege",
+            ),
+            (
+                "byzantine-endgame-objective-target-defense",
+                "byzantine-offensive-objective-state-defense",
+                "byzantine-offensive-objective-class-defense",
+                (82, 235, 236, 952, 927),
+                "defense",
+            ),
+            (
+                "byzantine-endgame-objective-target-production",
+                "byzantine-offensive-objective-state-production",
+                "byzantine-offensive-objective-class-production",
+                (49, 12, 87, 101, 104, 83),
+                "production",
+            ),
+            (
+                "byzantine-endgame-objective-target-town-center",
+                "byzantine-offensive-objective-state-town-center",
+                "byzantine-offensive-objective-class-town-center",
+                (109, 71, 141, 142),
+                "town-center",
+            ),
+        )
+        target_base = len(rules)
+        for offset, (identity, state_value, class_value, native_ids, class_token) in enumerate(target_specs):
+            output = GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile_id, f"endgame-objective-target:{class_token}"),
+                    "target-object-id",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+            )
+            rules.append(
+                NativeDucRule(
+                    identity=identity,
+                    order=target_base + offset,
+                    facts=(
+                        parse_expression(
+                            f"(goal byzantine-offensive-objective-state {state_value})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(goal byzantine-offensive-objective-class {class_value})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(goal byzantine-offensive-objective-claim 1)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    actions=(
+                        parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                        parse_expression(
+                            "(up-set-target-point byzantine-offensive-objective-point)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression("(up-filter-distance c: -1 c: 40)", SourceLocation(1)),
+                        *tuple(
+                            parse_expression(
+                                f"(up-find-remote c: {native_id} c: 1)",
+                                SourceLocation(1),
+                            )
+                            for native_id in native_ids
+                        ),
+                        parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
+                        parse_expression("(up-get-object-data id 0)", SourceLocation(1)),
+                    ),
+                    lifecycle=(
+                        NativeDucLifecycleStage.ADMISSIBILITY,
+                        NativeDucLifecycleStage.TARGET,
+                    ),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=identity,
+                    section="ACTION",
+                    expression_index=4 + len(native_ids),
+                    request=output,
+                    command="up-get-object-data",
+                    argument_index=1,
+                )
+            )
+
         witness_specs = (
             (
                 "byzantine-endgame-objective-witness-siege-search",
