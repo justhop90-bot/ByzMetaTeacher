@@ -3024,15 +3024,15 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(and (unit-type-count varangian-guard < 12) "
         "(unit-type-count 492 < 12)))"
     )
-    standard_siege_ready_facts = (
-        "(unit-type-count trebuchet >= 4)",
-        "(unit-type-count bombard-cannon >= 4)",
-        "(unit-type-count-total mangonel-line >= 4)",
+    standard_siege_ready = (
+        "(or (unit-type-count trebuchet >= 4) "
+        "(or (unit-type-count bombard-cannon >= 4) "
+        "(unit-type-count-total mangonel-line >= 4)))"
     )
-    fortified_siege_ready_facts = (
-        "(unit-type-count trebuchet >= 6)",
-        "(unit-type-count bombard-cannon >= 6)",
-        "(unit-type-count-total mangonel-line >= 6)",
+    fortified_siege_ready = (
+        "(or (unit-type-count trebuchet >= 6) "
+        "(or (unit-type-count bombard-cannon >= 6) "
+        "(unit-type-count-total mangonel-line >= 6)))"
     )
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     frontier_witness = (
@@ -3078,10 +3078,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 ),
                 parse_expression(premium_ready, SourceLocation(1)),
                 parse_expression("(up-compare-goal byzantine-imperial-band-state != 2)", SourceLocation(1)),
-                *(
-                    parse_expression(fact, SourceLocation(1))
-                    for fact in standard_siege_ready_facts
-                ),
+                parse_expression(standard_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
             ),
@@ -3104,10 +3101,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 ),
                 parse_expression(premium_ready, SourceLocation(1)),
                 parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
-                *(
-                    parse_expression(fact, SourceLocation(1))
-                    for fact in fortified_siege_ready_facts
-                ),
+                parse_expression(fortified_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
             ),
@@ -3130,10 +3124,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 ),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
-                *(
-                    parse_expression(fact, SourceLocation(1))
-                    for fact in standard_siege_ready_facts
-                ),
+                parse_expression(standard_siege_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
