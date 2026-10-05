@@ -1978,17 +1978,66 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byzantine-imperial-band-floor-break",
+            "byzantine-imperial-band-floor-break-open",
             facts=(
-                expr(f"(up-compare-goal {state_name} != {standing})"),
+                expr(f"(goal {state_name} {open_field})"),
                 expr(floor_broken),
             ),
             actions=(
+                expr(f"(set-goal {rearm_band_name} {open_field})"),
+                expr(f"(enable-timer {rearm_timer} 30)"),
                 expr(f"(set-goal {state_name} {standing})"),
                 expr(f"(set-goal {candidate_name} 0)"),
                 expr(f"(set-goal {reason_name} 10)"),
                 expr(f"(disable-timer {guard_timer})"),
                 expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-floor-break-fortified",
+            facts=(
+                expr(f"(goal {state_name} {fortified})"),
+                expr(floor_broken),
+            ),
+            actions=(
+                expr(f"(set-goal {rearm_band_name} {fortified})"),
+                expr(f"(enable-timer {rearm_timer} 30)"),
+                expr(f"(set-goal {state_name} {standing})"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(set-goal {reason_name} 10)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-floor-break-trash",
+            facts=(
+                expr(f"(goal {state_name} {trash})"),
+                expr(floor_broken),
+            ),
+            actions=(
+                expr(f"(set-goal {rearm_band_name} {trash})"),
+                expr(f"(enable-timer {rearm_timer} 45)"),
+                expr(f"(set-goal {state_name} {standing})"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(set-goal {reason_name} 10)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 30)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-floor-break-standing",
+            facts=(
+                expr(f"(goal {state_name} {standing})"),
+                expr(floor_broken),
+            ),
+            actions=(
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(set-goal {reason_name} 10)"),
+                expr(f"(disable-timer {guard_timer})"),
                 expr(f"(enable-timer {dwell_timer} 30)"),
             ),
         ),
@@ -2048,7 +2097,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(floor_recovered),
                 expr(f"(not {trash_eligible})"),
-                expr(gold_recovery_open_eligible),
+                expr(open_field_eligible),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2079,7 +2128,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(goal {state_name} {trash})"),
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(gold_recovered),
-                expr(open_field_eligible),
+                expr(gold_recovery_open_eligible),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2128,7 +2177,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {fortified})"),
                 expr(f"(not {fortified_exec})"),
-                expr(f"(not (timer-triggered {guard_timer}))"),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
@@ -2140,7 +2188,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {candidate_standing})"),
                 expr(f"(not {economic_collapse})"),
-                expr(f"(not (timer-triggered {guard_timer}))"),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
@@ -2152,7 +2199,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {trash})"),
                 expr(f"(not {trash_eligible})"),
-                expr(f"(not (timer-triggered {guard_timer}))"),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
@@ -2164,7 +2210,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {open_field})"),
                 expr(f"(not {open_field_eligible})"),
-                expr(f"(not (timer-triggered {guard_timer}))"),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
