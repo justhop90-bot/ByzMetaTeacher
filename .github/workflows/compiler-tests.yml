@@ -95,6 +95,10 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
+      - name: Replay forensic trace - object 19263 STOP/reset
+        run: |
+          python -m pip install "git+https://github.com/happyleavesaoc/aoc-mgz.git@master"
+          python validation/trace_replay_object_19263.py | tee replay-object-19263-trace.json
       - name: Native zero-findings acceptance - checked-in Byzantine.per
         run: python LearnerAI/Compiler/tests/assert_native_zero.py Byzantine.per --report /tmp/native-reports/byzantine-checked-in.json
       - name: Verify generic compiler fixture reproducibility
