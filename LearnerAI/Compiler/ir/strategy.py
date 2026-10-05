@@ -3138,11 +3138,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
                 parse_expression(imperial_band_ready, SourceLocation(1)),
-                *(
-                    parse_expression(fact, SourceLocation(1))
-                    for fact in imperial_floor_ready_facts
-                ),
-                parse_expression(attack_package_ready, SourceLocation(1)),
+                parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
                 parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
                 parse_expression(fortified_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
