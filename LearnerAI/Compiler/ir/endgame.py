@@ -48,6 +48,7 @@ class EndgamePushContract:
     maximum_group_size: int
     live_witness_ref: str
     cleared_witness_ref: str
+    frontier_witness_ref: str | None = None
     frontier: tuple[EndgameFrontierState, ...]
 
     def __post_init__(self) -> None:
@@ -77,6 +78,10 @@ class EndgamePushContract:
             raise ValueError("endgame push contract requires a live witness reference")
         if not self.cleared_witness_ref.strip():
             raise ValueError("endgame push contract requires a cleared witness reference")
+        if self.frontier_witness_ref is not None and not isinstance(self.frontier_witness_ref, str):
+            raise TypeError("endgame push contract frontier_witness_ref must be a string or None")
+        if self.frontier_witness_ref is not None and not self.frontier_witness_ref.strip():
+            raise ValueError("endgame push contract frontier_witness_ref must not be empty")
         if not isinstance(self.frontier, tuple):
             raise TypeError("endgame push contract frontier must be a tuple")
         if any(not isinstance(item, EndgameFrontierState) for item in self.frontier):
@@ -209,6 +214,8 @@ class EndgamePlan:
         if self.push_contract is not None:
             references.add(self.push_contract.live_witness_ref)
             references.add(self.push_contract.cleared_witness_ref)
+            if self.push_contract.frontier_witness_ref is not None:
+                references.add(self.push_contract.frontier_witness_ref)
         return tuple(sorted(references))
 
 
