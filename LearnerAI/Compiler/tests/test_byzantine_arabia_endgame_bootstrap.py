@@ -1,0 +1,82 @@
+import unittest
+
+from LearnerAI.Compiler.clients.basilisk import (
+    ByzantineProfile,
+    build_byzantine_strategy,
+    lower_strategy_profile,
+    resolve_effective_civ,
+)
+from LearnerAI.Compiler.ir.strategy import lower_strategy_profile as lower_profile
+
+
+class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        cls.profile = build_byzantine_strategy(cls.effective)
+        cls.compilation = lower_strategy_profile(cls.profile, cls.effective)
+        cls.output = lower_profile(cls.profile, cls.effective).to_source()
+
+    def test_castle_military_seed_demands_bootstrap_upgrade_paths(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        for identity, line, minimum in (
+            ("castle-spearman-seed", "spearman-line", 6),
+            ("castle-skirmisher-seed", "skirmisher-line", 6),
+            ("castle-scout-cavalry-seed", "scout-cavalry-line", 6),
+        ):
+            self.assertIn(identity, demands)
+            demand = demands[identity]
+            self.assertEqual(demand.target.unit_id, line)
+            self.assertEqual(demand.target.minimum, minimum)
+            self.assertIn("(current-age >= castle-age)", demand.execution.requirements)
+            self.assertIn(
+                f"(unit-type-count-total {line} < {minimum})",
+                demand.execution.requirements,
+            )
+
+    def test_imperial_ram_upgrade_chain_is_persistent_and_bootstrapped(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        for identity in ("research-capped-ram", "research-siege-ram"):
+            self.assertIn(identity, demands)
+            demand = demands[identity]
+            self.assertTrue(
+                any("ram-line" in requirement for requirement in demand.execution.requirements)
+            )
+            self.assertIn("can-research-with-escrow", demand.execution.requirements[1])
+
+    def test_endgame_admission_accepts_ram_siege_and_mature_attack_force(self):
+        start = self.output.index("byzantine-endgame-push-admit")
+        end = self.output.index("byzantine-endgame-push-live-witness", start)
+        admit = self.output[start:end]
+        self.assertIn("(unit-type-count-total battering-ram-line >= 4)", admit)
+        self.assertIn("(military-population >= 15)", admit)
+        self.assertNotIn("(unit-type-count halberdier >= 18)", admit)
+        self.assertNotIn("(unit-type-count 6 >= 18)", admit)
+        self.assertNotIn("(unit-type-count hussar >= 12)", admit)
+
+    def test_endgame_push_owns_attack_readiness_and_siege_approach_writers(self):
+        self.assertIn(
+            "(set-goal byzantine-army-attack-ready 1)",
+            self.output,
+        )
+        self.assertIn(
+            "(set-goal byzantine-siege-approach byzantine-siege-approach-normal)",
+            self.output,
+        )
+        self.assertIn(
+            "(set-goal byzantine-army-attack-ready 0)",
+            self.output,
+        )
+
+    def test_endgame_push_release_uses_attack_package_instead_of_exact_trash_snapshot(self):
+        start = self.output.index("byzantine-endgame-push-release")
+        end = self.output.index("byzantine-endgame-push-release-trash", start)
+        release = self.output[start:end]
+        self.assertIn("(military-population >= 15)", release)
+        self.assertNotIn("(unit-type-count halberdier >= 18)", release)
+        self.assertNotIn("(unit-type-count 6 >= 18)", release)
+        self.assertNotIn("(unit-type-count hussar >= 12)", release)
+
+
+if __name__ == "__main__":
+    unittest.main()
