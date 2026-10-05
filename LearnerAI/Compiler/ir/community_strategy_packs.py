@@ -1535,21 +1535,12 @@ def build_byzantine_stock_strategy(
                 requirements=(
                     "(current-age == dark-age)",
                     "(unit-type-count-total villager >= 21)",
-                    "(building-type-count-total lumber-camp >= 1)",
-                    "(building-type-count-total mining-camp >= 1)",
                     "(can-research-with-escrow feudal-age)",
                 ),
             )
             base_demand = replace(
                 base_demand,
                 execution=execution,
-                admissibility=(
-                    *base_demand.admissibility,
-                    _persistent(
-                        "Feudal transition waits for the opening resource front to be established",
-                        "strategy-opening-resource-front-ready",
-                    ),
-                ),
             )
         if (
             base_demand.execution is not None
