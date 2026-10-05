@@ -1883,13 +1883,12 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count 6 < 18)",
         "(unit-type-count hussar < 12)",
     )
+    # The standing floor is a military invariant only. Economic admission
+    # belongs to each destination band, not to floor recovery itself.
     floor_recovered_facts = (
         "(unit-type-count halberdier >= 18)",
         "(unit-type-count 6 >= 18)",
         "(unit-type-count hussar >= 12)",
-        "(food-amount >= 2000)",
-        "(wood-amount >= 1700)",
-        "(gold-amount >= 1600)",
     )
     siege_floor = lor(
         "(unit-type-count-total mangonel-line >= 2)",
@@ -1989,9 +1988,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count halberdier < 18)",
         "(unit-type-count 6 < 18)",
         "(unit-type-count hussar < 12)",
-        "(food-amount < 2000)",
-        "(wood-amount < 1700)",
-        "(gold-amount < 1600)",
     )
     recovery_open_clear_failures = (
         "(goal byzantine-fortification-threat 1)",
@@ -2003,9 +1999,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count halberdier < 18)",
         "(unit-type-count 6 < 18)",
         "(unit-type-count hussar < 12)",
-        "(food-amount < 2000)",
-        "(wood-amount < 1700)",
-        "(gold-amount < 1600)",
     )
     trash_clear_failures = (
         "(goal byzantine-fortification-threat 1)",
@@ -2015,9 +2008,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count halberdier < 18)",
         "(unit-type-count 6 < 18)",
         "(unit-type-count hussar < 12)",
-        "(food-amount < 2000)",
-        "(wood-amount < 1700)",
-        "(gold-amount < 1600)",
     )
     fortified_clear_failures = (
         "(goal byzantine-fortification-threat 0)",

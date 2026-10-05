@@ -607,6 +607,28 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertIn("(goal byzantine-offensive-objective-claim 1)", trash_open_candidate_facts)
 
+        standing_trash_candidate_facts = tuple(
+            fact.source
+            for fact in rules["byzantine-imperial-band-standing-trash-candidate"].facts
+        )
+        self.assertIn("(gold-amount <= 800)", standing_trash_candidate_facts)
+        self.assertNotIn("(gold-amount >= 1600)", standing_trash_candidate_facts)
+
+        transition_trash_facts = tuple(
+            fact.source
+            for fact in rules["byzantine-imperial-band-transition-trash"].facts
+        )
+        self.assertIn("(gold-amount <= 800)", transition_trash_facts)
+        self.assertNotIn("(gold-amount >= 1600)", transition_trash_facts)
+
+        trash_clear_facts = tuple(
+            fact.source
+            for identity, rule in rules.items()
+            if identity.startswith("byzantine-imperial-band-clear-trash-candidate")
+            for fact in rule.facts
+        )
+        self.assertNotIn("(gold-amount < 1600)", trash_clear_facts)
+
         fortified_open_candidate_facts = tuple(
             fact.source for fact in rules["byzantine-imperial-band-fortified-open-candidate"].facts
         )
