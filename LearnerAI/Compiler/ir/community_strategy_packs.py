@@ -638,6 +638,17 @@ def community_strategy_observations(
                 )
             )
 
+    observations.append(
+        _observation(
+            "strategy-villager-continuity",
+            "(unit-type-count-total villager < 110)",
+            _airef_provenance(
+                effective,
+                "commands/commands-details.html#unit-type-count-total",
+            ),
+        )
+    )
+
     return tuple(observations)
 
 
@@ -653,18 +664,9 @@ def community_strategy_demands(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
-    observations = list(community_strategy_observations(effective))
-
     demands: list[_StrategicDemandSpec] = []
 
     villager_provider = _provider_for_line(effective, "villager-line")
-    observations.append(
-        _observation(
-            "strategy-villager-continuity",
-            "(unit-type-count-total villager < 110)",
-            _airef_provenance(effective, "commands/commands-details.html#unit-type-count-total"),
-        )
-    )
     villager_demand = _StrategicDemandSpec(
         identity="civilian-villager-continuity",
         owner="economy",
