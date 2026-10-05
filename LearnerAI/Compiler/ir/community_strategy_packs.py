@@ -1404,7 +1404,8 @@ def community_strategy_demands(
                     "strategy-imperial-cataphract-replacement",
                 ),
                 reason_labels=(
-                    "Imperial food/gold bank is above the protected spending envelope",
+                    "Imperial food bank is above the protected spending envelope",
+                    "Imperial gold bank is above the protected spending envelope",
                     "Cataphract standing floor has fallen below the replacement threshold",
                 ),
                 requirement_expressions=(
@@ -1425,7 +1426,8 @@ def community_strategy_demands(
                     "strategy-imperial-varangian-replacement",
                 ),
                 reason_labels=(
-                    "Imperial food/gold bank is above the protected spending envelope",
+                    "Imperial food bank is above the protected spending envelope",
+                    "Imperial gold bank is above the protected spending envelope",
                     "Enemy infantry pressure keeps the Varangian package strategically active",
                     "Varangian standing floor has fallen below the replacement threshold",
                 ),
@@ -1472,7 +1474,8 @@ def community_strategy_demands(
                     "strategy-imperial-trebuchet-replacement",
                 ),
                 reason_labels=(
-                    "Imperial wood/gold bank is above the protected spending envelope",
+                    "Imperial wood bank is above the protected spending envelope",
+                    "Imperial gold bank is above the protected spending envelope",
                     "Enemy fortification creates a valid trebuchet conversion channel",
                     "Trebuchet standing floor has fallen below the replacement threshold",
                 ),
