@@ -54,10 +54,10 @@ class NativeFactRegistryIntegrationTests(unittest.TestCase):
         self.assertEqual(
             facts.names()[:4],
             (
+                "attack-soldier-count",
                 "building-available",
                 "building-type-count",
                 "building-type-count-total",
-                "can-afford-building",
             ),
         )
         current_age = facts.require("current-age")
