@@ -2008,8 +2008,6 @@ def build_land_castle_strategy(
                 requirements=(
                     "(current-age == dark-age)",
                     "(unit-type-count-total villager >= 21)",
-                    "(building-type-count-total lumber-camp >= 1)",
-                    "(building-type-count-total mining-camp >= 1)",
                     "(can-research-with-escrow feudal-age)",
                 ),
                 action="(research feudal-age)",

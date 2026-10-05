@@ -12612,8 +12612,6 @@
     (not (up-research-status c: 101 >= 2))
     (not (current-age >= feudal-age))
     (current-age == dark-age)
-    (building-type-count-total lumber-camp >= 1)
-    (building-type-count-total mining-camp >= 1)
     (unit-type-count-total villager >= 21)
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
@@ -12738,16 +12736,7 @@
     (can-train villager)
     (not (and
         (current-age == dark-age)
-        (and
-            (unit-type-count-total villager >= 21)
-            (and
-                (building-type-count-total lumber-camp >= 1)
-                (and
-                    (building-type-count-total mining-camp >= 1)
-                    (can-research-with-escrow feudal-age)
-                )
-            )
-        )
+        (unit-type-count-total villager >= 21)
     ))
     (not (and
         (current-age == feudal-age)
@@ -15797,6 +15786,27 @@
     (up-get-point position-object byzantine-dark-wood-camp-point-1)
     (up-set-target-point byzantine-dark-wood-camp-point-1)
     (up-build place-point 0 c: lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-lumber-camp-floor-1 77)
+)
+
+; Safety fallback: retain the community-standard direct build path if
+; the DUC resource-point search does not produce a placement witness.
+(defrule
+    (goal demand-economy-lumber-camp-floor-1 1)
+    (not (building-type-count lumber-camp >= 1))
+    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (not (building-type-count lumber-camp >= 1))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age == dark-age)
+    (unit-type-count-total villager >= 15)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 1)
+=>
+    (build lumber-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-lumber-camp-floor-1 77)
 )

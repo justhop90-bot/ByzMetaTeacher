@@ -710,8 +710,7 @@ def community_strategy_demands(
                 "(current-age >= dark-age)",
                 "(can-train villager)",
                 "(not (and (current-age == dark-age) "
-                "(and (unit-type-count-total villager >= 21) "
-                "(can-research-with-escrow feudal-age))))",
+                "(unit-type-count-total villager >= 21)))",
                 "(not (and (current-age == feudal-age) "
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
@@ -1536,21 +1535,12 @@ def build_byzantine_stock_strategy(
                 requirements=(
                     "(current-age == dark-age)",
                     "(unit-type-count-total villager >= 21)",
-                    "(building-type-count-total lumber-camp >= 1)",
-                    "(building-type-count-total mining-camp >= 1)",
                     "(can-research-with-escrow feudal-age)",
                 ),
             )
             base_demand = replace(
                 base_demand,
                 execution=execution,
-                admissibility=(
-                    *base_demand.admissibility,
-                    _persistent(
-                        "Feudal transition waits for the opening resource front to be established",
-                        "strategy-opening-resource-front-ready",
-                    ),
-                ),
             )
         if (
             base_demand.execution is not None
