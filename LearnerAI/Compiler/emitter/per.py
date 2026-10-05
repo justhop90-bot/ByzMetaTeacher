@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from ..ast import Expression
+
 from ..errors import CompileError
 from ..ir import (
     LifecycleState,
@@ -34,6 +36,24 @@ MAX_RULES = 10_000
 MAX_RULE_ELEMENTS = 32
 MAX_LINE_LENGTH = 255
 INITIALIZATION_CHUNK = 30
+
+# Semantic unit-line names are compiler-owned identities. These aliases are
+# lowered only when an expression is rendered into runtime .per syntax.
+_NATIVE_RUNTIME_UNIT_LINE_ALIASES = {
+    "camel-rider-line": "camel-line",
+}
+
+
+def _render_runtime_expression(expression: Expression) -> str:
+    parts = [expression.head]
+    for argument in expression.args:
+        if isinstance(argument, Expression):
+            parts.append(_render_runtime_expression(argument))
+        else:
+            token = str(argument)
+            parts.append(_NATIVE_RUNTIME_UNIT_LINE_ALIASES.get(token, token))
+    return "(" + " ".join(parts) + ")"
+
 
 
 def _claim_name(conflict_class: str) -> str:
@@ -500,7 +520,7 @@ def emit(
                 (current_rule.identity, section, expression_index), ()
             )
             if request is None and not readers:
-                return expression.source
+                return _render_runtime_expression(expression)
 
             arguments = list(expression.args)
             if request is not None:
@@ -581,7 +601,7 @@ def emit(
         def _render_attack_expression(rule_identity, section, expression_index, expression):
             request = goal_inputs.get((rule_identity, section, expression_index, 0))
             if request is None:
-                return expression.source
+                return _render_runtime_expression(expression)
             binding = bindings.binding_for(request.request.request_id)
             if not isinstance(binding, GoalSlot):
                 raise CompileError(
@@ -741,9 +761,9 @@ def emit(
         for rule in control_plan.rules:
             out.append(f"; Native control rule: {rule.identity}")
             out.append("(defrule")
-            out.extend(f"    {fact.source}" for fact in rule.facts)
+            out.extend(f"    {_render_runtime_expression(fact)}" for fact in rule.facts)
             out.append("=>")
-            out.extend(f"    {action.source}" for action in rule.actions)
+            out.extend(f"    {_render_runtime_expression(action)}" for action in rule.actions)
             out += [")", ""]
 
     if arbitration_requests:
@@ -843,7 +863,7 @@ def emit(
                 f"            (goal demand-{demand.name} {lifecycle.pending.value})",
                 "        )",
                 "    )",
-                f"    {demand.invalidation.expression.source}",
+                f"    {_render_runtime_expression(demand.invalidation.expression)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.cancelled.value})",
                 ")",
@@ -870,7 +890,7 @@ def emit(
             f"; Release: {demand.name} | COMPLETE -> RELEASED",
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.complete.value})",
-            f"    {demand.release.source}",
+            f"    {_render_runtime_expression(demand.release)}",
             "=>",
             f"    (set-goal demand-{demand.name} {lifecycle.released.value})",
             ")",
@@ -893,7 +913,7 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    {demand.witness.source}",
+                        f"    {_render_runtime_expression(demand.witness)}",
                     ]
                     actions = [
                         f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
@@ -905,8 +925,8 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    (not {demand.witness.source})",
-                        f"    {construction.pending_foundation_fact.source}",
+                        f"    (not {_render_runtime_expression(demand.witness)})",
+                        f"    {_render_runtime_expression(construction.pending_foundation_fact)}",
                     ]
                     actions = [
                         f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
@@ -918,9 +938,9 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    (not {demand.witness.source})",
+                        f"    (not {_render_runtime_expression(demand.witness)})",
                         f"    (up-pending-objects c: {construction.native_building_id} == 0)",
-                        f"    {construction.pending_placement_fact.source}",
+                        f"    {_render_runtime_expression(construction.pending_placement_fact)}",
                     ]
                     actions = [
                         f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
@@ -932,9 +952,9 @@ def emit(
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                         f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
-                        f"    (not {demand.witness.source})",
+                        f"    (not {_render_runtime_expression(demand.witness)})",
                         f"    (up-pending-objects c: {construction.native_building_id} == 0)",
-                        f"    (not {construction.pending_placement_fact.source})",
+                        f"    (not {_render_runtime_expression(construction.pending_placement_fact)})",
                     ]
                     actions = [
                         f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
@@ -957,7 +977,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    {demand.witness.source}",
+                f"    {_render_runtime_expression(demand.witness)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
@@ -968,8 +988,8 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
-                f"    {research.pending_fact.source}",
+                f"    (not {_render_runtime_expression(demand.witness)})",
+                f"    {_render_runtime_expression(research.pending_fact)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                 ")",
@@ -980,8 +1000,8 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
-                f"    (not {research.pending_fact.source})",
+                f"    (not {_render_runtime_expression(demand.witness)})",
+                f"    (not {_render_runtime_expression(research.pending_fact)})",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
             ]
@@ -1003,7 +1023,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    {demand.witness.source}",
+                f"    {_render_runtime_expression(demand.witness)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
@@ -1014,8 +1034,8 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
-                f"    {production.pending_fact.source}",
+                f"    (not {_render_runtime_expression(demand.witness)})",
+                f"    {_render_runtime_expression(production.pending_fact)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                 ")",
@@ -1026,8 +1046,8 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
-                f"    (not {demand.witness.source})",
-                f"    (not {production.pending_fact.source})",
+                f"    (not {_render_runtime_expression(demand.witness)})",
+                f"    (not {_render_runtime_expression(production.pending_fact)})",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
             ]
@@ -1046,7 +1066,7 @@ def emit(
                 f"; Completion witness: {demand.name} | PENDING -> COMPLETE",
                 "(defrule",
                 f"    (goal demand-{demand.name} {lifecycle.pending.value})",
-                f"    {demand.witness.source}",
+                f"    {_render_runtime_expression(demand.witness)}",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
@@ -1064,30 +1084,30 @@ def emit(
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.active.value})",
-            f"    (not {demand.witness.source})",
+            f"    (not {_render_runtime_expression(demand.witness)})",
         ]
 
         if construction is not None:
             out += [
                 f"    (goal construction-retry-barrier-{demand.name} 0)",
                 f"    (up-pending-objects c: {construction.native_building_id} == 0)",
-                f"    (not {construction.pending_placement_fact.source})",
+                f"    (not {_render_runtime_expression(construction.pending_placement_fact)})",
             ]
 
         if production is not None:
             out += [
                 f"    (goal production-retry-barrier-{demand.name} 0)",
-                f"    (not {production.pending_fact.source})",
+                f"    (not {_render_runtime_expression(production.pending_fact)})",
             ]
 
         if demand.research_lifecycle is not None:
             out += [
                 f"    (goal research-retry-barrier-{demand.name} 0)",
-                f"    (not {demand.research_lifecycle.pending_fact.source})",
+                f"    (not {_render_runtime_expression(demand.research_lifecycle.pending_fact)})",
             ]
 
         out += [
-            f"    (not {demand.release.source})",
+            f"    (not {_render_runtime_expression(demand.release)})",
         ]
 
         request = demand.action.arbitration_request
@@ -1096,7 +1116,7 @@ def emit(
             out.append(f"    (goal {_claim_name(conflict_class)} 0)")
 
         out.extend(
-            f"    {requirement.expression.source}"
+            f"    {_render_runtime_expression(requirement.expression)}"
             for requirement in demand.requirements
         )
         out += [
@@ -1104,7 +1124,7 @@ def emit(
         ]
         for operation in targeted_releases.get(demand.identity, ()):
             out.append(f"    (release-escrow {operation.resource})")
-        out.append(f"    {demand.action.expression.source}")
+        out.append(f"    {_render_runtime_expression(demand.action.expression)}")
 
         if request is not None:
             conflict_class = request.request_id.purpose.split(":", 1)[1]
