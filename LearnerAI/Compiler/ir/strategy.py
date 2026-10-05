@@ -2282,6 +2282,12 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(or (unit-type-count bombard-cannon >= 1) "
         "(unit-type-count-total mangonel-line >= 1)))"
     )
+    frontier_witness_ref = plan.push_contract.frontier_witness_ref
+    frontier_witness = (
+        profile.observation(frontier_witness_ref).expression
+        if frontier_witness_ref is not None
+        else None
+    )
 
     rules = [
         NativeControlRule(
@@ -2369,6 +2375,13 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression(cleared_witness, SourceLocation(1)),
                 parse_expression(military_ready, SourceLocation(1)),
+                *(
+                    (
+                        parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
+                    )
+                    if frontier_witness is not None
+                    else ()
+                ),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
@@ -2514,7 +2527,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         )
     )
 
-    frontier_witness_ref = plan.push_contract.frontier_witness_ref
     target_control = plan.target_control
     conversion_contract = plan.conversion_contract
     if target_control is not None or frontier_witness_ref is not None:
@@ -2552,7 +2564,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 ),
             )
         )
-        frontier_witness = profile.observation(frontier_witness_ref).expression
         rules.append(
             NativeControlRule(
                 "byzantine-endgame-frontier-witness-initialize",
