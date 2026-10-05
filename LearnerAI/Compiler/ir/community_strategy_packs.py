@@ -327,12 +327,14 @@ def _training_demand(
     age_guard: str,
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
+    release_symbol: str | None = None,
     invalidate_ref: str | None = None,
     additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
     witness_symbol = witness_symbol or action_symbol
+    release_symbol = release_symbol or witness_symbol
     train_target = action_symbol
     return _StrategicDemandSpec(
         identity=identity,
@@ -369,7 +371,7 @@ def _training_demand(
             ),
             action=f"(train {action_symbol})",
             witness=f"(unit-type-count {witness_symbol} >= {minimum})",
-            release=f"(unit-type-count {witness_symbol} >= {minimum})",
+            release=f"(unit-type-count {release_symbol} >= {minimum})",
         ),
         recovery=_CapabilityRecoveryContract(),
     )
@@ -389,12 +391,14 @@ def _endgame_training_demand(
     requirement_expressions: tuple[str, ...],
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
+    release_symbol: str | None = None,
 ) -> _StrategicDemandSpec:
     if len(reason_refs) != len(reason_labels):
         raise ValueError("endgame training reason refs/labels must have equal length")
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
     witness_symbol = witness_symbol or action_symbol
+    release_symbol = release_symbol or witness_symbol
     reasons = tuple(
         _persistent(label, reference)
         for reference, label in zip(reason_refs, reason_labels)
@@ -436,7 +440,7 @@ def _endgame_training_demand(
             requirements=requirements,
             action=f"(train {action_symbol})",
             witness=f"(unit-type-count {witness_symbol} >= {minimum})",
-            release=f"(unit-type-count {witness_symbol} >= {minimum})",
+            release=f"(unit-type-count {release_symbol} >= {minimum})",
         ),
         recovery=_CapabilityRecoveryContract(),
     )
@@ -1319,7 +1323,8 @@ def community_strategy_demands(
                 minimum=18,
                 age_guard="(current-age >= imperial-age)",
                 action_symbol="skirmisher-line",
-                witness_symbol="6",
+                witness_symbol="skirmisher-line",
+                release_symbol="6",
                 additional_requirements=("(unit-type-count 6 < 18)",),
             ),
             _training_demand(
@@ -1542,10 +1547,12 @@ def community_strategy_demands(
     )
 
     for identity, _alias, minimum, requirements, label in band_demands:
+        release_symbol = None
         if "elite-skirmisher" in identity:
             unit_line = "skirmisher-line"
             action_symbol = "skirmisher-line"
-            witness_symbol = "6"
+            witness_symbol = "skirmisher-line"
+            release_symbol = "6"
             exact_requirement = f"(unit-type-count 6 < {minimum})"
             reason_ref = "strategy-imperial-age"
         elif "halberdier" in identity:
@@ -1573,6 +1580,7 @@ def community_strategy_demands(
                 requirement_expressions=(*requirements, exact_requirement),
                 action_symbol=action_symbol,
                 witness_symbol=witness_symbol,
+                release_symbol=release_symbol or witness_symbol,
             )
         )
 
