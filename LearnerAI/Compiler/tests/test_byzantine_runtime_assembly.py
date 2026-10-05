@@ -27,8 +27,10 @@ def _write_json(path: Path, value: dict[str, object]) -> None:
 def _fixture() -> Path:
     root = Path(tempfile.mkdtemp())
     compiler = root / "dist/byzantine/Byzantine.compiler.per"
+    compiler.parent.mkdir(parents=True, exist_ok=True)
     compiler.write_text("(defrule compiler)\n", encoding="utf-8")
     overlay = root / "runtime/byzantine/Byzantine.runtime-overlay.per"
+    overlay.parent.mkdir(parents=True, exist_ok=True)
     overlay.write_text("(defrule overlay)\n", encoding="utf-8")
 
     compiler_sha = _sha(compiler.read_bytes())
