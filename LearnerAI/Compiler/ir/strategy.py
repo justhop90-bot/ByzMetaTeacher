@@ -1960,6 +1960,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             "byzantine-endgame-objective-admit",
             facts=(
                 expr("(current-age >= castle-age)"),
+                expr("(goal byzantine-endgame-push-state 1)"),
                 expr("(goal byzantine-army-attack-ready 1)"),
                 expr("(goal byzantine-siege-approach byzantine-siege-approach-normal)"),
                 expr(f"(goal {objective_state} 0)"),
