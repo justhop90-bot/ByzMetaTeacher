@@ -551,7 +551,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-imperial-ram-replacement",
-            "(and (current-age >= imperial-age) (unit-type-count battering-ram-line < 2))",
+            "(and (current-age >= imperial-age) (unit-type-count 1258 < 2))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
