@@ -165,10 +165,11 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         by_id = {item.identity: item for item in profile.demands}
 
         cataphract = by_id["imperial-cataphract-sustain"]
-        self.assertEqual(cataphract.target.minimum, 12)
+        self.assertEqual(cataphract.target.minimum, 30)
         self.assertEqual(
             tuple(item.observation_ref for item in cataphract.reason),
             (
+                "strategy-imperial-spend-food",
                 "strategy-imperial-spend-gold",
                 "strategy-imperial-cataphract-replacement",
             ),
@@ -179,13 +180,13 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         )
 
         ram = by_id["imperial-ram-sustain"]
-        self.assertEqual(ram.target.minimum, 4)
+        self.assertEqual(ram.target.minimum, 8)
         self.assertIn(
             "strategy-imperial-ram-replacement",
             [item.observation_ref for item in ram.reason],
         )
         self.assertIn(
-            "(unit-type-count-total battering-ram-line < 4)",
+            "(unit-type-count-total battering-ram-line < 8)",
             ram.execution.requirements,
         )
 
