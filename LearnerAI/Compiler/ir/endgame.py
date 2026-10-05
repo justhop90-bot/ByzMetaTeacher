@@ -191,6 +191,33 @@ class EndgamePushContract:
 
 
 @dataclass(frozen=True)
+class EndgameConversionContract:
+    identity: str
+    frontier_required: EndgameFrontierState
+    forward_production_buildings: tuple[str, ...]
+    resource_denial_native_ids: tuple[int, ...]
+    resource_denial_query_kind: EndgameTargetQueryKind = EndgameTargetQueryKind.OBJECT_CLASS
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.identity, str) or not self.identity.strip():
+            raise ValueError("endgame conversion identity must not be empty")
+        if not isinstance(self.frontier_required, EndgameFrontierState):
+            raise TypeError("endgame conversion frontier_required must be EndgameFrontierState")
+        if not self.forward_production_buildings:
+            raise ValueError("endgame conversion requires forward production buildings")
+        if any(not isinstance(item, str) or not item.strip() for item in self.forward_production_buildings):
+            raise ValueError("endgame conversion production buildings must be non-empty strings")
+        if len(self.forward_production_buildings) != len(set(self.forward_production_buildings)):
+            raise ValueError("endgame conversion production buildings must be unique")
+        if not self.resource_denial_native_ids:
+            raise ValueError("endgame conversion requires resource-denial native ids")
+        if any(not isinstance(item, int) or isinstance(item, bool) or not 0 <= item <= 32767 for item in self.resource_denial_native_ids):
+            raise ValueError("endgame conversion resource-denial native ids must be valid native ids")
+        if not isinstance(self.resource_denial_query_kind, EndgameTargetQueryKind):
+            raise TypeError("endgame conversion resource-denial query kind must be EndgameTargetQueryKind")
+
+
+@dataclass(frozen=True)
 class EndgamePolicyRule:
     identity: str
     mode: EndgameMode
@@ -230,6 +257,7 @@ class EndgamePlan:
     objective_priority: tuple[str, ...]
     push_contract: EndgamePushContract | None = None
     target_control: EndgameTargetControlContract | None = None
+    conversion_contract: EndgameConversionContract | None = None
     push_states: tuple[EndgamePushState, ...] = (
         EndgamePushState.FORMING,
         EndgamePushState.READY,
@@ -256,6 +284,8 @@ class EndgamePlan:
             self.push_contract, EndgamePushContract
         ):
             raise TypeError("endgame plan push_contract must be EndgamePushContract or None")
+        if self.conversion_contract is not None and not isinstance(self.conversion_contract, EndgameConversionContract):
+            raise TypeError("endgame plan conversion_contract must be EndgameConversionContract or None")
         if self.target_control is not None and not isinstance(
             self.target_control, EndgameTargetControlContract
         ):
