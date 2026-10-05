@@ -46,6 +46,25 @@ class SemanticSupportStateTests(unittest.TestCase):
             "unit-type-count",
         )
 
+    def test_players_military_population_is_contractually_mapped_as_observation(self):
+        registry = default_de_registry()
+        mapping_registry = default_engine_semantic_mapping_registry()
+
+        mapping = mapping_registry.for_command("players-military-population")
+        self.assertIsNotNone(mapping)
+        self.assertEqual(
+            mapping.identity,
+            "observation.threat.military-population",
+        )
+        self.assertEqual(
+            mapping.status,
+            EngineSemanticMappingStatus.CONTRACTED,
+        )
+        self.assertEqual(
+            registry.assess_support("players-military-population").state,
+            NativeSupportState.EXECUTABLE_SAFE,
+        )
+
     def test_default_registry_maps_every_semantic_adapter(self):
         registry = default_de_registry()
         mappings = [
