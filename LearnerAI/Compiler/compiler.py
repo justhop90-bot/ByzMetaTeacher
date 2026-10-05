@@ -58,6 +58,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.duc import analyze_duc
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
+    from Compiler.semantic.strategy_dependency import analyze_strategy_dependencies
     from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from Compiler.semantic.operational_domains import merge_operational_plan
@@ -121,6 +122,7 @@ else:
     from .semantic.duc import analyze_duc
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
+    from .semantic.strategy_dependency import analyze_strategy_dependencies
     from .semantic.native_control import validate_native_control_plan
     from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .semantic.operational_domains import merge_operational_plan
@@ -651,6 +653,7 @@ def compile_package_with_report(
     native_backend: Aoe2NativeBackend | None = None,
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
+    strategy_report: Path | None = None,
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
@@ -739,6 +742,19 @@ def compile_package_with_report(
             duc_report=duc_report,
             persistent_control_report=persistent_control_report,
         )
+        strategy_capability_graph = project_capability_graph(ir, registry)
+        strategy_capability_report = validate_capability_graph(
+            strategy_capability_graph,
+            registry,
+        )
+        strategy_dependency_report = analyze_strategy_dependencies(
+            ir,
+            strategy_capability_graph,
+            strategy_capability_report,
+            effective_rules,
+            persistent_state_report,
+            persistent_control_report,
+        )
         duc_errors = tuple(
             item
             for item in getattr(rule_report, "errors", ())
@@ -764,6 +780,9 @@ def compile_package_with_report(
             result,
             rule_report.diagnostics,
         )
+        strategy_dependency_report = strategy_dependency_report.with_artifact(artifact_result)
+        if strategy_report is not None:
+            strategy_dependency_report.write_json(strategy_report)
         staged.write_bytes(artifact_result.encode("utf-8"))
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
@@ -791,6 +810,7 @@ def compile_source_with_report(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
+    strategy_report: Path | None = None,
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
@@ -1088,6 +1108,11 @@ def main() -> int:
         help="optional deterministic JSON artifact containing resolved runtime bindings",
     )
     ap.add_argument(
+        "--strategy-report",
+        type=Path,
+        help="optional deterministic JSON Strategy Dependency / Deadlock report",
+    )
+    ap.add_argument(
         "--native-backend-root",
         type=Path,
         default=_DEFAULT_NATIVE_BACKEND_ROOT,
@@ -1131,6 +1156,7 @@ def main() -> int:
             native_backend=native_backend,
             source_unit=str(args.source.resolve()),
             binding_manifest=args.binding_manifest,
+            strategy_report=args.strategy_report,
         )
     except (OSError, NativeBackendError, ValueError) as exc:
         ap.error(str(exc))

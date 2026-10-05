@@ -112,6 +112,16 @@ from .rule_execution import (
     analyze_rule_reachability,
 )
 
+from .strategy_dependency import (
+    StrategyDependencyCode,
+    StrategyDependencyEdge,
+    StrategyDependencyFinding,
+    StrategyDependencyNode,
+    StrategyDependencyProof,
+    StrategyDependencyReport,
+    analyze_strategy_dependencies,
+)
+
 from .persistent_control import (
     PersistentControlDiagnostic,
     PersistentControlDiagnosticCode,
