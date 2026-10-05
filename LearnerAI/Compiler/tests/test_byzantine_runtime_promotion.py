@@ -9,7 +9,7 @@ from pathlib import Path
 
 from tools.assemble_byzantine_runtime import assemble_byzantine_runtime
 from tools.promote_byzantine_runtime import promote_byzantine_runtime
-from .test_artifact_lineage import ByzantineArtifactLineageTests
+from LearnerAI.Compiler.tests.test_artifact_lineage import ByzantineArtifactLineageTests
 
 
 class ByzantineRuntimePromotionTests(unittest.TestCase):
