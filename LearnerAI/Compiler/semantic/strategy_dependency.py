@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Iterable
@@ -390,6 +390,7 @@ class StrategyDependencyReport:
     findings: tuple[StrategyDependencyFinding, ...]
     runtime_open_dependencies: int = 0
     artifact_sha256: str | None = None
+    feature_traces: tuple[FeatureTrace, ...] = ()
 
     @property
     def errors(self):
@@ -399,19 +400,55 @@ class StrategyDependencyReport:
     def warnings(self):
         return tuple(x for x in self.findings if x.severity is DiagnosticSeverity.WARNING)
 
+    @property
+    def first_broken_edge_diagnostics(self) -> tuple[FeatureTraceDiagnostic, ...]:
+        diagnostics = tuple(
+            diagnostic
+            for trace in self.feature_traces
+            if (diagnostic := trace.diagnostic()) is not None
+        )
+        return tuple(sorted(
+            diagnostics,
+            key=lambda diagnostic: (
+                _FEATURE_STAGE_INDEX[diagnostic.target_stage],
+                diagnostic.feature_id,
+                diagnostic.code,
+                diagnostic.source_stage.value,
+            ),
+        ))
+
+    def feature_trace(self, feature_id: str) -> FeatureTrace | None:
+        for trace in self.feature_traces:
+            if trace.feature_id == feature_id:
+                return trace
+        return None
+
+    def with_feature_traces(
+        self,
+        feature_traces: Iterable[FeatureTrace],
+    ) -> "StrategyDependencyReport":
+        traces = tuple(feature_traces)
+        feature_ids = tuple(trace.feature_id for trace in traces)
+        if len(feature_ids) != len(set(feature_ids)):
+            raise ValueError("feature_traces must have unique feature_id values")
+        ordered = tuple(sorted(traces, key=lambda trace: trace.feature_id))
+        return replace(self, feature_traces=ordered)
+
     def with_artifact(self, artifact: str | bytes) -> "StrategyDependencyReport":
         payload = artifact.encode() if isinstance(artifact, str) else artifact
-        return StrategyDependencyReport(
-            self.schema_version, self.demands, self.capabilities, self.providers,
-            self.rules, self.persistent_states, self.nodes, self.edges,
-            self.findings, self.runtime_open_dependencies,
-            hashlib.sha256(payload).hexdigest(),
+        return replace(
+            self,
+            artifact_sha256=hashlib.sha256(payload).hexdigest(),
         )
 
     def to_json(self) -> str:
         return json.dumps({
             "schema_version": self.schema_version,
             "artifact_sha256": self.artifact_sha256,
+            "feature_traces": [asdict(x) for x in self.feature_traces],
+            "first_broken_edge_diagnostics": [
+                asdict(x) for x in self.first_broken_edge_diagnostics
+            ],
             "summary": {
                 "demands": self.demands,
                 "capabilities": self.capabilities,
