@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from .counter_strategy import CounterPackage
     from .native_attack import NativeAttackLifecyclePlan
     from .native_duc import NativeDucPlan
+    from .recurrent import TimerRequest
+    from .strategic_number import StrategicNumberOrigin
     from .water import WaterExecutionPlan
     from .map_profile import MapProfile
     from .opening import OpeningSelectorPlan
@@ -1140,9 +1142,10 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from ..ast import SourceLocation
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .strategic_number import StrategicNumberOrigin
 
     states: dict[str, NativeControlState] = {}
     native_state_names: dict[int, str] = {}
@@ -1609,6 +1612,8 @@ def _strategy_control_plan(profile: StrategyProfile):
         from .camp_control import lower_byzantine_camp_controller
         camp_plan = lower_byzantine_camp_controller(profile.camp_controller, profile)
 
+    relic_plan = _byzantine_relic_control_plan(profile.profile_id)
+
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
         for state in (assertion_plan.states if assertion_plan is not None else ())
@@ -1638,6 +1643,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         opening_plan,
         economy_plan,
         camp_plan,
+        relic_plan,
     )
 
 
@@ -2305,6 +2311,160 @@ def build_land_castle_strategy(
     )
 
 
+
+
+def _byzantine_relic_control_plan(profile_id: str):
+    """Lower relic acquisition state into the shared persistent-control plane."""
+    if profile_id != "byzantine-stock-v1":
+        return None
+
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .recurrent import TimerRequest
+    from .strategic_number import StrategicNumberOrigin
+
+    owner = SemanticId(profile_id, "byzantine-relic-control")
+    state_name = "byzantine-relic-control-state"
+    timer_name = "byzantine-relic-control-timer"
+    state = NativeControlState(
+        state_name,
+        GoalSlotRequest(
+            StorageRequestId(owner, "relic-control-state"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    timer = NativeControlState(
+        timer_name,
+        TimerRequest(
+            StorageRequestId(owner, f"timer:{timer_name}"),
+            initialization_policy="DISABLE_BEFORE_FIRST_USE",
+            stability_key=f"{profile_id}:byzantine-relic-control-timer",
+        ),
+    )
+    focus_player = NativeControlState(
+        "sn-focus-player-number",
+        StrategicNumberRequest(
+            StorageRequestId(owner, "sn-focus-player-number"),
+            why_not_goal=(
+                "Native DUC focus-player selector used to make the remote relic "
+                "search operate against Gaia. SN 251 is DE-documented."
+            ),
+            stability_key=f"{profile_id}:strategic-number:251",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=251,
+        ),
+    )
+
+    def expr(source: str):
+        return parse_expression(source, SourceLocation(1))
+
+    acquire_guard = (
+        expr("(current-age >= castle-age)"),
+        expr(f"(goal {state_name} 0)"),
+        expr("(building-type-count-total 104 >= 1)"),
+        expr("(unit-type-count-total 125 >= 1)"),
+        expr("(unit-type-count-total 286 < 1)"),
+        expr(
+            f"(or "
+            f"(up-timer-status {timer_name} c:== timer-disabled) "
+            f"(up-timer-status {timer_name} c:== timer-triggered))"
+        ),
+    )
+
+    rules = (
+        NativeControlRule(
+            "byzantine-relic-control-initialize",
+            facts=(expr(f"(goal {state_name} -1)"),),
+            actions=(
+                expr(f"(set-goal {state_name} 0)"),
+                expr(f"(disable-timer {timer_name})"),
+                expr("(set-strategic-number sn-focus-player-number 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-focus-gaia",
+            facts=(
+                expr(f"(goal {state_name} 0)"),
+            ),
+            actions=(
+                expr("(set-strategic-number sn-focus-player-number 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-mark-dispatch",
+            facts=acquire_guard,
+            actions=(
+                expr(f"(set-goal {state_name} 1)"),
+                expr(f"(enable-timer {timer_name} 45)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-pickup-witness",
+            facts=(
+                expr(f"(goal {state_name} 1)"),
+                expr("(unit-type-count-total 286 >= 1)"),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} 2)"),
+                expr(f"(disable-timer {timer_name})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-resume-carrier",
+            facts=(
+                expr(f"(goal {state_name} 0)"),
+                expr("(unit-type-count-total 286 >= 1)"),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} 2)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-start-return",
+            facts=(
+                expr(f"(goal {state_name} 2)"),
+                expr("(unit-type-count-total 286 >= 1)"),
+                expr("(building-type-count-total 104 >= 1)"),
+                expr(f"(up-timer-status {timer_name} c:== timer-disabled)"),
+            ),
+            actions=(
+                expr(f"(enable-timer {timer_name} 45)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-carrier-loss-recovery",
+            facts=(
+                expr(f"(goal {state_name} 2)"),
+                expr("(unit-type-count-total 286 < 1)"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer_name})"),
+                expr(f"(set-goal {state_name} 0)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-relic-control-expiry",
+            facts=(
+                expr(
+                    f"(or "
+                    f"(goal {state_name} 1) "
+                    f"(goal {state_name} 2))"
+                ),
+                expr(f"(timer-triggered {timer_name})"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer_name})"),
+                expr(f"(set-goal {state_name} 0)"),
+            ),
+        ),
+    )
+    return NativeControlPlan(
+        states=(state, timer, focus_player),
+        rules=rules,
+    )
+
 def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
@@ -2316,7 +2476,12 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest
     from .model import GoalRole, SemanticId, StorageRequestId
-    from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+    from .native_duc import (
+        NativeDucLifecycleStage,
+        NativeDucOutputRequest,
+        NativeDucPlan,
+        NativeDucRule,
+    )
 
     target_specs = (
         (
@@ -2382,8 +2547,107 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             )
         )
 
+    if profile_id != "byzantine-stock-v1":
+        return NativeDucPlan(
+            rules=tuple(rules),
+            output_requests=tuple(outputs),
+        )
+
+    relic_base = len(rules)
+    from .native_duc import NativeDucLifecycleStage
+
+    lifecycle_rules = (
+        NativeDucRule(
+            identity="byzantine-relic-control-acquire",
+            order=relic_base + 0,
+            facts=(
+                parse_expression("(current-age >= castle-age)", SourceLocation(1)),
+                parse_expression("(goal byzantine-relic-control-state 0)", SourceLocation(1)),
+                parse_expression("(building-type-count-total 104 >= 1)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total 125 >= 1)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total 286 < 1)", SourceLocation(1)),
+                parse_expression("(up-gaia-type-count-total c: 285 > 0)", SourceLocation(1)),
+                parse_expression(
+                    "(up-timer-status byzantine-relic-control-timer c:== timer-disabled)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression("(up-find-remote c: 285 c: 1)", SourceLocation(1)),
+                parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
+                parse_expression("(up-find-local c: 125 c: 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-target-objects 0 0 -1 stance-defensive)",
+                    SourceLocation(1),
+                ),
+            ),
+            lifecycle=(
+                NativeDucLifecycleStage.ADMISSIBILITY,
+                NativeDucLifecycleStage.TARGET,
+                NativeDucLifecycleStage.DISPATCH,
+            ),
+        ),
+        NativeDucRule(
+            identity="byzantine-relic-control-pickup-witness",
+            order=relic_base + 1,
+            facts=(parse_expression("(goal byzantine-relic-control-state 1)", SourceLocation(1)),),
+            actions=(
+                parse_expression("(up-find-local c: 286 c: 1)", SourceLocation(1)),
+            ),
+            lifecycle=(NativeDucLifecycleStage.PICKUP_WITNESS,),
+        ),
+        NativeDucRule(
+            identity="byzantine-relic-control-return",
+            order=relic_base + 2,
+            facts=(
+                parse_expression("(goal byzantine-relic-control-state 2)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total 286 >= 1)", SourceLocation(1)),
+                parse_expression("(building-type-count-total 104 >= 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-timer-status byzantine-relic-control-timer c:== timer-disabled)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression("(up-find-local c: 104 c: 1)", SourceLocation(1)),
+                parse_expression("(up-set-target-object search-local c: 0)", SourceLocation(1)),
+                parse_expression("(up-find-local c: 286 c: 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-target-objects 0 0 -1 stance-defensive)",
+                    SourceLocation(1),
+                ),
+            ),
+            lifecycle=(NativeDucLifecycleStage.RETURN,),
+        ),
+        NativeDucRule(
+            identity="byzantine-relic-control-release-witness",
+            order=relic_base + 3,
+            facts=(
+                parse_expression("(goal byzantine-relic-control-state 2)", SourceLocation(1)),
+                parse_expression("(up-gaia-type-count-total c: 285 == 0)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+            ),
+            lifecycle=(NativeDucLifecycleStage.RELEASE_WITNESS,),
+        ),
+        NativeDucRule(
+            identity="byzantine-relic-control-recovery",
+            order=relic_base + 4,
+            facts=(
+                parse_expression("(goal byzantine-relic-control-state 2)", SourceLocation(1)),
+                parse_expression("(up-gaia-type-count-total c: 285 >= 1)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+            ),
+            lifecycle=(NativeDucLifecycleStage.RECOVERY,),
+        ),
+    )
     return NativeDucPlan(
-        rules=tuple(rules),
+        rules=tuple((*rules, *lifecycle_rules)),
         output_requests=tuple(outputs),
     )
 

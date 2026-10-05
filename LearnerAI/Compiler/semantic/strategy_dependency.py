@@ -10,6 +10,7 @@ from typing import Iterable
 
 from ..diagnostics import DiagnosticSeverity
 from ..ir.capability import CapabilityGraph, CapabilityProvider
+from ..ir.native_duc import NativeDucLifecycleStage
 from .capability_validation import CapabilityDiagnosticCode, ValidationReport
 from .persistent_state import PersistentStateDiagnosticCode, PersistentStateReport
 from .rule_execution import RuleExecutionReport
@@ -36,6 +37,11 @@ class StrategyDependencyCode(str, Enum):
     OPEN_STATE_LOOP = "SDDR-023"
     ARBITRATION_BLOCKED = "SDDR-031"
     UNKNOWN_RUNTIME_BLOCK = "SDDR-040"
+    RELIC_LIFECYCLE_CONNECTED = "SDDR-050"
+    RELIC_PICKUP_WITNESS_MISSING = "SDDR-051"
+    RELIC_RETURN_PATH_MISSING = "SDDR-052"
+    RELIC_RECOVERY_PATH_MISSING = "SDDR-053"
+    RELIC_RELEASE_WITNESS_OPEN = "SDDR-054"
 
 
 @dataclass(frozen=True)
@@ -212,6 +218,7 @@ def analyze_strategy_dependencies(
     rule_report: RuleExecutionReport,
     persistent_state_report: PersistentStateReport,
     persistent_control_report=None,
+    duc_plan=None,
 ) -> StrategyDependencyReport:
     """Correlate existing compiler reports; never reparses or invents semantics."""
     if not isinstance(capability_graph, CapabilityGraph):
@@ -235,6 +242,18 @@ def analyze_strategy_dependencies(
             rule_order,
         ))
         return ident
+
+    def add_named_node(node_id, kind, label, rule_order=None):
+        nodes.setdefault(
+            node_id,
+            StrategyDependencyNode(
+                node_id,
+                kind,
+                label,
+                rule_order=rule_order,
+            ),
+        )
+        return node_id
 
     for demand in capability_graph.demands:
         did = add_node(demand.identity, "STRATEGIC_DEMAND", demand.identity.local_name)
@@ -406,6 +425,104 @@ def analyze_strategy_dependencies(
                     root=root, blocking=pid,
                     chain=(root, _node_id(demand.target), pid),
                     codes=pcodes, locations=(_loc(provider.location),),
+                ))
+
+    # Correlate compiler-owned relic lifecycle metadata carried by the existing DUC plan.
+    if duc_plan is not None:
+        relic_rules = tuple(
+            rule for rule in duc_plan.rules
+            if (
+                "relic" in rule.identity
+                or any(
+                    "relic" in str(expression.source).lower()
+                    or "monk-with-relic" in str(expression.source).lower()
+                    for expression in (*rule.facts, *rule.actions)
+                )
+            )
+            and getattr(rule, "lifecycle", ())
+        )
+        if relic_rules:
+            relic_root = "strategy:byzantine-relic-acquisition"
+            relic_capability = "capability:relic-acquisition"
+            add_named_node(relic_root, "STRATEGIC_DEMAND", "byzantine-relic-acquisition")
+            add_named_node(relic_capability, "CAPABILITY", "relic-acquisition")
+            edge_set.add((relic_root, relic_capability, "REQUIRES"))
+            stage_rules: dict[NativeDucLifecycleStage, list] = {}
+            for rule in sorted(relic_rules, key=lambda item: (item.order, item.identity)):
+                rule_id = add_named_node(
+                    f"duc:{rule.identity}",
+                    "DUC_RULE",
+                    rule.identity,
+                    rule_order=rule.order,
+                )
+                edge_set.add((relic_capability, rule_id, "PROVIDED_BY"))
+                for stage in rule.lifecycle:
+                    stage_rules.setdefault(stage, []).append(rule)
+
+            required = (
+                NativeDucLifecycleStage.ADMISSIBILITY,
+                NativeDucLifecycleStage.TARGET,
+                NativeDucLifecycleStage.DISPATCH,
+                NativeDucLifecycleStage.PICKUP_WITNESS,
+                NativeDucLifecycleStage.RETURN,
+                NativeDucLifecycleStage.RELEASE_WITNESS,
+                NativeDucLifecycleStage.RECOVERY,
+            )
+            missing = tuple(stage for stage in required if stage not in stage_rules)
+            if not missing:
+                findings.append(_finding(
+                    StrategyDependencyCode.RELIC_LIFECYCLE_CONNECTED,
+                    DiagnosticSeverity.INFO,
+                    StrategyDependencyProof.PROVEN,
+                    "Byzantine relic acquisition has compiler-owned admissibility, Gaia targeting, Monk dispatch, pickup witness, return, release witness, and recovery",
+                    root=relic_root,
+                    blocking=relic_capability,
+                    chain=(relic_root, relic_capability, *(f"duc:{rule.identity}" for rule in relic_rules)),
+                    rules=(rule.order for rule in relic_rules),
+                ))
+            if NativeDucLifecycleStage.PICKUP_WITNESS not in stage_rules:
+                findings.append(_finding(
+                    StrategyDependencyCode.RELIC_PICKUP_WITNESS_MISSING,
+                    DiagnosticSeverity.ERROR,
+                    StrategyDependencyProof.PROVEN,
+                    "relic acquisition has no compiler-owned monk-with-relic pickup witness",
+                    root=relic_root,
+                    blocking=relic_capability,
+                    chain=(relic_root, relic_capability),
+                ))
+            if NativeDucLifecycleStage.RETURN not in stage_rules:
+                findings.append(_finding(
+                    StrategyDependencyCode.RELIC_RETURN_PATH_MISSING,
+                    DiagnosticSeverity.ERROR,
+                    StrategyDependencyProof.PROVEN,
+                    "relic acquisition has no compiler-owned return path for a Monk carrying a relic",
+                    root=relic_root,
+                    blocking=relic_capability,
+                    chain=(relic_root, relic_capability),
+                ))
+            if NativeDucLifecycleStage.RECOVERY not in stage_rules:
+                findings.append(_finding(
+                    StrategyDependencyCode.RELIC_RECOVERY_PATH_MISSING,
+                    DiagnosticSeverity.ERROR,
+                    StrategyDependencyProof.PROVEN,
+                    "relic acquisition has no compiler-owned recovery/reacquisition path",
+                    root=relic_root,
+                    blocking=relic_capability,
+                    chain=(relic_root, relic_capability),
+                ))
+            if NativeDucLifecycleStage.RELEASE_WITNESS in stage_rules:
+                release_rule = stage_rules[NativeDucLifecycleStage.RELEASE_WITNESS][0]
+                release_id = f"duc:{release_rule.identity}"
+                edge_set.add((release_id, relic_capability, "RELEASES"))
+                findings.append(_finding(
+                    StrategyDependencyCode.RELIC_RELEASE_WITNESS_OPEN,
+                    DiagnosticSeverity.INFO,
+                    StrategyDependencyProof.OPEN,
+                    "relic return/drop release is represented by a world-state observation, but native monastery deposit cannot be statically proven; this witness remains OPEN",
+                    root=relic_root,
+                    blocking=release_id,
+                    chain=(relic_root, relic_capability, release_id),
+                    rules=(release_rule.order,),
                 ))
 
     for boundary in persistent_state_report.boundaries:
