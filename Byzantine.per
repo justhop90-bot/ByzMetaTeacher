@@ -9508,7 +9508,7 @@
     (goal byzantine-army-reinforcement 0)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
-    (unit-type-count-total camel-rider-line >= bt-castle-timing-cataphract-floor)
+    (unit-type-count-total camel-line >= bt-castle-timing-cataphract-floor)
     (unit-type-count-total 358 >= bt-castle-timing-skirmisher-floor)
     (unit-type-count-total battering-ram-line >= bt-castle-timing-siege-floor)
 =>
@@ -9862,7 +9862,7 @@
     (not (up-pending-placement c: 101))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
-    (or (or (unit-type-count-total cataphract-line >= 6) (unit-type-count-total knight-line >= 6)) (unit-type-count-total camel-rider-line >= 6))
+    (or (or (unit-type-count-total cataphract-line >= 6) (unit-type-count-total knight-line >= 6)) (unit-type-count-total camel-line >= 6))
     (building-type-count-total stable < 2)
     (can-build stable)
 =>
@@ -9943,7 +9943,7 @@
     (not (up-pending-placement c: 101))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
-    (or (or (unit-type-count-total cataphract-line >= 12) (unit-type-count-total knight-line >= 12)) (unit-type-count-total camel-rider-line >= 12))
+    (or (or (unit-type-count-total cataphract-line >= 12) (unit-type-count-total knight-line >= 12)) (unit-type-count-total camel-line >= 12))
     (building-type-count-total stable >= 2)
     (building-type-count-total stable < 3)
     (can-build stable)
@@ -10025,7 +10025,7 @@
     (not (up-pending-placement c: 101))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
-    (or (or (unit-type-count-total cataphract-line >= 18) (unit-type-count-total knight-line >= 18)) (unit-type-count-total camel-rider-line >= 18))
+    (or (or (unit-type-count-total cataphract-line >= 18) (unit-type-count-total knight-line >= 18)) (unit-type-count-total camel-line >= 18))
     (building-type-count-total stable >= 3)
     (building-type-count-total stable < 4)
     (can-build stable)
@@ -13973,7 +13973,7 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
     (can-train-with-escrow 329)
-    (unit-type-count-total camel-rider-line < 3)
+    (unit-type-count-total camel-line < 3)
 =>
     (train 329)
     (set-goal action-claim-train-arbitration 1)
@@ -14153,7 +14153,7 @@
     (or
         (goal counter-package-mounted_pressure_castle 1)
         (or
-            (players-unit-type-count any-enemy camel-rider-line >= 3)
+            (players-unit-type-count any-enemy camel-line >= 3)
             (players-unit-type-count any-enemy scout-cavalry-line >= 6)
         )
     )
@@ -24778,7 +24778,7 @@
 (defrule
     (goal demand-castle-camel-transition-floor 0)
     (not (unit-type-count 329 >= 2))
-    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-rider-line >= 4)))
+    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-line >= 4)))
     (not (current-age >= imperial-age))
 =>
     (set-goal demand-castle-camel-transition-floor 1)
@@ -24857,8 +24857,8 @@
 (defrule
     (goal demand-imperial-halberdier-floor 0)
     (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
-    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-rider-line >= 4)))
-    (not (and (players-unit-type-count any-enemy knight < 4) (and (players-unit-type-count any-enemy scout-cavalry-line < 6) (players-unit-type-count any-enemy camel-rider-line < 4))))
+    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-line >= 4)))
+    (not (and (players-unit-type-count any-enemy knight < 4) (and (players-unit-type-count any-enemy scout-cavalry-line < 6) (players-unit-type-count any-enemy camel-line < 4))))
 =>
     (set-goal demand-imperial-halberdier-floor 1)
 )
@@ -24951,8 +24951,8 @@
 (defrule
     (goal demand-imperial-heavy-camel-floor 0)
     (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
-    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-rider-line >= 4)))
-    (not (and (players-unit-type-count any-enemy knight < 4) (and (players-unit-type-count any-enemy scout-cavalry-line < 6) (players-unit-type-count any-enemy camel-rider-line < 4))))
+    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-line >= 4)))
+    (not (and (players-unit-type-count any-enemy knight < 4) (and (players-unit-type-count any-enemy scout-cavalry-line < 6) (players-unit-type-count any-enemy camel-line < 4))))
 =>
     (set-goal demand-imperial-heavy-camel-floor 1)
 )
@@ -25008,7 +25008,7 @@
             (or
                 (players-unit-type-count any-enemy scout-cavalry-line >= 6)
                 (or
-                    (players-unit-type-count any-enemy camel-rider-line >= 4)
+                    (players-unit-type-count any-enemy camel-line >= 4)
                     (unit-type-count 330 >= 1)
                 )
             )
@@ -27824,7 +27824,7 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (up-compare-goal byzantine-imperial-band-state == 1)
-    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-rider-line >= 8))))
+    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-line >= 8))))
     (unit-type-count 359 < 24)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 24)
@@ -27897,8 +27897,8 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (up-compare-goal byzantine-imperial-band-state == 1)
-    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-rider-line >= 8)))
-    (not (or (players-unit-type-count any-enemy knight-line >= 12) (or (players-unit-type-count any-enemy scout-cavalry-line >= 12) (players-unit-type-count any-enemy camel-rider-line >= 12))))
+    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-line >= 8)))
+    (not (or (players-unit-type-count any-enemy knight-line >= 12) (or (players-unit-type-count any-enemy scout-cavalry-line >= 12) (players-unit-type-count any-enemy camel-line >= 12))))
     (unit-type-count 359 < 30)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 30)
@@ -27971,7 +27971,7 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (up-compare-goal byzantine-imperial-band-state == 1)
-    (or (players-unit-type-count any-enemy knight-line >= 12) (or (players-unit-type-count any-enemy scout-cavalry-line >= 12) (players-unit-type-count any-enemy camel-rider-line >= 12)))
+    (or (players-unit-type-count any-enemy knight-line >= 12) (or (players-unit-type-count any-enemy scout-cavalry-line >= 12) (players-unit-type-count any-enemy camel-line >= 12)))
     (unit-type-count 359 < 36)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 36)
@@ -28264,7 +28264,7 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (up-compare-goal byzantine-imperial-band-state == 1)
-    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (or (players-unit-type-count any-enemy camel-rider-line >= 8) (players-unit-type-count any-enemy mangonel-line >= 2)))))
+    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (or (players-unit-type-count any-enemy camel-line >= 8) (players-unit-type-count any-enemy mangonel-line >= 2)))))
     (unit-type-count hussar < 16)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 16)
@@ -28337,7 +28337,7 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (up-compare-goal byzantine-imperial-band-state == 1)
-    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (or (players-unit-type-count any-enemy camel-rider-line >= 8) (players-unit-type-count any-enemy mangonel-line >= 2))))
+    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (or (players-unit-type-count any-enemy camel-line >= 8) (players-unit-type-count any-enemy mangonel-line >= 2))))
     (unit-type-count hussar < 20)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 20)
