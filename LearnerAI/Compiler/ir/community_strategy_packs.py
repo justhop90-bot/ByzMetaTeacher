@@ -1744,6 +1744,7 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
             minimum_group_size=6,
             maximum_group_size=40,
             live_witness_ref="strategy-endgame-attack-package-live",
+            cleared_witness_ref="strategy-endgame-attack-package-cleared",
             frontier=(
                 _EndgameFrontierState.SIEGE,
                 _EndgameFrontierState.DEFENSE,
