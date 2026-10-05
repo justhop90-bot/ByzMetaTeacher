@@ -278,12 +278,67 @@ class EndgameContractTests(unittest.TestCase):
             "(attack-soldier-count <= 0)",
             tuple(fact.source for fact in admit.facts),
         )
+        admit_facts = tuple(fact.source for fact in admit.facts)
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            admit_facts,
+        )
         self.assertTrue(
             all(
                 "byzantine-offensive-objective-" not in fact.source
+                or fact.source == "(goal byzantine-offensive-objective-claim 0)"
                 for fact in admit.facts
             )
         )
+
+        release = rules["byzantine-endgame-push-release"]
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            tuple(fact.source for fact in release.facts),
+        )
+        recovery_release = rules["byzantine-endgame-push-recovery-release"]
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            tuple(fact.source for fact in recovery_release.facts),
+        )
+
+        configured_push = replace(
+            plan.push_contract,
+            frontier_witness_ref="strategy-enemy-pressure",
+        )
+        configured_plan = replace(
+            plan,
+            push_contract=configured_push,
+        )
+        configured_profile = replace(
+            profile,
+            endgame_plan=configured_plan,
+        )
+        configured_compilation = lower_strategy_profile(
+            configured_profile,
+            self.effective,
+        )
+        configured_rules = {
+            rule.identity: rule
+            for rule in configured_compilation.control_plan.rules
+        }
+        advance_release = configured_rules["byzantine-endgame-frontier-advance-release"]
+        self.assertEqual(
+            tuple(fact.source for fact in advance_release.facts),
+            (
+                "(goal byzantine-endgame-push-state 4)",
+                "(goal byzantine-offensive-objective-claim 0)",
+            ),
+        )
+        for identity in (
+            "byzantine-endgame-frontier-commit-defense",
+            "byzantine-endgame-frontier-commit-production",
+            "byzantine-endgame-frontier-commit-town-center",
+        ):
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 0)",
+                tuple(fact.source for fact in configured_rules[identity].facts),
+            )
 
     def test_endgame_conversion_admission_uses_strategic_demand_identity(self):
         profile = build_byzantine_stock_strategy(self.effective)
