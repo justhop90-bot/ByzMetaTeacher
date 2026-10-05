@@ -328,6 +328,7 @@ def _training_demand(
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
     invalidate_ref: str | None = None,
+    additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
@@ -362,6 +363,7 @@ def _training_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
+                *additional_requirements,
                 f"(can-train-with-escrow {train_target})",
                 f"(unit-type-count-total {train_target} < {minimum})",
             ),
@@ -1317,6 +1319,7 @@ def community_strategy_demands(
                 age_guard="(current-age >= imperial-age)",
                 action_symbol="skirmisher-line",
                 witness_symbol="6",
+                additional_requirements=("(unit-type-count 6 < 18)",),
             ),
             _training_demand(
                 effective=effective,
@@ -1431,6 +1434,146 @@ def community_strategy_demands(
             ),
         )
     )
+
+    # Band-specific Imperial scaling sits above the standing floor.
+    # Each line uses mutually exclusive target tiers so one production line has
+    # exactly one active upper target at a time.
+    imperial_band_open = "(goal byzantine-imperial-band-state 1)"
+    imperial_band_fortified = "(goal byzantine-imperial-band-state 2)"
+    imperial_band_trash = "(goal byzantine-imperial-band-state 3)"
+    enemy_mounted_8 = (
+        "(or (players-unit-type-count any-enemy knight-line >= 8) "
+        "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
+        "(players-unit-type-count any-enemy camel-rider-line >= 8))"
+    )
+    enemy_mounted_12 = (
+        "(or (players-unit-type-count any-enemy knight-line >= 12) "
+        "(or (players-unit-type-count any-enemy scout-cavalry-line >= 12) "
+        "(players-unit-type-count any-enemy camel-rider-line >= 12))"
+    )
+    enemy_ranged_8 = (
+        "(or (players-unit-type-count any-enemy archer-line >= 8) "
+        "(players-unit-type-count any-enemy crossbow-line >= 8))"
+    )
+    enemy_ranged_12 = (
+        "(or (players-unit-type-count any-enemy archer-line >= 12) "
+        "(players-unit-type-count any-enemy crossbow-line >= 12))"
+    )
+    enemy_mobile_or_siege = (
+        "(or "
+        "(players-unit-type-count any-enemy knight-line >= 8) "
+        "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
+        "(or (players-unit-type-count any-enemy camel-rider-line >= 8) "
+        "(players-unit-type-count any-enemy mangonel-line >= 2)))"
+    )
+
+    band_demands = (
+        ("imperial-open-halberdier-standard", "imperial-open-halberdier-standard", 24, (
+            imperial_band_open,
+            "(not " + enemy_mounted_8 + ")",
+        ), "Maintain the open-field Halberdier screen."),
+        ("imperial-open-halberdier-pressure", "imperial-open-halberdier-pressure", 30, (
+            imperial_band_open,
+            enemy_mounted_8,
+            "(not " + enemy_mounted_12 + ")",
+        ), "Scale Halberdiers against sustained mounted pressure."),
+        ("imperial-open-halberdier-severe", "imperial-open-halberdier-severe", 36, (
+            imperial_band_open,
+            enemy_mounted_12,
+        ), "Scale Halberdiers against severe mounted pressure."),
+        ("imperial-open-elite-skirmisher-standard", "imperial-open-elite-skirmisher-standard", 24, (
+            imperial_band_open,
+            "(not " + enemy_ranged_8 + ")",
+        ), "Maintain the open-field Elite Skirmisher screen."),
+        ("imperial-open-elite-skirmisher-pressure", "imperial-open-elite-skirmisher-pressure", 30, (
+            imperial_band_open,
+            enemy_ranged_8,
+            "(not " + enemy_ranged_12 + ")",
+        ), "Scale Elite Skirmishers against sustained ranged pressure."),
+        ("imperial-open-elite-skirmisher-severe", "imperial-open-elite-skirmisher-severe", 36, (
+            imperial_band_open,
+            enemy_ranged_12,
+        ), "Scale Elite Skirmishers against severe ranged pressure."),
+        ("imperial-open-hussar-standard", "imperial-open-hussar-standard", 16, (
+            imperial_band_open,
+            "(not " + enemy_mobile_or_siege + ")",
+        ), "Maintain Open Field Hussar mobility."),
+        ("imperial-open-hussar-mobile", "imperial-open-hussar-mobile", 20, (
+            imperial_band_open,
+            enemy_mobile_or_siege,
+        ), "Increase Hussars for mobility, raid, and siege interception."),
+        ("imperial-fortified-halberdier", "imperial-fortified-halberdier", 24, (
+            imperial_band_fortified,
+        ), "Protect a fortified siege push with a Halberdier screen."),
+        ("imperial-fortified-elite-skirmisher", "imperial-fortified-elite-skirmisher", 20, (
+            imperial_band_fortified,
+        ), "Protect a fortified siege push with ranged trash support."),
+        ("imperial-fortified-hussar", "imperial-fortified-hussar", 10, (
+            imperial_band_fortified,
+        ), "Retain a small mobile Hussar reserve during fortified pushes."),
+        ("imperial-trash-halberdier-standard", "imperial-trash-halberdier-standard", 30, (
+            imperial_band_trash,
+            "(not (and (food-amount >= 3000) (wood-amount >= 2500)))",
+        ), "Exploit Byzantine Halberdier economics in a gold-starved war."),
+        ("imperial-trash-halberdier-high", "imperial-trash-halberdier-high", 36, (
+            imperial_band_trash,
+            "(food-amount >= 3000)",
+            "(wood-amount >= 2500)",
+        ), "Exploit surplus food/wood to saturate the Halberdier screen."),
+        ("imperial-trash-elite-skirmisher-standard", "imperial-trash-elite-skirmisher-standard", 30, (
+            imperial_band_trash,
+            "(not (and (food-amount >= 3000) (wood-amount >= 2500)))",
+        ), "Exploit Byzantine Elite Skirmisher economics in a gold-starved war."),
+        ("imperial-trash-elite-skirmisher-high", "imperial-trash-elite-skirmisher-high", 36, (
+            imperial_band_trash,
+            "(food-amount >= 3000)",
+            "(wood-amount >= 2500)",
+        ), "Exploit surplus food/wood to saturate the Elite Skirmisher screen."),
+        ("imperial-trash-hussar-standard", "imperial-trash-hussar-standard", 18, (
+            imperial_band_trash,
+            "(not (and (food-amount >= 3000) (wood-amount >= 2500)))",
+        ), "Use Hussars for mobility while gold is scarce."),
+        ("imperial-trash-hussar-high", "imperial-trash-hussar-high", 24, (
+            imperial_band_trash,
+            "(food-amount >= 3000)",
+            "(wood-amount >= 2500)",
+        ), "Use surplus food/wood to expand the Hussar raiding reserve."),
+    )
+
+    for identity, _alias, minimum, requirements, label in band_demands:
+        if "elite-skirmisher" in identity:
+            unit_line = "skirmisher-line"
+            action_symbol = "skirmisher-line"
+            witness_symbol = "6"
+            exact_requirement = f"(unit-type-count 6 < {minimum})"
+            reason_ref = "strategy-imperial-age"
+        elif "halberdier" in identity:
+            unit_line = "spearman-line"
+            action_symbol = "halberdier"
+            witness_symbol = "halberdier"
+            exact_requirement = f"(unit-type-count 359 < {minimum})"
+            reason_ref = "strategy-imperial-age"
+        else:
+            unit_line = "scout-cavalry-line"
+            action_symbol = "hussar"
+            witness_symbol = "hussar"
+            exact_requirement = f"(unit-type-count hussar < {minimum})"
+            reason_ref = "strategy-imperial-age"
+        demands.append(
+            _endgame_training_demand(
+                effective=effective,
+                identity=identity,
+                owner="imperial-band",
+                priority=_StrategicPriority.CORE if minimum >= 24 else _StrategicPriority.DEFENSE,
+                line=unit_line,
+                minimum=minimum,
+                reason_refs=(reason_ref,),
+                reason_labels=(label,),
+                requirement_expressions=(*requirements, exact_requirement),
+                action_symbol=action_symbol,
+                witness_symbol=witness_symbol,
+            )
+        )
 
     # Provider depth follows standing military demand. Queue depth remains OPEN:
     # these demands expand the physical production network only after witnessed
