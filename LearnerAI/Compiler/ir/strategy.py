@@ -3019,6 +3019,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(or (unit-type-count 492 >= 12))))"
     )
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
+    premium_not_ready = (
+        "(and (unit-type-count cataphract < 12) "
+        "(and (unit-type-count varangian-guard < 12) "
+        "(unit-type-count 492 < 12)))"
+    )
     standard_siege_ready_facts = (
         "(unit-type-count trebuchet >= 4)",
         "(unit-type-count bombard-cannon >= 4)",
@@ -3112,6 +3117,30 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
+            "byzantine-endgame-push-admit-trash",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 3)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in standard_siege_ready_facts
+                ),
+            ),
+            actions=(
+                parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
             "byzantine-endgame-push-live-witness",
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 2)", SourceLocation(1)),
@@ -3143,7 +3172,76 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression(f"(not {military_ready})", SourceLocation(1)),
+                parse_expression("(up-compare-goal byzantine-imperial-band-state < 1)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-halberdier-floor",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(unit-type-count halberdier < 18)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-elite-skirmisher-floor",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(unit-type-count 6 < 18)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-hussar-floor",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(unit-type-count hussar < 12)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recover-premium",
+            facts=(
+                parse_expression(
+                    "(or (goal byzantine-endgame-push-state 1) "
+                    "(or (goal byzantine-endgame-push-state 2) "
+                    "(goal byzantine-endgame-push-state 3)))",
+                    SourceLocation(1),
+                ),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(up-compare-goal byzantine-imperial-band-state != 3)", SourceLocation(1)),
+                parse_expression(premium_not_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
@@ -3156,7 +3254,36 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-endgame-push-state 3)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression(cleared_witness, SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
+                *(
+                    (
+                        parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
+                    )
+                    if frontier_witness is not None
+                    else ()
+                ),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-release-trash",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 3)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression(cleared_witness, SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 3)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
                 *(
                     (
                         parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
@@ -3175,7 +3302,27 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression(military_ready, SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
+                parse_expression(premium_ready, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-recovery-release-trash",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 3)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in imperial_floor_ready_facts
+                ),
             ),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
