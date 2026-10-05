@@ -91,6 +91,67 @@ jobs:
             LearnerAI.Compiler.tests.test_byzantine_runtime_promotion \
             LearnerAI.Compiler.tests.test_byzantine_bot_build -v
 
+      - name: Analyze checked-in Byzantine.per overlay relationship
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_strategy, compile_strategy_profile
+          from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+          import hashlib
+
+          effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+          profile = build_byzantine_strategy(effective, include_water_continuity=True)
+          compiler = compile_strategy_profile(profile, effective).encode("utf-8")
+          root = Path("Byzantine.per").read_bytes()
+
+          common = 0
+          limit = min(len(compiler), len(root))
+          while common < limit and compiler[common] == root[common]:
+              common += 1
+
+          print(f"compiler_bytes={len(compiler)}")
+          print(f"root_bytes={len(root)}")
+          print(f"common_prefix_bytes={common}")
+          print(f"compiler_sha256={hashlib.sha256(compiler).hexdigest()}")
+          print(f"root_sha256={hashlib.sha256(root).hexdigest()}")
+
+          if root.startswith(compiler):
+              overlay = root[len(compiler):]
+              print("append_only_overlay=true")
+              print(f"overlay_bytes={len(overlay)}")
+              print(f"overlay_sha256={hashlib.sha256(overlay).hexdigest()}")
+              Path("/tmp/byzantine-overlay-bootstrap.per").write_bytes(overlay)
+          else:
+              compiler_text = compiler.decode("utf-8", errors="replace")
+              root_text = root.decode("utf-8", errors="replace")
+              compiler_lines = compiler_text.splitlines()
+              root_lines = root_text.splitlines()
+              mismatch = next(
+                  (
+                      i
+                      for i, (left, right) in enumerate(
+                          zip(compiler_lines, root_lines),
+                          start=1,
+                      )
+                      if left != right
+                  ),
+                  min(len(compiler_lines), len(root_lines)) + 1,
+              )
+              print("append_only_overlay=false")
+              print(f"first_mismatching_line={mismatch}")
+              print(f"compiler_line={compiler_lines[mismatch-1] if mismatch <= len(compiler_lines) else '<eof>'}")
+              print(f"root_line={root_lines[mismatch-1] if mismatch <= len(root_lines) else '<eof>'}")
+              raise SystemExit(2)
+          PY
+      - name: Upload overlay bootstrap candidate
+        if: ${{ hashFiles('/tmp/byzantine-overlay-bootstrap.per') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: byzantine-overlay-bootstrap
+          path: /tmp/byzantine-overlay-bootstrap.per
+          if-no-files-found: error
+          retention-days: 7
+
   test:
     name: Compiler tests + native zero-findings
     runs-on: ubuntu-latest
