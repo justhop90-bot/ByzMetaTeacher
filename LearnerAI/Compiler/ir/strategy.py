@@ -1804,6 +1804,13 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
 
     shared_states = (
         NativeControlState(
+            "byzantine-siege-approach",
+            GoalSlotRequest(
+                StorageRequestId(military_owner, "siege-approach"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
             "byzantine-fortification-threat",
             GoalSlotRequest(
                 StorageRequestId(
@@ -2416,6 +2423,11 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         ("byzantine-offensive-objective-class-defense", 2),
         ("byzantine-offensive-objective-class-production", 3),
         ("byzantine-offensive-objective-class-town-center", 4),
+        ("byzantine-siege-approach-normal", 0),
+        ("byzantine-siege-approach-fortified", 1),
+        ("byzantine-siege-approach-staging", 2),
+        ("byzantine-siege-approach-escorted", 3),
+        ("byzantine-siege-approach-breach", 4),
         ("bt-imp-band-standing", standing),
         ("bt-imp-band-open", open_field),
         ("bt-imp-band-fortified", fortified),
