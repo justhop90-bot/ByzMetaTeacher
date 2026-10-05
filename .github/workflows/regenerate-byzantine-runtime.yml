@@ -116,3 +116,5 @@ jobs:
           git add Byzantine.per .github/workflows/regenerate-byzantine-runtime.yml
           git commit -m "sync: regenerate Byzantine.per after Imperial resolver fix"
           git push origin HEAD:sync/byzantine-per-endgame-runtime-overlay-20261005
+
+# trigger after workflow creation
