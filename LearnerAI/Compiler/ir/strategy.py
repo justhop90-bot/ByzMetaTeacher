@@ -3237,24 +3237,52 @@ def _default_byzantine_duc_plan(
     objective_dispatch_base = len(rules)
     objective_dispatch_specs = (
         (
-            "byzantine-endgame-objective-dispatch-siege",
+            "byzantine-endgame-objective-dispatch-siege-committed",
             "byzantine-offensive-objective-state-siege",
             "byzantine-offensive-objective-class-siege",
+            "byzantine-army-role-committed",
         ),
         (
-            "byzantine-endgame-objective-dispatch-defense",
+            "byzantine-endgame-objective-dispatch-siege-raid-split",
+            "byzantine-offensive-objective-state-siege",
+            "byzantine-offensive-objective-class-siege",
+            "byzantine-army-role-raid-split",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-defense-committed",
             "byzantine-offensive-objective-state-defense",
             "byzantine-offensive-objective-class-defense",
+            "byzantine-army-role-committed",
         ),
         (
-            "byzantine-endgame-objective-dispatch-production",
+            "byzantine-endgame-objective-dispatch-defense-raid-split",
+            "byzantine-offensive-objective-state-defense",
+            "byzantine-offensive-objective-class-defense",
+            "byzantine-army-role-raid-split",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-production-committed",
             "byzantine-offensive-objective-state-production",
             "byzantine-offensive-objective-class-production",
+            "byzantine-army-role-committed",
         ),
         (
-            "byzantine-endgame-objective-dispatch-town-center",
+            "byzantine-endgame-objective-dispatch-production-raid-split",
+            "byzantine-offensive-objective-state-production",
+            "byzantine-offensive-objective-class-production",
+            "byzantine-army-role-raid-split",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-town-center-committed",
             "byzantine-offensive-objective-state-town-center",
             "byzantine-offensive-objective-class-town-center",
+            "byzantine-army-role-committed",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-town-center-raid-split",
+            "byzantine-offensive-objective-state-town-center",
+            "byzantine-offensive-objective-class-town-center",
+            "byzantine-army-role-raid-split",
         ),
     )
     objective_dispatch_common_facts = (
@@ -3266,25 +3294,12 @@ def _default_byzantine_duc_plan(
             "(goal byzantine-army-attack-ready 1)",
             SourceLocation(1),
         ),
-        parse_expression(
-            "(or "
-            "(goal byzantine-army-role-state "
-            "byzantine-army-role-committed) "
-            "(goal byzantine-army-role-state "
-            "byzantine-army-role-raid-split))",
-            SourceLocation(1),
-        ),
-        parse_expression(
-            "(up-compare-goal "
-            "byzantine-offensive-objective-search >= 1)",
-            SourceLocation(1),
-        ),
     )
     objective_attack_action = (
         "(up-target-objects 1 "
         "action-attack-move -1 -1)"
     )
-    for offset, (identity, state_value, class_value) in enumerate(
+    for offset, (identity, state_value, class_value, role_state) in enumerate(
         objective_dispatch_specs
     ):
         rules.append(
@@ -3303,10 +3318,31 @@ def _default_byzantine_duc_plan(
                         SourceLocation(1),
                     ),
                     *objective_dispatch_common_facts,
+                    parse_expression(
+                        "(goal byzantine-army-role-state "
+                        f"{role_state})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
                 ),
                 actions=(
                     parse_expression(
-                        "(up-set-target-object search-remote c: 0)",
+                        "(up-filter-include cmdid-military -1 -1 -1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-find-local c: -1 c: 240)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-remove-objects search-local 19 != 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-remove-objects search-local 1 == 125)",
                         SourceLocation(1),
                     ),
                     parse_expression(
@@ -3324,7 +3360,8 @@ def _default_byzantine_duc_plan(
                 ),
             )
         )
-        
+
+    relic_base = len(rules)
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
 
