@@ -122,6 +122,18 @@ class ByzantineBotBuildTests(unittest.TestCase):
                     rule,
                 )
                 self.assertIn(_OBJECTIVE_ATTACK_DISPATCH, rule)
+                self.assertIn(
+                    "(up-reset-search 0 0 1 1)",
+                    rule,
+                )
+                for forbidden in (
+                    "set-goal",
+                    "enable-timer",
+                    "disable-timer",
+                    "up-modify-sn",
+                    "up-get-point",
+                ):
+                    self.assertNotIn(forbidden, rule)
 
             role_block = _role_block(rendered)
             for forbidden in _ROLE_FORBIDDEN_ACTIONS:
