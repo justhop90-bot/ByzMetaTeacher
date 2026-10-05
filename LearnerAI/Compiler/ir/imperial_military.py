@@ -204,7 +204,18 @@ def resolve_imperial_military(
         )
 
     # P1: executable fortified escalation.
-    if state.fortified_executable(plan) and state.current is not ImperialMilitaryBand.FORTIFIED_PUSH:
+    standing_fortified_ready = (
+        state.current is not ImperialMilitaryBand.STANDING_FLOOR
+        or (
+            state.floor_recovered(plan)
+            and state.dwell_seconds >= plan.minimum_dwell[ImperialMilitaryBand.STANDING_FLOOR]
+        )
+    )
+    if (
+        standing_fortified_ready
+        and state.fortified_executable(plan)
+        and state.current is not ImperialMilitaryBand.FORTIFIED_PUSH
+    ):
         required = plan.guard_dwell[ImperialMilitaryBand.FORTIFIED_PUSH]
         if (
             state.candidate_band is ImperialMilitaryBand.FORTIFIED_PUSH
