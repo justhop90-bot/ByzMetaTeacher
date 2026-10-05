@@ -299,7 +299,7 @@ class EndgameContractTests(unittest.TestCase):
 
         configured_push = replace(
             plan.push_contract,
-            frontier_witness_ref="strategy-enemy-pressure",
+            frontier_witness_ref="current-imperial-age",
         )
         configured_plan = replace(
             plan,
@@ -328,7 +328,7 @@ class EndgameContractTests(unittest.TestCase):
         push_release = configured_rules["byzantine-endgame-push-release"]
         push_release_facts = tuple(fact.source for fact in push_release.facts)
         frontier_expression = configured_profile.observation(
-            "strategy-enemy-pressure"
+            "current-imperial-age"
         ).expression
         self.assertIn(
             f"(not {frontier_expression})",
