@@ -181,13 +181,18 @@ class EndgameObjectiveControlContract:
         )
         if any(not isinstance(item, str) or not item.strip() for item in fields):
             raise ValueError("endgame objective control identifiers must be non-empty strings")
+        control_identifiers = fields[1:]
+        if len(control_identifiers) != len(set(control_identifiers)):
+            raise ValueError("endgame objective control identifiers must be unique")
 
         if not isinstance(self.release_search_radius, int) or isinstance(
             self.release_search_radius, bool
         ):
             raise TypeError("endgame objective release_search_radius must be an integer")
-        if not 1 <= self.release_search_radius <= 80:
-            raise ValueError("endgame objective release_search_radius must be in 1..80")
+        if not 41 <= self.release_search_radius <= 80:
+            raise ValueError(
+                "endgame objective release_search_radius must be in 41..80"
+            )
 
     @property
     def state_constants(self) -> tuple[tuple[str, int], ...]:
