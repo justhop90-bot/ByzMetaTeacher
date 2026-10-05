@@ -32,6 +32,50 @@ class EndgamePushState(str, Enum):
     ADVANCE = "ADVANCE"
     RECOVERY = "RECOVERY"
 
+class EndgameFrontierState(str, Enum):
+    SIEGE = "SIEGE"
+    DEFENSE = "DEFENSE"
+    PRODUCTION = "PRODUCTION"
+    TOWN_CENTER = "TOWN_CENTER"
+
+
+@dataclass(frozen=True)
+class EndgamePushContract:
+    identity: str
+    attack_group_count: int
+    attack_soldier_percent: int
+    minimum_group_size: int
+    maximum_group_size: int
+    live_witness_expression: str
+    frontier: tuple[EndgameFrontierState, ...]
+
+    def __post_init__(self) -> None:
+        if not self.identity.strip():
+            raise ValueError("endgame push contract identity must not be empty")
+        if not 1 <= self.attack_group_count <= 32767:
+            raise ValueError("endgame attack group count must be in 1..32767")
+        if not 0 <= self.attack_soldier_percent <= 100:
+            raise ValueError("endgame attack soldier percent must be in 0..100")
+        if not 1 <= self.minimum_group_size <= self.maximum_group_size <= 32767:
+            raise ValueError("endgame attack group size bounds are invalid")
+        if not self.live_witness_expression.strip():
+            raise ValueError("endgame push contract requires a live witness expression")
+        if not self.frontier:
+            raise ValueError("endgame push contract requires at least one frontier state")
+        if len(self.frontier) != len(set(self.frontier)):
+            raise ValueError("endgame frontier states must be unique")
+        expected = (
+            EndgameFrontierState.SIEGE,
+            EndgameFrontierState.DEFENSE,
+            EndgameFrontierState.PRODUCTION,
+            EndgameFrontierState.TOWN_CENTER,
+        )
+        if self.frontier != expected:
+            raise ValueError(
+                "endgame frontier must use the canonical siege/defense/production/"
+                "town-center sequence"
+            )
+
 
 @dataclass(frozen=True)
 class EndgamePolicyRule:
@@ -65,6 +109,7 @@ class EndgamePlan:
     identity: str
     rules: tuple[EndgamePolicyRule, ...]
     objective_priority: tuple[str, ...]
+    push_contract: EndgamePushContract | None = None
     push_states: tuple[EndgamePushState, ...] = (
         EndgamePushState.FORMING,
         EndgamePushState.READY,
@@ -133,6 +178,7 @@ class EndgameRuntimeState:
     push_state: EndgamePushState
     frontier_valid: bool
     recovery_required: bool
+    frontier: EndgameFrontierState = EndgameFrontierState.SIEGE
 
     def __post_init__(self) -> None:
         if not isinstance(self.mode, EndgameMode):
@@ -143,6 +189,8 @@ class EndgameRuntimeState:
             )
         if not isinstance(self.push_state, EndgamePushState):
             raise TypeError("endgame runtime push_state must be EndgamePushState")
+        if not isinstance(self.frontier, EndgameFrontierState):
+            raise TypeError("endgame runtime frontier must be EndgameFrontierState")
         if self.mode is EndgameMode.RECOVERY and self.push_state is not EndgamePushState.RECOVERY:
             raise ValueError("RECOVERY endgame mode requires RECOVERY push state")
         if self.push_state is EndgamePushState.RECOVERY and not self.recovery_required:
