@@ -175,8 +175,12 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             ),
         )
         self.assertIn(
-            "(unit-type-count-total cataphract < 12)",
+            "(unit-type-count-total cataphract < 30)",
             cataphract.execution.requirements,
+        )
+        self.assertIn(
+            "strategy-imperial-cataphract-replacement",
+            [item.observation_ref for item in cataphract.reason],
         )
 
         ram = by_id["imperial-ram-sustain"]
@@ -189,6 +193,26 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "(unit-type-count-total battering-ram-line < 8)",
             ram.execution.requirements,
         )
+
+    def test_imperial_sustain_demands_run_to_their_declared_targets(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        expected = {
+            "imperial-cataphract-sustain": 30,
+            "imperial-varangian-sustain": 24,
+            "imperial-ram-sustain": 8,
+            "imperial-trebuchet-sustain": 8,
+        }
+        for identity, minimum in expected.items():
+            demand = by_id[identity]
+            self.assertIn(
+                f"(unit-type-count-total {demand.execution.action.split()[-1].rstrip(')')} < {minimum})",
+                demand.execution.requirements,
+            )
+            self.assertFalse(
+                any("< 12)" in requirement or "< 2)" in requirement for requirement in demand.execution.requirements),
+                demand.identity,
+            )
 
     def test_imperial_provider_depth_reopens_after_attrition_floor_loss(self):
         profile = build_byzantine_stock_strategy(self.effective)
