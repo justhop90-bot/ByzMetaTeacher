@@ -1566,7 +1566,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         Primitive("gold-amount", "FACT", "OBSERVATION", 2, 2),
         Primitive("stone-amount", "FACT", "OBSERVATION", 2, 2),
         Primitive("players-unit-type-count", "FACT", "OBSERVATION", 4, 4),
-        Primitive("players-military-population", "FACT", "OBSERVATION", 2, 2),
+        Primitive("players-military-population", "FACT", "OBSERVATION", 3, 3),
         Primitive("players-building-type-count", "FACT", "OBSERVATION", 4, 4),
         Primitive("map-type", "FACT", "OBSERVATION", 1, 1, completion_witness=False),
         Primitive("warboat-count", "FACT", "OBSERVATION", 2, 2, completion_witness=False),
