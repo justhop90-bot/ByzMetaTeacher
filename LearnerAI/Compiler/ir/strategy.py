@@ -2024,7 +2024,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     fortified_clear_failures = (
         "(goal byzantine-fortification-threat 0)",
-        "(up-compare-goal byzantine-siege-approach != byzantine-siege-approach-fortified)",
+        "(up-compare-goal byzantine-siege-approach != 1)",
         "(goal byzantine-offensive-objective-claim 0)",
         "(unit-type-count-total mangonel-line < 2)",
         "(unit-type-count-total trebuchet-line < 2)",
