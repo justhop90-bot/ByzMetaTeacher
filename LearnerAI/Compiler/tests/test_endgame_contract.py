@@ -4,6 +4,9 @@ from dataclasses import replace
 from LearnerAI.Compiler.ir.endgame import (
     EndgameMode,
     EndgamePolicyRule,
+    EndgameObjectiveClass,
+    EndgameObjectiveState,
+    EndgameObjectiveControlContract,
     EndgamePushState,
     EndgameRuntimeState,
     EndgameWinCondition,
@@ -32,6 +35,29 @@ from LearnerAI.Compiler.ir.community_strategy_packs import (
 class EndgameContractTests(unittest.TestCase):
     def setUp(self):
         self.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+
+    def test_objective_control_contract_is_typed_and_deterministic(self):
+        contract = EndgameObjectiveControlContract(
+            identity="byzantine-endgame-objective-v1",
+        )
+        self.assertEqual(contract.state_goal, "byzantine-offensive-objective-state")
+        self.assertEqual(contract.class_goal, "byzantine-offensive-objective-class")
+        self.assertEqual(
+            tuple(value for _name, value in contract.state_constants),
+            tuple(range(len(EndgameObjectiveState))),
+        )
+        self.assertEqual(
+            tuple(value for _name, value in contract.class_constants),
+            tuple(range(len(EndgameObjectiveClass))),
+        )
+        self.assertEqual(
+            contract.constants[0],
+            ("byzantine-offensive-objective-state-idle", 0),
+        )
+        self.assertEqual(
+            contract.constants[-1],
+            ("byzantine-offensive-objective-class-town-center", 4),
+        )
 
     def test_endgame_plan_requires_deterministic_policy_order(self):
         plan = EndgamePlan(
