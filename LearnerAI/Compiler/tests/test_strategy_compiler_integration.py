@@ -348,10 +348,19 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertTrue(conversion_demands)
         self.assertTrue(
+            all(demand.execution.action.startswith("(build ")
+                    for demand in conversion_demands)
+        )
+        conversion_rules = tuple(
+            rule for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-conversion-admit-")
+        )
+        self.assertEqual(len(conversion_rules), len(conversion_demands))
+        self.assertTrue(
             all(
                 "(goal byzantine-endgame-frontier-verified 1)"
-                in demand.execution.requirements
-                for demand in conversion_demands
+                in tuple(fact.source for fact in rule.facts)
+                for rule in conversion_rules
             )
         )
 
