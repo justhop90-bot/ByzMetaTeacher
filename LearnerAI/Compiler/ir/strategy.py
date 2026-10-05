@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from .economic_control import EconomyControllerPlan
     from .camp_control import ByzantineCampControllerPlan
     from .role_separation import NativeRoleSeparationPlan
+    from .endgame import EndgamePlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -399,6 +400,7 @@ class StrategyProfile:
     economy_controller: "EconomyControllerPlan | None" = None
     camp_controller: "ByzantineCampControllerPlan | None" = None
     role_separation_plan: "NativeRoleSeparationPlan | None" = None
+    endgame_plan: "EndgamePlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -700,6 +702,20 @@ def _validate_strategic_number_modes(
             )
 
 
+def _validate_endgame_plan(
+    profile: StrategyProfile,
+) -> None:
+    plan = profile.endgame_plan
+    if plan is None:
+        return
+    from .endgame import validate_endgame_plan
+
+    validate_endgame_plan(
+        plan,
+        observation_ids=tuple(item.identity for item in profile.observations),
+    )
+
+
 def resolve_strategy_profile(
     profile: StrategyProfile,
     effective: EffectiveCivData,
@@ -722,6 +738,8 @@ def resolve_strategy_profile(
     _validate_capability_observations(profile, effective)
     _validate_observation_specs(profile, effective)
     _validate_strategic_number_modes(profile, effective)
+
+    _validate_endgame_plan(profile)
 
     for demand in profile.demands:
         if demand.identity in seen:
@@ -1079,6 +1097,7 @@ def lower_strategy_profile(
         economy_controller=profile.economy_controller,
         camp_controller=profile.camp_controller,
         role_separation_plan=profile.role_separation_plan,
+        endgame_plan=profile.endgame_plan,
     )
 
 
