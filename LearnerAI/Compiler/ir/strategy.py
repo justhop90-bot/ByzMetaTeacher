@@ -1851,8 +1851,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         for demand in profile.demands:
             if not demand.identity.startswith("imperial-forward-production-"):
                 continue
-            building_token = demand.capability_intent.entity_id
-            if not isinstance(building_token, str):
+            action = demand.execution.action.strip()
+            if not action.startswith("(build ") or not action.endswith(")"):
+                continue
+            building_token = action[len("(build "):-1].strip()
+            if not building_token:
                 continue
             rules.append(
                 NativeControlRule(
