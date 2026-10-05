@@ -16,6 +16,15 @@ from .game_data_dat_snapshot import (
 
 from .game_data_manifest import ByzantineManifest, ByzantineManifestCoverage, ManifestNode, ManifestNodeKind, ManifestNodeStatus, classify_byzantine_manifest_coverage, parse_byzantine_manifest
 from .native_duc import NativeDucGoalInputRequest, NativeDucLifecycleStage, NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+from .endgame import (
+    EndgameMode,
+    EndgamePolicyRule,
+    EndgamePlan,
+    EndgamePushState,
+    EndgameRuntimeState,
+    EndgameWinCondition,
+    validate_endgame_plan,
+)
 from .role_separation import (
     NativeRoleRule,
     NativeRoleSeparationPlan,
