@@ -1160,10 +1160,8 @@ def _byzantine_endgame_attack_group_sn_controllers(
         "(unit-type-count halberdier >= 6))))"
     )
     release_guard = parse_expression(
-        "(or "
-        f"{live_witness} "
-        f"(or (timer-triggered byzantine-endgame-push-timer) "
-        f"(not {military_ready})))",
+        "(or (goal byzantine-endgame-push-state 3) "
+        "(goal byzantine-endgame-push-state 5))",
         SourceLocation(1),
     )
     rearm_guard = parse_expression(
@@ -1202,7 +1200,7 @@ def _byzantine_endgame_attack_group_sn_controllers(
                 release_guard=release_guard,
                 rearm_guard=rearm_guard,
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
-                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                release_evidence=StrategicNumberReleaseEvidence.TIMER_CADENCE,
                 owner=profile.profile_id,
             )
         )
