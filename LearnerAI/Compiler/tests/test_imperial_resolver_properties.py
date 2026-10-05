@@ -149,18 +149,59 @@ class ImperialResolverPropertyTests(unittest.TestCase):
                     )
 
 
-    def test_open_and_trash_posture_do_not_require_objective_claim(self):
+    def test_open_field_requires_offensive_objective_claim(self):
         base = self.base()
         without_claim = replace(base, offensive_objective=False)
-        self.assertTrue(ImperialResolver.open_field_eligible(without_claim))
+        self.assertFalse(ImperialResolver.open_field_eligible(without_claim))
+
+        with_claim = replace(base, offensive_objective=True)
+        self.assertTrue(ImperialResolver.open_field_eligible(with_claim))
+
+    def test_gold_starved_trash_can_exist_without_offensive_objective(self):
+        base = self.base()
         trash = replace(
-            without_claim,
+            base,
+            offensive_objective=False,
             gold=800,
             food=3000,
             wood=3000,
             current=ImperialBand.GOLD_STARVED_TRASH,
         )
         self.assertTrue(ImperialResolver.gold_starved_eligible(trash))
+
+    def test_fortified_clear_releases_to_open_when_active_objective_no_longer_requires_siege(self):
+        case = replace(
+            self.base(),
+            current=ImperialBand.FORTIFIED_PUSH,
+            offensive_objective=True,
+            fortification_threat=False,
+            fortified_objective_requires_siege=False,
+        )
+        decision = self.resolve(
+            case,
+            dwell_seconds=ImperialResolver.FORT_MIN_DWELL,
+            guard_seconds=ImperialResolver.FORT_CLEAR_DWELL,
+            rearm_seconds=0,
+        )
+        self.assertEqual(decision.destination, ImperialBand.OPEN_FIELD)
+        self.assertEqual(decision.reason, ImperialReason.FORTIFIED_CLEAR)
+
+    def test_fortified_clear_holds_when_objective_still_requires_siege(self):
+        case = replace(
+            self.base(),
+            current=ImperialBand.FORTIFIED_PUSH,
+            offensive_objective=True,
+            fortification_threat=False,
+            fortified_objective_requires_siege=True,
+        )
+        decision = self.resolve(
+            case,
+            dwell_seconds=ImperialResolver.FORT_MIN_DWELL,
+            guard_seconds=ImperialResolver.FORT_CLEAR_DWELL,
+            rearm_seconds=0,
+        )
+        self.assertEqual(decision.destination, ImperialBand.FORTIFIED_PUSH)
+        self.assertEqual(decision.reason, ImperialReason.HOLD_DWELL)
 
     def test_property_open_entry_thresholds_are_inclusive(self):
         base = self.base()
