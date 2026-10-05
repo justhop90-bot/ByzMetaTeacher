@@ -140,8 +140,36 @@ def main() -> int:
             all_stop_counts.items(),
             key=lambda item: (-item[1], item[0]),
         )[:20],
+        "all_stops": [],
         "stops": [],
     }
+
+    for index, action in (
+        (i, actions[i])
+        for i in range(len(actions))
+        if actions[i].type.name == "STOP"
+    ):
+        window_start = max(0, action.timestamp.total_seconds() - 5)
+        window_end = action.timestamp.total_seconds() + 5
+        stop_context = [
+            compact(candidate)
+            for candidate in actions
+            if window_start <= candidate.timestamp.total_seconds() <= window_end
+            and (
+                (
+                    action.player
+                    and candidate.player
+                    and candidate.player.number == action.player.number
+                )
+                or TARGET in candidate.payload.get("object_ids", [])
+                or candidate.payload.get("target_id") == TARGET
+            )
+        ]
+        report["all_stops"].append({
+            "index": index,
+            "action": compact(action),
+            "context": stop_context,
+        })
 
     for index in stop_indices:
         action = actions[index]
