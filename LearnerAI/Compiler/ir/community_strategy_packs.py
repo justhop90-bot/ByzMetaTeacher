@@ -559,35 +559,6 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
         ),
         _observation(
-            "strategy-endgame-ground-conversion",
-            "(and (current-age >= imperial-age) "
-            "(and (or (goal byzantine-endgame-frontier 1) (or (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3))) "
-            "(goal byzantine-endgame-push-state 1)))",
-            (
-                EvidenceRef(
-                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
-                    source="LearnerAI/Compiler/ir/strategy.py",
-                    revision="main",
-                    locator="byzantine-endgame-frontier-commit-*",
-                    patch=effective.patch,
-                ),
-            ),
-        ),
-        _observation(
-            "strategy-endgame-resource-denial",
-            "(and (current-age >= imperial-age) "
-            "(or (goal byzantine-endgame-frontier 1) (or (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3))))",
-            (
-                EvidenceRef(
-                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
-                    source="LearnerAI/Compiler/ir/strategy.py",
-                    revision="main",
-                    locator="byzantine-endgame-frontier-commit-*",
-                    patch=effective.patch,
-                ),
-            ),
-        ),
-        _observation(
             "strategy-imperial-trebuchet-replacement",
             "(and (current-age >= imperial-age) (unit-type-count trebuchet < 2))",
             _airef_provenance(effective, "commands/commands-details.html#unit-type-count"),
@@ -1529,7 +1500,7 @@ def community_strategy_demands(
                     owner="endgame-conversion",
                     posture=_StrategyPosture.CASTLE_POWER,
                     priority=_StrategicPriority.SUPPORT,
-                    reason_ref="strategy-endgame-ground-conversion",
+                    reason_ref="strategy-imperial-age",
                     reason_label="Verified frontier ground creates forward-production pressure",
                     building=building,
                     requirements=(
