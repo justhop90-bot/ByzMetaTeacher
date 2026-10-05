@@ -600,8 +600,25 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         open_candidate_facts = tuple(
             fact.source for fact in rules["byzantine-imperial-band-standing-open-candidate"].facts
         )
-        self.assertNotIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
-        self.assertNotIn("(goal byzantine-offensive-objective-claim 0)", open_candidate_facts)
+        self.assertIn("(goal byzantine-offensive-objective-claim 1)", open_candidate_facts)
+
+        trash_open_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-trash-open-candidate"].facts
+        )
+        self.assertIn("(goal byzantine-offensive-objective-claim 1)", trash_open_candidate_facts)
+
+        fortified_open_candidate_facts = tuple(
+            fact.source for fact in rules["byzantine-imperial-band-fortified-open-candidate"].facts
+        )
+        self.assertIn(
+            "(not (goal byzantine-offensive-objective-class "
+            "byzantine-offensive-objective-class-siege))",
+            fortified_open_candidate_facts,
+        )
+        self.assertNotIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            fortified_open_candidate_facts,
+        )
 
         for identity in (
             "byzantine-imperial-band-floor-break-open",
@@ -610,6 +627,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-imperial-band-fortified-candidate",
             "byzantine-imperial-band-standing-open-candidate",
             "byzantine-imperial-band-standing-trash-candidate",
+            "byzantine-imperial-band-trash-open-candidate",
+            "byzantine-imperial-band-fortified-open-candidate",
             "byzantine-imperial-band-transition-open",
             "byzantine-imperial-band-transition-fortified",
             "byzantine-imperial-band-transition-trash",
