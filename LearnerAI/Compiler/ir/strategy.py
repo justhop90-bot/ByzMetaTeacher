@@ -1783,6 +1783,16 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlState(
+            "byzantine-fortification-threat",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, "byzantine-fortification-threat"),
+                    "fortification-threat",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
             contract.witness_target_goal,
             witness_target_request,
         ),
