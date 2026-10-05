@@ -1397,7 +1397,7 @@ def community_strategy_demands(
                 owner="endgame-replacement",
                 priority=_StrategicPriority.DEFENSE,
                 line="cataphract-line",
-                minimum=_ENDGAME_CATAPHRACHT_TARGET,
+                minimum=_ENDGAME_CATAPHRACT_TARGET,
                 reason_refs=(
                     "strategy-imperial-spend-food",
                     "strategy-imperial-spend-gold",
