@@ -1589,43 +1589,6 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     return NativeControlPlan(states=(state,), rules=rules)
 
 
-def _age_bank_villager_control_plan():
-    """Preserve continuous villager production until the active age bank is issuable."""
-    from ..ast import SourceLocation
-    from ..semantic.analyzer import parse_expression
-    from .native_control import NativeControlPlan, NativeControlRule
-
-    def fact(source: str):
-        return parse_expression(source, SourceLocation(1))
-
-    return NativeControlPlan(
-        rules=(
-            NativeControlRule(
-                "age-bank-villager-production",
-                facts=(
-                    fact("(unit-type-count-total villager < 110)"),
-                    fact("(can-train villager)"),
-                    fact(
-                        "(not (and (current-age == dark-age) "
-                        "(and (unit-type-count-total villager >= 21) "
-                        "(and (building-type-count-total lumber-camp >= 1) "
-                        "(and (building-type-count-total mining-camp >= 1) "
-                        "(can-research-with-escrow feudal-age))))))"
-                    ),
-                    fact(
-                        "(not (and (current-age == feudal-age) "
-                        "(and (unit-type-count-total villager >= 28) "
-                        "(and (building-type-count-total blacksmith >= 1) "
-                        "(and (building-type-count-total market >= 1) "
-                        "(can-research-with-escrow castle-age))))))"
-                    ),
-                ),
-                actions=(fact("(train villager)"),),
-            ),
-        )
-    )
-
-
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
@@ -1652,12 +1615,6 @@ def _strategy_control_plan(profile: StrategyProfile):
     if profile.camp_controller is not None:
         from .camp_control import lower_byzantine_camp_controller
         camp_plan = lower_byzantine_camp_controller(profile.camp_controller, profile)
-
-    age_bank_plan = (
-        _age_bank_villager_control_plan()
-        if profile.profile_id.startswith("byzantine-")
-        else None
-    )
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1688,7 +1645,6 @@ def _strategy_control_plan(profile: StrategyProfile):
         opening_plan,
         economy_plan,
         camp_plan,
-        age_bank_plan,
     )
 
 
