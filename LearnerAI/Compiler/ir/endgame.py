@@ -51,8 +51,12 @@ class EndgamePushContract:
     frontier: tuple[EndgameFrontierState, ...]
 
     def __post_init__(self) -> None:
-        if not self.identity.strip():
+        if not isinstance(self.identity, str) or not self.identity.strip():
             raise ValueError("endgame push contract identity must not be empty")
+        if not isinstance(self.live_witness_ref, str):
+            raise TypeError("endgame push contract live_witness_ref must be a string")
+        if not isinstance(self.cleared_witness_ref, str):
+            raise TypeError("endgame push contract cleared_witness_ref must be a string")
         if not 1 <= self.attack_group_count <= 32767:
             raise ValueError("endgame attack group count must be in 1..32767")
         if not 0 <= self.attack_soldier_percent <= 100:
@@ -63,6 +67,10 @@ class EndgamePushContract:
             raise ValueError("endgame push contract requires a live witness reference")
         if not self.cleared_witness_ref.strip():
             raise ValueError("endgame push contract requires a cleared witness reference")
+        if not isinstance(self.frontier, tuple):
+            raise TypeError("endgame push contract frontier must be a tuple")
+        if any(not isinstance(item, EndgameFrontierState) for item in self.frontier):
+            raise TypeError("endgame push contract frontier must use EndgameFrontierState")
         if not self.frontier:
             raise ValueError("endgame push contract requires at least one frontier state")
         if len(self.frontier) != len(set(self.frontier)):
@@ -89,7 +97,7 @@ class EndgamePolicyRule:
     priority: int = 0
 
     def __post_init__(self) -> None:
-        if not self.identity.strip():
+        if not isinstance(self.identity, str) or not self.identity.strip():
             raise ValueError("endgame policy rule identity must not be empty")
         if not isinstance(self.mode, EndgameMode):
             raise TypeError("endgame policy rule mode must be EndgameMode")
@@ -97,6 +105,10 @@ class EndgamePolicyRule:
             raise TypeError(
                 "endgame policy rule win_condition must be EndgameWinCondition"
             )
+        if not isinstance(self.observation_refs, tuple):
+            raise TypeError("endgame policy rule observation_refs must be a tuple")
+        if any(not isinstance(reference, str) for reference in self.observation_refs):
+            raise TypeError("endgame policy rule observation_refs must contain strings")
         if any(not reference.strip() for reference in self.observation_refs):
             raise ValueError(
                 f"endgame policy rule '{self.identity}' contains an empty observation reference"
@@ -128,12 +140,22 @@ class EndgamePlan:
         if not self.rules:
             raise ValueError("endgame plan requires at least one policy rule")
 
+        if not isinstance(self.rules, tuple):
+            raise TypeError("endgame plan rules must be a tuple")
+        if any(not isinstance(rule, EndgamePolicyRule) for rule in self.rules):
+            raise TypeError("endgame plan rules must use EndgamePolicyRule")
         identities = tuple(rule.identity for rule in self.rules)
         if len(identities) != len(set(identities)):
             raise ValueError("endgame policy rule identities must be unique")
-        if not isinstance(self.rules, tuple):
-            raise TypeError("endgame plan rules must be a tuple")
+        if self.push_contract is not None and not isinstance(
+            self.push_contract, EndgamePushContract
+        ):
+            raise TypeError("endgame plan push_contract must be EndgamePushContract or None")
 
+        if not isinstance(self.objective_priority, tuple):
+            raise TypeError("endgame plan objective_priority must be a tuple")
+        if any(not isinstance(item, str) for item in self.objective_priority):
+            raise TypeError("endgame plan objective_priority must contain strings")
         ordered = tuple(sorted(self.rules, key=lambda item: (-item.priority, item.identity)))
         if ordered != self.rules:
             raise ValueError(
@@ -155,6 +177,10 @@ class EndgamePlan:
             EndgamePushState.ADVANCE,
             EndgamePushState.RECOVERY,
         )
+        if not isinstance(self.push_states, tuple):
+            raise TypeError("endgame plan push_states must be a tuple")
+        if any(not isinstance(item, EndgamePushState) for item in self.push_states):
+            raise TypeError("endgame plan push_states must use EndgamePushState")
         if self.push_states != expected_states:
             raise ValueError(
                 "endgame push states must use the canonical forming/ready/executing/"
@@ -194,6 +220,10 @@ class EndgameRuntimeState:
             raise TypeError("endgame runtime push_state must be EndgamePushState")
         if not isinstance(self.frontier, EndgameFrontierState):
             raise TypeError("endgame runtime frontier must be EndgameFrontierState")
+        if not isinstance(self.frontier_valid, bool):
+            raise TypeError("endgame runtime frontier_valid must be bool")
+        if not isinstance(self.recovery_required, bool):
+            raise TypeError("endgame runtime recovery_required must be bool")
         if self.mode is EndgameMode.RECOVERY and self.push_state is not EndgamePushState.RECOVERY:
             raise ValueError("RECOVERY endgame mode requires RECOVERY push state")
         if self.push_state is EndgamePushState.RECOVERY and not self.recovery_required:
