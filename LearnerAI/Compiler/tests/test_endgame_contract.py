@@ -299,7 +299,7 @@ class EndgameContractTests(unittest.TestCase):
 
         configured_push = replace(
             plan.push_contract,
-            frontier_witness_ref="current-imperial-age",
+            frontier_witness_ref="strategy-enemy-castle",
         )
         configured_plan = replace(
             plan,
