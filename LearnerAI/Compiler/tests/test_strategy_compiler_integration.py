@@ -263,6 +263,55 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-filter-distance c: -1 c: 40)", output)
         self.assertIn("; Native DUC rule: byzantine-endgame-target-", output)
 
+    def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = tuple(state.identifier for state in control.states)
+        self.assertIn("byzantine-endgame-push-state", state_ids)
+        self.assertIn("byzantine-endgame-push-timer", state_ids)
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-endgame-push-")
+        }
+        self.assertIn("byzantine-endgame-push-admit", rules)
+        self.assertIn("byzantine-endgame-push-live-witness", rules)
+        self.assertIn("byzantine-endgame-push-pulse-expiry", rules)
+        self.assertIn("byzantine-endgame-push-release", rules)
+
+        admit_actions = tuple(action.source for action in rules["byzantine-endgame-push-admit"].actions)
+        self.assertIn("(set-strategic-number sn-native-36 1)", admit_actions)
+        self.assertIn("(set-strategic-number sn-native-227 100)", admit_actions)
+        self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
+
+        live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
+        self.assertIn("(set-strategic-number sn-native-36 0)", live_actions)
+        self.assertIn("(set-strategic-number sn-native-227 75)", live_actions)
+        self.assertIn("(disable-timer byzantine-endgame-push-timer)", live_actions)
+        self.assertIn("(set-goal byzantine-endgame-push-state 3)", live_actions)
+
+        expiry_actions = tuple(action.source for action in rules["byzantine-endgame-push-pulse-expiry"].actions)
+        self.assertIn("(set-strategic-number sn-native-36 0)", expiry_actions)
+        self.assertIn("(disable-timer byzantine-endgame-push-timer)", expiry_actions)
+        self.assertIn("(set-goal byzantine-endgame-push-state 3)", expiry_actions)
+
+        release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
+        self.assertIn("(goal byzantine-endgame-push-state 3)", release_facts)
+        self.assertIn("(attack-soldier-count <= 0)", release_facts)
+        self.assertIn("(unit-type-count cataphract >= 4)", " ".join(release_facts))
+
+        release_actions = tuple(action.source for action in rules["byzantine-endgame-push-release"].actions)
+        self.assertIn("(set-goal byzantine-endgame-push-state 1)", release_actions)
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", output)
+        self.assertIn("(set-strategic-number sn-native-36 0)", output)
+
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
