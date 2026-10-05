@@ -1859,62 +1859,94 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     def expr(source: str):
         return parse_expression(source, SourceLocation(1))
 
+    def land(*parts: str) -> str:
+        if not parts:
+            raise ValueError("imperial band guard requires at least one fact")
+        result = parts[-1]
+        for part in reversed(parts[:-1]):
+            result = f"(and {part} {result})"
+        return result
+
+    def lor(*parts: str) -> str:
+        if not parts:
+            raise ValueError("imperial band alternative requires at least one fact")
+        result = parts[-1]
+        for part in reversed(parts[:-1]):
+            result = f"(or {part} {result})"
+        return result
+
     standing = int(ImperialBand.STANDING_FLOOR)
     open_field = int(ImperialBand.OPEN_FIELD)
     fortified = int(ImperialBand.FORTIFIED_PUSH)
     trash = int(ImperialBand.GOLD_STARVED_TRASH)
     candidate_standing = 4
 
-    floor_broken = (
-        "(or (unit-type-count halberdier < 18) "
-        "(or (unit-type-count skirmisher-line < 18) "
-        "(unit-type-count hussar < 12)))"
+    floor_broken = lor(
+        "(unit-type-count halberdier < 18)",
+        "(unit-type-count 6 < 18)",
+        "(unit-type-count hussar < 12)",
     )
-    floor_recovered = (
-        "(and (unit-type-count halberdier >= 18) "
-        "(and (unit-type-count skirmisher-line >= 18) "
-        "(and (unit-type-count hussar >= 12) "
-        "(and (food-amount >= 2000) "
-        "(and (wood-amount >= 1700) (gold-amount >= 1600))))))"
+    floor_recovered = land(
+        "(unit-type-count halberdier >= 18)",
+        "(unit-type-count 6 >= 18)",
+        "(unit-type-count hussar >= 12)",
+        "(food-amount >= 2000)",
+        "(wood-amount >= 1700)",
+        "(gold-amount >= 1600)",
     )
-    fortified_exec = (
-        "(and (goal byzantine-fortification-threat 1) "
-        "(and (goal byzantine-siege-approach byzantine-siege-approach-fortified) "
-        "(and (goal byzantine-offensive-objective-claim 1) "
-        "(and (up-compare-goal byzantine-army-role-siege-size >= 2) "
-        "(and (food-amount >= 2400) "
-        "(and (wood-amount >= 2400) (gold-amount >= 2600))))))"
+    siege_floor = lor(
+        "(unit-type-count-total mangonel-line >= 2)",
+        "(unit-type-count-total trebuchet-line >= 2)",
+        "(unit-type-count-total bombard-cannon-line >= 2)",
     )
-    open_field_eligible = (
-        "(and "
-        "(goal byzantine-offensive-objective-claim 1) "
-        "(and (goal byzantine-fortification-threat 0) "
-        "(and (players-military-population any-enemy >= 12) "
-        "(and (food-amount >= 2400) "
-        "(and (wood-amount >= 2000) "
-        "(and (gold-amount >= 2000) "
-        f"{floor_recovered})))))"
+    fortified_exec = land(
+        "(goal byzantine-fortification-threat 1)",
+        "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
+        "(goal byzantine-offensive-objective-claim 1)",
+        siege_floor,
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2400)",
+        "(gold-amount >= 2600)",
     )
-    trash_eligible = (
-        "(and (goal byzantine-fortification-threat 0) "
-        "(and (food-amount >= 2400) "
-        "(and (wood-amount >= 2200) "
-        "(and (gold-amount <= 800) "
-        f"{floor_recovered})))"
+    open_field_eligible = land(
+        "(goal byzantine-offensive-objective-claim 1)",
+        "(goal byzantine-fortification-threat 0)",
+        "(players-military-population any-enemy >= 12)",
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2000)",
+        "(gold-amount >= 2000)",
+        floor_recovered,
     )
-    economic_collapse = (
-        "(or (food-amount < 1800) (wood-amount < 1500)"
+    trash_eligible = land(
+        "(goal byzantine-fortification-threat 0)",
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2200)",
+        "(gold-amount <= 800)",
+        floor_recovered,
+    )
+    gold_recovery_open_eligible = land(
+        "(goal byzantine-offensive-objective-claim 1)",
+        "(goal byzantine-fortification-threat 0)",
+        "(players-military-population any-enemy >= 12)",
+        "(food-amount >= 2400)",
+        "(wood-amount >= 2000)",
+        "(gold-amount >= 1800)",
+        floor_recovered,
+    )
+    economic_collapse = lor(
+        "(food-amount < 1800)",
+        "(wood-amount < 1500)",
     )
     gold_recovered = "(gold-amount >= 1800)"
-    fortified_clear = (
-        "(and (goal byzantine-fortification-threat 0) "
-        "(goal byzantine-offensive-objective-claim 0))"
+    fortified_clear = land(
+        "(goal byzantine-fortification-threat 0)",
+        "(goal byzantine-offensive-objective-claim 0)",
     )
 
     def cooldown_clear(target: int) -> str:
-        return (
-            f"(or (up-compare-goal {rearm_band_name} != {target}) "
-            f"(timer-triggered {rearm_timer}))"
+        return lor(
+            f"(up-compare-goal {rearm_band_name} != {target})",
+            f"(timer-triggered {rearm_timer})",
         )
 
     rules: list[NativeControlRule] = [
@@ -2016,7 +2048,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(floor_recovered),
                 expr(f"(not {trash_eligible})"),
-                expr(open_field_eligible),
+                expr(gold_recovery_open_eligible),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
