@@ -30,7 +30,6 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
                 "byzantine-relic-control-return",
                 "byzantine-relic-control-release-witness",
                 "byzantine-relic-control-recovery",
-                "byzantine-relic-control-expiry",
             ),
         )
 
@@ -77,8 +76,20 @@ class ByzantineRelicLifecycleTests(unittest.TestCase):
 
         pickup = rules["byzantine-relic-control-pickup-witness"]
         self.assertIn(
+            "(up-find-local c: monk-with-relic c: 1)",
+            tuple(item.source for item in pickup.actions),
+        )
+
+        control = compilation.control_plan
+        self.assertIsNotNone(control)
+        assert control is not None
+        pickup_control = next(
+            rule for rule in control.rules
+            if rule.identity == "byzantine-relic-control-pickup-witness"
+        )
+        self.assertIn(
             "(unit-type-count-total monk-with-relic >= 1)",
-            tuple(item.source for item in pickup.facts),
+            tuple(item.source for item in pickup_control.facts),
         )
 
         return_rule = rules["byzantine-relic-control-return"]
