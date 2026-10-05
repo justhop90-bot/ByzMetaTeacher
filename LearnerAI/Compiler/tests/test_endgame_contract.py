@@ -109,6 +109,7 @@ class EndgameContractTests(unittest.TestCase):
                 attack_soldier_percent=100,
                 minimum_group_size=6,
                 maximum_group_size=40,
+                active_window_seconds=20,
                 live_witness_ref="strategy-endgame-attack-package-live",
                 cleared_witness_ref="strategy-endgame-attack-package-cleared",
                 frontier=contract.frontier,
@@ -231,6 +232,7 @@ class EndgameContractTests(unittest.TestCase):
                 attack_soldier_percent=100,
                 minimum_group_size=6,
                 maximum_group_size=40,
+                active_window_seconds=20,
                 live_witness_ref="live",
                 cleared_witness_ref="cleared",
                 frontier=(
