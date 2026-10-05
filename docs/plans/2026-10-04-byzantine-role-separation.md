@@ -346,4 +346,22 @@ The compiler strategy profile now carries NativeRoleSeparationPlan, allocates ni
 No second attack scheduler was introduced. No timer is used as role completion evidence. Role formation is not a recurring initializer. Foreign/stale objects are removed from the local search before role flags are rewritten. Recovery clears the five role groups before re-forming. The 25% reserve policy in fortified breach remains owned by the existing siege controller.
 
 ### Ownership correction
-The role controller does not mutate `byzantine-army-attack-ready`. It raises `byzantine-army-role-recovery-request`. The existing persistent control plane consumes that request, performs `up-reset-attack-now`, clears `army-attack-ready`, and clears the request. This preserves the original state-owner boundary while allowing role formation/fortified/overmatch failure to fail closed.
+
+The role controller does not mutate `byzantine-army-attack-ready` and does not emit `up-reset-attack-now`. It raises `byzantine-army-role-recovery-request`. The current runtime bridge only clears that request; there is no role-owned attack-reset bridge.
+
+All four Byzantine `up-reset-attack-now` producers remain owned by the existing army recovery/reposition lifecycle:
+1. overmatch-triggered recovery;
+2. active attack while the Town is under attack;
+3. fortified attack collapse below the live siege floor;
+4. stale-army watchdog collapse at three or fewer attack soldiers.
+
+This ownership is now pinned by a runtime artifact regression. No additional reset producer is authorized without a corresponding lifecycle test.
+
+
+## Replay 19263 forensic correction
+
+The checked-in `rec.aoe2record` is a DE save-version 68.9 replay. Object `19263` is absent from the initial object list and participates in 24,730 player-1 events: 24,728 `AI_ORDER`, one `ORDER`, and one `UNGARRISON`. It receives zero recorded `STOP` actions.
+
+The replay contains 14 total `STOP` actions. The most-stopped object is `4238` with six STOPs, and the exact trace shows object `4238` belongs to player 2, not the Byzantine bot. The first observed STOP on it occurs at 35.36 seconds, immediately after a player-2 BUILD involving object 4238 at 34.068 seconds. Therefore object `19263` is not the STOP/reset producer in this replay, and the Byzantine runtime must not be modified on the basis of that object identifier alone.
+
+The direct Byzantine reset owner remains the four army recovery/reposition rules pinned by `test_attack_reset_now_has_only_the_army_recovery_owners`. The role-separation recovery request is not a reset actuator.
