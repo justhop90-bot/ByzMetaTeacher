@@ -49,6 +49,9 @@ Acceptance: a deterministic baseline report exists and no strategic logic is cha
 Acceptance: zero logical arity defects and zero rules above 32 elements.
 
 ## Phase 2: Strategic executive and continuous resource spending
+
+**Completed tranche:** military production depth is now compiler-owned and runtime-synchronized. The compiler emits 12 provider-depth demands across Barracks, Stable, Archery Range, and Siege Workshop. Scaling is triggered by standing military demand and gated by previous provider-floor witnesses. Queue-depth semantics remain `OPEN` and are not inferred.
+
 - [ ] Deep-audit every current late-game spending rule before threshold changes.
 - [ ] Separate surplus detection from spend selection.
 - [ ] Turn fixed military targets into minimums, not terminal spend conditions.
@@ -127,7 +130,7 @@ Acceptance: fewer wasteful engagements, better siege use, coherent retreat/repos
 - [ ] Treat houses, farms, dropsites, camps, mills, markets, starvation recovery, and defensive construction as one economy.
 - [ ] Make wall/building placement preserve villager access, army exits, production paths, and resource routes.
 - [ ] Align villager allocation with current strategic demand rather than only fixed percentages.
-- [ ] Expand production capacity when bank pressure warrants it.
+- [x] Expand production capacity when witnessed standing military demand warrants it, using sequential provider floors; continuous bank-pressure arbitration remains open.
 - [ ] Make research compete correctly with military production and infrastructure.
 - [ ] Use the market as a pressure valve, not as a substitute for gathering control.
 - [ ] Stop economic expansion when military/tech/siege requirements dominate.

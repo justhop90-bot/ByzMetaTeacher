@@ -25,6 +25,8 @@ _CANONICAL_BUILDING_ID_OVERRIDES = {
     # catalog tree, so these symbols remain explicit and auditable here rather
     # than silently disappearing from the compiler's build vocabulary.
     "town-center": 621,
+    "barracks": 12,
+    "archery-range": 87,
     "stable": 101,
     "siege-workshop": 49,
     "university": 209,

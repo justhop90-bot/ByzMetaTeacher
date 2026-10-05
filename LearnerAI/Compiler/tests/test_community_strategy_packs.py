@@ -88,6 +88,61 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             ],
         )
 
+    def test_stock_profile_scales_military_provider_depth_from_standing_demand(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+
+        expected = (
+            ("castle-barracks-depth-2", "barracks", 2),
+            ("imperial-barracks-depth-3", "barracks", 3),
+            ("imperial-barracks-depth-4", "barracks", 4),
+            ("castle-stable-depth-2", "stable", 2),
+            ("imperial-stable-depth-3", "stable", 3),
+            ("imperial-stable-depth-4", "stable", 4),
+            ("castle-range-depth-2", "archery-range", 2),
+            ("imperial-range-depth-3", "archery-range", 3),
+            ("imperial-range-depth-4", "archery-range", 4),
+            ("castle-siege-depth-2", "siege-workshop", 2),
+            ("imperial-siege-depth-3", "siege-workshop", 3),
+            ("imperial-siege-depth-4", "siege-workshop", 4),
+        )
+
+        for identity, building, floor in expected:
+            self.assertIn(identity, by_id)
+            demand = by_id[identity]
+            self.assertEqual(
+                demand.execution.action,
+                f"(build {building})",
+            )
+            self.assertIn(
+                f"(building-type-count-total {building} < {floor})",
+                demand.execution.requirements,
+            )
+            self.assertEqual(
+                demand.execution.witness,
+                f"(building-type-count {building} >= {floor})",
+            )
+            self.assertEqual(demand.execution.release, demand.execution.witness)
+
+        observation_by_id = {item.identity: item.expression for item in profile.observations}
+        self.assertIn(
+            "(unit-type-count-total cataphract-line >= 6)",
+            observation_by_id["strategy-production-stable-depth-6"],
+        )
+        self.assertIn(
+            "(unit-type-count-total camel-rider-line >= 6)",
+            observation_by_id["strategy-production-stable-depth-6"],
+        )
+        for demand in by_id.values():
+            if "-depth-" in demand.identity:
+                self.assertFalse(
+                    any(
+                        "up-pending-objects" in requirement
+                        for requirement in demand.execution.requirements
+                    ),
+                    demand.identity,
+                )
+
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}

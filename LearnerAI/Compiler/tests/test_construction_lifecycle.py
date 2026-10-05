@@ -85,6 +85,10 @@ class ConstructionTransitionTests(unittest.TestCase):
             NativeSupportState.EXECUTABLE_SAFE,
         )
 
+    def test_native_building_catalog_resolves_missing_de_and_barracks_provider_ids(self):
+        self.assertEqual(resolve_building_id("barracks"), 12)
+        self.assertEqual(resolve_building_id("archery-range"), 87)
+
     def test_generic_witness_diagnostics_precede_construction_canonicalization(self):
         source = """
         demand castle {

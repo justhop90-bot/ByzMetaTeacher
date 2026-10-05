@@ -380,6 +380,47 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             witness_section,
         )
 
+    def test_runtime_artifact_contains_standing_demand_provider_depth_ladders(self):
+        expected = (
+            ("castle-barracks-depth-2", "barracks", 2, "(current-age >= castle-age)"),
+            ("imperial-barracks-depth-3", "barracks", 3, "(current-age >= imperial-age)"),
+            ("imperial-barracks-depth-4", "barracks", 4, "(current-age >= imperial-age)"),
+            ("castle-stable-depth-2", "stable", 2, "(current-age >= castle-age)"),
+            ("imperial-stable-depth-3", "stable", 3, "(current-age >= imperial-age)"),
+            ("imperial-stable-depth-4", "stable", 4, "(current-age >= imperial-age)"),
+            ("castle-range-depth-2", "archery-range", 2, "(current-age >= castle-age)"),
+            ("imperial-range-depth-3", "archery-range", 3, "(current-age >= imperial-age)"),
+            ("imperial-range-depth-4", "archery-range", 4, "(current-age >= imperial-age)"),
+            ("castle-siege-depth-2", "siege-workshop", 2, "(current-age >= castle-age)"),
+            ("imperial-siege-depth-3", "siege-workshop", 3, "(current-age >= imperial-age)"),
+            ("imperial-siege-depth-4", "siege-workshop", 4, "(current-age >= imperial-age)"),
+        )
+        for identity, building, floor, age_guard in expected:
+            self.assertIn(f"(defconst demand-{identity}", self.per)
+            self.assertIn(f"(set-goal demand-{identity} 1)", self.per)
+            action_marker = f"(defrule\n    (goal demand-{identity} 1)"
+            action_start = self.per.index(action_marker)
+            next_rule = self.per.index("\n(defrule", action_start + len(action_marker))
+            action_rule = self.per[action_start:next_rule]
+            self.assertIn(age_guard, action_rule)
+            self.assertIn(
+                f"(building-type-count-total {building} < {floor})",
+                action_rule,
+            )
+            self.assertIn(f"(can-build {building})", action_rule)
+            self.assertIn(f"(build {building})", action_rule)
+            self.assertIn(
+                "(goal action-claim-build-pass-singleton 0)",
+                action_rule,
+            )
+            self.assertIn(
+                f"(goal construction-retry-barrier-{identity} 0)",
+                action_rule,
+            )
+            self.assertIn(
+                f"(building-type-count {building} >= {floor})",
+                self.per,
+            )
     def test_fortified_breach_preserves_attack_reserve(self):
         start = self.per.index(
             "(goal byzantine-siege-approach byzantine-siege-approach-breach)"

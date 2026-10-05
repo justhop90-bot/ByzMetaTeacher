@@ -216,6 +216,81 @@
 (defconst complete-castle-third-town-center 325)
 (defconst construction-retry-barrier-castle-third-town-center 326)
 
+; Byzantine standing-demand production depth.
+; Queue depth remains OPEN: provider scaling is driven only by witnessed standing units.
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-castle-barracks-depth-2 15110)
+(defconst issued-castle-barracks-depth-2 15113)
+(defconst pending-castle-barracks-depth-2 15111)
+(defconst complete-castle-barracks-depth-2 15112)
+(defconst construction-retry-barrier-castle-barracks-depth-2 15210)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-barracks-depth-3 15114)
+(defconst issued-imperial-barracks-depth-3 15117)
+(defconst pending-imperial-barracks-depth-3 15115)
+(defconst complete-imperial-barracks-depth-3 15116)
+(defconst construction-retry-barrier-imperial-barracks-depth-3 15211)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-barracks-depth-4 15118)
+(defconst issued-imperial-barracks-depth-4 15121)
+(defconst pending-imperial-barracks-depth-4 15119)
+(defconst complete-imperial-barracks-depth-4 15120)
+(defconst construction-retry-barrier-imperial-barracks-depth-4 15212)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-castle-stable-depth-2 15122)
+(defconst issued-castle-stable-depth-2 15125)
+(defconst pending-castle-stable-depth-2 15123)
+(defconst complete-castle-stable-depth-2 15124)
+(defconst construction-retry-barrier-castle-stable-depth-2 15213)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-stable-depth-3 15126)
+(defconst issued-imperial-stable-depth-3 15129)
+(defconst pending-imperial-stable-depth-3 15127)
+(defconst complete-imperial-stable-depth-3 15128)
+(defconst construction-retry-barrier-imperial-stable-depth-3 15214)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-stable-depth-4 15130)
+(defconst issued-imperial-stable-depth-4 15133)
+(defconst pending-imperial-stable-depth-4 15131)
+(defconst complete-imperial-stable-depth-4 15132)
+(defconst construction-retry-barrier-imperial-stable-depth-4 15215)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-castle-range-depth-2 15134)
+(defconst issued-castle-range-depth-2 15137)
+(defconst pending-castle-range-depth-2 15135)
+(defconst complete-castle-range-depth-2 15136)
+(defconst construction-retry-barrier-castle-range-depth-2 15216)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-range-depth-3 15138)
+(defconst issued-imperial-range-depth-3 15141)
+(defconst pending-imperial-range-depth-3 15139)
+(defconst complete-imperial-range-depth-3 15140)
+(defconst construction-retry-barrier-imperial-range-depth-3 15217)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-range-depth-4 15142)
+(defconst issued-imperial-range-depth-4 15145)
+(defconst pending-imperial-range-depth-4 15143)
+(defconst complete-imperial-range-depth-4 15144)
+(defconst construction-retry-barrier-imperial-range-depth-4 15218)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-castle-siege-depth-2 15146)
+(defconst issued-castle-siege-depth-2 15149)
+(defconst pending-castle-siege-depth-2 15147)
+(defconst complete-castle-siege-depth-2 15148)
+(defconst construction-retry-barrier-castle-siege-depth-2 15219)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-siege-depth-3 15150)
+(defconst issued-imperial-siege-depth-3 15153)
+(defconst pending-imperial-siege-depth-3 15151)
+(defconst complete-imperial-siege-depth-3 15152)
+(defconst construction-retry-barrier-imperial-siege-depth-3 15220)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-imperial-siege-depth-4 15154)
+(defconst issued-imperial-siege-depth-4 15157)
+(defconst pending-imperial-siege-depth-4 15155)
+(defconst complete-imperial-siege-depth-4 15156)
+(defconst construction-retry-barrier-imperial-siege-depth-4 15221)
+
 ; Persistent Feudal military package.
 ; 0 = minimal defensive Feudal (baseline Spearmen only)
 ; 1 = Archer pressure / anti-infantry package
@@ -9307,6 +9382,986 @@
     (set-goal byzantine-army-attack-ready 1)
 )
 
+; Pending diagnostics: castle-barracks-depth-2
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-castle-barracks-depth-2 15112)
+    (building-type-count barracks >= 2)
+=>
+    (set-goal demand-castle-barracks-depth-2 0)
+)
+
+(defrule
+    (or
+        (goal demand-castle-barracks-depth-2 15113)
+        (goal demand-castle-barracks-depth-2 15111)
+    )
+    (building-type-count barracks >= 2)
+=>
+    (set-goal demand-castle-barracks-depth-2 15112)
+)
+
+(defrule
+    (or
+        (goal demand-castle-barracks-depth-2 15113)
+        (goal demand-castle-barracks-depth-2 15111)
+    )
+    (not (building-type-count barracks >= 2))
+    (up-pending-objects c: 12 >= 1)
+=>
+    (set-goal demand-castle-barracks-depth-2 15111)
+)
+
+(defrule
+    (or
+        (goal demand-castle-barracks-depth-2 15113)
+        (goal demand-castle-barracks-depth-2 15111)
+    )
+    (not (building-type-count barracks >= 2))
+    (up-pending-objects c: 12 == 0)
+    (up-pending-placement c: 12)
+=>
+    (set-goal demand-castle-barracks-depth-2 15111)
+)
+
+(defrule
+    (or
+        (goal demand-castle-barracks-depth-2 15113)
+        (goal demand-castle-barracks-depth-2 15111)
+    )
+    (not (building-type-count barracks >= 2))
+    (up-pending-objects c: 12 == 0)
+    (not (up-pending-placement c: 12))
+=>
+    (set-goal demand-castle-barracks-depth-2 1)
+    (set-goal construction-retry-barrier-castle-barracks-depth-2 1)
+)
+
+(defrule
+    (goal demand-castle-barracks-depth-2 0)
+    (not (building-type-count barracks >= 2))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-barracks-depth-2 1)
+)
+
+; Action issuance: castle-barracks-depth-2
+(defrule
+    (goal demand-castle-barracks-depth-2 1)
+    (not (building-type-count barracks >= 2))
+    (goal construction-retry-barrier-castle-barracks-depth-2 0)
+    (up-pending-objects c: 12 == 0)
+    (not (up-pending-placement c: 12))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or (unit-type-count-total varangian-guard-line >= 6) (unit-type-count-total 359 >= 6))
+    (building-type-count-total barracks < 2)
+    (can-build barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-barracks-depth-2 15113)
+)
+
+; Pending diagnostics: imperial-barracks-depth-3
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-barracks-depth-3 15116)
+    (building-type-count barracks >= 3)
+=>
+    (set-goal demand-imperial-barracks-depth-3 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-3 15117)
+        (goal demand-imperial-barracks-depth-3 15115)
+    )
+    (building-type-count barracks >= 3)
+=>
+    (set-goal demand-imperial-barracks-depth-3 15116)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-3 15117)
+        (goal demand-imperial-barracks-depth-3 15115)
+    )
+    (not (building-type-count barracks >= 3))
+    (up-pending-objects c: 12 >= 1)
+=>
+    (set-goal demand-imperial-barracks-depth-3 15115)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-3 15117)
+        (goal demand-imperial-barracks-depth-3 15115)
+    )
+    (not (building-type-count barracks >= 3))
+    (up-pending-objects c: 12 == 0)
+    (up-pending-placement c: 12)
+=>
+    (set-goal demand-imperial-barracks-depth-3 15115)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-3 15117)
+        (goal demand-imperial-barracks-depth-3 15115)
+    )
+    (not (building-type-count barracks >= 3))
+    (up-pending-objects c: 12 == 0)
+    (not (up-pending-placement c: 12))
+=>
+    (set-goal demand-imperial-barracks-depth-3 1)
+    (set-goal construction-retry-barrier-imperial-barracks-depth-3 1)
+)
+
+(defrule
+    (goal demand-imperial-barracks-depth-3 0)
+    (not (building-type-count barracks >= 3))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-barracks-depth-3 1)
+)
+
+; Action issuance: imperial-barracks-depth-3
+(defrule
+    (goal demand-imperial-barracks-depth-3 1)
+    (not (building-type-count barracks >= 3))
+    (goal construction-retry-barrier-imperial-barracks-depth-3 0)
+    (up-pending-objects c: 12 == 0)
+    (not (up-pending-placement c: 12))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (unit-type-count-total varangian-guard-line >= 12) (unit-type-count-total 359 >= 12))
+    (building-type-count-total barracks >= 2)
+    (building-type-count-total barracks < 3)
+    (can-build barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-barracks-depth-3 15117)
+)
+
+; Pending diagnostics: imperial-barracks-depth-4
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-barracks-depth-4 15120)
+    (building-type-count barracks >= 4)
+=>
+    (set-goal demand-imperial-barracks-depth-4 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-4 15121)
+        (goal demand-imperial-barracks-depth-4 15119)
+    )
+    (building-type-count barracks >= 4)
+=>
+    (set-goal demand-imperial-barracks-depth-4 15120)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-4 15121)
+        (goal demand-imperial-barracks-depth-4 15119)
+    )
+    (not (building-type-count barracks >= 4))
+    (up-pending-objects c: 12 >= 1)
+=>
+    (set-goal demand-imperial-barracks-depth-4 15119)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-4 15121)
+        (goal demand-imperial-barracks-depth-4 15119)
+    )
+    (not (building-type-count barracks >= 4))
+    (up-pending-objects c: 12 == 0)
+    (up-pending-placement c: 12)
+=>
+    (set-goal demand-imperial-barracks-depth-4 15119)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-barracks-depth-4 15121)
+        (goal demand-imperial-barracks-depth-4 15119)
+    )
+    (not (building-type-count barracks >= 4))
+    (up-pending-objects c: 12 == 0)
+    (not (up-pending-placement c: 12))
+=>
+    (set-goal demand-imperial-barracks-depth-4 1)
+    (set-goal construction-retry-barrier-imperial-barracks-depth-4 1)
+)
+
+(defrule
+    (goal demand-imperial-barracks-depth-4 0)
+    (not (building-type-count barracks >= 4))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-barracks-depth-4 1)
+)
+
+; Action issuance: imperial-barracks-depth-4
+(defrule
+    (goal demand-imperial-barracks-depth-4 1)
+    (not (building-type-count barracks >= 4))
+    (goal construction-retry-barrier-imperial-barracks-depth-4 0)
+    (up-pending-objects c: 12 == 0)
+    (not (up-pending-placement c: 12))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (unit-type-count-total varangian-guard-line >= 18) (unit-type-count-total 359 >= 18))
+    (building-type-count-total barracks >= 3)
+    (building-type-count-total barracks < 4)
+    (can-build barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-barracks-depth-4 15121)
+)
+
+; Pending diagnostics: castle-stable-depth-2
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-castle-stable-depth-2 15124)
+    (building-type-count stable >= 2)
+=>
+    (set-goal demand-castle-stable-depth-2 0)
+)
+
+(defrule
+    (or
+        (goal demand-castle-stable-depth-2 15125)
+        (goal demand-castle-stable-depth-2 15123)
+    )
+    (building-type-count stable >= 2)
+=>
+    (set-goal demand-castle-stable-depth-2 15124)
+)
+
+(defrule
+    (or
+        (goal demand-castle-stable-depth-2 15125)
+        (goal demand-castle-stable-depth-2 15123)
+    )
+    (not (building-type-count stable >= 2))
+    (up-pending-objects c: 101 >= 1)
+=>
+    (set-goal demand-castle-stable-depth-2 15123)
+)
+
+(defrule
+    (or
+        (goal demand-castle-stable-depth-2 15125)
+        (goal demand-castle-stable-depth-2 15123)
+    )
+    (not (building-type-count stable >= 2))
+    (up-pending-objects c: 101 == 0)
+    (up-pending-placement c: 101)
+=>
+    (set-goal demand-castle-stable-depth-2 15123)
+)
+
+(defrule
+    (or
+        (goal demand-castle-stable-depth-2 15125)
+        (goal demand-castle-stable-depth-2 15123)
+    )
+    (not (building-type-count stable >= 2))
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+=>
+    (set-goal demand-castle-stable-depth-2 1)
+    (set-goal construction-retry-barrier-castle-stable-depth-2 1)
+)
+
+(defrule
+    (goal demand-castle-stable-depth-2 0)
+    (not (building-type-count stable >= 2))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-stable-depth-2 1)
+)
+
+; Action issuance: castle-stable-depth-2
+(defrule
+    (goal demand-castle-stable-depth-2 1)
+    (not (building-type-count stable >= 2))
+    (goal construction-retry-barrier-castle-stable-depth-2 0)
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or (or (unit-type-count-total cataphract-line >= 6) (unit-type-count-total knight-line >= 6)) (unit-type-count-total camel-rider-line >= 6))
+    (building-type-count-total stable < 2)
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-stable-depth-2 15125)
+)
+
+; Pending diagnostics: imperial-stable-depth-3
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-stable-depth-3 15128)
+    (building-type-count stable >= 3)
+=>
+    (set-goal demand-imperial-stable-depth-3 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-3 15129)
+        (goal demand-imperial-stable-depth-3 15127)
+    )
+    (building-type-count stable >= 3)
+=>
+    (set-goal demand-imperial-stable-depth-3 15128)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-3 15129)
+        (goal demand-imperial-stable-depth-3 15127)
+    )
+    (not (building-type-count stable >= 3))
+    (up-pending-objects c: 101 >= 1)
+=>
+    (set-goal demand-imperial-stable-depth-3 15127)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-3 15129)
+        (goal demand-imperial-stable-depth-3 15127)
+    )
+    (not (building-type-count stable >= 3))
+    (up-pending-objects c: 101 == 0)
+    (up-pending-placement c: 101)
+=>
+    (set-goal demand-imperial-stable-depth-3 15127)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-3 15129)
+        (goal demand-imperial-stable-depth-3 15127)
+    )
+    (not (building-type-count stable >= 3))
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+=>
+    (set-goal demand-imperial-stable-depth-3 1)
+    (set-goal construction-retry-barrier-imperial-stable-depth-3 1)
+)
+
+(defrule
+    (goal demand-imperial-stable-depth-3 0)
+    (not (building-type-count stable >= 3))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-stable-depth-3 1)
+)
+
+; Action issuance: imperial-stable-depth-3
+(defrule
+    (goal demand-imperial-stable-depth-3 1)
+    (not (building-type-count stable >= 3))
+    (goal construction-retry-barrier-imperial-stable-depth-3 0)
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (or (unit-type-count-total cataphract-line >= 12) (unit-type-count-total knight-line >= 12)) (unit-type-count-total camel-rider-line >= 12))
+    (building-type-count-total stable >= 2)
+    (building-type-count-total stable < 3)
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-stable-depth-3 15129)
+)
+
+; Pending diagnostics: imperial-stable-depth-4
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-stable-depth-4 15132)
+    (building-type-count stable >= 4)
+=>
+    (set-goal demand-imperial-stable-depth-4 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-4 15133)
+        (goal demand-imperial-stable-depth-4 15131)
+    )
+    (building-type-count stable >= 4)
+=>
+    (set-goal demand-imperial-stable-depth-4 15132)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-4 15133)
+        (goal demand-imperial-stable-depth-4 15131)
+    )
+    (not (building-type-count stable >= 4))
+    (up-pending-objects c: 101 >= 1)
+=>
+    (set-goal demand-imperial-stable-depth-4 15131)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-4 15133)
+        (goal demand-imperial-stable-depth-4 15131)
+    )
+    (not (building-type-count stable >= 4))
+    (up-pending-objects c: 101 == 0)
+    (up-pending-placement c: 101)
+=>
+    (set-goal demand-imperial-stable-depth-4 15131)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-stable-depth-4 15133)
+        (goal demand-imperial-stable-depth-4 15131)
+    )
+    (not (building-type-count stable >= 4))
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+=>
+    (set-goal demand-imperial-stable-depth-4 1)
+    (set-goal construction-retry-barrier-imperial-stable-depth-4 1)
+)
+
+(defrule
+    (goal demand-imperial-stable-depth-4 0)
+    (not (building-type-count stable >= 4))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-stable-depth-4 1)
+)
+
+; Action issuance: imperial-stable-depth-4
+(defrule
+    (goal demand-imperial-stable-depth-4 1)
+    (not (building-type-count stable >= 4))
+    (goal construction-retry-barrier-imperial-stable-depth-4 0)
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (or (unit-type-count-total cataphract-line >= 18) (unit-type-count-total knight-line >= 18)) (unit-type-count-total camel-rider-line >= 18))
+    (building-type-count-total stable >= 3)
+    (building-type-count-total stable < 4)
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-stable-depth-4 15133)
+)
+
+; Pending diagnostics: castle-range-depth-2
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-castle-range-depth-2 15136)
+    (building-type-count archery-range >= 2)
+=>
+    (set-goal demand-castle-range-depth-2 0)
+)
+
+(defrule
+    (or
+        (goal demand-castle-range-depth-2 15137)
+        (goal demand-castle-range-depth-2 15135)
+    )
+    (building-type-count archery-range >= 2)
+=>
+    (set-goal demand-castle-range-depth-2 15136)
+)
+
+(defrule
+    (or
+        (goal demand-castle-range-depth-2 15137)
+        (goal demand-castle-range-depth-2 15135)
+    )
+    (not (building-type-count archery-range >= 2))
+    (up-pending-objects c: 87 >= 1)
+=>
+    (set-goal demand-castle-range-depth-2 15135)
+)
+
+(defrule
+    (or
+        (goal demand-castle-range-depth-2 15137)
+        (goal demand-castle-range-depth-2 15135)
+    )
+    (not (building-type-count archery-range >= 2))
+    (up-pending-objects c: 87 == 0)
+    (up-pending-placement c: 87)
+=>
+    (set-goal demand-castle-range-depth-2 15135)
+)
+
+(defrule
+    (or
+        (goal demand-castle-range-depth-2 15137)
+        (goal demand-castle-range-depth-2 15135)
+    )
+    (not (building-type-count archery-range >= 2))
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+=>
+    (set-goal demand-castle-range-depth-2 1)
+    (set-goal construction-retry-barrier-castle-range-depth-2 1)
+)
+
+(defrule
+    (goal demand-castle-range-depth-2 0)
+    (not (building-type-count archery-range >= 2))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-range-depth-2 1)
+)
+
+; Action issuance: castle-range-depth-2
+(defrule
+    (goal demand-castle-range-depth-2 1)
+    (not (building-type-count archery-range >= 2))
+    (goal construction-retry-barrier-castle-range-depth-2 0)
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or (unit-type-count-total crossbow-line >= 6) (unit-type-count-total skirmisher-line >= 6))
+    (building-type-count-total archery-range < 2)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-range-depth-2 15137)
+)
+
+; Pending diagnostics: imperial-range-depth-3
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-range-depth-3 15140)
+    (building-type-count archery-range >= 3)
+=>
+    (set-goal demand-imperial-range-depth-3 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-3 15141)
+        (goal demand-imperial-range-depth-3 15139)
+    )
+    (building-type-count archery-range >= 3)
+=>
+    (set-goal demand-imperial-range-depth-3 15140)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-3 15141)
+        (goal demand-imperial-range-depth-3 15139)
+    )
+    (not (building-type-count archery-range >= 3))
+    (up-pending-objects c: 87 >= 1)
+=>
+    (set-goal demand-imperial-range-depth-3 15139)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-3 15141)
+        (goal demand-imperial-range-depth-3 15139)
+    )
+    (not (building-type-count archery-range >= 3))
+    (up-pending-objects c: 87 == 0)
+    (up-pending-placement c: 87)
+=>
+    (set-goal demand-imperial-range-depth-3 15139)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-3 15141)
+        (goal demand-imperial-range-depth-3 15139)
+    )
+    (not (building-type-count archery-range >= 3))
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+=>
+    (set-goal demand-imperial-range-depth-3 1)
+    (set-goal construction-retry-barrier-imperial-range-depth-3 1)
+)
+
+(defrule
+    (goal demand-imperial-range-depth-3 0)
+    (not (building-type-count archery-range >= 3))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-range-depth-3 1)
+)
+
+; Action issuance: imperial-range-depth-3
+(defrule
+    (goal demand-imperial-range-depth-3 1)
+    (not (building-type-count archery-range >= 3))
+    (goal construction-retry-barrier-imperial-range-depth-3 0)
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (unit-type-count-total crossbow-line >= 12) (unit-type-count-total skirmisher-line >= 12))
+    (building-type-count-total archery-range >= 2)
+    (building-type-count-total archery-range < 3)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-range-depth-3 15141)
+)
+
+; Pending diagnostics: imperial-range-depth-4
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-range-depth-4 15144)
+    (building-type-count archery-range >= 4)
+=>
+    (set-goal demand-imperial-range-depth-4 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-4 15145)
+        (goal demand-imperial-range-depth-4 15143)
+    )
+    (building-type-count archery-range >= 4)
+=>
+    (set-goal demand-imperial-range-depth-4 15144)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-4 15145)
+        (goal demand-imperial-range-depth-4 15143)
+    )
+    (not (building-type-count archery-range >= 4))
+    (up-pending-objects c: 87 >= 1)
+=>
+    (set-goal demand-imperial-range-depth-4 15143)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-4 15145)
+        (goal demand-imperial-range-depth-4 15143)
+    )
+    (not (building-type-count archery-range >= 4))
+    (up-pending-objects c: 87 == 0)
+    (up-pending-placement c: 87)
+=>
+    (set-goal demand-imperial-range-depth-4 15143)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-range-depth-4 15145)
+        (goal demand-imperial-range-depth-4 15143)
+    )
+    (not (building-type-count archery-range >= 4))
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+=>
+    (set-goal demand-imperial-range-depth-4 1)
+    (set-goal construction-retry-barrier-imperial-range-depth-4 1)
+)
+
+(defrule
+    (goal demand-imperial-range-depth-4 0)
+    (not (building-type-count archery-range >= 4))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-range-depth-4 1)
+)
+
+; Action issuance: imperial-range-depth-4
+(defrule
+    (goal demand-imperial-range-depth-4 1)
+    (not (building-type-count archery-range >= 4))
+    (goal construction-retry-barrier-imperial-range-depth-4 0)
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (unit-type-count-total crossbow-line >= 18) (unit-type-count-total skirmisher-line >= 18))
+    (building-type-count-total archery-range >= 3)
+    (building-type-count-total archery-range < 4)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-range-depth-4 15145)
+)
+
+; Pending diagnostics: castle-siege-depth-2
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-castle-siege-depth-2 15148)
+    (building-type-count siege-workshop >= 2)
+=>
+    (set-goal demand-castle-siege-depth-2 0)
+)
+
+(defrule
+    (or
+        (goal demand-castle-siege-depth-2 15149)
+        (goal demand-castle-siege-depth-2 15147)
+    )
+    (building-type-count siege-workshop >= 2)
+=>
+    (set-goal demand-castle-siege-depth-2 15148)
+)
+
+(defrule
+    (or
+        (goal demand-castle-siege-depth-2 15149)
+        (goal demand-castle-siege-depth-2 15147)
+    )
+    (not (building-type-count siege-workshop >= 2))
+    (up-pending-objects c: 49 >= 1)
+=>
+    (set-goal demand-castle-siege-depth-2 15147)
+)
+
+(defrule
+    (or
+        (goal demand-castle-siege-depth-2 15149)
+        (goal demand-castle-siege-depth-2 15147)
+    )
+    (not (building-type-count siege-workshop >= 2))
+    (up-pending-objects c: 49 == 0)
+    (up-pending-placement c: 49)
+=>
+    (set-goal demand-castle-siege-depth-2 15147)
+)
+
+(defrule
+    (or
+        (goal demand-castle-siege-depth-2 15149)
+        (goal demand-castle-siege-depth-2 15147)
+    )
+    (not (building-type-count siege-workshop >= 2))
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+=>
+    (set-goal demand-castle-siege-depth-2 1)
+    (set-goal construction-retry-barrier-castle-siege-depth-2 1)
+)
+
+(defrule
+    (goal demand-castle-siege-depth-2 0)
+    (not (building-type-count siege-workshop >= 2))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-siege-depth-2 1)
+)
+
+; Action issuance: castle-siege-depth-2
+(defrule
+    (goal demand-castle-siege-depth-2 1)
+    (not (building-type-count siege-workshop >= 2))
+    (goal construction-retry-barrier-castle-siege-depth-2 0)
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or (or (unit-type-count-total mangonel-line >= 2) (unit-type-count-total trebuchet >= 2)) (or (unit-type-count-total bombard-cannon >= 2) (unit-type-count-total ram-line >= 2)))
+    (building-type-count-total siege-workshop < 2)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-siege-depth-2 15149)
+)
+
+; Pending diagnostics: imperial-siege-depth-3
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-siege-depth-3 15152)
+    (building-type-count siege-workshop >= 3)
+=>
+    (set-goal demand-imperial-siege-depth-3 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-3 15153)
+        (goal demand-imperial-siege-depth-3 15151)
+    )
+    (building-type-count siege-workshop >= 3)
+=>
+    (set-goal demand-imperial-siege-depth-3 15152)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-3 15153)
+        (goal demand-imperial-siege-depth-3 15151)
+    )
+    (not (building-type-count siege-workshop >= 3))
+    (up-pending-objects c: 49 >= 1)
+=>
+    (set-goal demand-imperial-siege-depth-3 15151)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-3 15153)
+        (goal demand-imperial-siege-depth-3 15151)
+    )
+    (not (building-type-count siege-workshop >= 3))
+    (up-pending-objects c: 49 == 0)
+    (up-pending-placement c: 49)
+=>
+    (set-goal demand-imperial-siege-depth-3 15151)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-3 15153)
+        (goal demand-imperial-siege-depth-3 15151)
+    )
+    (not (building-type-count siege-workshop >= 3))
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+=>
+    (set-goal demand-imperial-siege-depth-3 1)
+    (set-goal construction-retry-barrier-imperial-siege-depth-3 1)
+)
+
+(defrule
+    (goal demand-imperial-siege-depth-3 0)
+    (not (building-type-count siege-workshop >= 3))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-siege-depth-3 1)
+)
+
+; Action issuance: imperial-siege-depth-3
+(defrule
+    (goal demand-imperial-siege-depth-3 1)
+    (not (building-type-count siege-workshop >= 3))
+    (goal construction-retry-barrier-imperial-siege-depth-3 0)
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (or (unit-type-count-total mangonel-line >= 4) (unit-type-count-total trebuchet >= 4)) (or (unit-type-count-total bombard-cannon >= 4) (unit-type-count-total ram-line >= 4)))
+    (building-type-count-total siege-workshop >= 2)
+    (building-type-count-total siege-workshop < 3)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-siege-depth-3 15153)
+)
+
+; Pending diagnostics: imperial-siege-depth-4
+; Standing-demand provider depth; queue state remains intentionally unobserved.
+(defrule
+    (goal demand-imperial-siege-depth-4 15156)
+    (building-type-count siege-workshop >= 4)
+=>
+    (set-goal demand-imperial-siege-depth-4 0)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-4 15157)
+        (goal demand-imperial-siege-depth-4 15155)
+    )
+    (building-type-count siege-workshop >= 4)
+=>
+    (set-goal demand-imperial-siege-depth-4 15156)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-4 15157)
+        (goal demand-imperial-siege-depth-4 15155)
+    )
+    (not (building-type-count siege-workshop >= 4))
+    (up-pending-objects c: 49 >= 1)
+=>
+    (set-goal demand-imperial-siege-depth-4 15155)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-4 15157)
+        (goal demand-imperial-siege-depth-4 15155)
+    )
+    (not (building-type-count siege-workshop >= 4))
+    (up-pending-objects c: 49 == 0)
+    (up-pending-placement c: 49)
+=>
+    (set-goal demand-imperial-siege-depth-4 15155)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-siege-depth-4 15157)
+        (goal demand-imperial-siege-depth-4 15155)
+    )
+    (not (building-type-count siege-workshop >= 4))
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+=>
+    (set-goal demand-imperial-siege-depth-4 1)
+    (set-goal construction-retry-barrier-imperial-siege-depth-4 1)
+)
+
+(defrule
+    (goal demand-imperial-siege-depth-4 0)
+    (not (building-type-count siege-workshop >= 4))
+    (current-age >= imperial-age)
+=>
+    (set-goal demand-imperial-siege-depth-4 1)
+)
+
+; Action issuance: imperial-siege-depth-4
+(defrule
+    (goal demand-imperial-siege-depth-4 1)
+    (not (building-type-count siege-workshop >= 4))
+    (goal construction-retry-barrier-imperial-siege-depth-4 0)
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (or (unit-type-count-total mangonel-line >= 6) (unit-type-count-total trebuchet >= 6)) (or (unit-type-count-total bombard-cannon >= 6) (unit-type-count-total ram-line >= 6)))
+    (building-type-count-total siege-workshop >= 3)
+    (building-type-count-total siege-workshop < 4)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-siege-depth-4 15157)
+)
+
 ; MINIMUM-VIABLE IMPERIAL ATTACK ADMISSION
 ; Early Imperial pressure can begin from a smaller role-balanced backbone plus
 ; one offensive siege piece. Fortified targets still use the larger package.
@@ -11072,6 +12127,80 @@
     (set-goal construction-retry-barrier-economy-stone-camp-floor-5 0)
 )
 
+; Per-pass construction retry barriers: Byzantine provider-depth scaling
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-castle-barracks-depth-2 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-barracks-depth-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-barracks-depth-4 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-castle-stable-depth-2 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-stable-depth-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-stable-depth-4 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-castle-range-depth-2 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-range-depth-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-range-depth-4 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-castle-siege-depth-2 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-siege-depth-3 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-imperial-siege-depth-4 0)
+)
+
+
 ; Demand initialization
 (defrule
     (true)
@@ -11122,6 +12251,24 @@
     (set-goal demand-economy-stone-camp-floor-5 0)
     (set-goal demand-economy-food-mill-boom 1)
     (set-goal demand-economy-market-floor-1 1)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal demand-castle-barracks-depth-2 1)
+    (set-goal demand-imperial-barracks-depth-3 1)
+    (set-goal demand-imperial-barracks-depth-4 1)
+    (set-goal demand-castle-stable-depth-2 1)
+    (set-goal demand-imperial-stable-depth-3 1)
+    (set-goal demand-imperial-stable-depth-4 1)
+    (set-goal demand-castle-range-depth-2 1)
+    (set-goal demand-imperial-range-depth-3 1)
+    (set-goal demand-imperial-range-depth-4 1)
+    (set-goal demand-castle-siege-depth-2 1)
+    (set-goal demand-imperial-siege-depth-3 1)
+    (set-goal demand-imperial-siege-depth-4 1)
     (set-goal demand-castle-stable-capability 0)
     (set-goal demand-castle-archery-capability 0)
     (disable-self)
