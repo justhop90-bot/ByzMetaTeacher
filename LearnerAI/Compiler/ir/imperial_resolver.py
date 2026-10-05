@@ -142,6 +142,7 @@ class ImperialResolver:
     def gold_starved_eligible(cls, value: ImperialResolverInput) -> bool:
         return (
             cls.floor_recovered(value)
+            and value.offensive_objective
             and value.gold <= cls.TRASH_GOLD_IN
             and value.food >= cls.TRASH_FOOD_IN
             and value.wood >= cls.TRASH_WOOD_IN
