@@ -1536,10 +1536,9 @@ def community_strategy_demands(
                         "(current-age >= imperial-age)",
                         "(goal byzantine-endgame-frontier >= 1)",
                         "(can-build " + _slug(building_name) + ")",
-                        "(or (building-type-count-total " + _slug(building_name) + " < 5) "
-                        "(building-type-count-total siege-workshop < 5))",
+                        "(building-type-count-total " + _slug(building_name) + " < 5)",
                     ),
-                    initial_state=LifecycleState.RELEASED,
+                    initial_state=LifecycleState.ACTIVE,
                 )
             )
 
