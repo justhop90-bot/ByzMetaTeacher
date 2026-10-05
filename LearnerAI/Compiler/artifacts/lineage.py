@@ -299,6 +299,56 @@ def verify_compiler_manifest_semantics(
     return actual_sha, source_revision
 
 
+def verify_overlay_manifest_semantics(
+    *,
+    repository_root: Path,
+    manifest_path: Path = OVERLAY_MANIFEST,
+) -> str:
+    """Verify the declared runtime overlay and return its artifact SHA."""
+    root = repository_root.resolve()
+    manifest_file = _expect_file(
+        root=root,
+        relative_path=manifest_path,
+        code="BYZ-LINEAGE-011",
+        edge="overlay -> overlay-manifest",
+    )
+    manifest = _read_json(manifest_file)
+    _expect_equal(
+        code="BYZ-LINEAGE-000",
+        edge="overlay-manifest -> schema",
+        expected="byzantine-runtime-overlay-1",
+        observed=_get(manifest, "schema", context="overlay"),
+    )
+    _expect_equal(
+        code="BYZ-LINEAGE-000",
+        edge="overlay-manifest -> artifact-kind",
+        expected="runtime-overlay",
+        observed=_get(manifest, "artifact_kind", context="overlay"),
+    )
+    _expect_equal(
+        code="BYZ-LINEAGE-011",
+        edge="overlay -> id",
+        expected="byzantine-runtime-overlay",
+        observed=_get(manifest, "id", context="overlay"),
+    )
+    _check_canonical_artifact_reference(
+        manifest=manifest,
+        expected_artifact_path=OVERLAY_ARTIFACT,
+        expected_manifest_path=OVERLAY_MANIFEST,
+        context="overlay",
+        artifact_path_code="BYZ-LINEAGE-011",
+        manifest_path_code="BYZ-LINEAGE-011",
+    )
+    artifact = _get(manifest, "artifact", context="overlay")
+    return _artifact_hash(
+        root=root,
+        relative_path=OVERLAY_ARTIFACT,
+        declared_sha256=str(_get(artifact, "sha256", context="overlay.artifact")),
+        code="BYZ-LINEAGE-011",
+        edge="overlay-manifest -> overlay-artifact",
+    )
+
+
 def verify_runtime_manifest_semantics(
     *,
     repository_root: Path,
