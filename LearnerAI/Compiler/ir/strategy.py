@@ -1901,7 +1901,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 "byzantine-endgame-mode-resource-denial",
                 facts=(
                     parse_expression(verified_frontier_match, SourceLocation(1)),
-                    parse_expression(profile.observation("strategy-endgame-resource-denial").expression, SourceLocation(1)),
                     parse_expression(profile.observation("strategy-enemy-pressure").expression, SourceLocation(1)),
                 ),
                 actions=(
@@ -1913,7 +1912,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 "byzantine-endgame-mode-attrition",
                 facts=(
                     parse_expression(verified_frontier_match, SourceLocation(1)),
-                    parse_expression(profile.observation("strategy-endgame-ground-conversion").expression, SourceLocation(1)),
                     parse_expression(profile.observation("strategy-imperial-spend-gold").expression, SourceLocation(1)),
                 ),
                 actions=(
