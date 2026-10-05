@@ -2566,7 +2566,6 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             ),
             actions=(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
-                parse_expression("(up-modify-sn sn-focus-player-number c:= 0)", SourceLocation(1)),
                 parse_expression("(up-find-remote c: relic c: 1)", SourceLocation(1)),
                 parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
                 parse_expression("(up-find-local c: monk c: 1)", SourceLocation(1)),
@@ -2604,11 +2603,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             ),
             actions=(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
-                parse_expression(
-                    "(up-modify-sn sn-focus-player-number c:= my-player-number)",
-                    SourceLocation(1),
-                ),
-                parse_expression("(up-find-remote c: monastery c: 1)", SourceLocation(1)),
+                parse_expression("(up-find-local c: monastery c: 1)", SourceLocation(1)),
                 parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
                 parse_expression("(up-find-local c: monk-with-relic c: 1)", SourceLocation(1)),
                 parse_expression(
