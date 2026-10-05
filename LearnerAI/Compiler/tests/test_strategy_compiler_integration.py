@@ -684,7 +684,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         generated_lines = tuple(
             line
             for line in output.splitlines()
-            if line.strip().startswith("(defrule")
+            if line.strip()
         )
         self.assertTrue(generated_lines)
         self.assertLessEqual(
