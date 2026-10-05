@@ -519,6 +519,16 @@ def community_strategy_observations(
             effective.age_advance(Age.IMPERIAL).provenance,
         ),
         _observation(
+            "strategy-endgame-attack-package-live",
+            "(attack-soldier-count > 0)",
+            _airef_provenance(effective, "commands/commands-details.html#attack-soldier-count"),
+        ),
+        _observation(
+            "strategy-endgame-attack-package-cleared",
+            "(attack-soldier-count <= 0)",
+            _airef_provenance(effective, "commands/commands-details.html#attack-soldier-count"),
+        ),
+        _observation(
             "strategy-imperial-spend-food",
             "(and (current-age >= imperial-age) (food-amount >= 2200))",
             _airef_provenance(effective, "commands/commands-details.html#food-amount"),
@@ -1733,7 +1743,7 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
             attack_soldier_percent=100,
             minimum_group_size=6,
             maximum_group_size=40,
-            live_witness_expression="(attack-soldier-count > 0)",
+            live_witness_ref="strategy-endgame-attack-package-live",
             frontier=(
                 _EndgameFrontierState.SIEGE,
                 _EndgameFrontierState.DEFENSE,
