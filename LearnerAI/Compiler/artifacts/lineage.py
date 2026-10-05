@@ -64,6 +64,105 @@ class ArtifactLineageResult:
     compiler_source_revision: str
 
 
+def defrule_blocks(payload: bytes) -> tuple[str, ...]:
+    """Extract complete defrule bodies in source order."""
+    text = payload.decode("utf-8", errors="replace")
+    blocks: list[str] = []
+    cursor = 0
+    while True:
+        start = text.find("(defrule", cursor)
+        if start < 0:
+            return tuple(blocks)
+        depth = 0
+        end = None
+        for index in range(start, len(text)):
+            char = text[index]
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = index + 1
+                    break
+        if end is None:
+            raise ArtifactLineageError(
+                code="BYZ-LINEAGE-030",
+                edge="runtime-artifact -> defrule-analysis",
+                expected="balanced defrule body",
+                observed="unterminated defrule",
+            )
+        blocks.append(text[start:end])
+        cursor = end
+
+
+@dataclass(frozen=True)
+class WovenRuntimeLineageResult:
+    """Compiler-owned rules conserved inside the woven runtime artifact."""
+
+    compiler_sha256: str
+    runtime_sha256: str
+    compiler_source_revision: str
+    compiler_rule_count: int
+    runtime_rule_count: int
+    compiler_rules_conserved: bool
+
+
+def verify_woven_runtime_lineage(
+    *,
+    repository_root: Path,
+    compiler_manifest_path: Path = COMPILER_MANIFEST,
+    runtime_artifact_path: Path = PROMOTED_ARTIFACT,
+) -> WovenRuntimeLineageResult:
+    """Verify compiler rule conservation without asserting compiler ordering."""
+    root = repository_root.resolve()
+    compiler_sha, source_revision = verify_compiler_manifest_semantics(
+        repository_root=root,
+        manifest_path=compiler_manifest_path,
+    )
+    runtime_path = _expect_file(
+        root=root,
+        relative_path=runtime_artifact_path,
+        code="BYZ-LINEAGE-031",
+        edge="compiler -> woven-runtime",
+    )
+    runtime_bytes = runtime_path.read_bytes()
+    compiler_bytes = (root / COMPILER_ARTIFACT).read_bytes()
+    compiler_rules = defrule_blocks(compiler_bytes)
+    runtime_rules = defrule_blocks(runtime_bytes)
+
+    compiler_counts: dict[str, int] = {}
+    runtime_counts: dict[str, int] = {}
+    for rule in compiler_rules:
+        compiler_counts[rule] = compiler_counts.get(rule, 0) + 1
+    for rule in runtime_rules:
+        runtime_counts[rule] = runtime_counts.get(rule, 0) + 1
+
+    missing = [
+        (rule, count, runtime_counts.get(rule, 0))
+        for rule, count in compiler_counts.items()
+        if runtime_counts.get(rule, 0) < count
+    ]
+    if missing:
+        rule, expected_count, observed_count = missing[0]
+        raise ArtifactLineageError(
+            code="BYZ-LINEAGE-032",
+            edge="compiler-owned-rules -> woven-runtime",
+            expected=f"{expected_count} occurrence(s) of exact compiler rule",
+            observed=f"{observed_count} occurrence(s); rule_head={rule[:160]!r}",
+            source_path=root / COMPILER_ARTIFACT,
+            target_path=runtime_path,
+        )
+
+    return WovenRuntimeLineageResult(
+        compiler_sha256=compiler_sha,
+        runtime_sha256=sha256_bytes(runtime_bytes),
+        compiler_source_revision=source_revision,
+        compiler_rule_count=len(compiler_rules),
+        runtime_rule_count=len(runtime_rules),
+        compiler_rules_conserved=True,
+    )
+
+
 def sha256_bytes(payload: bytes) -> str:
     """Return the SHA-256 digest for exact bytes."""
     return hashlib.sha256(payload).hexdigest()
