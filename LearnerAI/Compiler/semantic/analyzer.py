@@ -237,9 +237,12 @@ def _persistent_goal_read(expr: Expression, registry: PrimitiveRegistry) -> bool
     # PERSISTENT_STATE role below.
     if expr.head not in {"goal", "up-compare-goal"}:
         return False
-    primitive = registry.require(expr.head)
+    native = registry.require_native(expr.head)
     registry.validate_native_signature(expr.head, len(expr.args))
-    registry.validate_adapter_contract(primitive)
+    if native.command_type != "Fact":
+        raise ValueError(
+            f"persistent goal read '{expr.head}' is not registered as a native fact"
+        )
     return True
 
 
