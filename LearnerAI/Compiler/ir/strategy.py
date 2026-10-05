@@ -2995,16 +2995,18 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         plan.push_contract.cleared_witness_ref
     ).expression
     imperial_band_ready = "(up-compare-goal byzantine-imperial-band-state >= 1)"
-    imperial_floor_ready_facts = (
-        "(unit-type-count halberdier >= 18)",
-        "(unit-type-count 6 >= 18)",
-        "(unit-type-count hussar >= 12)",
+    # Native semantic validation does not currently expose military-population
+    # as an executable control fact, so use existing unit-count witnesses while
+    # preserving the same mature-force intent.
+    attack_package_ready = (
+        "(or (unit-type-count cataphract >= 8) "
+        "(or (unit-type-count varangian-guard >= 8) "
+        "(or (unit-type-count knight >= 8) "
+        "(or (unit-type-count halberdier >= 8) "
+        "(or (unit-type-count hussar >= 8) "
+        "(unit-type-count 6 >= 8))))))"
     )
-    premium_ready = (
-        "(or (unit-type-count cataphract >= 12) "
-        "(or (unit-type-count varangian-guard >= 12) "
-        "(unit-type-count 492 >= 12)))"
-    )
+    imperial_floor_ready_facts = (attack_package_ready,)
     gold_starved_exception = "(goal byzantine-imperial-band-state 3)"
     premium_not_ready = (
         "(and (unit-type-count cataphract < 12) "
@@ -3014,12 +3016,14 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     standard_siege_ready = (
         "(or (unit-type-count trebuchet >= 4) "
         "(or (unit-type-count bombard-cannon >= 4) "
-        "(unit-type-count-total mangonel-line >= 4)))"
+        "(or (unit-type-count-total mangonel-line >= 4) "
+        "(unit-type-count-total battering-ram-line >= 4))))"
     )
     fortified_siege_ready = (
         "(or (unit-type-count trebuchet >= 6) "
         "(or (unit-type-count bombard-cannon >= 6) "
-        "(unit-type-count-total mangonel-line >= 6)))"
+        "(or (unit-type-count-total mangonel-line >= 6) "
+        "(unit-type-count-total battering-ram-line >= 6))))"
     )
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     frontier_witness = (
@@ -3034,6 +3038,11 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             facts=(parse_expression("(goal byzantine-endgame-push-state 0)", SourceLocation(1)),),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
         ),
@@ -3052,6 +3061,54 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
+            "byzantine-endgame-push-army-ready",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression(imperial_band_ready, SourceLocation(1)),
+                parse_expression(attack_package_ready, SourceLocation(1)),
+                parse_expression(standard_siege_ready, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-normal)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-army-not-ready",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                parse_expression("(not " + attack_package_ready + ")", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-siege-not-ready",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                parse_expression("(not " + standard_siege_ready + ")", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
             "byzantine-endgame-push-admit",
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
@@ -3063,7 +3120,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression(premium_ready, SourceLocation(1)),
                 parse_expression("(up-compare-goal byzantine-imperial-band-state != 2)", SourceLocation(1)),
                 parse_expression(standard_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
@@ -3082,11 +3138,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
                 parse_expression(imperial_band_ready, SourceLocation(1)),
-                *(
-                    parse_expression(fact, SourceLocation(1))
-                    for fact in imperial_floor_ready_facts
-                ),
-                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
                 parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
                 parse_expression(fortified_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
@@ -3155,10 +3207,15 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-push-recover-halberdier-floor",
+            "byzantine-endgame-push-recover-army-package",
             facts=(
                 parse_expression(
                     "(or (goal byzantine-endgame-push-state 1) "
@@ -3167,15 +3224,20 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(unit-type-count halberdier < 18)", SourceLocation(1)),
+                parse_expression("(not " + attack_package_ready + ")", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
+                parse_expression(
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
+                    SourceLocation(1),
+                ),
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-push-recover-elite-skirmisher-floor",
+            "byzantine-endgame-push-recover-siege-package",
             facts=(
                 parse_expression(
                     "(or (goal byzantine-endgame-push-state 1) "
@@ -3184,46 +3246,16 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     SourceLocation(1),
                 ),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(unit-type-count 6 < 18)", SourceLocation(1)),
+                parse_expression("(not " + standard_siege_ready + ")", SourceLocation(1)),
             ),
             actions=(
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
-            ),
-        ),
-        NativeControlRule(
-            "byzantine-endgame-push-recover-hussar-floor",
-            facts=(
+                parse_expression("(set-goal byzantine-army-attack-ready 0)", SourceLocation(1)),
                 parse_expression(
-                    "(or (goal byzantine-endgame-push-state 1) "
-                    "(or (goal byzantine-endgame-push-state 2) "
-                    "(goal byzantine-endgame-push-state 3)))",
+                    "(set-goal byzantine-siege-approach byzantine-siege-approach-staging)",
                     SourceLocation(1),
                 ),
-                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(unit-type-count hussar < 12)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
-                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
-            ),
-        ),
-        NativeControlRule(
-            "byzantine-endgame-push-recover-premium",
-            facts=(
-                parse_expression(
-                    "(or (goal byzantine-endgame-push-state 1) "
-                    "(or (goal byzantine-endgame-push-state 2) "
-                    "(goal byzantine-endgame-push-state 3)))",
-                    SourceLocation(1),
-                ),
-                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
-                parse_expression("(up-compare-goal byzantine-imperial-band-state != 3)", SourceLocation(1)),
-                parse_expression(premium_not_ready, SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
-                parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -3237,7 +3269,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression(attack_package_ready, SourceLocation(1)),
                 *(
                     (
                         parse_expression(f"(not {frontier_witness})", SourceLocation(1)),
@@ -3285,7 +3317,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression(premium_ready, SourceLocation(1)),
+                parse_expression(attack_package_ready, SourceLocation(1)),
             ),
             actions=(
                 parse_expression("(set-goal byzantine-endgame-push-state 0)", SourceLocation(1)),

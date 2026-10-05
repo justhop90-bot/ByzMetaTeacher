@@ -678,7 +678,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(enable-timer byzantine-imperial-band-dwell-timer 90)", output)
         self.assertIn("(enable-timer byzantine-imperial-band-rearm-timer 45)", output)
 
-    def test_byzantine_endgame_push_requires_imperial_trash_floor_and_band(self):
+    def test_byzantine_endgame_push_uses_mature_attack_package_and_band(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
         control = compilation.control_plan
         assert control is not None
@@ -692,13 +692,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(up-compare-goal byzantine-imperial-band-state >= 1)",
             facts,
         )
-        self.assertTrue(any("(unit-type-count halberdier >= 18)" in fact for fact in facts))
-        self.assertTrue(any("(unit-type-count 6 >= 18)" in fact for fact in facts))
-        self.assertTrue(any("(unit-type-count hussar >= 12)" in fact for fact in facts))
-        self.assertTrue(
-            any("(unit-type-count cataphract >= 12)" in fact for fact in facts)
-            or any("(goal byzantine-imperial-band-state 3)" in fact for fact in facts)
-        )
+        self.assertTrue(any("(unit-type-count cataphract >= 8)" in fact for fact in facts))
+        self.assertTrue(any("(unit-type-count-total battering-ram-line >= 4)" in fact for fact in facts))
+        self.assertFalse(any("(unit-type-count halberdier >= 18)" in fact for fact in facts))
+        self.assertFalse(any("(unit-type-count 6 >= 18)" in fact for fact in facts))
+        self.assertFalse(any("(unit-type-count hussar >= 12)" in fact for fact in facts))
 
     def test_byzantine_endgame_push_is_a_bounded_attack_group_pulse(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
@@ -746,7 +744,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn(
             "(or (unit-type-count trebuchet >= 6) "
             "(or (unit-type-count bombard-cannon >= 6) "
-            "(unit-type-count-total mangonel-line >= 6)))",
+            "(or (unit-type-count-total mangonel-line >= 6) "
+            "(unit-type-count-total battering-ram-line >= 6))))",
             fortified_facts,
         )
 
@@ -806,7 +805,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             release_facts,
         )
         self.assertIn("(attack-soldier-count <= 0)", release_facts)
-        self.assertIn("(unit-type-count cataphract >= 12)", " ".join(release_facts))
+        self.assertIn("(unit-type-count cataphract >= 8)", " ".join(release_facts))
 
         release_actions = tuple(action.source for action in rules["byzantine-endgame-push-release"].actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 1)", release_actions)
