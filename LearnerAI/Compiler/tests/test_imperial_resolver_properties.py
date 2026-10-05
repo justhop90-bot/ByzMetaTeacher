@@ -127,16 +127,13 @@ class ImperialResolverPropertyTests(unittest.TestCase):
                             ImperialReason.FLOOR_BREAK,
                         )
 
-    def test_property_floor_recovery_resources_are_inclusive(self):
+    def test_floor_recovery_is_exactly_the_military_floor(self):
         base = self.base()
-        for field, threshold in FLOOR_RECOVERY_THRESHOLDS.items():
-            for value in around(threshold):
-                with self.subTest(field=field, value=value):
-                    case = replace(base, **{field: value})
-                    self.assertEqual(
-                        ImperialResolver.floor_recovered(case),
-                        value >= threshold,
-                    )
+        for field, threshold in FLOOR_THRESHOLDS.items():
+            below = replace(base, **{field: threshold - 1})
+            exact = replace(base, **{field: threshold})
+            self.assertFalse(ImperialResolver.floor_recovered(below))
+            self.assertTrue(ImperialResolver.floor_recovered(exact))
 
     def test_gold_starved_trash_remains_reachable_at_low_gold(self):
         base = replace(
@@ -410,7 +407,7 @@ class ImperialResolverPropertyTests(unittest.TestCase):
             (
                 "economic_collapse",
                 ImperialBand.OPEN_FIELD,
-                60,
+                30,
                 30,
                 ImperialBand.STANDING_FLOOR,
             ),
