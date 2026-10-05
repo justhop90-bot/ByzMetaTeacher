@@ -613,6 +613,26 @@ class AdmissibilityValidationPass:
             for predicate in predicates:
                 kinds = kinds | _kinds(predicate)
                 for atom in _atoms(predicate):
+                    if (
+                        atom.kind is PredicateKind.STRATEGY
+                        and atom.primitive in {"goal", "up-compare-goal"}
+                    ):
+                        try:
+                            registry.validate_native_signature(
+                                atom.primitive,
+                                len(atom.expression.args),
+                            )
+                        except (KeyError, ValueError) as exc:
+                            diagnostics.append(
+                                _diag(
+                                    CapabilityDiagnosticCode.INVALID_ADMISSIBILITY,
+                                    f"provider '{provider.identity.local_name}': {exc}",
+                                    node=provider.identity,
+                                    location=provider.location,
+                                )
+                            )
+                        continue
+
                     primitive = registry.get(atom.primitive)
                     if primitive is None:
                         diagnostics.append(
