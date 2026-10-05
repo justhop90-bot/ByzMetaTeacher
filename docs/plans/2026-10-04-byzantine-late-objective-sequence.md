@@ -56,12 +56,14 @@ The controller issues exactly one `up-target-objects 1 action-attack-move -1 -1`
 ## Witness/reassessment
 
 After execution, a 20-second timer only advances the controller into a fresh witness search.
-- A matching objective still present in the bounded area keeps execution active.
+- A matching objective still present with `attack-soldier-count > 0` keeps the objective in execution. It does not reissue the attack command.
+- A matching objective present with no attacking package (`attack-soldier-count <= 0`) releases the objective claim into the existing reinforcement/recovery owner instead of looping the same attack.
 - A missing objective releases the controller and returns it to the siege-first search.
 - An objective that moves outside the bounded area is treated as lost for purposes of this pass, forcing fresh reassessment rather than being falsely declared destroyed.
 - Castle/fortification threat aborts the objective controller and returns ownership to the existing fortified approach.
-- Loss of the attack package releases the objective claim and returns through the existing stale/reinforcement lifecycle.
 - Exhausting the Town Center class clears the objective claim and permits the proven ordinary `attack-now` fallback.
+
+The timer is cadence only. The release decision is the observed attack package/objective state, not timer expiry.
 
 ## Verification
 

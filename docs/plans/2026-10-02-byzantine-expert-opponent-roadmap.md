@@ -117,12 +117,15 @@ Acceptance: the bot uses walls and buildings to buy time, shape enemy routes, an
 - [x] Repair one verified attack-admission/execution mismatch: own military acquisition now scans 60 tiles while enemy-objective discovery remains bounded to 40; the attack-move actuator is unchanged.
 - [x] Complete the broader attack admission versus execution audit across staging, siege commitment, and objective reassessment.
 - [x] Use bounded native attack-group pulses for ordinary open-ground pressure, with a fresh reassessment before another pulse.
-- [ ] Establish screen/main/siege/raid/reserve roles.
-- [ ] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
+- [x] Establish screen/main/siege/raid/reserve roles in the native role-separation controller.
+- [x] Add fortified-position handling and efficient siege use, using the Phase 3.5 defensive-geometry and route model when selecting approaches.
 - [x] Preserve armies under defensive fire where native control permits.
 - [x] Make army-loss recovery change production and attack posture.
 - [x] Reassess attack continuation after enemy strength changes using coarse community military-population overmatch buckets; exact combat-power parity remains open.
+- [x] Repair late-objective witness reissuance: live objectives with a standing attack package remain in EXECUTING without reissuing attack; package loss releases into reinforcement/recovery.
+- [ ] Consume the role-recovery request at the army recovery owner instead of merely clearing the request.
 - [ ] Expire obsolete counter packages.
+- [ ] Validate the late-objective witness/release fix in an actual replay.
 
 Acceptance: fewer wasteful engagements, better siege use, coherent retreat/reposition/re-engage behavior, and meaningful recovery.
 
@@ -163,3 +166,6 @@ Acceptance: deterministic, natively valid, behaviorally coherent, reproducible r
 7. Record the result before adding another rule.
 
 The bot is better only when its observed decisions become more coherent, timely, economical, adaptive, and recoverable.
+
+
+**Late-objective evidence boundary:** the witness/release repair is compiler/native verified; actual AoE2 replay acceptance remains a separate open gate.
