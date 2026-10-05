@@ -1806,7 +1806,10 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         NativeControlState(
             "byzantine-fortification-threat",
             GoalSlotRequest(
-                StorageRequestId(objective_owner, "fortification-threat"),
+                StorageRequestId(
+                    SemanticId(profile.profile_id, "byzantine-fortification-threat"),
+                    "fortification-threat",
+                ),
                 role=GoalRole.PERSISTENT_STATE,
             ),
         ),
