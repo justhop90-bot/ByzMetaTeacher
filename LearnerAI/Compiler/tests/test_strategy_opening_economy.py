@@ -192,6 +192,77 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ((Resource.FOOD, 800), (Resource.GOLD, 200)),
         )
 
+    def test_age_bank_controller_preserves_villager_continuity_until_maturity(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            rule for rule in control.rules
+            if rule.identity == "age-bank-villager-production"
+        )
+        sources = tuple(fact.source for fact in rule.facts)
+        self.assertIn("(unit-type-count-total villager < 110)", sources)
+        self.assertIn("(population-headroom > 0)", sources)
+        self.assertIn("(can-train villager)", sources)
+        self.assertIn(
+            "(not (and (current-age == dark-age) "
+            "(unit-type-count-total villager >= 21) "
+            "(building-type-count-total lumber-camp >= 1) "
+            "(building-type-count-total mining-camp >= 1) "
+            "(can-research-with-escrow feudal-age)))",
+            sources,
+        )
+        self.assertIn(
+            "(not (and (current-age == feudal-age) "
+            "(unit-type-count-total villager >= 28) "
+            "(building-type-count-total blacksmith >= 1) "
+            "(building-type-count-total market >= 1) "
+            "(can-research-with-escrow castle-age)))",
+            sources,
+        )
+        self.assertEqual(
+            tuple(action.source for action in rule.actions),
+            ("(train villager)",),
+        )
+
+    def test_camp_floor_two_requires_a_remote_resource_front(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        for resource in ("wood", "gold", "stone"):
+            demand = profile.demand(f"economy-{resource}-camp-floor-2")
+            self.assertTrue(
+                any(
+                    "dropsite-min-distance" in requirement
+                    for requirement in demand.execution.requirements
+                ),
+                resource,
+            )
+
+    def test_adaptive_outpost_starts_released_and_reopens_from_pressure(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("adaptive-outpost")
+
+        self.assertEqual(demand.initial_state.name, "RELEASED")
+        self.assertEqual(
+            tuple(demand.execution.requirements),
+            ("(current-age >= feudal-age)", "(can-build outpost)"),
+        )
+
+    def test_stone_camp_is_castle_commitment_owned(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        for floor in range(1, 6):
+            demand = profile.demand(f"economy-stone-camp-floor-{floor}")
+            self.assertEqual(demand.initial_state.name, "RELEASED")
+            self.assertIn(
+                "(and (current-age >= feudal-age) "
+                "(goal demand-castle-commitment 1) "
+                "(resource-found stone))",
+                demand.execution.requirements,
+            )
+
     def test_feudal_research_yields_to_castle_feasibility(self):
         profile = build_byzantine_strategy(self.effective)
 
@@ -220,14 +291,30 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_start,
         )
         villager_rule = runtime[villager_start:villager_end]
+        self.assertIn("(unit-type-count-total villager >= 21)", villager_rule)
         self.assertIn(
+            "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
+            villager_rule,
+        )
+        self.assertIn("(building-type-count-total blacksmith >= 1)", villager_rule)
+        self.assertIn("(building-type-count-total market >= 1)", villager_rule)
+        self.assertNotIn(
             "(not (and\n        (current-age == dark-age)\n        (can-research-with-escrow feudal-age)\n    ))",
             villager_rule,
         )
-        self.assertIn(
+        self.assertNotIn(
             "(not (and\n        (current-age == feudal-age)\n        (can-research-with-escrow castle-age)\n    ))",
             villager_rule,
         )
+
+        outpost_start = runtime.index("; Pending diagnostics: adaptive-outpost")
+        outpost_end = runtime.index("; Pending diagnostics: adaptive-watch-tower", outpost_start)
+        outpost_section = runtime[outpost_start:outpost_end]
+        init_section = runtime[
+            runtime.index("; Demand initialization"):outpost_start
+        ]
+        self.assertIn("(set-goal demand-adaptive-outpost 0)", init_section)
+        self.assertIn("(current-age >= feudal-age)", outpost_section)
 
         dba_start = runtime.index("; Action issuance: research-double-bit-axe")
         dba_end = runtime.index("; Pending diagnostics: research-horse-collar", dba_start)
