@@ -368,6 +368,7 @@ def community_strategy_observations(
     university = _building(effective, "university")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
+    observations = community_strategy_observations(effective)
     opening_pressure = (
         "(or (players-unit-type-count any-enemy knight >= 3) "
         "(or (players-unit-type-count any-enemy archer-line >= 4) "
