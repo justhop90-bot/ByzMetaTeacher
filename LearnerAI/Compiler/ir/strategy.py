@@ -1161,7 +1161,7 @@ def _byzantine_endgame_attack_group_sn_controllers(
     )
     release_guard = parse_expression(
         "(or "
-        f"{live_witness.source} "
+        f"{live_witness} "
         f"(or (timer-triggered byzantine-endgame-push-timer) "
         f"(not {military_ready})))",
         SourceLocation(1),
