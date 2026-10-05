@@ -212,7 +212,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             ),
         )
         self.assertIn(
-            "(unit-type-count-total cataphract-line < 30)",
+            "(unit-type-count-total cataphract-line < 18)",
             cataphract.execution.requirements,
         )
         self.assertIn(
@@ -281,22 +281,22 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         by_id = {item.identity: item for item in profile.demands}
         checks = {
             "imperial-open-halberdier-standard": ("(up-compare-goal byzantine-imperial-band-state == 1)", 24),
-            "imperial-open-halberdier-pressure": ("(goal byzantine-imperial-band-state 1)", 30),
-            "imperial-open-halberdier-severe": ("(goal byzantine-imperial-band-state 1)", 36),
-            "imperial-open-elite-skirmisher-standard": ("(goal byzantine-imperial-band-state 1)", 24),
-            "imperial-open-elite-skirmisher-pressure": ("(goal byzantine-imperial-band-state 1)", 30),
-            "imperial-open-elite-skirmisher-severe": ("(goal byzantine-imperial-band-state 1)", 36),
-            "imperial-open-hussar-standard": ("(goal byzantine-imperial-band-state 1)", 16),
-            "imperial-open-hussar-mobile": ("(goal byzantine-imperial-band-state 1)", 20),
+            "imperial-open-halberdier-pressure": ("(up-compare-goal byzantine-imperial-band-state == 1)", 30),
+            "imperial-open-halberdier-severe": ("(up-compare-goal byzantine-imperial-band-state == 1)", 36),
+            "imperial-open-elite-skirmisher-standard": ("(up-compare-goal byzantine-imperial-band-state == 1)", 24),
+            "imperial-open-elite-skirmisher-pressure": ("(up-compare-goal byzantine-imperial-band-state == 1)", 30),
+            "imperial-open-elite-skirmisher-severe": ("(up-compare-goal byzantine-imperial-band-state == 1)", 36),
+            "imperial-open-hussar-standard": ("(up-compare-goal byzantine-imperial-band-state == 1)", 16),
+            "imperial-open-hussar-mobile": ("(up-compare-goal byzantine-imperial-band-state == 1)", 20),
             "imperial-fortified-halberdier": ("(up-compare-goal byzantine-imperial-band-state == 2)", 24),
-            "imperial-fortified-elite-skirmisher": ("(goal byzantine-imperial-band-state 2)", 20),
-            "imperial-fortified-hussar": ("(goal byzantine-imperial-band-state 2)", 10),
+            "imperial-fortified-elite-skirmisher": ("(up-compare-goal byzantine-imperial-band-state == 2)", 20),
+            "imperial-fortified-hussar": ("(up-compare-goal byzantine-imperial-band-state == 2)", 10),
             "imperial-trash-halberdier-standard": ("(up-compare-goal byzantine-imperial-band-state == 3)", 30),
-            "imperial-trash-halberdier-high": ("(goal byzantine-imperial-band-state 3)", 36),
-            "imperial-trash-elite-skirmisher-standard": ("(goal byzantine-imperial-band-state 3)", 30),
-            "imperial-trash-elite-skirmisher-high": ("(goal byzantine-imperial-band-state 3)", 36),
-            "imperial-trash-hussar-standard": ("(goal byzantine-imperial-band-state 3)", 18),
-            "imperial-trash-hussar-high": ("(goal byzantine-imperial-band-state 3)", 24),
+            "imperial-trash-halberdier-high": ("(up-compare-goal byzantine-imperial-band-state == 3)", 36),
+            "imperial-trash-elite-skirmisher-standard": ("(up-compare-goal byzantine-imperial-band-state == 3)", 30),
+            "imperial-trash-elite-skirmisher-high": ("(up-compare-goal byzantine-imperial-band-state == 3)", 36),
+            "imperial-trash-hussar-standard": ("(up-compare-goal byzantine-imperial-band-state == 3)", 18),
+            "imperial-trash-hussar-high": ("(up-compare-goal byzantine-imperial-band-state == 3)", 24),
         }
         for identity, (band_guard, minimum) in checks.items():
             demand = by_id[identity]
