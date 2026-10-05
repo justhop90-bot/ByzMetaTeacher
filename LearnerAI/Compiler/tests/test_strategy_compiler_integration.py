@@ -624,12 +624,12 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             if rule.identity.startswith("sn-controller-byzantine-endgame-push-")
         }
         self.assertIn(
-            "sn-controller-byzantine-endgame-push-227-activate",
+            "sn-controller-byz-push-227-activate",
             sn_controllers,
         )
         for identity in (
-            "sn-controller-byzantine-endgame-push-36-activate",
-            "sn-controller-byzantine-endgame-push-227-activate",
+            "sn-controller-byz-push-36-activate",
+            "sn-controller-byz-push-227-activate",
         ):
             self.assertIn(
                 "(goal byzantine-endgame-push-state 2)",
@@ -637,8 +637,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             )
 
         for identity in (
-            "sn-controller-byzantine-endgame-push-36-release",
-            "sn-controller-byzantine-endgame-push-227-release",
+            "sn-controller-byz-push-36-release",
+            "sn-controller-byz-push-227-release",
         ):
             release_facts = tuple(fact.source for fact in sn_controllers[identity].facts)
             joined_release_facts = " ".join(release_facts)
@@ -670,7 +670,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         output = compile_strategy_profile(self.stock_profile, self.effective)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", output)
         self.assertIn(
-            "; Native control rule: sn-controller-byzantine-endgame-push-227-activate",
+            "; Native control rule: sn-controller-byz-push-227-activate",
             output,
         )
 
