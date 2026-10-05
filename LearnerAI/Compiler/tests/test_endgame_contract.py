@@ -205,6 +205,18 @@ class EndgameContractTests(unittest.TestCase):
             )
         )
 
+    def test_endgame_conversion_admission_uses_strategic_demand_identity(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        rules = {rule.identity: rule for rule in compilation.control_plan.rules}
+        for demand in profile.demands:
+            if not demand.identity.startswith("imperial-forward-production-"):
+                continue
+            rule = rules[demand and f"byzantine-endgame-conversion-admit-{demand.identity}"]
+            sources = tuple(fact.source for fact in rule.facts) + tuple(action.source for action in rule.actions)
+            self.assertIn(f"(goal demand-{demand.identity} 0)", sources)
+            self.assertIn(f"(set-goal demand-{demand.identity} 1)", sources)
+
     def test_endgame_conversion_contract_is_bounded_and_typed(self):
         contract = EndgameConversionContract(
             identity="conversion",
