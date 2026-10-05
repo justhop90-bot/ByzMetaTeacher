@@ -2062,7 +2062,7 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == feudal-age)",
-                    "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
+                    "(unit-type-count-total villager >= 28)",
                     "(building-type-count-total blacksmith >= 1)",
                     "(building-type-count-total market >= 1)",
                     "(can-research-with-escrow castle-age)",
