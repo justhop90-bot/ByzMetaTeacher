@@ -43,6 +43,71 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         cls.compiler_pack = COMPILER_PACK.read_text(encoding="utf-8")
         cls.rules = defrule_blocks(cls.runtime)
 
+    def _assert_named_operands_are_declared(
+        self,
+        expressions: tuple[str, ...],
+        *,
+        label: str,
+    ) -> None:
+        declared = {
+            match.group(1)
+            for match in re.finditer(
+                r"\(defconst\s+([^\s()]+)\s+([^\s()]+)\)",
+                self.runtime,
+            )
+        }
+        missing: list[tuple[int, str, str]] = []
+        for expression in expressions:
+            for match in re.finditer(
+                rf"\({expression}\s+([^\s()]+)",
+                self.runtime,
+            ):
+                operand = match.group(1)
+                if re.fullmatch(r"-?\d+", operand):
+                    continue
+                line = self.runtime[:match.start()].count("\n") + 1
+                if operand not in declared:
+                    missing.append((line, expression, operand))
+        self.assertEqual(
+            missing,
+            [],
+            f"{label} references undeclared runtime constants: {missing[:25]}",
+        )
+
+    def test_named_goal_references_are_declared(self) -> None:
+        self._assert_named_operands_are_declared(
+            ("goal", "set-goal", "up-compare-goal", "up-modify-goal"),
+            label="goal",
+        )
+
+    def test_named_timer_references_are_declared(self) -> None:
+        self._assert_named_operands_are_declared(
+            ("enable-timer", "disable-timer", "timer-triggered"),
+            label="timer",
+        )
+
+    def test_named_strategic_number_references_are_declared(self) -> None:
+        self._assert_named_operands_are_declared(
+            (
+                "strategic-number",
+                "set-strategic-number",
+                "up-compare-sn",
+                "up-modify-sn",
+            ),
+            label="strategic-number",
+        )
+
+    def test_runtime_defconst_names_are_unique(self) -> None:
+        names = [
+            match.group(1)
+            for match in re.finditer(
+                r"\(defconst\s+([^\s()]+)\s+([^\s()]+)\)",
+                self.runtime,
+            )
+        ]
+        duplicates = sorted({name for name in names if names.count(name) > 1})
+        self.assertEqual(duplicates, [])
+
     def test_latest_compiler_endgame_contract_has_runtime_semantic_witness(self) -> None:
         self.assertIn('"byzantine-endgame-push-state"', self.compiler_strategy)
         for identity in (
