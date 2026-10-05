@@ -1886,7 +1886,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count 6 < 18)",
         "(unit-type-count hussar < 12)",
     )
-    floor_recovered = land(
+    floor_recovered_facts = (
         "(unit-type-count halberdier >= 18)",
         "(unit-type-count 6 >= 18)",
         "(unit-type-count hussar >= 12)",
@@ -1899,7 +1899,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(unit-type-count-total trebuchet-line >= 2)",
         "(unit-type-count-total bombard-cannon-line >= 2)",
     )
-    fortified_exec = land(
+    fortified_exec_facts = (
         "(goal byzantine-fortification-threat 1)",
         "(goal byzantine-siege-approach byzantine-siege-approach-fortified)",
         "(goal byzantine-offensive-objective-claim 1)",
@@ -1908,36 +1908,35 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
         "(wood-amount >= 2400)",
         "(gold-amount >= 2600)",
     )
-    open_field_eligible = land(
+    open_field_facts = (
         "(goal byzantine-fortification-threat 0)",
         "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
         "(gold-amount >= 2000)",
-        floor_recovered,
+        *floor_recovered_facts,
     )
-    trash_eligible = land(
+    trash_eligible_facts = (
         "(goal byzantine-fortification-threat 0)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2200)",
         "(gold-amount <= 800)",
-        floor_recovered,
+        *floor_recovered_facts,
     )
-    gold_recovery_open_eligible = land(
+    gold_recovery_open_facts = (
         "(goal byzantine-fortification-threat 0)",
         "(goal byzantine-offensive-objective-claim 1)",
         "(players-military-population any-enemy >= 12)",
         "(food-amount >= 2400)",
         "(wood-amount >= 2000)",
         "(gold-amount >= 1800)",
-        floor_recovered,
+        *floor_recovered_facts,
     )
     economic_collapse = lor(
         "(food-amount < 1800)",
         "(wood-amount < 1500)",
     )
-    gold_recovered = "(gold-amount >= 1800)"
     fortified_clear = land(
         "(goal byzantine-fortification-threat 0)",
         lor(
@@ -1945,6 +1944,9 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "(not (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege))",
         ),
     )
+
+    def expr_facts(facts: tuple[str, ...]) -> tuple[Expression, ...]:
+        return tuple(expr(fact) for fact in facts)
 
     def cooldown_clear(target: int) -> str:
         return lor(
@@ -2049,7 +2051,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "byzantine-imperial-band-fortified-candidate",
             facts=(
                 expr(f"(up-compare-goal {state_name} != {fortified})"),
-                expr(fortified_exec),
+                *expr_facts(fortified_exec_facts),
                 expr(cooldown_clear(fortified)),
                 expr(
                     f"(or (up-compare-goal {state_name} != {standing}) "
@@ -2067,7 +2069,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "byzantine-imperial-band-economic-candidate",
             facts=(
                 expr(f"(up-compare-goal {state_name} != {standing})"),
-                expr(f"(not {fortified_exec})"),
                 expr(economic_collapse),
                 expr(f"(up-compare-goal {candidate_name} != {candidate_standing})"),
             ),
@@ -2082,8 +2083,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {standing})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(floor_recovered),
-                expr(trash_eligible),
+                *expr_facts(trash_eligible_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
             ),
@@ -2098,9 +2098,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {standing})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(floor_recovered),
-                expr(f"(not {trash_eligible})"),
-                expr(open_field_eligible),
+                *expr_facts(open_field_facts),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2115,7 +2113,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {open_field})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(trash_eligible),
+                *expr_facts(trash_eligible_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
             ),
@@ -2130,8 +2128,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {state_name} {trash})"),
                 expr(f"(timer-triggered {dwell_timer})"),
-                expr(gold_recovered),
-                expr(gold_recovery_open_eligible),
+                *expr_facts(gold_recovery_open_facts),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2147,7 +2144,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(goal {state_name} {fortified})"),
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(fortified_clear),
-                expr(open_field_eligible),
+                *expr_facts(open_field_facts),
                 expr(cooldown_clear(open_field)),
                 expr(f"(up-compare-goal {candidate_name} != {open_field})"),
             ),
@@ -2164,7 +2161,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(timer-triggered {dwell_timer})"),
                 expr(fortified_clear),
                 expr(f"(not {open_field_eligible})"),
-                expr(trash_eligible),
+                *expr_facts(trash_eligible_facts),
                 expr(cooldown_clear(trash)),
                 expr(f"(up-compare-goal {candidate_name} != {trash})"),
             ),
@@ -2179,7 +2176,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             "byzantine-imperial-band-clear-fortified-candidate",
             facts=(
                 expr(f"(goal {candidate_name} {fortified})"),
-                expr(f"(not {fortified_exec})"),
+                expr(f"(goal byzantine-fortification-threat 0)"),
             ),
             actions=(
                 expr(f"(set-goal {candidate_name} 0)"),
@@ -2261,7 +2258,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(up-compare-goal {candidate_name} == {fortified})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(fortified_exec),
+                *expr_facts(fortified_exec_facts),
                 expr(cooldown_clear(fortified)),
             ),
             actions=(
@@ -2294,7 +2291,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {trash})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(trash_eligible),
+                *expr_facts(trash_eligible_facts),
                 expr(cooldown_clear(trash)),
             ),
             actions=(
@@ -2311,7 +2308,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {open_field})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(open_field_eligible),
+                *expr_facts(open_field_facts),
                 expr(cooldown_clear(open_field)),
             ),
             actions=(
