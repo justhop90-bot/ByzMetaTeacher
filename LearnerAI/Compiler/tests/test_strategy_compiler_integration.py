@@ -708,7 +708,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             fortified_facts,
         )
         self.assertIn(
-            "(unit-type-count trebuchet >= 6)",
+            "(or (unit-type-count trebuchet >= 6) "
+            "(or (unit-type-count bombard-cannon >= 6) "
+            "(unit-type-count-total mangonel-line >= 6)))",
             fortified_facts,
         )
 
