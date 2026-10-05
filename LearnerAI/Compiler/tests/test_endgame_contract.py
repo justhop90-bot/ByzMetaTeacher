@@ -6,6 +6,7 @@ from LearnerAI.Compiler.ir.endgame import (
     EndgamePolicyRule,
     EndgameObjectiveClass,
     EndgameObjectiveState,
+    EndgameObjectiveReleaseReason,
     EndgameObjectiveControlContract,
     EndgamePushState,
     EndgameRuntimeState,
@@ -55,9 +56,58 @@ class EndgameContractTests(unittest.TestCase):
             ("byzantine-offensive-objective-state-idle", 0),
         )
         self.assertEqual(
-            contract.constants[-1],
+            contract.class_constants[-1],
             ("byzantine-offensive-objective-class-town-center", 4),
         )
+
+    def test_objective_release_contract_is_typed_bounded_and_resets(self):
+        contract = EndgameObjectiveControlContract(
+            identity="byzantine-endgame-objective-v1",
+        )
+        self.assertEqual(
+            contract.witness_target_goal,
+            "byzantine-offensive-objective-witness-target",
+        )
+        self.assertEqual(
+            contract.release_reason_goal,
+            "byzantine-offensive-objective-release-reason",
+        )
+        self.assertEqual(
+            contract.release_search_goal,
+            "byzantine-offensive-objective-release-search",
+        )
+        self.assertEqual(contract.release_search_radius, 60)
+        self.assertEqual(
+            tuple(value for _name, value in contract.release_reason_constants),
+            tuple(range(len(EndgameObjectiveReleaseReason))),
+        )
+        self.assertEqual(
+            contract.release_reason_constants,
+            (
+                ("byzantine-offensive-objective-release-reason-none", 0),
+                ("byzantine-offensive-objective-release-reason-completed", 1),
+                ("byzantine-offensive-objective-release-reason-lost-out-of-bounds", 2),
+                ("byzantine-offensive-objective-release-reason-failed-execution", 3),
+                ("byzantine-offensive-objective-release-reason-fortification-abort", 4),
+                ("byzantine-offensive-objective-release-reason-tc-exhausted", 5),
+            ),
+        )
+        self.assertEqual(
+            contract.release_reason_constants[-1],
+            ("byzantine-offensive-objective-release-reason-tc-exhausted", 5),
+        )
+        with self.assertRaises(ValueError):
+            EndgameObjectiveControlContract(
+                identity="bad",
+                release_search_radius=40,
+            )
+
+        with self.assertRaises(ValueError):
+            EndgameObjectiveControlContract(
+                identity="bad",
+                state_goal="same",
+                class_goal="same",
+            )
 
     def test_endgame_plan_requires_deterministic_policy_order(self):
         plan = EndgamePlan(
@@ -151,7 +201,7 @@ class EndgameContractTests(unittest.TestCase):
             (
                 *([EndgameFrontierState.SIEGE] * 4),
                 *([EndgameFrontierState.DEFENSE] * 5),
-                *([EndgameFrontierState.PRODUCTION] * 5),
+                *([EndgameFrontierState.PRODUCTION] * 6),
                 *([EndgameFrontierState.TOWN_CENTER] * 4),
             ),
         )
@@ -161,6 +211,10 @@ class EndgameContractTests(unittest.TestCase):
         )
         self.assertEqual(contract.candidates[0].query_kind, EndgameTargetQueryKind.OBJECT_TYPE)
         self.assertEqual(contract.candidates[3].query_kind, EndgameTargetQueryKind.OBJECT_CLASS)
+        self.assertEqual(
+            (contract.candidates[14].identity, contract.candidates[14].native_id),
+            ("production-exposed-villager", 83),
+        )
         with self.assertRaises(ValueError):
             EndgameTargetControlContract(
                 identity="bad",
@@ -212,24 +266,83 @@ class EndgameContractTests(unittest.TestCase):
             "(set-goal byzantine-endgame-push-state 2)",
             tuple(action.source for action in admit.actions),
         )
-        self.assertIn(
-            "(set-strategic-number sn-native-36 1)",
-            tuple(action.source for action in admit.actions),
-        )
-        self.assertIn(
-            "(set-strategic-number sn-native-227 100)",
-            tuple(action.source for action in admit.actions),
-        )
+        admit_actions = tuple(action.source for action in admit.actions)
+        self.assertNotIn("sn-native-36", " ".join(admit_actions))
+        self.assertNotIn("sn-native-227", " ".join(admit_actions))
         self.assertIn(
             "(attack-soldier-count <= 0)",
             tuple(fact.source for fact in admit.facts),
         )
+        admit_facts = tuple(fact.source for fact in admit.facts)
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            admit_facts,
+        )
         self.assertTrue(
             all(
                 "byzantine-offensive-objective-" not in fact.source
+                or fact.source == "(goal byzantine-offensive-objective-claim 0)"
                 for fact in admit.facts
             )
         )
+
+        release = rules["byzantine-endgame-push-release"]
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            tuple(fact.source for fact in release.facts),
+        )
+        recovery_release = rules["byzantine-endgame-push-recovery-release"]
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            tuple(fact.source for fact in recovery_release.facts),
+        )
+
+        configured_push = replace(
+            plan.push_contract,
+            frontier_witness_ref="strategy-enemy-castle",
+        )
+        configured_plan = replace(
+            plan,
+            push_contract=configured_push,
+        )
+        configured_profile = replace(
+            profile,
+            endgame_plan=configured_plan,
+        )
+        configured_compilation = lower_strategy_profile(
+            configured_profile,
+            self.effective,
+        )
+        configured_rules = {
+            rule.identity: rule
+            for rule in configured_compilation.control_plan.rules
+        }
+        advance_release = configured_rules["byzantine-endgame-frontier-advance-release"]
+        self.assertEqual(
+            tuple(fact.source for fact in advance_release.facts),
+            (
+                "(goal byzantine-endgame-push-state 4)",
+                "(goal byzantine-offensive-objective-claim 0)",
+            ),
+        )
+        push_release = configured_rules["byzantine-endgame-push-release"]
+        push_release_facts = tuple(fact.source for fact in push_release.facts)
+        frontier_expression = configured_profile.observation(
+            "current-imperial-age"
+        ).expression
+        self.assertIn(
+            f"(not {frontier_expression})",
+            push_release_facts,
+        )
+        for identity in (
+            "byzantine-endgame-frontier-commit-defense",
+            "byzantine-endgame-frontier-commit-production",
+            "byzantine-endgame-frontier-commit-town-center",
+        ):
+            self.assertIn(
+                "(goal byzantine-offensive-objective-claim 0)",
+                tuple(fact.source for fact in configured_rules[identity].facts),
+            )
 
     def test_endgame_conversion_admission_uses_strategic_demand_identity(self):
         profile = build_byzantine_stock_strategy(self.effective)

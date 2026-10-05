@@ -25,11 +25,23 @@ from .endgame import (
     EndgameTargetCandidate,
     EndgameTargetControlContract,
     EndgameTargetQueryKind,
+    EndgameObjectiveControlContract,
+    EndgameObjectiveReleaseReason,
     EndgamePushState,
     EndgameRuntimeState,
     EndgameWinCondition,
     validate_endgame_plan,
 )
+from .imperial_military import (
+    ImperialMilitaryBand,
+    ImperialMilitaryReason,
+    ImperialMilitaryPlan,
+    ImperialMilitaryInput,
+    ImperialMilitaryDecision,
+    default_imperial_military_plan,
+    resolve_imperial_military,
+)
+
 from .role_separation import (
     NativeRoleRule,
     NativeRoleSeparationPlan,

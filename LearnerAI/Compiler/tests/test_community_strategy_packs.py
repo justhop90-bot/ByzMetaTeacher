@@ -228,6 +228,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertEqual(
             observations["strategy-production-barracks-replacement"],
             "(and (current-age >= imperial-age) "
+            "(or (unit-type-count halberdier < 18) "
             "(or (unit-type-count varangian-guard < 12) "
             "(unit-type-count 359 < 12)))",
         )
@@ -244,6 +245,70 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                 evidence.observation_ref
                 for evidence in by_id["imperial-barracks-depth-4"].reason
             ],
+        )
+
+    def test_imperial_military_backbone_and_scaling_demands_are_exact(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        for identity, minimum in (
+            ("imperial-halberdier-floor", 18),
+            ("imperial-elite-skirmisher-floor", 18),
+            ("imperial-hussar-floor", 12),
+            ("imperial-premium-gold-floor", 12),
+            ("imperial-trebuchet-floor", 4),
+            ("imperial-open-halberdier-band", 24),
+            ("imperial-open-elite-skirmisher-band", 24),
+            ("imperial-open-hussar-band", 16),
+            ("imperial-fortified-halberdier-band", 24),
+            ("imperial-fortified-elite-skirmisher-band", 20),
+            ("imperial-fortified-hussar-band", 12),
+            ("imperial-trashwar-halberdier-band", 30),
+            ("imperial-trashwar-elite-skirmisher-band", 30),
+            ("imperial-trashwar-hussar-band", 18),
+        ):
+            self.assertIn(identity, by_id)
+            self.assertEqual(by_id[identity].target.minimum, minimum)
+
+        self.assertIn(
+            "(food-amount >= 2400)",
+            by_id["imperial-open-halberdier-band"].execution.requirements,
+        )
+        self.assertIn(
+            "(players-building-type-count any-enemy 104 >= 1)",
+            by_id["imperial-fortified-elite-skirmisher-band"].execution.requirements,
+        )
+        self.assertIn(
+            "(gold-amount <= 800)",
+            by_id["imperial-trashwar-hussar-band"].execution.requirements,
+        )
+
+    def test_imperial_upgrade_ladder_has_required_technologies_and_gates(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        for identity, gate in (
+            ("research-pikeman", "(unit-type-count-total spearman-line >= 6)"),
+            ("research-elite-skirmisher", "(unit-type-count-total skirmisher-line >= 6)"),
+            ("research-husbandry", "(unit-type-count-total scout-cavalry-line >= 6)"),
+            ("research-halberdier", "(unit-type-count pikeman >= 8)"),
+            ("research-hussar", "(unit-type-count-total scout-cavalry-line >= 6)"),
+            ("research-bracer", "(unit-type-count-total skirmisher-line >= 12)"),
+            ("research-plate-mail", "(unit-type-count halberdier >= 12)"),
+            ("research-plate-barding", "(unit-type-count hussar >= 8)"),
+        ):
+            self.assertIn(identity, by_id)
+            self.assertIn(gate, by_id[identity].execution.requirements)
+
+        self.assertNotIn(
+            "research-blast-furnace",
+            by_id,
+        )
+        self.assertNotIn(
+            "research-bloodlines",
+            by_id,
+        )
+        self.assertNotIn(
+            "research-siege-engineers",
+            by_id,
         )
 
     def test_imperial_attack_strategic_numbers_are_owned_by_endgame_push_control(self):

@@ -149,3 +149,25 @@ rather than:
 `OBSERVATION -> TRAIN UNIT`
 
 The first is a strategy system. The second is a macro script wearing a strategy-shaped hat.
+
+
+## Imperial standing army and scaling bands
+
+Imperial Byzantine strategy now treats the discounted trash backbone as persistent military infrastructure rather than a purely reactive counter package.
+
+The standing floor is **18 Halberdiers / 18 Elite Skirmishers / 12 Hussars**. Falling below any one of those floors forces recovery before ordinary scaling. The floor remains valid even when the enemy composition is unclear.
+
+Once the floor is secure, posture selects the upper target:
+- **Open field:** 24/24/16, with high-bank scaling to 30/30/20.
+- **Fortified push:** 24/20/12 around the siege package, with high-bank scaling to 28/24/14.
+- **Gold-starved trash war:** 30/30/18, with high-bank scaling to 36/36/24.
+
+Enemy observations modify only the relevant ceiling. Sustained mounted pressure raises the Halberdier ceiling, sustained ranged pressure raises the Elite Skirmisher ceiling, and enemy siege/mobility pressure can raise the Hussar ceiling for interception and raiding. The controller does not switch posture from a single enemy unit observation.
+
+Posture hysteresis is deliberate: floor recovery is 30 seconds; Open Field, Fortified Push, and Trash War have 60/45/90-second minimum dwells; entry guards are 20/15/30 seconds; fortified-clear and gold-recovery use 20/30 seconds; and re-entry cooldowns are 30/30/45 seconds. Floor loss is an emergency override. Timers gate reassessment and latching only, never battlefield truth.
+
+The attack-group controller remains separate from the standing army. Endgame attack admission now requires the 18/18/12 floor plus a four-unit siege package. The role layer uses a four-siege standard floor and six-siege fortified floor. This prevents the attack lifecycle from declaring readiness merely because a few premium units exist.
+
+The upgrade ladder is equally explicit: Castle establishes Pikeman, Elite Skirmisher, Light Cavalry, Husbandry, armor/attack support, then Imperial promotes the established lines to Halberdier and Hussar and completes Bracer/late armor packages as the standing army justifies them. Availability remains civ-factual; unavailable technologies are never synthesized into Byzantine policy.
+
+The purpose is not to become a permanent trash-only bot. Cataphracts, Varangian Guards, Arbalesters, Bombard Cannons, Trebuchets, and other premium/siege packages remain available when target set, bank, and battlefield make their opportunity cost worthwhile. The trash backbone simply ensures that Byzantine military strength does not disappear while the bot waits for perfect counter confirmation.
