@@ -229,11 +229,27 @@ def _is_open_production_queue_capacity_control(expr: Expression) -> bool:
     return 0 <= value <= 15
 
 
+def _persistent_goal_read(expr: Expression, registry: PrimitiveRegistry) -> bool:
+    # Goal reads are persistent-state observations. They are valid in demand
+    # requirements, but remain outside completion-witness semantics.
+    if expr.head not in {"goal", "up-compare-goal"}:
+        return False
+    native = registry.require_native(expr.head)
+    registry.validate_native_signature(expr.head, len(expr.args))
+    if native.command_type != "Fact":
+        raise ValueError(
+            f"persistent goal read '{expr.head}' is not registered as a native fact"
+        )
+    return True
+
+
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     # SN 264 is accepted here only as OPEN production-capacity evidence. It
     # remains forbidden in all other contexts because ordinary Strategic
     # Number state is an engine-control effect, not a generic observation.
     if _is_open_production_queue_capacity_control(expr):
+        return {"PERSISTENT_STATE"}
+    if _persistent_goal_read(expr, registry):
         return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
