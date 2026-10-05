@@ -1972,12 +1972,15 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
         return parse_expression(source, SourceLocation(1))
 
     def objective_class_active():
-        return parse_expression(
-            f"(or (goal {objective_state} {siege}) "
-            f"(or (goal {objective_state} {defense}) "
-            f"(or (goal {objective_state} {production}) "
-            f"(goal {objective_state} {town_center}))))",
-            SourceLocation(1),
+        return (
+            parse_expression(
+                f"(up-compare-goal {objective_state} >= 1)",
+                SourceLocation(1),
+            ),
+            parse_expression(
+                f"(up-compare-goal {objective_state} <= 4)",
+                SourceLocation(1),
+            ),
         )
 
     rules = [
@@ -2018,7 +2021,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
         NativeControlRule(
             "byzantine-endgame-objective-fortification-abort",
             facts=(
-                objective_class_active(),
+                *objective_class_active(),
                 expr(f"(goal {claim} 1)"),
                 expr("(goal byzantine-fortification-threat 1)"),
             ),
