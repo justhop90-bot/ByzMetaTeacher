@@ -235,6 +235,23 @@ def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     # Number state is an engine-control effect, not a generic observation.
     if _is_open_production_queue_capacity_control(expr):
         return {"PERSISTENT_STATE"}
+
+    # Goal reads are native persistent-state reads. Their generic support state
+    # remains ENGINE_SEMANTICS_MAPPED, so only the read-only requirement-role
+    # seam may promote them to PERSISTENT_STATE. Witnesses/actions still pass
+    # through their normal support/context validators.
+    if expr.head in {"goal", "up-compare-goal"}:
+        primitive = registry.get(expr.head)
+        if primitive is None:
+            raise CompileError(
+                f"NATIVE-SUPPORT-005: native command '{expr.head}' has no semantic adapter"
+            )
+        try:
+            registry.validate_native_signature(expr.head, len(expr.args))
+            registry.validate_adapter_contract(primitive)
+        except ValueError as exc:
+            raise CompileError(str(exc)) from exc
+        return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
     if expr.head in _LOGICAL_ARITY:
