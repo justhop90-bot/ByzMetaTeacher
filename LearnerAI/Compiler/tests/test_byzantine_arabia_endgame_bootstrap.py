@@ -81,6 +81,13 @@ class ByzantineArabiaEndgameBootstrapTests(unittest.TestCase):
             self.output,
         )
 
+    def test_fortified_admission_reuses_attack_ready_latch(self):
+        start = self.output.index("byzantine-endgame-push-admit-fortified")
+        end = self.output.index("byzantine-endgame-push-admit-trash", start)
+        fortified = self.output[start:end]
+        self.assertIn("(goal byzantine-army-attack-ready 1)", fortified)
+        self.assertNotIn("(unit-type-count cataphract >= 8)", fortified)
+
     def test_endgame_push_release_uses_attack_package_instead_of_exact_trash_snapshot(self):
         start = self.output.index("byzantine-endgame-push-release")
         end = self.output.index("byzantine-endgame-push-release-trash", start)
