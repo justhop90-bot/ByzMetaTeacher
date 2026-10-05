@@ -561,7 +561,7 @@ def community_strategy_observations(
         _observation(
             "strategy-endgame-ground-conversion",
             "(and (current-age >= imperial-age) "
-            "(and (or (goal byzantine-endgame-frontier 1) (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3)) "
+            "(and (or (goal byzantine-endgame-frontier 1) (or (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3))) "
             "(goal byzantine-endgame-push-state 1)))",
             (
                 EvidenceRef(
@@ -576,7 +576,7 @@ def community_strategy_observations(
         _observation(
             "strategy-endgame-resource-denial",
             "(and (current-age >= imperial-age) "
-            "(or (goal byzantine-endgame-frontier 1) (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3)))",
+            "(or (goal byzantine-endgame-frontier 1) (or (goal byzantine-endgame-frontier 2) (goal byzantine-endgame-frontier 3))))",
             (
                 EvidenceRef(
                     kind=EvidenceKind.REPOSITORY_CONTROLLER,
