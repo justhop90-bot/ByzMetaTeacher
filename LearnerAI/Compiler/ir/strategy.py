@@ -2321,7 +2321,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(up-compare-goal {candidate_name} == {fortified})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(fortified_exec),
+                *(expr(part) for part in fortified_exec_facts),
                 expr(cooldown_clear(fortified)),
             ),
             actions=(
@@ -2354,7 +2354,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {trash})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(trash_eligible),
+                *(expr(part) for part in trash_facts),
                 expr(cooldown_clear(trash)),
             ),
             actions=(
@@ -2371,12 +2371,32 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
             facts=(
                 expr(f"(goal {candidate_name} {open_field})"),
                 expr(f"(timer-triggered {guard_timer})"),
-                expr(open_field_eligible),
+                expr(f"(up-compare-goal {state_name} != {trash})"),
+                *(expr(part) for part in open_field_facts),
                 expr(cooldown_clear(open_field)),
             ),
             actions=(
                 expr(f"(set-goal {state_name} {open_field})"),
                 expr(f"(set-goal {reason_name} 60)"),
+                expr(f"(set-goal {candidate_name} 0)"),
+                expr(f"(disable-timer {guard_timer})"),
+                expr(f"(disable-timer {dwell_timer})"),
+                expr(f"(enable-timer {dwell_timer} 60)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-imperial-band-transition-open-recovery",
+            facts=(
+                expr(f"(goal {candidate_name} {open_field})"),
+                expr(f"(timer-triggered {guard_timer})"),
+                expr(f"(goal {state_name} {trash})"),
+                expr(f"(up-compare-goal {state_name} == {trash})"),
+                *(expr(part) for part in gold_recovery_open_facts),
+                expr(cooldown_clear(open_field)),
+            ),
+            actions=(
+                expr(f"(set-goal {state_name} {open_field})"),
+                expr(f"(set-goal {reason_name} 50)"),
                 expr(f"(set-goal {candidate_name} 0)"),
                 expr(f"(disable-timer {guard_timer})"),
                 expr(f"(disable-timer {dwell_timer})"),
