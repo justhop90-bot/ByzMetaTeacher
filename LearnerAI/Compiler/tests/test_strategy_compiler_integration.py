@@ -329,9 +329,31 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("byzantine-endgame-mode-breakthrough", rules)
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("byzantine-endgame-frontier-verified", output)
         self.assertIn("byzantine-endgame-mode", output)
         self.assertIn("byzantine-endgame-win-condition", output)
         self.assertIn("Verified frontier ground creates forward-production pressure", output)
+
+        for rule_id in (
+            "byzantine-endgame-mode-resource-denial",
+            "byzantine-endgame-mode-attrition",
+            "byzantine-endgame-mode-breakthrough",
+        ):
+            facts = tuple(fact.source for fact in rules[rule_id].facts)
+            self.assertIn("(goal byzantine-endgame-frontier-verified 1)", facts)
+
+        conversion_demands = tuple(
+            demand for demand in compilation.demands
+            if demand.identity.startswith("imperial-forward-production-")
+        )
+        self.assertTrue(conversion_demands)
+        self.assertTrue(
+            all(
+                "(goal byzantine-endgame-frontier-verified 1)"
+                in demand.execution.requirements
+                for demand in conversion_demands
+            )
+        )
 
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
