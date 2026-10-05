@@ -3317,11 +3317,12 @@ def _default_byzantine_duc_plan(
                         "(up-reset-search 0 0 1 1)",
                         SourceLocation(1),
                     ),
-                )
-                    lifecycle=(
+                ),
+                lifecycle=(
                     NativeDucLifecycleStage.TARGET,
                     NativeDucLifecycleStage.DISPATCH,
                 ),
+            )
         )
         
     relic_base = len(rules)
