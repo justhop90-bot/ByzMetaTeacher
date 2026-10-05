@@ -45,7 +45,7 @@ from .economic_control import default_byzantine_economy_controller
 from .camp_control import CampResource, default_byzantine_camp_controller
 
 _ENDGAME_CATAPHRACT_TARGET = 30
-_ENDGAME_VARIANGIAN_TARGET = 24
+_ENDGAME_VARANGIAN_TARGET = 24
 _ENDGAME_RAM_TARGET = 8
 _ENDGAME_TREBUCHET_TARGET = 8
 
@@ -1417,7 +1417,7 @@ def community_strategy_demands(
                 owner="endgame-replacement",
                 priority=_StrategicPriority.DEFENSE,
                 line="varangian-guard-line",
-                minimum=_ENDGAME_VARIANGIAN_TARGET,
+                minimum=_ENDGAME_VARANGIAN_TARGET,
                 reason_refs=(
                     "strategy-imperial-spend-food",
                     "strategy-imperial-spend-gold",
