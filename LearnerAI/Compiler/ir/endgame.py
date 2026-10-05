@@ -57,6 +57,16 @@ class EndgamePushContract:
             raise TypeError("endgame push contract live_witness_ref must be a string")
         if not isinstance(self.cleared_witness_ref, str):
             raise TypeError("endgame push contract cleared_witness_ref must be a string")
+        if not all(
+            isinstance(value, int) and not isinstance(value, bool)
+            for value in (
+                self.attack_group_count,
+                self.attack_soldier_percent,
+                self.minimum_group_size,
+                self.maximum_group_size,
+            )
+        ):
+            raise TypeError("endgame push contract numeric fields must be integers")
         if not 1 <= self.attack_group_count <= 32767:
             raise ValueError("endgame attack group count must be in 1..32767")
         if not 0 <= self.attack_soldier_percent <= 100:
@@ -105,6 +115,8 @@ class EndgamePolicyRule:
             raise TypeError(
                 "endgame policy rule win_condition must be EndgameWinCondition"
             )
+        if not isinstance(self.priority, int) or isinstance(self.priority, bool):
+            raise TypeError("endgame policy rule priority must be an integer")
         if not isinstance(self.observation_refs, tuple):
             raise TypeError("endgame policy rule observation_refs must be a tuple")
         if any(not isinstance(reference, str) for reference in self.observation_refs):
