@@ -48,8 +48,8 @@ class EndgamePushContract:
     maximum_group_size: int
     live_witness_ref: str
     cleared_witness_ref: str
-    frontier_witness_ref: str | None = None
     frontier: tuple[EndgameFrontierState, ...]
+    frontier_witness_ref: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.identity, str) or not self.identity.strip():
