@@ -1770,13 +1770,6 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             SourceLocation(1),
         )
 
-    def clear_objective(reason: str) -> NativeControlRule:
-        return NativeControlRule(
-            f"byzantine-endgame-objective-release-{reason}",
-            facts=(),
-            actions=(),
-        )
-
     rules = [
         NativeControlRule(
             "byzantine-endgame-objective-initialize",
