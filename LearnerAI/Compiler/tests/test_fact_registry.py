@@ -45,6 +45,30 @@ class NativeFactRegistryTests(unittest.TestCase):
             adapter,
         )
 
+    def test_attack_soldier_count_is_a_contracted_world_observation(self):
+        registry = default_de_registry()
+        mapping = registry._semantic_mappings.for_command("attack-soldier-count")
+        self.assertIsNotNone(mapping)
+        assert mapping is not None
+        self.assertEqual(mapping.identity, "observation.attack.soldier-count")
+        self.assertEqual(mapping.status.value, "contracted")
+
+        fact = registry.normalize_fact(
+            "attack-soldier-count",
+            (">", 0),
+        )
+        self.assertEqual(
+            fact.semantic_id,
+            "observation.attack.soldier-count",
+        )
+        self.assertEqual(
+            fact.canonical_args,
+            (
+                CanonicalEnum("COMPARE_OP", ">"),
+                CanonicalInteger(0),
+            ),
+        )
+
     def test_current_age_normalization_canonicalizes_operator_and_enum(self):
         fact = default_de_registry().normalize_fact(
             "current-age",
