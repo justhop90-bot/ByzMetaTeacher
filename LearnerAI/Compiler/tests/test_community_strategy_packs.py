@@ -270,15 +270,15 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertEqual(by_id[identity].target.minimum, minimum)
 
         self.assertIn(
-            "(up-compare-goal byz-imp-band-state c:== 1)",
+            "(goal byz-imp-band-state 1)",
             by_id["imperial-open-halberdier-band"].execution.requirements,
         )
         self.assertIn(
-            "(up-compare-goal byz-imp-band-state c:== 2)",
+            "(goal byz-imp-band-state 2)",
             by_id["imperial-fortified-elite-skirmisher-band"].execution.requirements,
         )
         self.assertIn(
-            "(up-compare-goal byz-imp-band-state c:== 3)",
+            "(goal byz-imp-band-state 3)",
             by_id["imperial-trashwar-hussar-band"].execution.requirements,
         )
 
