@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the canonical compiler-produced Byzantine Core v1 artifact."""
+"""Build the canonical Byzantine compiler -> runtime -> promoted artifact."""
 
 from __future__ import annotations
 
@@ -13,12 +13,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from LearnerAI.Compiler.clients.basilisk import (
+from LearnerAI.Compiler.clients.basilisk import (  # noqa: E402
     ByzantineProfile,
     build_byzantine_strategy,
     compile_strategy_profile,
 )
-from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ  # noqa: E402
+from LearnerAI.Compiler.artifacts.lineage import (  # noqa: E402
+    PROMOTED_ARTIFACT,
+    PROMOTION_MANIFEST,
+    RUNTIME_ARTIFACT,
+    RUNTIME_MANIFEST,
+    verify_byzantine_artifact_lineage,
+)
+from tools.assemble_byzantine_runtime import assemble_byzantine_runtime  # noqa: E402
+from tools.promote_byzantine_runtime import promote_byzantine_runtime  # noqa: E402
 
 NATIVE_PARSER_REVISION = "3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
 DEFAULT_OUTPUT_DIR = Path("dist/byzantine")
@@ -49,10 +58,24 @@ def _canonical_json(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
-def build(output_dir: Path) -> tuple[Path, Path]:
+def build(output_dir: Path = DEFAULT_OUTPUT_DIR) -> tuple[Path, Path]:
+    """Compile, assemble, promote, and cryptographically verify Byzantine."""
     root = ROOT
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    compiler_artifact = output_dir / "Byzantine.compiler.per"
+    compiler_manifest = output_dir / "Byzantine.compiler.manifest.json"
+    overlay_artifact = root / "runtime/byzantine/Byzantine.runtime-overlay.per"
+    if not overlay_artifact.is_file():
+        raise RuntimeError(
+            "BYZ-ASSEMBLY-003: canonical Byzantine runtime overlay is missing at "
+            f"{overlay_artifact}"
+        )
+    if not (root / "runtime/byzantine/Byzantine.runtime-overlay.json").is_file():
+        raise RuntimeError(
+            "BYZ-ASSEMBLY-003: canonical Byzantine runtime overlay manifest is missing"
+        )
 
     civ_profile = ByzantineProfile.for_update_185872()
     effective = resolve_effective_civ(civ_profile)
@@ -64,9 +87,6 @@ def build(output_dir: Path) -> tuple[Path, Path]:
         raise RuntimeError("canonical Byzantine compilation is not byte-deterministic")
 
     artifact_sha256 = _sha256_text(first)
-    artifact_path = output_dir / "Byzantine.per"
-    manifest_path = output_dir / "Byzantine.manifest.json"
-
     build_input_identity = {
         "profile_entrypoint": "ByzantineProfile.for_update_185872",
         "strategy_entrypoint": "build_byzantine_strategy",
@@ -79,44 +99,77 @@ def build(output_dir: Path) -> tuple[Path, Path]:
         "effective_snapshot_fingerprint": effective.fingerprint,
     }
 
-    manifest = {
-        "schema": "byzantine-core-v1-build-1",
-        "profile_id": profile.profile_id,
-        "civilization": effective.civ_name,
-        "civ_id": int(effective.civ_id),
-        "patch_key": effective.patch.key,
-        "effective_snapshot_fingerprint": effective.fingerprint,
-        "artifact_sha256": artifact_sha256,
-        "artifact_line_count": len(first.splitlines()),
-        "artifact_rule_count": first.count("(defrule"),
-        "artifact_byte_length": len(first.encode("utf-8")),
-        "compiler_source_revision": _git_revision(root),
-        "build_input_identity": build_input_identity,
-        "native_parser_revision": NATIVE_PARSER_REVISION,
+    compiler_manifest_payload = {
+        "schema": "byzantine-compiler-artifact-1",
+        "artifact_kind": "compiler",
+        "artifact": {
+            "path": "dist/byzantine/Byzantine.compiler.per",
+            "manifest_path": "dist/byzantine/Byzantine.compiler.manifest.json",
+            "sha256": artifact_sha256,
+            "byte_length": len(first.encode("utf-8")),
+            "line_count": len(first.splitlines()),
+            "rule_count": first.count("(defrule"),
+        },
+        "compiler": {
+            "source_revision": _git_revision(root),
+            "entrypoint": "compile_strategy_profile",
+        },
+        "strategy": {
+            "profile_entrypoint": "ByzantineProfile.for_update_185872",
+            "strategy_entrypoint": "build_byzantine_strategy",
+            "profile_id": profile.profile_id,
+        },
+        "effective_civ": {
+            "civilization": effective.civ_name,
+            "civ_id": int(effective.civ_id),
+            "patch_key": effective.patch.key,
+            "snapshot_fingerprint": effective.fingerprint,
+        },
+        "native_parser": {
+            "name": "aoe2-ai-parser",
+            "revision": NATIVE_PARSER_REVISION,
+        },
         "determinism": {
-            "second_compile_equal": True,
-            "artifact_sha256_matches_manifest": True,
+            "compile_repeat_equal": True,
+            "hash_recomputed": True,
         },
     }
+    compiler_artifact.write_text(first, encoding="utf-8", newline="")
+    compiler_manifest.write_text(
+        _canonical_json(compiler_manifest_payload) + "\n",
+        encoding="utf-8",
+        newline="",
+    )
 
-    with artifact_path.open("w", encoding="utf-8", newline="") as handle:
-        handle.write(first)
-    with manifest_path.open("w", encoding="utf-8", newline="") as handle:
-        handle.write(_canonical_json(manifest) + "\n")
-    return artifact_path, manifest_path
+    assemble_byzantine_runtime(repository_root=root, output_dir=output_dir)
+    promote_byzantine_runtime(repository_root=root)
+    result = verify_byzantine_artifact_lineage(repository_root=root)
+    if not result.root_matches_runtime:
+        raise RuntimeError("BYZ-PROMOTE-001: promoted Byzantine.per diverges from runtime")
+
+    print(
+        json.dumps(
+            {
+                "compiler_artifact": str(compiler_artifact),
+                "runtime_artifact": str(root / RUNTIME_ARTIFACT),
+                "promoted_artifact": str(root / PROMOTED_ARTIFACT),
+                "promotion_manifest": str(root / PROMOTION_MANIFEST),
+                "compiler_sha256": result.compiler_sha256,
+                "runtime_sha256": result.runtime_sha256,
+                "promoted_sha256": result.promoted_sha256,
+                "lineage_verified": True,
+            },
+            sort_keys=True,
+        )
+    )
+    return root / PROMOTED_ARTIFACT, root / PROMOTION_MANIFEST
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args()
-    artifact_path, manifest_path = build(args.output_dir)
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    print(json.dumps({
-        "artifact": str(artifact_path),
-        "manifest": str(manifest_path),
-        "artifact_sha256": manifest["artifact_sha256"],
-    }, sort_keys=True))
+    build(args.output_dir)
     return 0
 
 
