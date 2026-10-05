@@ -662,7 +662,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             release_facts,
         )
         self.assertIn("(attack-soldier-count <= 0)", release_facts)
-        self.assertIn("(unit-type-count cataphract >= 4)", " ".join(release_facts))
+        release_facts_text = " ".join(release_facts)
+        self.assertIn("(unit-type-count halberdier >= 18)", release_facts_text)
+        self.assertIn("(unit-type-count skirmisher-line >= 18)", release_facts_text)
+        self.assertIn("(unit-type-count hussar >= 12)", release_facts_text)
+        self.assertIn("(unit-type-count trebuchet >= 4)", release_facts_text)
 
         release_actions = tuple(action.source for action in rules["byzantine-endgame-push-release"].actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 1)", release_actions)
@@ -856,6 +860,53 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
             output,
         )
+
+    def test_stock_strategy_lowers_imperial_military_band_controller(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        for state in (
+            "byz-imp-band-state",
+            "byz-imp-band-candidate",
+            "byz-imp-band-rearm",
+            "byz-imp-band-reason",
+            "byz-imp-band-dwell",
+            "byz-imp-band-guard",
+            "byz-imp-band-rearm-timer",
+        ):
+            self.assertIn(state, state_ids)
+
+        rule_ids = {rule.identity for rule in control.rules}
+        for identity in (
+            "byz-imperial-military-floor-break-0",
+            "byz-imperial-military-latch-fortified-open-field",
+            "byz-imperial-military-latch-economic-open-field",
+            "byz-imperial-military-latch-trash-open",
+            "byz-imperial-military-enter-fortified",
+            "byz-imperial-military-open-to-trash",
+            "byz-imperial-military-trash-to-open",
+        ):
+            self.assertIn(identity, rule_ids)
+
+        floor_rule = next(
+            rule for rule in control.rules
+            if rule.identity == "byz-imperial-military-floor-break-0"
+        )
+        self.assertIn(
+            "(set-goal byz-imp-band-state 0)",
+            tuple(action.source for action in floor_rule.actions),
+        )
+        self.assertIn(
+            "(set-goal byz-imp-band-reason 10)",
+            tuple(action.source for action in floor_rule.actions),
+        )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertIn("; Native control rule: byz-imperial-military-floor-break-0", output)
+        self.assertIn("(defconst byz-imp-floor-halbs 18)", output)
+        self.assertIn("(defconst byz-imp-guard-fort 15)", output)
 
     def test_strategy_profile_compiles_through_existing_semantic_pipeline(self):
         output = compile_strategy_profile(
