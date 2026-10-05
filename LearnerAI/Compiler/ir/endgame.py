@@ -161,6 +161,7 @@ class EndgameObjectiveControlContract:
     search_goal: str = "byzantine-offensive-objective-search"
     enemy_player_goal: str = "byzantine-offensive-enemy-player"
     claim_goal: str = "byzantine-offensive-objective-claim"
+    witness_target_goal: str = "byzantine-offensive-objective-witness-target"
     release_reason_goal: str = "byzantine-offensive-objective-release-reason"
     release_search_goal: str = "byzantine-offensive-objective-release-search"
     release_search_radius: int = 60
@@ -175,6 +176,7 @@ class EndgameObjectiveControlContract:
             self.search_goal,
             self.enemy_player_goal,
             self.claim_goal,
+            self.witness_target_goal,
             self.release_reason_goal,
             self.release_search_goal,
             self.timer_name,
