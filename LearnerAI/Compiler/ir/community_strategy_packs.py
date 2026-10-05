@@ -398,12 +398,7 @@ def _endgame_training_demand(
                 "strategy-imperial-age",
             ),
         ),
-        invalidation=(
-            _persistent(
-                f"{identity}:release-at-target",
-                f"{identity}-target-complete",
-            ),
-        ),
+        invalidation=(),
         capability_intent=_CapabilityIntent(
             _CapabilityIntentKind.TRAIN,
             "unit-line",
@@ -1315,16 +1310,16 @@ def community_strategy_demands(
         for item in observations
     }
     provider_depth_specs = (
-        ("barracks", "castle-barracks-depth-2", 2, 0, "strategy-production-barracks-depth-6", "(current-age >= castle-age)"),
+        ("barracks", "castle-barracks-depth-2", 2, 0, "strategy-production-barracks-depth-6", "(current-age >= castle-age)", None),
         ("barracks", "imperial-barracks-depth-3", 3, 2, "strategy-production-barracks-depth-12", "(current-age >= imperial-age)", "strategy-production-barracks-replacement"),
         ("barracks", "imperial-barracks-depth-4", 4, 3, "strategy-production-barracks-depth-18", "(current-age >= imperial-age)", "strategy-production-barracks-replacement"),
-        ("stable", "castle-stable-depth-2", 2, 0, "strategy-production-stable-depth-6", "(current-age >= castle-age)"),
+        ("stable", "castle-stable-depth-2", 2, 0, "strategy-production-stable-depth-6", "(current-age >= castle-age)", None),
         ("stable", "imperial-stable-depth-3", 3, 2, "strategy-production-stable-depth-12", "(current-age >= imperial-age)", "strategy-production-stable-replacement"),
         ("stable", "imperial-stable-depth-4", 4, 3, "strategy-production-stable-depth-18", "(current-age >= imperial-age)", "strategy-production-stable-replacement"),
-        ("archery-range", "castle-range-depth-2", 2, 0, "strategy-production-range-depth-6", "(current-age >= castle-age)"),
+        ("archery-range", "castle-range-depth-2", 2, 0, "strategy-production-range-depth-6", "(current-age >= castle-age)", None),
         ("archery-range", "imperial-range-depth-3", 3, 2, "strategy-production-range-depth-12", "(current-age >= imperial-age)", "strategy-production-range-replacement"),
         ("archery-range", "imperial-range-depth-4", 4, 3, "strategy-production-range-depth-18", "(current-age >= imperial-age)", "strategy-production-range-replacement"),
-        ("siege-workshop", "castle-siege-depth-2", 2, 0, "strategy-production-siege-depth-2", "(current-age >= castle-age)"),
+        ("siege-workshop", "castle-siege-depth-2", 2, 0, "strategy-production-siege-depth-2", "(current-age >= castle-age)", None),
         ("siege-workshop", "imperial-siege-depth-3", 3, 2, "strategy-production-siege-depth-4", "(current-age >= imperial-age)", "strategy-production-siege-replacement"),
         ("siege-workshop", "imperial-siege-depth-4", 4, 3, "strategy-production-siege-depth-6", "(current-age >= imperial-age)", "strategy-production-siege-replacement"),
     )
