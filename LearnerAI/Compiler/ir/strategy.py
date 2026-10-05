@@ -2318,11 +2318,12 @@ def _byzantine_relic_control_plan(profile_id: str):
     if profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}:
         return None
 
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
     from .recurrent import TimerRequest
+    from .strategic_number import StrategicNumberOrigin
 
     owner = SemanticId(profile_id, "byzantine-relic-control")
     state_name = "byzantine-relic-control-state"
