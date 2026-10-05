@@ -1166,21 +1166,7 @@ def _byzantine_endgame_attack_group_sn_controllers(
         SourceLocation(1),
     )
 
-    controllers = [
-        StrategicNumberController(
-            identity="byzantine-endgame-push-attack-groups-underlay",
-            native_strategic_number_id=36,
-            value=0,
-            layer=StrategicNumberControllerLayer.AGE_BASE,
-            priority=0,
-            origin=StrategicNumberControllerOrigin.EXPLICIT,
-            activation_guard=parse_expression(
-                "(current-age >= dark-age)",
-                SourceLocation(1),
-            ),
-            owner=profile.profile_id,
-        ),
-    ]
+    controllers = []
     for native_id, value in (
         (36, contract.attack_group_count),
         (227, contract.attack_soldier_percent),
