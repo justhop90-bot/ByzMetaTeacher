@@ -1,14 +1,15 @@
 # Byzantine Core v1 canonical build
 
-The canonical build is a four-stage artifact pipeline:
+The canonical build has two distinct ownership layers:
 
 ```
 Byzantine strategy
     -> compiler artifact
-    -> runtime assembly
-    -> runtime promotion
-    -> Byzantine.per
+    -> woven-runtime provenance verification
+    -> packaged runtime artifact
 ```
+
+The compiler owns the rules it emits. The checked-in `Byzantine.per` is the authoritative woven runtime program and owns final rule ordering because community/runtime adaptations are interleaved with compiler-owned rules.
 
 Build with:
 
@@ -22,20 +23,13 @@ The builder produces and verifies:
 - `dist/byzantine/Byzantine.compiler.manifest.json`
 - `dist/byzantine/Byzantine.runtime.per`
 - `dist/byzantine/Byzantine.runtime.manifest.json`
-- `Byzantine.per`
-- `Byzantine.manifest.json`
 
-Runtime assembly consumes the compiler artifact plus the explicitly declared:
+The packaged runtime artifact is a byte copy of the checked-in authoritative `Byzantine.per`. The compiler does not reorder or reconstruct the woven runtime program.
 
-```
-runtime/byzantine/Byzantine.runtime-overlay.per
-runtime/byzantine/Byzantine.runtime-overlay.json
-```
+The critical lineage invariant is rule conservation. Every compiler-owned `defrule` body, including duplicate multiplicity, must occur verbatim in the authoritative woven runtime artifact. The verifier does not require compiler rule order to equal runtime rule order because the latter is a community/runtime composition boundary.
 
-The assembler verifies both input hashes, rejects duplicate emitted rule bodies between compiler and overlay, and writes the runtime manifest deterministically. Promotion then byte-copies the verified runtime artifact into the canonical root artifact and verifies byte identity again.
+This closes the previous split-brain failure mode more honestly than a compiler-plus-suffix overlay model. A changed compiler rule that disappears from the woven runtime is a hard lineage failure. A community-only runtime rule is permitted and remains outside compiler ownership.
 
-The builder fails closed when the runtime overlay or its manifest is missing. This is intentional: the current repository has not yet extracted a canonical runtime overlay from the checked-in `Byzantine.per`. The old behavior in which `dist/byzantine/Byzantine.per` could be green while root `Byzantine.per` remained a separate hand-repaired artifact is no longer an accepted artifact contract.
+The manifests record exact SHA-256 values, compiler source revision, effective Byzantine snapshot identity, compiler rule count, woven runtime rule count, and the conservation result.
 
-The manifests record exact SHA-256 values, canonical paths, compiler source revision, effective Byzantine snapshot identity, assembly lineage, and promotion provenance. The semantic verifier checks the complete compiler -> runtime -> promotion hash chain.
-
-This proves static artifact lineage and reproducibility. It does not prove DE runtime behavior, queue timing, DUC object liveness, native Strategic Number mutation, or any other runtime-only property that remains OPEN evidence.
+This proves static artifact provenance and reproducibility. It does not prove DE runtime behavior, queue timing, DUC object liveness, native Strategic Number mutation, or other runtime-only properties that remain OPEN evidence.
