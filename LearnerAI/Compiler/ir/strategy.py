@@ -2371,7 +2371,9 @@ def _byzantine_relic_control_plan(profile_id: str):
         states=(state, timer, relic_return, relic_defend),
         rules=(),
     )
-\n\ndef _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
+
+
+def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
     Strategy policy selects only decision-grade observed pressure. DUC then
