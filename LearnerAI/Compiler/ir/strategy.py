@@ -2461,7 +2461,7 @@ def _byzantine_relic_control_plan(profile_id: str):
         ),
     )
     return NativeControlPlan(
-        states=(state, timer),
+        states=(state, timer, focus_player),
         rules=rules,
     )
 
