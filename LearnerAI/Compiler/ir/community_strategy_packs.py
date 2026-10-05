@@ -158,6 +158,48 @@ def _build_demand(
     )
 
 
+def _production_depth_demand(
+    *,
+    identity: str,
+    building,
+    floor: int,
+    previous_floor: int,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
+    reason_ref: str,
+    reason_label: str,
+    age_guard: str,
+    standing_demand: str,
+) -> _StrategicDemandSpec:
+    building_token = _slug(building.name)
+    requirements = [
+        age_guard,
+        standing_demand,
+    ]
+    if previous_floor > 0:
+        requirements.append(
+            f"(building-type-count-total {building_token} >= {previous_floor})"
+        )
+    requirements.extend(
+        (
+            f"(building-type-count-total {building_token} < {floor})",
+            f"(can-build {building_token})",
+        )
+    )
+    return _build_demand(
+        identity=identity,
+        owner="production-depth",
+        posture=posture,
+        priority=priority,
+        reason_ref=reason_ref,
+        reason_label=reason_label,
+        building=building,
+        requirements=tuple(requirements),
+        target_witness=f"(building-type-count {building_token} >= {floor})",
+        release=f"(building-type-count {building_token} >= {floor})",
+    )
+
+
 def _research_demand(
     *,
     effective: EffectiveCivData,
@@ -328,6 +370,37 @@ def community_strategy_observations(
         "(or (players-unit-type-count any-enemy archer-line >= 4) "
         "(players-unit-type-count any-enemy militia-line >= 5)))"
     )
+    production_depth_observations = (
+        (
+            "barracks",
+            "(or (unit-type-count-total varangian-guard-line >= {threshold}) "
+            "(unit-type-count-total 359 >= {threshold}))",
+            "strategy-production-barracks-depth",
+        ),
+        (
+            "stable",
+            "(or (or (unit-type-count-total cataphract-line >= {threshold}) "
+            "(unit-type-count-total knight-line >= {threshold})) "
+            "(unit-type-count-total camel-line >= {threshold}))",
+            "strategy-production-stable-depth",
+        ),
+        (
+            "archery-range",
+            "(or (unit-type-count-total crossbow-line >= {threshold}) "
+            "(unit-type-count-total skirmisher-line >= {threshold}))",
+            "strategy-production-range-depth",
+        ),
+        (
+            "siege-workshop",
+            "(or (or (unit-type-count-total mangonel-line >= {threshold}) "
+            "(unit-type-count-total trebuchet >= {threshold})) "
+            "(or (unit-type-count-total bombard-cannon >= {threshold}) "
+            "(unit-type-count-total battering-ram-line >= {threshold}))"
+            ")",
+            "strategy-production-siege-depth",
+        ),
+    )
+
     observations = [
         _observation(
             "strategy-castle-age",
@@ -545,6 +618,22 @@ def community_strategy_observations(
                 tech.provenance,
             )
         )
+
+    for provider, expression_template, base_identity in production_depth_observations:
+        thresholds = (6, 12, 18) if provider != "siege-workshop" else (2, 4, 6)
+        for threshold in thresholds:
+            identity = f"{base_identity}-{threshold}"
+            expression = expression_template.format(threshold=threshold)
+            observations.append(
+                _observation(
+                    identity,
+                    expression,
+                    _airef_provenance(
+                        effective,
+                        "commands/commands-details.html#unit-type-count-total",
+                    ),
+                )
+            )
 
     return tuple(observations)
 
@@ -945,6 +1034,55 @@ def community_strategy_demands(
             ),
         )
     )
+
+    # Provider depth follows standing military demand. Queue depth remains OPEN:
+    # these demands expand the physical production network only after witnessed
+    # standing units reach the next threshold.
+    standing_depth_observations = {
+        item.identity: item.expression
+        for item in observations
+    }
+    provider_depth_specs = (
+        ("barracks", "castle-barracks-depth-2", 2, 0, "strategy-production-barracks-depth-6", "(current-age >= castle-age)"),
+        ("barracks", "imperial-barracks-depth-3", 3, 2, "strategy-production-barracks-depth-12", "(current-age >= imperial-age)"),
+        ("barracks", "imperial-barracks-depth-4", 4, 3, "strategy-production-barracks-depth-18", "(current-age >= imperial-age)"),
+        ("stable", "castle-stable-depth-2", 2, 0, "strategy-production-stable-depth-6", "(current-age >= castle-age)"),
+        ("stable", "imperial-stable-depth-3", 3, 2, "strategy-production-stable-depth-12", "(current-age >= imperial-age)"),
+        ("stable", "imperial-stable-depth-4", 4, 3, "strategy-production-stable-depth-18", "(current-age >= imperial-age)"),
+        ("archery-range", "castle-range-depth-2", 2, 0, "strategy-production-range-depth-6", "(current-age >= castle-age)"),
+        ("archery-range", "imperial-range-depth-3", 3, 2, "strategy-production-range-depth-12", "(current-age >= imperial-age)"),
+        ("archery-range", "imperial-range-depth-4", 4, 3, "strategy-production-range-depth-18", "(current-age >= imperial-age)"),
+        ("siege-workshop", "castle-siege-depth-2", 2, 0, "strategy-production-siege-depth-2", "(current-age >= castle-age)"),
+        ("siege-workshop", "imperial-siege-depth-3", 3, 2, "strategy-production-siege-depth-4", "(current-age >= imperial-age)"),
+        ("siege-workshop", "imperial-siege-depth-4", 4, 3, "strategy-production-siege-depth-6", "(current-age >= imperial-age)"),
+    )
+    for (
+        building_name,
+        identity,
+        floor,
+        previous_floor,
+        standing_observation_ref,
+        age_guard,
+    ) in provider_depth_specs:
+        building = _building(effective, building_name)
+        standing_demand = standing_depth_observations[standing_observation_ref]
+        demands.append(
+            _production_depth_demand(
+                identity=identity,
+                building=building,
+                floor=floor,
+                previous_floor=previous_floor,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref=standing_observation_ref,
+                reason_label=(
+                    f"Standing military demand warrants {floor} {building_name} "
+                    "production providers"
+                ),
+                age_guard=age_guard,
+                standing_demand=standing_demand,
+            )
+        )
 
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
