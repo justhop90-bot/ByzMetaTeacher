@@ -1161,6 +1161,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
 
     from ..ast import SourceLocation
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
+    from .recurrent import TimerRequest
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
@@ -1630,12 +1631,21 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     from .strategic_number import StrategicNumberOrigin
 
     push_state_name = "byzantine-endgame-push-state"
+    push_timer_name = "byzantine-endgame-push-timer"
     push_owner = SemanticId(profile.profile_id, "byzantine-endgame-push")
     push_state = NativeControlState(
         push_state_name,
         GoalSlotRequest(
             StorageRequestId(push_owner, push_state_name),
             role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    push_timer = NativeControlState(
+        push_timer_name,
+        TimerRequest(
+            StorageRequestId(push_owner, f"timer:{push_timer_name}"),
+            initialization_policy="DISABLE_BEFORE_FIRST_USE",
+            stability_key=f"{profile.profile_id}:byzantine-endgame-push-timer",
         ),
     )
 
@@ -1701,6 +1711,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             actions=(
                 parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
                 parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
             ),
         ),
@@ -1718,6 +1729,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             actions=(
                 parse_expression(f"(set-strategic-number sn-native-36 {plan.push_contract.attack_group_count})", SourceLocation(1)),
                 parse_expression(f"(set-strategic-number sn-native-227 {plan.push_contract.attack_soldier_percent})", SourceLocation(1)),
+                parse_expression(f"(enable-timer {push_timer_name} 20)", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
             ),
         ),
@@ -1728,7 +1740,23 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression(live_witness, SourceLocation(1)),
             ),
             actions=(
-                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 3)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-pulse-expiry",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+                parse_expression(f"(timer-triggered {push_timer_name})", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 3)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -1745,20 +1773,20 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             actions=(
                 parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
                 parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 5)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
             "byzantine-endgame-push-release",
             facts=(
-                parse_expression("(or (goal byzantine-endgame-push-state 2) (goal byzantine-endgame-push-state 3))", SourceLocation(1)),
+                parse_expression("(goal byzantine-endgame-push-state 3)", SourceLocation(1)),
                 parse_expression(cleared_witness, SourceLocation(1)),
                 parse_expression(military_ready, SourceLocation(1)),
             ),
             actions=(
-                parse_expression("(set-strategic-number sn-native-36 0)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-native-227 75)", SourceLocation(1)),
-                parse_expression("(set-goal byzantine-endgame-push-state 3)", SourceLocation(1)),
+                parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -1773,7 +1801,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         ),
     ]
 
-    states = [push_state, *sn_states]
+    states = [push_state, push_timer, *sn_states]
 
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     target_control = plan.target_control
@@ -1862,6 +1890,19 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     ),
                 )
             )
+
+    if frontier_witness_ref is not None:
+        rules.append(
+            NativeControlRule(
+                "byzantine-endgame-frontier-advance-release",
+                facts=(
+                    parse_expression("(goal byzantine-endgame-push-state 4)", SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                ),
+            )
+        )
 
     return NativeControlPlan(states=tuple(states), rules=tuple(rules))
 
