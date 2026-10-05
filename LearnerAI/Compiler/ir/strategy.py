@@ -1757,6 +1757,11 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
     reason_lost = f"{release_reason}-lost-out-of-bounds"
     reason_fortification = f"{release_reason}-fortification-abort"
     reason_tc_exhausted = f"{release_reason}-tc-exhausted"
+    target_latch = "byzantine-offensive-objective-target-latch"
+    target_siege = "byzantine-offensive-objective-target-siege"
+    target_defense = "byzantine-offensive-objective-target-defense"
+    target_production = "byzantine-offensive-objective-target-production"
+    target_town_center = "byzantine-offensive-objective-target-town-center"
 
     def expr(source: str):
         return parse_expression(source, SourceLocation(1))
@@ -1783,6 +1788,11 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
                 expr(f"(set-goal {objective_class} 0)"),
                 expr(f"(set-goal {contract.enemy_player_goal} 0)"),
                 expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {target_latch} 0)"),
+                expr(f"(set-goal {target_siege} -1)"),
+                expr(f"(set-goal {target_defense} -1)"),
+                expr(f"(set-goal {target_production} -1)"),
+                expr(f"(set-goal {target_town_center} -1)"),
                 expr(f"(set-goal {witness_target} 0)"),
                 expr(f"(set-goal {release_reason} 0)"),
                 expr(f"(disable-timer {timer})"),
@@ -1817,11 +1827,139 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
-            "byzantine-endgame-objective-enter-executing",
+            "byzantine-endgame-objective-admit",
             facts=(
-                objective_class_active(),
+                expr("(current-age >= castle-age)"),
+                expr("(goal byzantine-army-attack-ready 1)"),
+                expr("(goal byzantine-siege-approach byzantine-siege-approach-normal)"),
+                expr(f"(goal {objective_state} 0)"),
+                expr(f"(goal {claim} 0)"),
+            ),
+            actions=(
+                expr(f"(set-goal {objective_state} {siege})"),
+                expr(f"(set-goal {objective_class} {class_none})"),
+                expr(f"(set-goal {claim} 1)"),
+                expr(f"(set-goal {release_reason} 0)"),
+                expr(f"(set-goal {target_latch} 1)"),
+                expr(f"(set-goal {target_siege} -1)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-target-miss-siege",
+            facts=(
+                expr(f"(goal {objective_state} {siege})"),
+                expr(f"(goal {objective_class} {class_none})"),
                 expr(f"(goal {claim} 1)"),
-                expr("(attack-soldier-count > 0)"),
+                expr(f"(goal {target_latch} 1)"),
+                expr(f"(up-compare-goal {target_siege} == 0)"),
+            ),
+            actions=(
+                expr(f"(set-goal {objective_state} {defense})"),
+                expr(f"(set-goal {objective_class} {objective_class}-defense)"),
+                expr(f"(set-goal {target_latch} 2)"),
+                expr(f"(set-goal {target_defense} -1)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-target-miss-defense",
+            facts=(
+                expr(f"(goal {objective_state} {defense})"),
+                expr(f"(goal {objective_class} {objective_class}-defense)"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(goal {target_latch} 2)"),
+                expr(f"(up-compare-goal {target_defense} == 0)"),
+            ),
+            actions=(
+                expr(f"(set-goal {objective_state} {production})"),
+                expr(f"(set-goal {objective_class} {objective_class}-production)"),
+                expr(f"(set-goal {target_latch} 3)"),
+                expr(f"(set-goal {target_production} -1)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-target-miss-production",
+            facts=(
+                expr(f"(goal {objective_state} {production})"),
+                expr(f"(goal {objective_class} {objective_class}-production)"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(goal {target_latch} 3)"),
+                expr(f"(up-compare-goal {target_production} == 0)"),
+            ),
+            actions=(
+                expr(f"(set-goal {objective_state} {town_center})"),
+                expr(f"(set-goal {objective_class} {class_town_center})"),
+                expr(f"(set-goal {target_latch} 4)"),
+                expr(f"(set-goal {target_town_center} -1)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-target-miss-town-center",
+            facts=(
+                expr(f"(goal {objective_state} {town_center})"),
+                expr(f"(goal {objective_class} {class_town_center})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(goal {target_latch} 4)"),
+                expr(f"(up-compare-goal {target_town_center} == 0)"),
+            ),
+            actions=(
+                expr(f"(disable-timer {timer})"),
+                expr(f"(set-goal {release_reason} {reason_tc_exhausted})"),
+                expr(f"(set-goal {objective_class} {class_none})"),
+                expr(f"(set-goal {claim} 0)"),
+                expr(f"(set-goal {objective_state} 0)"),
+                expr(f"(set-goal {target_latch} 0)"),
+                expr(f"(set-goal {target_town_center} -1)"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-siege",
+            facts=(
+                expr(f"(goal {objective_state} {siege})"),
+                expr(f"(goal {objective_class} {class_none})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_siege} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-defense",
+            facts=(
+                expr(f"(goal {objective_state} {defense})"),
+                expr(f"(goal {objective_class} {objective_class}-defense)"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_defense} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-production",
+            facts=(
+                expr(f"(goal {objective_state} {production})"),
+                expr(f"(goal {objective_class} {objective_class}-production)"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_production} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-town-center",
+            facts=(
+                expr(f"(goal {objective_state} {town_center})"),
+                expr(f"(goal {objective_class} {class_town_center})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_town_center} >= 1)"),
             ),
             actions=(
                 expr("(disable-timer byzantine-army-stale-timer)"),
