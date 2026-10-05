@@ -221,6 +221,45 @@ class ByzantineArtifactLineageTests(unittest.TestCase):
             verify_byzantine_artifact_lineage(repository_root=root)
         self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-020")
 
+    def test_runtime_artifact_hash_mismatch_is_detected(self) -> None:
+        root = self._fixture()
+        (root / "dist/byzantine/Byzantine.runtime.per").write_bytes(
+            b"(defrule runtime-tampered)\n"
+        )
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_byzantine_artifact_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-013")
+
+    def test_runtime_manifest_reference_hash_is_verified(self) -> None:
+        root = self._fixture()
+        path = root / "dist/byzantine/Byzantine.runtime.manifest.json"
+        payload = json.loads(path.read_text())
+        payload["inputs"]["overlay"]["manifest_sha256"] = "e" * 64
+        _write_json(path, payload)
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_byzantine_artifact_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-011")
+
+    def test_promotion_runtime_manifest_reference_hash_is_verified(self) -> None:
+        root = self._fixture()
+        path = root / "Byzantine.manifest.json"
+        payload = json.loads(path.read_text())
+        payload["source_runtime"]["manifest_sha256"] = "f" * 64
+        _write_json(path, payload)
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_byzantine_artifact_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-020")
+
+    def test_runtime_source_revision_must_match_compiler(self) -> None:
+        root = self._fixture()
+        path = root / "dist/byzantine/Byzantine.runtime.manifest.json"
+        payload = json.loads(path.read_text())
+        payload["compiler_source_revision"] = "d" * 40
+        _write_json(path, payload)
+        with self.assertRaises(ArtifactLineageError) as ctx:
+            verify_byzantine_artifact_lineage(repository_root=root)
+        self.assertEqual(ctx.exception.code, "BYZ-LINEAGE-016")
+
 
 if __name__ == "__main__":
     unittest.main()
