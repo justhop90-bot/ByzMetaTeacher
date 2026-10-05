@@ -2024,7 +2024,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     )
     fortified_clear_failures = (
         "(goal byzantine-fortification-threat 0)",
-        "(goal byzantine-siege-approach != byzantine-siege-approach-fortified)",
+        "(up-compare-goal byzantine-siege-approach != byzantine-siege-approach-fortified)",
         "(goal byzantine-offensive-objective-claim 0)",
         "(unit-type-count-total mangonel-line < 2)",
         "(unit-type-count-total trebuchet-line < 2)",
@@ -2390,7 +2390,6 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
                 expr(f"(goal {candidate_name} {open_field})"),
                 expr(f"(timer-triggered {guard_timer})"),
                 expr(f"(goal {state_name} {trash})"),
-                expr(f"(up-compare-goal {state_name} == {trash})"),
                 *(expr(part) for part in gold_recovery_open_facts),
                 expr(cooldown_clear(open_field)),
             ),
