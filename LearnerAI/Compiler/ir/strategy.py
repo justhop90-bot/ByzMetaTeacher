@@ -1793,6 +1793,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     from .recurrent import TimerRequest
 
     owner = SemanticId(profile.profile_id, "byzantine-imperial-band")
+    objective_owner = SemanticId(profile.profile_id, "byzantine-endgame-objective")
     state_name = "byzantine-imperial-band-state"
     candidate_name = "byzantine-imperial-band-candidate"
     rearm_band_name = "byzantine-imperial-band-rearm"
@@ -1801,7 +1802,32 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     guard_timer = "byzantine-imperial-band-guard-timer"
     rearm_timer = "byzantine-imperial-band-rearm-timer"
 
+    shared_states = (
+        NativeControlState(
+            "byzantine-fortification-threat",
+            GoalSlotRequest(
+                StorageRequestId(objective_owner, "fortification-threat"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            "byzantine-offensive-objective-class",
+            GoalSlotRequest(
+                StorageRequestId(objective_owner, "objective-class"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            "byzantine-offensive-objective-claim",
+            GoalSlotRequest(
+                StorageRequestId(objective_owner, "objective-claim"),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+    )
+
     states = (
+        *shared_states,
         NativeControlState(
             state_name,
             GoalSlotRequest(
@@ -2382,6 +2408,11 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     ]
 
     constants = (
+        ("byzantine-offensive-objective-class-none", 0),
+        ("byzantine-offensive-objective-class-siege", 1),
+        ("byzantine-offensive-objective-class-defense", 2),
+        ("byzantine-offensive-objective-class-production", 3),
+        ("byzantine-offensive-objective-class-town-center", 4),
         ("bt-imp-band-standing", standing),
         ("bt-imp-band-open", open_field),
         ("bt-imp-band-fortified", fortified),
