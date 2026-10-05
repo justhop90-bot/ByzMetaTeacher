@@ -177,7 +177,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             ),
         )
         self.assertIn(
-            "(unit-type-count-total cataphract < 30)",
+            "(unit-type-count-total cataphract-line < 30)",
             cataphract.execution.requirements,
         )
         self.assertIn(
@@ -192,7 +192,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             [item.observation_ref for item in ram.reason],
         )
         self.assertIn(
-            "(unit-type-count-total battering-ram-line < 8)",
+            "(unit-type-count-total ram-line < 8)",
             ram.execution.requirements,
         )
 
@@ -225,10 +225,11 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "strategy-production-barracks-replacement",
             observations,
         )
-        self.assertIn(
-            "(or (unit-type-count-total varangian-guard-line >= 12) "
-            "(unit-type-count 359 >= 12))",
+        self.assertEqual(
             observations["strategy-production-barracks-replacement"],
+            "(and (current-age >= imperial-age) "
+            "(or (unit-type-count varangian-guard < 12) "
+            "(unit-type-count 359 < 12)))",
         )
         self.assertIn(
             "strategy-production-barracks-replacement",
@@ -247,13 +248,18 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
 
     def test_imperial_attack_strategic_numbers_are_owned_by_endgame_push_control(self):
         profile = build_byzantine_stock_strategy(self.effective)
-        for mode in profile.strategic_number_modes:
-            if mode.native_strategic_number_id in {36, 227}:
-                self.assertEqual(
-                    mode.maximum_age,
-                    Age.CASTLE,
-                    mode.identity,
-                )
+        modes = {mode.identity: mode for mode in profile.strategic_number_modes}
+        for identity in (
+            "attack-groups-feudal",
+            "attack-groups-castle",
+            "attack-allocation-flush",
+            "attack-allocation-rush",
+            "attack-allocation-boom",
+            "attack-allocation-castle-power",
+        ):
+            self.assertEqual(modes[identity].maximum_age, (
+                Age.FEUDAL if identity == "attack-groups-feudal" else Age.CASTLE
+            ))
 
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
