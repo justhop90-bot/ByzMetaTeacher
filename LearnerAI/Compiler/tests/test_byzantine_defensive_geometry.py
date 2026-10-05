@@ -301,6 +301,14 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "(unit-type-count-total bombard-cannon >= bt-imperial-timing-siege-floor)",
             imperial_section,
         )
+        self.assertIn(
+            "(unit-type-count-total battering-ram-line >= bt-imperial-timing-siege-floor)",
+            imperial_section,
+        )
+        self.assertNotIn(
+            "(unit-type-count-total ram-line >= bt-imperial-timing-siege-floor)",
+            imperial_section,
+        )
 
     def test_attack_recovery_uses_minimum_viable_package_after_a_small_push(self):
         start = self.per.index("; Package loss during a fortified approach")
