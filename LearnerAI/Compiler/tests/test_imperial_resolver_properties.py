@@ -149,10 +149,10 @@ class ImperialResolverPropertyTests(unittest.TestCase):
                     )
 
 
-    def test_open_and_trash_posture_do_not_require_objective_claim(self):
+    def test_open_and_trash_posture_require_offensive_objective_claim(self):
         base = self.base()
         without_claim = replace(base, offensive_objective=False)
-        self.assertTrue(ImperialResolver.open_field_eligible(without_claim))
+        self.assertFalse(ImperialResolver.open_field_eligible(without_claim))
         trash = replace(
             without_claim,
             gold=800,
@@ -160,7 +160,7 @@ class ImperialResolverPropertyTests(unittest.TestCase):
             wood=3000,
             current=ImperialBand.GOLD_STARVED_TRASH,
         )
-        self.assertTrue(ImperialResolver.gold_starved_eligible(trash))
+        self.assertFalse(ImperialResolver.gold_starved_eligible(trash))
 
     def test_property_open_entry_requires_offensive_objective(self):
         base = self.base()
