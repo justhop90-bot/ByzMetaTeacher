@@ -1134,9 +1134,88 @@ def _combine_binary_native_guards(head: str, parts: tuple[str, ...]) -> str:
     return combined
 
 
-def _strategic_number_arbitration_control_plan(profile: StrategyProfile):
+def _byzantine_endgame_attack_group_sn_controllers(
+    profile: StrategyProfile,
+):
+    """Return temporary SN36/SN227 controllers owned by the bounded endgame pulse."""
+    plan = profile.endgame_plan
+    if plan is None or plan.push_contract is None:
+        return ()
+
+    from ..semantic.analyzer import parse_expression
+    from .strategic_number_arbitration import (
+        StrategicNumberController,
+        StrategicNumberControllerLayer,
+        StrategicNumberControllerOrigin,
+        StrategicNumberControllerScope,
+        StrategicNumberReleaseEvidence,
+    )
+
+    contract = plan.push_contract
+    live_witness = profile.observation(contract.live_witness_ref).expression
+    military_ready = (
+        "(or (unit-type-count cataphract >= 4) "
+        "(or (unit-type-count varangian-guard >= 6) "
+        "(or (unit-type-count 492 >= 6) "
+        "(unit-type-count halberdier >= 6))))"
+    )
+    release_guard = parse_expression(
+        "(or "
+        f"{live_witness.source} "
+        f"(or (timer-triggered byzantine-endgame-push-timer) "
+        f"(not {military_ready})))",
+        SourceLocation(1),
+    )
+    rearm_guard = parse_expression(
+        "(not (goal byzantine-endgame-push-state 2))",
+        SourceLocation(1),
+    )
+    activation_guard = parse_expression(
+        "(goal byzantine-endgame-push-state 2)",
+        SourceLocation(1),
+    )
+
+    controllers = [
+        StrategicNumberController(
+            identity="byzantine-endgame-push-attack-groups-underlay",
+            native_strategic_number_id=36,
+            value=0,
+            layer=StrategicNumberControllerLayer.DEFAULT_BASE,
+            priority=0,
+            origin=StrategicNumberControllerOrigin.EXPLICIT,
+            owner=profile.profile_id,
+        ),
+    ]
+    for native_id, value in (
+        (36, contract.attack_group_count),
+        (227, contract.attack_soldier_percent),
+    ):
+        controllers.append(
+            StrategicNumberController(
+                identity=f"byzantine-endgame-push-{native_id}",
+                native_strategic_number_id=native_id,
+                value=value,
+                layer=StrategicNumberControllerLayer.TEMPORARY,
+                priority=900,
+                origin=StrategicNumberControllerOrigin.EXPLICIT,
+                activation_guard=activation_guard,
+                release_guard=release_guard,
+                rearm_guard=rearm_guard,
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner=profile.profile_id,
+            )
+        )
+    return tuple(controllers)
+
+
+def _strategic_number_arbitration_control_plan(
+    profile: StrategyProfile,
+    *,
+    extra_controllers=(),
+):
     """Build and lower the typed Strategic Number controller arbitration plan."""
-    if not profile.strategic_number_modes:
+    if not profile.strategic_number_modes and not extra_controllers:
         return None
 
     from ..primitives.strategic_number_catalog import (
@@ -1148,7 +1227,10 @@ def _strategic_number_arbitration_control_plan(profile: StrategyProfile):
     )
 
     inventory = default_strategic_number_inventory()
-    arbitration_plan = build_strategic_number_arbitration_plan(profile)
+    arbitration_plan = build_strategic_number_arbitration_plan(
+        profile,
+        extra_controllers=tuple(extra_controllers),
+    )
     lowering = lower_strategic_number_arbitration(
         arbitration_plan,
         profile_id=profile.profile_id,
@@ -2555,7 +2637,13 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
-    mode_plan = _strategic_number_arbitration_control_plan(profile)
+    endgame_attack_group_sn_controllers = _byzantine_endgame_attack_group_sn_controllers(
+        profile
+    )
+    mode_plan = _strategic_number_arbitration_control_plan(
+        profile,
+        extra_controllers=endgame_attack_group_sn_controllers,
+    )
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
     endgame_objective_plan = _byzantine_endgame_objective_control_plan(profile)
