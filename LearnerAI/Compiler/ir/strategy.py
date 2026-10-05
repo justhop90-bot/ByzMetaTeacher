@@ -2739,7 +2739,11 @@ def _byzantine_relic_control_plan(profile_id: str):
         rules=rules,
     )
 
-def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
+def _default_byzantine_duc_plan(
+    profile_id: str,
+    *,
+    target_control=None,
+) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
     Strategy policy selects only decision-grade observed pressure. DUC then
@@ -2826,6 +2830,100 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             rules=tuple(rules),
             output_requests=tuple(outputs),
         )
+
+    if target_control is not None:
+        from .endgame import EndgameFrontierState, EndgameTargetQueryKind
+        from .model import GoalRole
+
+        frontier_values = {
+            EndgameFrontierState.SIEGE: 0,
+            EndgameFrontierState.DEFENSE: 1,
+            EndgameFrontierState.PRODUCTION: 2,
+            EndgameFrontierState.TOWN_CENTER: 3,
+        }
+        target_base = len(rules)
+        for offset, candidate in enumerate(target_control.candidates):
+            frontier_value = frontier_values[candidate.frontier]
+            query_kind = candidate.query_kind
+            if query_kind not in {
+                EndgameTargetQueryKind.OBJECT_TYPE,
+                EndgameTargetQueryKind.OBJECT_CLASS,
+            }:
+                raise ValueError(
+                    f"unsupported endgame target query kind '{query_kind}'"
+                )
+            identity = f"byzantine-endgame-target-{target_base + offset:03d}-{candidate.identity}"
+            output = GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile_id, f"endgame-target:{candidate.identity}"),
+                    "up-get-object-data",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+            )
+            rules.append(
+                NativeDucRule(
+                    identity=identity,
+                    order=target_base + offset,
+                    facts=(
+                        parse_expression(
+                            "(current-age >= imperial-age)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(goal byzantine-endgame-push-state 1)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(goal byzantine-endgame-frontier {frontier_value})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(goal byzantine-offensive-objective-claim 0)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    actions=(
+                        parse_expression(
+                            "(up-full-reset-search)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-set-target-point {target_control.anchor_goal})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-filter-distance c: -1 c: {target_control.search_radius})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-find-remote c: {candidate.native_id} c: 1)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-set-target-object search-remote c: 0)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-get-object-data id 0)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    lifecycle=(
+                        NativeDucLifecycleStage.ADMISSIBILITY,
+                        NativeDucLifecycleStage.TARGET,
+                    ),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=identity,
+                    section="ACTION",
+                    expression_index=5,
+                    request=output,
+                    command="up-get-object-data",
+                    argument_index=1,
+                )
+            )
 
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
