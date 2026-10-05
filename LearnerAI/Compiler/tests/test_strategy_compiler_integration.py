@@ -633,7 +633,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         ):
             self.assertIn(
                 "(goal byzantine-endgame-push-state 2)",
-                tuple(fact.source for fact in sn_controllers[identity].facts),
+                " ".join(fact.source for fact in sn_controllers[identity].facts),
             )
 
         for identity in (
