@@ -1779,10 +1779,7 @@ def _byzantine_imperial_band_control_plan(profile: StrategyProfile):
     then ordinary band transitions. Timers only provide dwell/cooldown cadence;
     every transition re-checks its live resource and battlefield guard.
     """
-    if profile.profile_id not in {
-        "byzantine-land-castle-v1",
-        "byzantine-stock-v1",
-    }:
+    if profile.profile_id != "byzantine-stock-v1":
         return None
 
     from .imperial_resolver import ImperialBand
