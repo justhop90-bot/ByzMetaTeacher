@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.dev/schema/byzantine/runtime-overlay-manifest-1.json",
+  "title": "Byzantine Runtime Overlay Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "artifact_kind",
+    "id",
+    "artifact",
+    "ownership"
+  ],
+  "properties": {
+    "schema": {
+      "const": "byzantine-runtime-overlay-1"
+    },
+    "artifact_kind": {
+      "const": "runtime-overlay"
+    },
+    "id": {
+      "const": "byzantine-runtime-overlay"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "manifest_path",
+        "sha256",
+        "byte_length",
+        "line_count",
+        "rule_count"
+      ],
+      "properties": {
+        "path": {
+          "const": "runtime/byzantine/Byzantine.runtime-overlay.per"
+        },
+        "manifest_path": {
+          "const": "runtime/byzantine/Byzantine.runtime-overlay.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the exact UTF-8 bytes at artifact.path."
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rule_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflict_mode"
+      ],
+      "properties": {
+        "conflict_mode": {
+          "const": "reject"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "artifact_kind": {
+            "const": "runtime-overlay"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "const": "byzantine-runtime-overlay"
+          },
+          "artifact": {
+            "properties": {
+              "path": {
+                "const": "runtime/byzantine/Byzantine.runtime-overlay.per"
+              },
+              "manifest_path": {
+                "const": "runtime/byzantine/Byzantine.runtime-overlay.json"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "x-semantic-constraints": [
+    "artifact.sha256 must equal SHA256(artifact.path) using exact file bytes",
+    "artifact.manifest_path must resolve to this manifest",
+    "overlay rule identities must not collide with compiler-owned rule identities when assembled"
+  ]
+}
