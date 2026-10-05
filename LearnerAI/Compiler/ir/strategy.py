@@ -3078,12 +3078,6 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
         "(or (unit-type-count bombard-cannon >= 6) "
         "(unit-type-count-total mangonel-line >= 6)))"
     )
-    siege_ready = (
-        f"(or (and (goal byzantine-imperial-band-state 2) "
-        f"{fortified_siege_ready}) "
-        f"(and (not (goal byzantine-imperial-band-state 2)) "
-        f"{standard_siege_ready}))"
-    )
     frontier_witness_ref = plan.push_contract.frontier_witness_ref
     frontier_witness = (
         profile.observation(frontier_witness_ref).expression
@@ -3118,6 +3112,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
             "byzantine-endgame-push-admit",
             facts=(
                 parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 1)", SourceLocation(1)),
                 parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
                 parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
@@ -3125,7 +3120,28 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in military_ready_facts
                 ),
-                parse_expression(siege_ready, SourceLocation(1)),
+                parse_expression(standard_siege_ready, SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
+                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
+                parse_expression("(set-goal byzantine-endgame-push-state 2)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-push-admit-fortified",
+            facts=(
+                parse_expression("(goal byzantine-endgame-push-state 1)", SourceLocation(1)),
+                parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
+                parse_expression("(current-age >= imperial-age)", SourceLocation(1)),
+                parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
+                parse_expression("(attack-soldier-count <= 0)", SourceLocation(1)),
+                *(
+                    parse_expression(fact, SourceLocation(1))
+                    for fact in military_ready_facts
+                ),
+                parse_expression(fortified_siege_ready, SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
                 parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
             ),
