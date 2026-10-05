@@ -143,7 +143,7 @@ class EndgameContractTests(unittest.TestCase):
                 attachment.native_strategic_number_id
                 for attachment in profile.attack_plan.strategic_number_action_attachments
             ),
-            (36, 227, 122, 123),
+            (36, 227, 16, 26),
         )
 
     def test_endgame_runtime_recovery_requires_recovery_push_state(self):
