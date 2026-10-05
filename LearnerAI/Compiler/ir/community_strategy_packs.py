@@ -38,6 +38,7 @@ from .endgame import (
     EndgameFrontierState as _EndgameFrontierState,
     EndgamePushContract as _EndgamePushContract,
     EndgameTargetCandidate as _EndgameTargetCandidate,
+    EndgameConversionContract as _EndgameConversionContract,
     EndgameTargetControlContract as _EndgameTargetControlContract,
     EndgameTargetQueryKind as _EndgameTargetQueryKind,
 )
