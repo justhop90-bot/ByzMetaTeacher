@@ -3234,6 +3234,93 @@ def _default_byzantine_duc_plan(
                 )
             )
 
+    objective_dispatch_base = len(rules)
+    objective_dispatch_specs = (
+        (
+            "byzantine-endgame-objective-dispatch-siege",
+            "byzantine-offensive-objective-state-siege",
+            "byzantine-offensive-objective-class-siege",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-defense",
+            "byzantine-offensive-objective-state-defense",
+            "byzantine-offensive-objective-class-defense",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-production",
+            "byzantine-offensive-objective-state-production",
+            "byzantine-offensive-objective-class-production",
+        ),
+        (
+            "byzantine-endgame-objective-dispatch-town-center",
+            "byzantine-offensive-objective-state-town-center",
+            "byzantine-offensive-objective-class-town-center",
+        ),
+    )
+    objective_attack_action = (
+        "(up-target-objects 1 action-attack-move -1 -1)"
+    )
+    for offset, (identity, state_value, class_value) in enumerate(
+        objective_dispatch_specs
+    ):
+        rules.append(
+            NativeDucRule(
+                identity=identity,
+                order=objective_dispatch_base + offset,
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-state "
+                        f"{state_value})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-class "
+                        f"{class_value})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-offensive-objective-claim 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-army-attack-ready 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(or "
+                        "(goal byzantine-army-role-state "
+                        "byzantine-army-role-committed) "
+                        "(goal byzantine-army-role-state "
+                        "byzantine-army-role-raid-split))",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-compare-goal "
+                        "byzantine-offensive-objective-search >= 1)",
+                        SourceLocation(1),
+                    ),
+                         ,
+                    actions=(
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        objective_attack_action,
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-reset-search 0 0 1 1)",
+                        SourceLocation(1),
+                    ),
+                        "),
+                        lifecycle=(
+                        NativeDucLifecycleStage.TARGET,
+                        NativeDucLifecycleStage.DISPATCH,
+                        ),
+                        ),
+                     )
+                    
     relic_base = len(rules)
     from .native_duc import NativeDucLifecycleStage
 
