@@ -15,7 +15,7 @@ from .game_data_dat_snapshot import (
 )
 
 from .game_data_manifest import ByzantineManifest, ByzantineManifestCoverage, ManifestNode, ManifestNodeKind, ManifestNodeStatus, classify_byzantine_manifest_coverage, parse_byzantine_manifest
-from .native_duc import NativeDucGoalInputRequest, NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+from .native_duc import NativeDucGoalInputRequest, NativeDucLifecycleStage, NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 from .role_separation import (
     NativeRoleRule,
     NativeRoleSeparationPlan,
