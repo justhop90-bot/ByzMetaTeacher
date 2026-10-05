@@ -123,7 +123,10 @@ def _require_state(
     *,
     command: str,
     argument_index: int,
+    external_goal_states: frozenset[str] = frozenset(),
 ) -> None:
+    if identifier in external_goal_states and expected_kind == "GOAL":
+        return
     if identifier not in states:
         raise ValueError(
             f"undeclared {expected_kind} state '{identifier}' referenced by "
@@ -154,6 +157,7 @@ def _validate_typed_operand(
             states,
             command=command,
             argument_index=2,
+            external_goal_states=external_goal_states,
         )
     elif prefix == "s:":
         _require_state(
@@ -175,6 +179,7 @@ def _validate_leaf(
     is_action: bool,
     registry,
     states: dict[str, str],
+    external_goal_states: frozenset[str],
 ) -> None:
     head = expression.head
     if head in _LOGICAL_ARITY:
@@ -197,6 +202,7 @@ def _validate_leaf(
                 is_action=False,
                 registry=registry,
                 states=states,
+                external_goal_states=external_goal_states,
             )
         return
 
@@ -254,6 +260,7 @@ def _validate_leaf(
             states,
             command=head,
             argument_index=index,
+            external_goal_states=external_goal_states,
         )
     elif head in _SN_COMMANDS:
         _require_state(
@@ -262,6 +269,7 @@ def _validate_leaf(
             states,
             command=head,
             argument_index=0,
+            external_goal_states=external_goal_states,
         )
     elif head in _TIMER_COMMANDS:
         timer_index = 1 if head == "up-set-timer" else 0
@@ -338,11 +346,14 @@ def _validate_leaf(
 def validate_native_control_plan(
     plan: NativeControlPlan,
     registry,
+    *,
+    external_goal_states: tuple[str, ...] = (),
 ) -> NativeControlValidationReport:
     if not isinstance(plan, NativeControlPlan):
         raise TypeError("plan must be a NativeControlPlan")
 
     states = _validate_storage_request_names(plan)
+    external_goal_state_set = frozenset(external_goal_states)
     rule_identities: set[str] = set()
     commands: set[str] = set()
 
