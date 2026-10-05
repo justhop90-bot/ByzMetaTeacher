@@ -366,6 +366,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 actions,
             )
             self.assertIn("(up-find-remote", " ".join(actions))
+            self.assertNotIn("up-modify-sn sn-focus-player-number", " ".join(actions))
             self.assertNotIn("(up-target-objects", " ".join(actions))
 
         consumer = next(
