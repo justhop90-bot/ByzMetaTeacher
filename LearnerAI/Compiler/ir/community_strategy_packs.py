@@ -1341,7 +1341,7 @@ def community_strategy_demands(
                 minimum=18,
                 reason_refs=("strategy-imperial-floor-halberdier",),
                 reason_labels=("Imperial Halberdier floor remains a standing army invariant",),
-                requirement_expressions=(),)
+                requirement_expressions=(),
                 action_symbol="halberdier",
                 witness_symbol="halberdier",
             ),
@@ -1354,7 +1354,7 @@ def community_strategy_demands(
                 minimum=18,
                 reason_refs=("strategy-imperial-floor-elite-skirmisher",),
                 reason_labels=("Imperial Elite Skirmisher floor remains a standing army invariant",),
-                requirement_expressions=(),)
+                requirement_expressions=(),
                 action_symbol="skirmisher-line",
                 witness_symbol="skirmisher-line",
             ),
@@ -1367,7 +1367,7 @@ def community_strategy_demands(
                 minimum=12,
                 reason_refs=("strategy-imperial-floor-hussar",),
                 reason_labels=("Imperial Hussar floor remains the standing mobility layer",),
-                requirement_expressions=(),)
+                requirement_expressions=(),
                 action_symbol="hussar",
                 witness_symbol="hussar",
             ),
