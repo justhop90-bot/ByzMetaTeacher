@@ -55,7 +55,8 @@ jobs:
                   f"unexpected stale gold-floor shape before patch: >=1600={ge_count}, <1600={lt_count}"
               )
 
-          tail = tail.replace("    (gold-amount >= 1600)" + chr(10), "")\n          tail = tail.replace("    (gold-amount < 1600)" + chr(10), "")
+          tail = tail.replace("    (gold-amount >= 1600)", "")
+          tail = tail.replace("    (gold-amount < 1600)", "")
 
           if "(gold-amount <= 800)" not in tail:
               raise SystemExit("gold-starved trash admission disappeared")
