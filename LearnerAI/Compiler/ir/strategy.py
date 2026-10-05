@@ -1798,6 +1798,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
     executing = f"{objective_state}-executing"
     witness = f"{objective_state}-witness"
     class_none = f"{objective_class}-none"
+    class_siege = f"{objective_class}-siege"
     class_town_center = f"{objective_class}-town-center"
     reason_none = f"{release_reason}-none"
     reason_failed = f"{release_reason}-failed-execution"
@@ -1892,6 +1893,19 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
+            "byzantine-endgame-objective-target-select-siege",
+            facts=(
+                expr(f"(goal {objective_state} {siege})"),
+                expr(f"(goal {objective_class} {class_none})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(goal {target_latch} 1)"),
+                expr(f"(up-compare-goal {target_siege} >= 1)"),
+            ),
+            actions=(
+                expr(f"(set-goal {objective_class} {class_siege})"),
+            ),
+        ),
+        NativeControlRule(
             "byzantine-endgame-objective-target-miss-siege",
             facts=(
                 expr(f"(goal {objective_state} {siege})"),
@@ -1962,7 +1976,7 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             "byzantine-endgame-objective-enter-executing-siege",
             facts=(
                 expr(f"(goal {objective_state} {siege})"),
-                expr(f"(goal {objective_class} {class_none})"),
+                expr(f"(goal {objective_class} {class_siege})"),
                 expr(f"(goal {claim} 1)"),
                 expr(f"(up-compare-goal {target_siege} >= 1)"),
             ),
