@@ -18,6 +18,7 @@ from LearnerAI.Compiler.ir.strategy import (
     StrategyProfile,
     lower_strategy_profile,
 )
+from LearnerAI.Compiler.ir.community_strategy_packs import build_byzantine_stock_strategy
 
 
 class EndgameContractTests(unittest.TestCase):
