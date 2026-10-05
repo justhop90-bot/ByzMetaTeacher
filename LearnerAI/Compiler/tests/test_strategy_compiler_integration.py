@@ -588,24 +588,52 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("byzantine-endgame-push-pulse-expiry", rules)
         self.assertIn("byzantine-endgame-push-release", rules)
 
+        admit_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-admit"].facts)
+        self.assertIn(
+            "(goal byzantine-offensive-objective-claim 0)",
+            admit_facts,
+        )
         admit_actions = tuple(action.source for action in rules["byzantine-endgame-push-admit"].actions)
-        self.assertIn("(set-strategic-number sn-native-36 1)", admit_actions)
-        self.assertIn("(set-strategic-number sn-native-227 100)", admit_actions)
+        self.assertNotIn("sn-native-36", " ".join(admit_actions))
+        self.assertNotIn("sn-native-227", " ".join(admit_actions))
         ready_actions = tuple(action.source for action in rules["byzantine-endgame-push-imperial-ready"].actions)
         self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
         self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
 
         live_actions = tuple(action.source for action in rules["byzantine-endgame-push-live-witness"].actions)
-        self.assertIn("(set-strategic-number sn-native-36 0)", live_actions)
-        self.assertIn("(set-strategic-number sn-native-227 75)", live_actions)
+        self.assertNotIn("sn-native-36", " ".join(live_actions))
+        self.assertNotIn("sn-native-227", " ".join(live_actions))
         self.assertIn("(disable-timer byzantine-endgame-push-timer)", live_actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 3)", live_actions)
 
         expiry_actions = tuple(action.source for action in rules["byzantine-endgame-push-pulse-expiry"].actions)
-        self.assertIn("(set-strategic-number sn-native-36 0)", expiry_actions)
+        self.assertNotIn("sn-native-36", " ".join(expiry_actions))
+        self.assertNotIn("sn-native-227", " ".join(expiry_actions))
         self.assertIn("(disable-timer byzantine-endgame-push-timer)", expiry_actions)
         self.assertIn("(set-goal byzantine-endgame-push-state 3)", expiry_actions)
+
+        sn_controllers = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("sn-controller-byzantine-endgame-push-")
+        }
+        self.assertIn(
+            "sn-controller-byzantine-endgame-push-36-write",
+            sn_controllers,
+        )
+        self.assertIn(
+            "sn-controller-byzantine-endgame-push-227-activate",
+            sn_controllers,
+        )
+        for identity in (
+            "sn-controller-byzantine-endgame-push-36-activate",
+            "sn-controller-byzantine-endgame-push-227-activate",
+        ):
+            self.assertIn(
+                "(goal byzantine-endgame-push-state 2)",
+                tuple(fact.source for fact in sn_controllers[identity].facts),
+            )
 
         release_facts = tuple(fact.source for fact in rules["byzantine-endgame-push-release"].facts)
         self.assertIn("(goal byzantine-endgame-push-state 3)", release_facts)
@@ -617,7 +645,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", output)
-        self.assertIn("(set-strategic-number sn-native-36 0)", output)
+        self.assertIn(
+            "; Native control rule: sn-controller-byzantine-endgame-push-227-activate",
+            output,
+        )
 
     def test_byzantine_endgame_closure_consumes_verified_campaign_state(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
