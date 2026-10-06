@@ -205,6 +205,22 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
                 rule[:500],
             )
 
+    def test_open_ground_attack_ready_path_issues_attack_now(self) -> None:
+        matching = [
+            rule
+            for rule in self.rules
+            if "(current-age >= castle-age)" in rule
+            and "(goal byzantine-army-attack-ready 1)" in rule
+            and "(goal byzantine-siege-approach byzantine-siege-approach-normal)" in rule
+            and "(goal byzantine-offensive-objective-state "
+            "byzantine-offensive-objective-state-idle)" in rule
+            and "(goal byzantine-offensive-objective-claim 0)" in rule
+            and "(set-strategic-number sn-number-attack-groups 200)" in rule
+        ]
+        self.assertEqual(len(matching), 1)
+        self.assertIn("(attack-now)", matching[0])
+        self.assertIn("(set-goal byzantine-army-attack-ready 2)", matching[0])
+
     def test_reposition_controller_has_single_town_under_attack_guard(self) -> None:
         matching = [
             rule

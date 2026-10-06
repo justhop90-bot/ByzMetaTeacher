@@ -358,25 +358,22 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_rule,
         )
 
-    def test_checked_in_runtime_keeps_gold_camp_floor_two_remote_gated(self):
+    def test_checked_in_runtime_gold_floor_two_selects_second_active_gold(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
         start = runtime.index("; economy-gold-camp-floor-2")
         end = runtime.index("; economy-gold-camp-floor-3", start)
         floor_two = runtime[start:end]
 
-        recovery_start = floor_two.index(
-            "(goal demand-economy-gold-camp-floor-2 0)"
-        )
-        recovery_end = floor_two.index(
-            "(goal demand-economy-gold-camp-floor-2 1)",
-            recovery_start,
-        )
-        recovery = floor_two[recovery_start:recovery_end]
-        self.assertIn("(dropsite-min-distance gold <= -1)", recovery)
+        self.assertNotIn("(dropsite-min-distance gold", floor_two)
+        self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
         self.assertIn(
-            "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance)",
-            recovery,
+            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)",
+            floor_two,
+        )
+        self.assertIn(
+            "(up-set-target-object search-remote c: 1)",
+            floor_two,
         )
 
     def test_canonical_artifact_matches_early_economy_policy(self):

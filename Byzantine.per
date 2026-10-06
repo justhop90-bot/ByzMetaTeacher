@@ -12509,9 +12509,9 @@
 )
 
 ; Ordinary open-ground attack remains behind the tactical admission gate.
-; When no DUC objective owns the package, this path uses the native attack-group
-; control surface for a bounded grouped pulse. Precise DUC objectives remain
-; responsible for siege/structure targeting.
+; Once the selected army package is ready and no DUC objective owns it, issue
+; the native attack-now command. Attack-group SNs remain pacing controls, not
+; substitutes for command issuance.
 (defrule
     (current-age >= castle-age)
     (goal byzantine-army-attack-ready 1)
@@ -12524,6 +12524,7 @@
     (set-strategic-number sn-percent-attack-soldiers 100)
     (set-strategic-number sn-minimum-attack-group-size 6)
     (set-strategic-number sn-maximum-attack-group-size 40)
+    (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
     (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
@@ -17216,10 +17217,6 @@
     (goal demand-economy-gold-camp-floor-2 0)
     (resource-found gold)
     (not (building-type-count mining-camp >= 2))
-    (or
-        (dropsite-min-distance gold <= -1)
-        (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)
-    )
 =>
     (set-goal demand-economy-gold-camp-floor-2 1)
 )
@@ -17284,7 +17281,7 @@
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 1)
+    (up-find-resource c: gold c: 40)
     (up-get-search-state byzantine-dark-gold-camp-search-state-2)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
@@ -17297,11 +17294,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
-    (up-set-target-object search-remote c: 0)
+    (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17321,7 +17318,6 @@
     (goal demand-economy-gold-camp-floor-3 0)
     (resource-found gold)
     (not (building-type-count mining-camp >= 3))
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
 =>
     (set-goal demand-economy-gold-camp-floor-3 1)
 )
@@ -17380,14 +17376,13 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 1)
+    (up-find-resource c: gold c: 40)
     (up-get-search-state byzantine-dark-gold-camp-search-state-3)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
@@ -17400,12 +17395,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 0)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 2)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
-    (up-set-target-object search-remote c: 0)
+    (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17425,7 +17419,6 @@
     (goal demand-economy-gold-camp-floor-4 0)
     (resource-found gold)
     (not (building-type-count mining-camp >= 4))
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
 =>
     (set-goal demand-economy-gold-camp-floor-4 1)
 )
@@ -17484,14 +17477,13 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 1)
+    (up-find-resource c: gold c: 40)
     (up-get-search-state byzantine-dark-gold-camp-search-state-4)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
@@ -17504,12 +17496,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 0)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 3)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
-    (up-set-target-object search-remote c: 0)
+    (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17529,7 +17520,6 @@
     (goal demand-economy-gold-camp-floor-5 0)
     (resource-found gold)
     (not (building-type-count mining-camp >= 5))
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
 =>
     (set-goal demand-economy-gold-camp-floor-5 1)
 )
@@ -17588,14 +17578,13 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 1)
+    (up-find-resource c: gold c: 40)
     (up-get-search-state byzantine-dark-gold-camp-search-state-5)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
@@ -17608,12 +17597,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 0)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 4)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
-    (up-set-target-object search-remote c: 0)
+    (up-set-target-object search-remote c: 4)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
