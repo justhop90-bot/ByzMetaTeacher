@@ -5172,6 +5172,26 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
     return NativeAttackLifecyclePlan(
         rules=(
             NativeAttackRule(
+                identity="byzantine-imperial-attack-now-baseline",
+                order=90,
+                facts=(
+                    parse_expression(
+                        "(current-age >= imperial-age)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(military-population >= 4)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(attack-soldier-count <= 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+                lifecycle=lifecycle,
+            ),
+            NativeAttackRule(\n            NativeAttackRule(
                 identity="byzantine-castle-attack-now-cataphract",
                 order=100,
                 facts=(
