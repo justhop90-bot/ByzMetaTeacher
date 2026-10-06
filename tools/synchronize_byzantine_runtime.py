@@ -247,13 +247,6 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     install_block = lifecycle_block
     if f"; Action issuance: {identity} | ACTIVE -> ISSUED" not in install_block:
         install_block += "\n" + action_block
-    for name, value in dock_constants.items():
-        install_block = re.sub(
-            rf"(?<![A-Za-z0-9_-]){re.escape(name)}(?![A-Za-z0-9_-])",
-            str(value),
-            install_block,
-        )
-
     start_marker = f"; Pending diagnostics: {identity}"
     end_marker = "; Native Strategos voice plan"
     start = runtime.find(start_marker)
@@ -271,7 +264,7 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
         runtime,
         "; Demand initialization",
     )
-    init_line = f"    (set-goal {dock_constants[identity]} 1)"
+    init_line = f"    (set-goal demand-{identity} 1)"
     if init_line not in init_rule:
         disable_line = "    (disable-self)"
         if disable_line not in init_rule:
@@ -288,7 +281,7 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
         "(defrule\n"
         "    (true)\n"
         "=>\n"
-        f"    (set-goal {dock_constants[f'construction-retry-barrier-{identity}']} 0)\n"
+        "    (set-goal construction-retry-barrier-water-dock-capability 0)\n"
         ")\n"
     )
     runtime = _install_once(
