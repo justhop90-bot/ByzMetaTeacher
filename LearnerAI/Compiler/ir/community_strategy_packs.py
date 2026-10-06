@@ -48,6 +48,14 @@ from .map_profile import default_byzantine_map_profiles
 from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
 from .camp_control import CampResource, default_byzantine_camp_controller
+from .strategic_voice import (
+    NativeVoicePlan as _NativeVoicePlan,
+    VoicePriority as _VoicePriority,
+    VoiceAudience as _VoiceAudience,
+    VoiceRule as _VoiceRule,
+    make_voice_goal_state as _make_voice_goal_state,
+    make_voice_timer_state as _make_voice_timer_state,
+)
 
 _ENDGAME_CATAPHRACT_TARGET = 18
 _ENDGAME_VARANGIAN_TARGET = 14
@@ -2282,6 +2290,153 @@ def community_water_execution_plan():
     )
 
 
+def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _NativeVoicePlan:
+    """Build the sparse, transition-driven Strategos narration policy."""
+    from ..ast import SourceLocation
+    from ..semantic.analyzer import parse_expression
+
+    def expr(source: str):
+        return parse_expression(source, SourceLocation(1))
+
+    mounted = (
+        "(or (players-unit-type-count any-enemy knight-line >= 8) "
+        "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
+        "(players-unit-type-count any-enemy camel-rider-line >= 8)))"
+    )
+    mounted_clear = (
+        "(not "
+        "(or (players-unit-type-count any-enemy knight-line >= 8) "
+        "(or (players-unit-type-count any-enemy scout-cavalry-line >= 8) "
+        "(players-unit-type-count any-enemy camel-rider-line >= 8))))"
+    )
+
+    rules = (
+        _VoiceRule(
+            "strategos-posture-castle-power", 0, _VoicePriority.DECISION,
+            expr("(goal strategy-posture 4)"),
+            expr("(not (goal strategy-posture 4))"),
+            "I see the shape of the fight. I am taking the efficient road.",
+            "voice-latch-strategos-posture", "voice-rearm-strategos-posture", 90,
+        ),
+        _VoiceRule(
+            "strategos-cavalry-pressure", 1, _VoicePriority.DECISION,
+            expr(mounted), expr(mounted_clear),
+            "Their cavalry is no longer incidental. Halberdiers are the answer.",
+            "voice-latch-cavalry-pressure", "voice-rearm-cavalry-pressure", 90,
+        ),
+        _VoiceRule(
+            "strategos-ranged-pressure", 2, _VoicePriority.DECISION,
+            expr("(players-unit-type-count any-enemy archer-line >= 8)"),
+            expr("(players-unit-type-count any-enemy archer-line < 8)"),
+            "Their ranged line now dictates the field. Elite Skirmishers are the answer.",
+            "voice-latch-ranged-pressure", "voice-rearm-ranged-pressure", 90,
+        ),
+        _VoiceRule(
+            "strategos-severe-counter", 3, _VoicePriority.RECOVERY,
+            expr("(players-unit-type-count any-enemy archer-line >= 12)"),
+            expr("(players-unit-type-count any-enemy archer-line < 12)"),
+            "This threat justifies saturation. I am building the screen.",
+            "voice-latch-severe-counter", "voice-rearm-severe-counter", 60,
+        ),
+        _VoiceRule(
+            "strategos-resource-abundance", 4, _VoicePriority.CONTEXT,
+            expr("(and (current-age >= imperial-age) "
+                 "(and (food-amount >= 2400) (wood-amount >= 2000)))"),
+            expr("(or (current-age < imperial-age) "
+                 "(or (food-amount < 2000) (wood-amount < 1600)))"),
+            "Food and wood are abundant. There is no reason to conserve them.",
+            "voice-latch-resource-abundance", "voice-rearm-resource-abundance", 120,
+        ),
+        _VoiceRule(
+            "strategos-army-preparation", 5, _VoicePriority.TACTICAL,
+            expr("(and (current-age >= castle-age) (goal byzantine-attack-phase 1))"),
+            expr("(or (current-age < castle-age) (not (goal byzantine-attack-phase 1)))"),
+            "The force is almost ready. I am finishing the missing piece.",
+            "voice-latch-army-preparation", "voice-rearm-army-preparation", 45,
+        ),
+        _VoiceRule(
+            "strategos-army-ready", 6, _VoicePriority.TACTICAL,
+            expr("(goal byzantine-army-attack-ready 1)"),
+            expr("(not (goal byzantine-army-attack-ready 1))"),
+            "The army is assembled. More preparation would be waste.",
+            "voice-latch-army-ready", "voice-rearm-army-ready", 45,
+        ),
+        _VoiceRule(
+            "strategos-siege-blocker", 7, _VoicePriority.RECOVERY,
+            expr("(and (goal byzantine-army-attack-ready 1) "
+                 "(goal byzantine-siege-approach 0))"),
+            expr("(or (not (goal byzantine-army-attack-ready 1)) "
+                 "(not (goal byzantine-siege-approach 0)))"),
+            "The screen is ready. The wall is not. I need siege.",
+            "voice-latch-siege-blocker", "voice-rearm-siege-blocker", 60,
+        ),
+        _VoiceRule(
+            "strategos-attack-issued", 8, _VoicePriority.CRITICAL,
+            expr("(goal byzantine-endgame-push-state 2)"),
+            expr("(not (goal byzantine-endgame-push-state 2))"),
+            "The army is ready. I am going in.",
+            "voice-latch-attack-issued", "voice-rearm-attack-issued", 30,
+        ),
+        _VoiceRule(
+            "strategos-attack-witness", 9, _VoicePriority.CRITICAL,
+            expr("(goal byzantine-offensive-objective-state "
+                 "byzantine-offensive-objective-state-witness)"),
+            expr("(not (goal byzantine-offensive-objective-state "
+                 "byzantine-offensive-objective-state-witness))"),
+            "The defense is open. Now the siege can work.",
+            "voice-latch-attack-witness", "voice-rearm-attack-witness", 30,
+        ),
+        _VoiceRule(
+            "strategos-push-failed", 10, _VoicePriority.CRITICAL,
+            expr("(goal byzantine-endgame-push-state 5)"),
+            expr("(not (goal byzantine-endgame-push-state 5))"),
+            "That push opened nothing. I know what was missing.",
+            "voice-latch-push-failed", "voice-rearm-push-failed", 30,
+        ),
+        _VoiceRule(
+            "strategos-gold-recovery", 11, _VoicePriority.RECOVERY,
+            expr("(goal byzantine-imperial-band-state 3)"),
+            expr("(not (goal byzantine-imperial-band-state 3))"),
+            "The gold route has failed. The objective has not.",
+            "voice-latch-gold-recovery", "voice-rearm-gold-recovery", 60,
+        ),
+        _VoiceRule(
+            "strategos-reassessment", 12, _VoicePriority.DECISION,
+            expr("(goal byzantine-attack-phase 5)"),
+            expr("(not (goal byzantine-attack-phase 5))"),
+            "The old answer solved the old problem. It is no longer the right answer.",
+            "voice-latch-reassessment", "voice-rearm-reassessment", 90,
+        ),
+        _VoiceRule(
+            "strategos-endgame-advance", 13, _VoicePriority.CRITICAL,
+            expr("(goal byzantine-endgame-push-state 4)"),
+            expr("(not (goal byzantine-endgame-push-state 4))"),
+            "I have spent enough time becoming stronger. Now I will use it.",
+            "voice-latch-endgame-advance", "voice-rearm-endgame-advance", 30,
+        ),
+    )
+
+    goals = (
+        _make_voice_goal_state(profile_id, "voice-global-lock"),
+        _make_voice_goal_state(profile_id, "voice-match-count"),
+        *(
+            _make_voice_goal_state(profile_id, rule.latch_state)
+            for rule in rules
+        ),
+    )
+    timers = (
+        _make_voice_timer_state(profile_id, "voice-global-cooldown"),
+        *(
+            _make_voice_timer_state(profile_id, rule.rearm_timer)
+            for rule in rules
+        ),
+    )
+    return _NativeVoicePlan(
+        states=tuple((*goals, *timers)),
+        rules=rules,
+    )
+
+
 def build_byzantine_stock_strategy(
     effective: EffectiveCivData,
     *,
@@ -2391,6 +2546,7 @@ def build_byzantine_stock_strategy(
         camp_controller=default_byzantine_camp_controller(),
         role_separation_plan=default_byzantine_role_separation_plan(stock_profile_id),
         endgame_plan=endgame_plan,
+        voice_plan=default_byzantine_voice_plan(stock_profile_id),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
@@ -2404,6 +2560,7 @@ __all__ = [
     "community_strategy_observations",
     "community_strategy_sn_modes",
     "default_byzantine_endgame_plan",
+    "default_byzantine_voice_plan",
     "default_byzantine_endgame_target_control",
     "community_water_execution_plan",
 ]
