@@ -4494,7 +4494,6 @@
 (defconst fisher-food 17)
 (defconst hunting-food 15)
 (defconst byzantine-resource-claim 269)
-(defconst byzantine-attack-phase 15978)
 (defconst byzantine-scout-phase 270)
 ; NAGA-derived scouting intelligence state. Observation stays separate from
 ; military execution: the scout records what it has actually searched, while
@@ -5951,7 +5950,6 @@
     (true)
 =>
     (set-goal byzantine-resource-claim 0)
-    (set-goal byzantine-attack-phase 0)
     (set-goal byzantine-scout-phase 0)
     (set-goal byzantine-scout-focus-player 0)
     (set-goal byzantine-scout-search-state 0)
@@ -29922,7 +29920,7 @@
 ; Voice clear witness: strategos-army-preparation
 (defrule
     (goal voice-latch-army-preparation 2)
-    (or (current-age < castle-age) (not (goal byzantine-attack-phase 1)))
+    (or (current-age < castle-age) (not (goal byzantine-endgame-push-state 1)))
 =>
     (set-goal voice-latch-army-preparation 0)
 )
@@ -30041,7 +30039,7 @@
 ; Voice clear witness: strategos-reassessment
 (defrule
     (goal voice-latch-reassessment 2)
-    (not (goal byzantine-attack-phase 5))
+    (not (goal byzantine-endgame-push-state 5))
 =>
     (set-goal voice-latch-reassessment 0)
 )
@@ -30177,7 +30175,7 @@
 
 ; Voice candidate: strategos-reassessment
 (defrule
-    (goal byzantine-attack-phase 5)
+    (goal byzantine-endgame-push-state 5)
     (goal voice-latch-reassessment 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
     (goal voice-match-count < 48)
@@ -30241,7 +30239,7 @@
 
 ; Voice candidate: strategos-army-preparation
 (defrule
-    (and (current-age >= castle-age) (goal byzantine-attack-phase 1))
+    (and (current-age >= castle-age) (goal byzantine-endgame-push-state 1))
     (goal voice-latch-army-preparation 0)
     (goal voice-global-lock 0)
     (goal voice-match-count < 36)
