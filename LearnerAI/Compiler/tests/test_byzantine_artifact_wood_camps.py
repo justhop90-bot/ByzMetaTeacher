@@ -114,8 +114,14 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             ),
         )
 
-        for start, end in intervals:
-            self.assertTrue(1 <= start <= end <= 16000)
+        for index, (start, end) in enumerate(intervals):
+            if index in (0, 3):
+                self.assertTrue(41 <= start <= 15998)
+            elif index in (1, 4):
+                self.assertTrue(41 <= start <= 15996)
+            else:
+                self.assertTrue(1 <= start <= 16000)
+            self.assertTrue(start <= end <= 16000)
 
         for index, (start, end) in enumerate(intervals):
             for other_start, other_end in intervals[index + 1 :]:
