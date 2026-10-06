@@ -10,6 +10,7 @@ from LearnerAI.Compiler.clients.basilisk import (
 from LearnerAI.Compiler.ast import Expression
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
+from LearnerAI.Compiler.ir.model import GoalSpanKind
 from LearnerAI.Compiler.ir.native_duc import NativeDucPlan, NativeDucRule
 from LearnerAI.Compiler.ir.strategy import StrategyPosture
 from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
