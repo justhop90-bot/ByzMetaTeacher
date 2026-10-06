@@ -245,6 +245,7 @@ _OBSERVATION_SPECS = (
     ("gold-amount", "observation.resource.gold"),
     ("stone-amount", "observation.resource.stone"),
     ("players-unit-type-count", "observation.threat.unit-count"),
+    ("town-under-attack", "observation.threat.town-under-attack"),
     ("players-military-population", "observation.threat.military-population"),
     ("players-building-type-count", "observation.world.building-count"),
     ("game-time", "observation.timing.game-time"),
