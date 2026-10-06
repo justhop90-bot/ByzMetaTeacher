@@ -98,7 +98,14 @@ def _replace_tail_section(source: str, marker: str, block: str) -> str:
     position = source.find(marker)
     if position < 0:
         return source.rstrip() + "\n\n" + block.rstrip() + "\n"
-    return source[:position].rstrip() + "\n\n" + block.rstrip() + "\n"
+
+    prefix = source[:position].rstrip()
+    normalized_block = block.rstrip()
+    current_tail = source[position:].rstrip()
+    if current_tail == normalized_block:
+        return source
+
+    return prefix + "\n\n" + normalized_block + "\n"
 
 
 def _install_once(source: str, marker: str, block: str) -> str:
