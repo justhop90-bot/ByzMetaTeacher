@@ -506,6 +506,8 @@ def _choose_goal_slots(
     *,
     relocatable_names: tuple[str, ...] = (),
 ) -> list[int]:
+    if count <= 0:
+        return []
     relocatable_names_set = set(relocatable_names)
     used: set[int] = set()
     for start, end, _kind in _storage_intervals(runtime):
