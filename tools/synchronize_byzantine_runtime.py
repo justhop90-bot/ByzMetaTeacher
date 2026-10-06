@@ -133,6 +133,172 @@ def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
     return list(dict.fromkeys(intervals))
 
 
+def _choose_voice_goal_slots(runtime: str, count: int) -> list[int]:
+    """Choose deterministic Goal ids that are free in the non-voice runtime overlay."""
+    occupied = set()
+    for start, end, _kind in _storage_intervals(runtime):
+        occupied.update(range(max(1, start), min(16_000, end) + 1))
+
+    # Avoid reusing any named constant already present in the hybrid runtime,
+    # even if that constant is not currently exercised by a storage operation.
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            runtime,
+        )
+    }
+    occupied.update(value for value in definitions.values() if 1 <= value <= 16_000)
+
+    chosen: list[int] = []
+    for candidate in range(16_000, 0, -1):
+        if candidate in occupied:
+            continue
+        chosen.append(candidate)
+        if len(chosen) == count:
+            return chosen
+    raise RuntimeError("no free native Goal slots remain for Strategos voice")
+
+
+def _timer_ids(source: str) -> set[int]:
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            source,
+        )
+    }
+    used: set[int] = set()
+    timer_re = re.compile(
+        r"\((?:enable-timer|disable-timer|timer-triggered)\s+([^\s()]+)"
+    )
+    for match in timer_re.finditer(source):
+        name = match.group(1)
+        value = definitions.get(name)
+        if value is not None and 1 <= value <= 50:
+            used.add(value)
+    return used
+
+
+def _choose_voice_timer_slots(runtime: str, count: int) -> list[int]:
+    """Choose deterministic Timer ids free in the non-voice runtime overlay."""
+    used = _timer_ids(runtime)
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            runtime,
+        )
+    }
+    used.update(value for value in definitions.values() if 1 <= value <= 50)
+
+    chosen: list[int] = []
+    for candidate in range(50, 0, -1):
+        if candidate in used:
+            continue
+        chosen.append(candidate)
+        if len(chosen) == count:
+            return chosen
+    raise RuntimeError("no free native Timer ids remain for Strategos voice")
+
+
+def _replace_defconst_values(
+    source: str,
+    replacements: dict[str, int],
+) -> str:
+    for name, value in replacements.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        source, replaced = pattern.subn(
+            f"(defconst {name} {value})",
+            source,
+            count=1,
+        )
+        if replaced != 1:
+            raise RuntimeError(
+                f"voice artifact is missing defconst: {name}"
+            )
+    return source
+
+
+def _remap_voice_storage(runtime: str, generated_voice: str) -> str:
+    """Reconcile generated voice storage with the hybrid runtime overlay."""
+    voice_base = runtime.split("; Native Strategos voice plan", 1)[0]
+
+    generated_definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"^\(defconst\s+([^\s()]+)\s+(-?\d+)\)$",
+            generated_voice,
+            flags=re.MULTILINE,
+        )
+    }
+    goal_names = tuple(
+        name
+        for name in generated_definitions
+        if name == "voice-global-lock"
+        or name == "voice-match-count"
+        or name.startswith("voice-latch-")
+    )
+    timer_names = tuple(
+        name
+        for name in generated_definitions
+        if name == "voice-global-cooldown"
+        or name.startswith("voice-rearm-")
+    )
+
+    goal_values = [generated_definitions[name] for name in goal_names]
+    goal_intervals = _storage_intervals(voice_base)
+    goal_occupied = {
+        value
+        for start, end, _kind in goal_intervals
+        for value in range(max(1, start), min(16_000, end) + 1)
+    }
+    goal_occupied.update(
+        value
+        for name, value in _defconst_values(voice_base).items()
+        if 1 <= value <= 16_000
+    )
+    goals_valid = (
+        len(goal_values) == len(set(goal_values))
+        and all(1 <= value <= 16_000 and value not in goal_occupied for value in goal_values)
+    )
+
+    timer_values = [generated_definitions[name] for name in timer_names]
+    timer_occupied = _timer_ids(voice_base)
+    timer_occupied.update(
+        value
+        for name, value in _defconst_values(voice_base).items()
+        if 1 <= value <= 50
+    )
+    timers_valid = (
+        len(timer_values) == len(set(timer_values))
+        and all(1 <= value <= 50 and value not in timer_occupied for value in timer_values)
+    )
+
+    if goals_valid and timers_valid:
+        return generated_voice
+
+    goal_replacements = dict(zip(goal_names, _choose_voice_goal_slots(voice_base, len(goal_names))))
+    timer_replacements = dict(zip(timer_names, _choose_voice_timer_slots(voice_base, len(timer_names))))
+    return _replace_defconst_values(
+        _replace_defconst_values(generated_voice, goal_replacements),
+        timer_replacements,
+    )
+
+
+def _defconst_values(source: str) -> dict[str, int]:
+    return {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            source,
+        )
+    }
+
+
 def _choose_goal_slots(runtime: str, count: int) -> list[int]:
     recovery_names = set(RECOVERY_NAMES)
     used: set[int] = set()
@@ -365,6 +531,7 @@ def synchronize() -> bool:
     if voice_start < 0:
         raise RuntimeError("generated artifact is missing Native Strategos voice plan")
     generated_voice = generated[voice_start:]
+    generated_voice = _remap_voice_storage(runtime, generated_voice)
     runtime = _replace_tail_section(runtime, voice_marker, generated_voice)
 
     if runtime == before:
