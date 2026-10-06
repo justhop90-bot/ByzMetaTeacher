@@ -26,11 +26,17 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
     def test_transport_state_preserves_intent_and_enters_recovery_when_capability_is_lost(self):
         ready = WaterExecutionState(
+            water_map=True,
             transport_required=True,
             transport_capable=True,
             transport_phase=TransportExecutionPhase.READY,
         )
-        recovered = transition_transport_execution(ready, transport_required=True, transport_capable=False)
+        recovered = transition_transport_execution(
+            ready,
+            water_map=True,
+            transport_required=True,
+            transport_capable=False,
+        )
 
         self.assertEqual(recovered.transport_phase, TransportExecutionPhase.RECOVER)
         self.assertTrue(recovered.transport_required)
@@ -52,10 +58,20 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
         held = transition_transport_execution(
             recovered,
+            water_map=True,
             transport_required=True,
             transport_capable=False,
         )
         self.assertEqual(held.transport_phase, TransportExecutionPhase.RECOVER)
+
+        reopened = transition_transport_execution(
+            held,
+            water_map=True,
+            transport_required=True,
+            transport_capable=False,
+            transport_rebuild_open=True,
+        )
+        self.assertEqual(reopened.transport_phase, TransportExecutionPhase.PREPARE)
 
     def test_water_map_and_transport_requirement_are_separate_observations(self):
         profile = build_byzantine_strategy(self.effective)
@@ -142,7 +158,8 @@ class WaterTransportExecutionTests(unittest.TestCase):
     def test_unknown_water_evidence_fails_closed(self):
         self.assertEqual(
             derive_water_posture(
-                transport_required=None,
+                water_map=None,
+                transport_required=False,
                 dock_exists=False,
                 naval_pressure=False,
                 warboat_floor_met=False,
@@ -151,6 +168,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         state = transition_transport_execution(
             WaterExecutionState(),
+            water_map=True,
             transport_required=True,
             transport_capable=None,
         )
@@ -158,8 +176,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
     def test_runtime_state_marks_transport_loss_as_recovery(self):
         profile = build_byzantine_strategy(self.effective)
+        water_map_expression = profile.observation("strategy-water-map").expression
+        transport_required_expression = profile.observation("strategy-transport-required").expression
         transport_expression = profile.observation("strategy-own-transport-capable").expression
-        islands_expression = profile.observation("strategy-water-islands").expression
+        rebuild_expression = profile.observation("strategy-transport-rebuild-open").expression
 
         previous = WaterExecutionState(
             transport_required=True,
@@ -170,8 +190,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
             previous_posture=StrategyPosture.BOOM,
             previous_water_execution_state=previous,
             fact_results=(
-                (islands_expression, True),
+                (water_map_expression, True),
+                (transport_required_expression, True),
                 (transport_expression, False),
+                (rebuild_expression, False),
             ),
         )
 
@@ -230,7 +252,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
         profile = build_byzantine_strategy(self.effective)
 
         self.assertIsNotNone(profile.water_execution_plan)
-        self.assertIn("strategy-water-islands", {
+        self.assertIn("strategy-water-map", {
+            item.identity for item in profile.observations
+        })
+        self.assertIn("strategy-transport-required", {
             item.identity for item in profile.observations
         })
 
@@ -242,6 +267,8 @@ class WaterTransportExecutionTests(unittest.TestCase):
         state_ids = {state.identifier for state in compilation.control_plan.states}
         self.assertIn("water-posture", state_ids)
         self.assertIn("transport-phase", state_ids)
+        self.assertIn("water-transport-objective", state_ids)
+        self.assertIn("water-transport-rebuild", state_ids)
 
         rule_ids = {rule.identity for rule in compilation.control_plan.rules}
         self.assertIn("transport-phase-recover-on-capability-loss", rule_ids)
