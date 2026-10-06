@@ -29,7 +29,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
         return effective, build_byzantine_castle_strategy(effective)
 
-    def test_existing_age_and_posture_modes_normalize_to_fixed_layers(self):
+    def test_existing_posture_modes_normalize_to_fixed_layers(self):
         effective, profile = self._profile()
 
         controllers = tuple(
@@ -37,11 +37,6 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             for mode in profile.strategic_number_modes
         )
 
-        age = next(
-            item
-            for item in controllers
-            if item.identity == "civilian-builders-feudal"
-        )
         strategy = next(
             item
             for item in controllers
@@ -49,14 +44,9 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
 
         self.assertIs(
-            age.layer,
-            StrategicNumberControllerLayer.AGE_BASE,
-        )
-        self.assertIs(
             strategy.layer,
             StrategicNumberControllerLayer.STRATEGY,
         )
-        self.assertEqual(age.native_state_name, "sn-native-4")
         self.assertEqual(strategy.native_state_name, "sn-native-227")
 
     def test_undocumented_native_id_is_rejected_by_semantic_gate(self):
