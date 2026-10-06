@@ -227,6 +227,25 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_strategy_compiler_emits_native_strategos_voice_plan(self):
+        first = compile_strategy_profile(self.stock_profile, self.effective)
+        second = compile_strategy_profile(self.stock_profile, self.effective)
+
+        self.assertEqual(first, second)
+        voice_start = first.index("; Native Strategos voice plan")
+        voice = first[voice_start:]
+        self.assertIn("(defconst voice-global-lock ", voice)
+        self.assertIn("(defconst voice-match-count ", voice)
+        self.assertIn("(defconst voice-global-cooldown ", voice)
+        self.assertIn(
+            '(chat-to-player my-player-number "The army is ready. I am going in.")',
+            voice,
+        )
+        self.assertIn("(up-jump-rule 13)", voice)
+        self.assertNotIn("chat-local-to-self", voice)
+        self.assertIn("(goal voice-latch-attack-issued 0)", voice)
+        self.assertIn("(goal voice-latch-attack-issued 2)", voice)
+
     def test_byzantine_stock_lowers_objective_control_state_and_ownership(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
         control = compilation.control_plan
