@@ -290,7 +290,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         )
         for identity in expected:
             self.assertIn(
-                "(research-completed 98)",
+                "(up-research-status c: 98 >= 3)",
                 by_id[identity].execution.requirements,
                 identity,
             )
