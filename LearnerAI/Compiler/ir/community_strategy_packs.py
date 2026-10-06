@@ -2144,7 +2144,7 @@ def default_byzantine_endgame_plan() -> _EndgamePlan:
             attack_group_count=1,
             attack_soldier_percent=100,
             minimum_group_size=6,
-            maximum_group_size=40,
+            maximum_group_size=20,
             active_window_seconds=20,
             live_witness_ref="strategy-endgame-attack-package-live",
             cleared_witness_ref="strategy-endgame-attack-package-cleared",

@@ -237,6 +237,8 @@ class EndgameContractTests(unittest.TestCase):
         self.assertIsNotNone(plan)
         self.assertIsNotNone(plan.push_contract)
         self.assertIsNone(plan.push_contract.frontier_witness_ref)
+        self.assertEqual(plan.push_contract.minimum_group_size, 6)
+        self.assertEqual(plan.push_contract.maximum_group_size, 20)
         self.assertIsNotNone(plan.target_control)
         self.assertEqual(plan.target_control.search_radius, 40)
         compilation = lower_strategy_profile(profile, self.effective)
