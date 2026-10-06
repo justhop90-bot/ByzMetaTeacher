@@ -1304,20 +1304,33 @@ def _evaluate_water_execution_state(
     )
     truths: dict[str, EvidenceTruth] = {}
     evaluated: list[tuple[str, EvidenceTruth]] = []
+    persistent_state_refs = {
+        plan.transport_required_observation,
+        plan.transport_rebuild_open_observation,
+    }
     for label, reference in refs:
-        evidence = StrategicEvidence(
-            kind=StrategicEvidenceKind.EXECUTION,
-            expression=None,
-            label=label,
-            observation_ref=reference,
-        )
-        binding = bind_observation_reference(
-            evidence,
-            profile,
-            effective,
-            registry,
-        )
-        truth = evaluate_binding(binding, snapshot)
+        if reference in persistent_state_refs:
+            from ..semantic.analyzer import parse_expression
+            from ..ast import SourceLocation
+            expression = parse_expression(
+                profile.observation(reference).expression,
+                SourceLocation(1),
+            )
+            truth = snapshot.result_for(expression)
+        else:
+            evidence = StrategicEvidence(
+                kind=StrategicEvidenceKind.EXECUTION,
+                expression=None,
+                label=label,
+                observation_ref=reference,
+            )
+            binding = bind_observation_reference(
+                evidence,
+                profile,
+                effective,
+                registry,
+            )
+            truth = evaluate_binding(binding, snapshot)
         truths[reference] = truth
         evaluated.append((label, truth))
 
