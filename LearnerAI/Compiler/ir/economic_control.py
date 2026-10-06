@@ -236,7 +236,11 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-base",
             EconomyMode.BASE,
-            ("(current-age < castle-age)", *no_pressure, opening(1)),
+            (
+                "(current-age < castle-age)",
+                *no_pressure,
+                f"(or {opening(1)} {opening(6)})",
+            ),
         ),
         select_rule(
             "economy-controller-select-castle-conversion",
