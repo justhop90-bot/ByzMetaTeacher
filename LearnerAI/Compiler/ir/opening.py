@@ -132,8 +132,9 @@ def lower_opening_selector(
         f"(not {transport_capable}))"
     )
     recovery_disaster = (
+        "(and (current-age < castle-age) "
         f"(or {gold_front_lost} "
-        f"(or {water_path_lost} {base_defense}))"
+        f"(or {water_path_lost} {base_defense})))"
     )
     recovery_clear = (
         f"(and (not {gold_front_lost}) "
