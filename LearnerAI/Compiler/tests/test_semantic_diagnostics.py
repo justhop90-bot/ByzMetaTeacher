@@ -40,7 +40,13 @@ class SemanticDiagnosticsTests(unittest.TestCase):
         self.assertEqual(classify_evidence_source("opaque://unknown"), EvidenceLineage.UNKNOWN)
 
     def test_performance_cost_classes_keep_expensive_heads_advisory(self):
-        self.assertEqual(performance_cost_for_head("up-get-distance"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-get-path-distance"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-build-line"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-clean-search"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-target-objects"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-target-point"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-point-distance"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-get-group-size"), PerformanceCostClass.HIGH)
         self.assertEqual(performance_cost_for_head("up-find-local"), PerformanceCostClass.MODERATE)
         self.assertEqual(performance_cost_for_head("up-find-remote"), PerformanceCostClass.MODERATE)
         self.assertEqual(performance_cost_for_head("move"), PerformanceCostClass.MODERATE)
