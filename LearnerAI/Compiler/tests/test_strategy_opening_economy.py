@@ -590,6 +590,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("opening-recovery-cause-defense", rules)
         self.assertIn("opening-recovery-cause-gold", rules)
         self.assertIn("opening-recovery-cause-water", rules)
+        self.assertIn("opening-recovery-clear-cause-castle", rules)
 
         gold_cause_facts = tuple(
             fact.source for fact in rules["opening-recovery-cause-gold"].facts
@@ -641,6 +642,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertTrue(
             all("timer-triggered" not in fact for fact in exit_facts)
         )
+        castle_exit = rules["opening-recovery-exit-counter-feudal-castle"]
+        castle_exit_facts = tuple(fact.source for fact in castle_exit.facts)
+        self.assertIn("(current-age >= castle-age)", castle_exit_facts)
+        self.assertIn("(gold-amount >= 1000)", " ".join(castle_exit_facts))
         exit_actions = tuple(action.source for action in exit_rule.actions)
         self.assertIn("(set-goal opening-plan 2)", exit_actions)
         self.assertIn("(set-goal opening-recovery-origin -1)", exit_actions)
@@ -674,6 +679,39 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             base_facts,
         )
 
+    def test_opening_recovery_rules_respect_native_element_budget(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        recovery_rules = [
+            rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        ]
+        self.assertTrue(recovery_rules)
+        for rule in recovery_rules:
+            elements = sum(
+                item.source.count("(")
+                for item in (*rule.facts, *rule.actions)
+            )
+            self.assertLessEqual(
+                elements,
+                32,
+                msg=f"{rule.identity} emits {elements} native rule elements",
+            )
+
+        clear_castle = next(
+            rule
+            for rule in recovery_rules
+            if rule.identity == "opening-recovery-clear-cause-castle"
+        )
+        self.assertIn(
+            "(current-age >= castle-age)",
+            tuple(fact.source for fact in clear_castle.facts),
+        )
+
     def test_opening_recovery_gold_loss_uses_hysteresis_band(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
@@ -691,7 +729,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertIn("(gold-amount <= 800)", gold_cause)
         self.assertIn(
-            "(or (not (or (dropsite-min-distance gold <= -1) "
+            "(and (not (or (dropsite-min-distance gold <= -1) "
             "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
             "(gold-amount >= 1000))",
             tuple(fact.source for fact in rules["opening-recovery-clear-cause"].facts),
