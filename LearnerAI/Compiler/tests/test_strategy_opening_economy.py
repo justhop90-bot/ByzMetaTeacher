@@ -571,6 +571,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("opening-plan", state_ids)
         self.assertIn("opening-recovery", state_ids)
         self.assertIn("opening-recovery-origin", state_ids)
+        self.assertIn("opening-recovery-cause", state_ids)
         self.assertIn("opening-recovery-gold-proven", state_ids)
         self.assertIn("opening-recovery-water-proven", state_ids)
 
@@ -581,25 +582,21 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         }
         self.assertIn("opening-recovery-prove-gold", rules)
         self.assertIn("opening-recovery-prove-water", rules)
+        self.assertIn("opening-recovery-cause-defense", rules)
+        self.assertIn("opening-recovery-cause-gold", rules)
+        self.assertIn("opening-recovery-cause-water", rules)
+
+        gold_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-gold"].facts
+        )
+        self.assertIn("(goal opening-recovery-gold-proven 1)", gold_cause_facts)
+        self.assertIn("(current-age < castle-age)", gold_cause_facts)
+        self.assertIn("(goal opening-recovery-cause 0)", gold_cause_facts)
+        self.assertTrue(all(len(fact.source) <= 255 for fact in rules["opening-recovery-cause-gold"].facts))
 
         entry = rules["opening-recovery-enter-counter-feudal"]
         entry_facts = tuple(fact.source for fact in entry.facts)
-        self.assertIn("(goal opening-recovery-gold-proven 1)", entry_facts)
-        self.assertIn("(current-age < castle-age)", entry_facts)
-        self.assertIn(
-            "(and (resource-found gold) (dropsite-min-distance gold <= -1))",
-            entry_facts,
-        )
-        self.assertIn(
-            "(or (and (map-type islands) "
-            "(goal opening-recovery-water-proven 1) "
-            "(not (unit-type-count transport-ship >= 1))) "
-            "(and (town-under-attack) "
-            "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(or (players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5))))))",
-            entry_facts,
-        )
+        self.assertIn("(goal opening-recovery-cause != 0)", entry_facts)
         self.assertIn("(goal opening-recovery-origin -1)", entry_facts)
         self.assertTrue(
             all("timer-triggered" not in fact for fact in entry_facts)
@@ -612,6 +609,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         exit_facts = tuple(fact.source for fact in exit_rule.facts)
         self.assertIn("(goal opening-plan 6)", exit_facts)
         self.assertIn("(goal opening-recovery-origin 2)", exit_facts)
+        self.assertIn("(goal opening-recovery-cause 0)", exit_facts)
         self.assertTrue(
             all("timer-triggered" not in fact for fact in exit_facts)
         )
@@ -655,23 +653,22 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity.startswith("opening-recovery-")
         }
 
-        water_entry_facts = tuple(
-            fact.source for fact in rules["opening-recovery-enter-water-economy"].facts
+        water_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-water"].facts
         )
-        self.assertIn("(goal opening-recovery-water-proven 1)", water_entry_facts)
-        self.assertIn(
-            "(not (unit-type-count transport-ship >= 1))",
-            water_entry_facts,
-        )
+        self.assertIn("(goal opening-recovery-water-proven 1)", water_cause_facts)
+        self.assertIn("(not (unit-type-count transport-ship >= 1))", water_cause_facts)
+        self.assertIn("(current-age < castle-age)", water_cause_facts)
 
-        defense_entry_facts = tuple(
-            fact.source for fact in rules["opening-recovery-enter-defensive-standard"].facts
+        defense_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-defense"].facts
         )
-        self.assertIn("(town-under-attack)", " ".join(defense_entry_facts))
+        self.assertIn("(town-under-attack)", " ".join(defense_cause_facts))
         self.assertIn(
             "(players-unit-type-count any-enemy knight >= 3)",
-            " ".join(defense_entry_facts),
+            " ".join(defense_cause_facts),
         )
+        self.assertIn("(goal opening-recovery-cause 0)", defense_cause_facts)
 
     def test_opening_recovery_preserves_sticky_identity_and_cannot_oscillate(self):
         profile = build_byzantine_strategy(self.effective)
@@ -698,6 +695,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity.startswith("opening-recovery-enter-")
         }
         self.assertTrue(recovery_rules)
+        self.assertIn("opening-recovery-clear-cause", recovery_rules)
         for rule in recovery_rules.values():
             facts = tuple(fact.source for fact in rule.facts)
             self.assertIn("(goal opening-recovery-origin -1)", facts)
