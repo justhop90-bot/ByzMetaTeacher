@@ -728,8 +728,25 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertNotIn("sn-native-36", " ".join(admit_actions))
         self.assertNotIn("sn-native-227", " ".join(admit_actions))
         ready_actions = tuple(action.source for action in rules["byzantine-endgame-push-imperial-ready"].actions)
-        self.assertIn("(set-strategic-number sn-native-16 6)", ready_actions)
-        self.assertIn("(set-strategic-number sn-native-26 40)", ready_actions)
+        push_contract = self.stock_profile.endgame_plan.push_contract
+        self.assertIsNotNone(push_contract)
+        assert push_contract is not None
+        self.assertIn(
+            f"(set-strategic-number sn-native-16 {push_contract.minimum_group_size})",
+            ready_actions,
+        )
+        self.assertIn(
+            f"(set-strategic-number sn-native-26 {push_contract.maximum_group_size})",
+            ready_actions,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-native-16 6)",
+            ready_actions,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-native-26 20)",
+            ready_actions,
+        )
         self.assertIn("(enable-timer byzantine-endgame-push-timer 20)", admit_actions)
         self.assertIn(
             "(up-compare-goal byzantine-imperial-band-state != 2)",
