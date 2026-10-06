@@ -15,6 +15,7 @@ on:
     paths:
       - "LearnerAI/Compiler/**"
       - ".github/workflows/compiler-tests.yml"
+      - "tools/synchronize_byzantine_runtime.py"
       - "Byzantine.per"
   workflow_dispatch:
 
