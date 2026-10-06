@@ -238,7 +238,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(defconst voice-match-count ", voice)
         self.assertIn("(defconst voice-global-cooldown ", voice)
         self.assertIn(
-            '(chat-to-player my-player-number "The army is ready. I am going in.")',
+            '(chat-to-player focus-player "The army is ready. I am going in.")',
             voice,
         )
         self.assertIn("(up-jump-rule 13)", voice)
