@@ -103,6 +103,7 @@ def lower_opening_selector(
         goal_state("opening-recovery-cause", "opening-recovery-cause"),
         goal_state(plan.recovery_gold_proven_state_name, "opening-recovery-proof"),
         goal_state(plan.recovery_water_proven_state_name, "opening-recovery-proof"),
+        goal_state("opening-recovery-defense-clear", "opening-recovery-defense-proof"),
     )
 
     unselected = f"(goal {plan.state_name} -1)"
@@ -113,6 +114,7 @@ def lower_opening_selector(
     recovery_cause_active = "(up-compare-goal opening-recovery-cause != -1)"
     gold_proven = f"(goal {plan.recovery_gold_proven_state_name} 1)"
     water_proven = f"(goal {plan.recovery_water_proven_state_name} 1)"
+    defense_clear = "(goal opening-recovery-defense-clear 1)"
 
     opening_plan_selected = (
         f"(and (up-compare-goal {plan.state_name} >= 1) "
@@ -145,11 +147,6 @@ def lower_opening_selector(
         f"(and (current-age < castle-age) "
         f"(and (town-under-attack) {enemy_castle}))"
     )
-    recovery_defense_lost = (
-        f"(and (town-under-attack) "
-        f"(or {pressure} (or {enemy_siege} {enemy_castle})))"
-    )
-
     def native_facts(*expressions: str):
         return tuple(
             parse_expression(expression, SourceLocation(1))
@@ -157,6 +154,87 @@ def lower_opening_selector(
         )
 
     rules: list[NativeControlRule] = [
+        NativeControlRule(
+            "opening-recovery-defense-clear-initialize",
+            facts=native_facts(
+                "(goal opening-recovery-defense-clear -1)",
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-defense-clear 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-defense-clear-quiet",
+            facts=native_facts(
+                "(not (town-under-attack))",
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-defense-clear 1)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-defense-clear-pressure-absent",
+            facts=native_facts(
+                "(town-under-attack)",
+                f"(not {pressure})",
+                f"(not {enemy_siege})",
+                f"(not {enemy_castle})",
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-defense-clear 1)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-defense-loss-pressure",
+            facts=native_facts(
+                "(town-under-attack)",
+                f"(current-age < castle-age)",
+                pressure,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-defense-clear 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-defense-loss-siege",
+            facts=native_facts(
+                "(town-under-attack)",
+                f"(current-age < castle-age)",
+                enemy_siege,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-defense-clear 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-defense-loss-castle",
+            facts=native_facts(
+                "(town-under-attack)",
+                f"(current-age < castle-age)",
+                enemy_castle,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-defense-clear 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
         NativeControlRule(
             "opening-selector-water-control",
             facts=native_facts(unselected, water, naval),
@@ -294,7 +372,7 @@ def lower_opening_selector(
                 opening_plan_selected,
                 recovery_cause_clear,
                 recovery_origin_unset,
-                f"(not {recovery_defense_lost})",
+                defense_clear,
                 gold_front_lost,
             ),
             actions=(
@@ -311,7 +389,7 @@ def lower_opening_selector(
                 recovery_cause_clear,
                 recovery_origin_unset,
                 "(current-age < castle-age)",
-                f"(not {recovery_defense_lost})",
+                defense_clear,
                 f"(not {gold_front_lost})",
                 water_path_lost,
             ),
@@ -368,7 +446,7 @@ def lower_opening_selector(
                     "(current-age < castle-age)",
                     gold_front_recovered,
                     f"(not {water_path_lost})",
-                    f"(not {recovery_defense_lost})",
+                    defense_clear,
                 ),
                 actions=(
                     parse_expression(
@@ -423,7 +501,7 @@ def lower_opening_selector(
                 "(current-age < castle-age)",
                 gold_front_recovered,
                 f"(not {water_path_lost})",
-                f"(not {recovery_defense_lost})",
+                defense_clear,
             ),
             actions=(
                 parse_expression(
