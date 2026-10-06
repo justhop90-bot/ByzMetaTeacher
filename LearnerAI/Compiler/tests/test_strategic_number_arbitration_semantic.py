@@ -49,6 +49,31 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
         self.assertEqual(strategy.native_state_name, "sn-native-227")
 
+    def test_current_byzantine_posture_modes_cover_all_four_native_sn227_allocations(self):
+        effective, profile = self._profile()
+
+        controllers = tuple(
+            strategic_number_mode_to_controller(mode, profile.profile_id)
+            for mode in profile.strategic_number_modes
+        )
+        by_identity = {controller.identity: controller for controller in controllers}
+
+        expected = {
+            "attack-allocation-flush": (50, StrategyPosture.FLUSH),
+            "attack-allocation-rush": (50, StrategyPosture.RUSH),
+            "attack-allocation-boom": (75, StrategyPosture.BOOM),
+            "attack-allocation-castle-power": (75, StrategyPosture.CASTLE_POWER),
+        }
+
+        self.assertEqual(set(by_identity), set(expected))
+        for identity, (value, posture) in expected.items():
+            controller = by_identity[identity]
+            self.assertEqual(controller.native_strategic_number_id, 227)
+            self.assertEqual(controller.value, value)
+            self.assertEqual(controller.postures, (posture,))
+            self.assertIs(controller.layer, StrategicNumberControllerLayer.STRATEGY)
+            self.assertEqual(controller.native_state_name, "sn-native-227")
+
     def test_undocumented_native_id_is_rejected_by_semantic_gate(self):
         controller = StrategicNumberController(
             identity="undocumented",
