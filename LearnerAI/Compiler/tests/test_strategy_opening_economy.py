@@ -579,6 +579,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("opening-recovery-cause", state_ids)
         self.assertIn("opening-recovery-gold-proven", state_ids)
         self.assertIn("opening-recovery-water-proven", state_ids)
+        self.assertIn("opening-recovery-defense-clear", state_ids)
 
         rules = {
             rule.identity: rule
@@ -608,22 +609,30 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             fact.source for fact in rules["opening-recovery-cause-water"].facts
         )
         water_cause_text = " ".join(water_cause_facts)
-        self.assertIn("(town-under-attack)", water_cause_text)
         self.assertIn(
-            "(players-unit-type-count any-enemy knight >= 3)",
-            water_cause_text,
+            "(goal opening-recovery-defense-clear 1)",
+            water_cause_facts,
+        )
+        defense_clear_rule = rules["opening-recovery-defense-clear-pressure-absent"]
+        defense_clear_text = " ".join(
+            fact.source for fact in defense_clear_rule.facts
+        )
+        self.assertIn("(town-under-attack)", defense_clear_text)
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
+            defense_clear_text,
         )
         self.assertIn(
-            "(players-unit-type-count any-enemy archer-line >= 4)",
-            water_cause_text,
+            "(not (players-unit-type-count any-enemy archer-line >= 4))",
+            defense_clear_text,
         )
         self.assertIn(
-            "(players-unit-type-count any-enemy militia-line >= 5)",
-            water_cause_text,
+            "(not (players-unit-type-count any-enemy militia-line >= 5))",
+            defense_clear_text,
         )
         self.assertIn(
-            "(players-unit-type-count any-enemy mangonel-line >= 2)",
-            water_cause_text,
+            "(not (players-unit-type-count any-enemy mangonel-line >= 2))",
+            defense_clear_text,
         )
 
         entry = rules["opening-recovery-enter-counter-feudal"]
@@ -950,7 +959,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertTrue(any("opening-recovery-gold-proven" in fact for fact in facts))
         self.assertTrue(any("opening-recovery-water-proven" in fact for fact in facts))
-        self.assertTrue(any("town-under-attack" in fact for fact in facts))
+        self.assertIn("(goal opening-recovery-defense-clear 1)", facts)
         self.assertNotIn("timer-triggered", " ".join(facts))
 
     def test_opening_recovery_preserves_sticky_identity_and_cannot_oscillate(self):
