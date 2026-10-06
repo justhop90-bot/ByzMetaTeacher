@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Iterable, Optional
 
 
 class EvidenceClass(str, Enum):
@@ -17,6 +17,22 @@ class EvidenceClass(str, Enum):
     COMMUNITY_PRACTICE = "COMMUNITY PRACTICE"
     COMPILER_POLICY = "COMPILER POLICY"
     OPEN_UNKNOWN = "OPEN / UNKNOWN"
+
+
+class EvidenceLineage(str, Enum):
+    AIREF = "AIREF"
+    USERPATCH = "USERPATCH"
+    OFFICIAL = "OFFICIAL"
+    COMMUNITY_FORUM = "COMMUNITY_FORUM"
+    COMMUNITY_TOOLING = "COMMUNITY_TOOLING"
+    REPO_ARCHAEOLOGY = "REPO_ARCHAEOLOGY"
+    UNKNOWN = "UNKNOWN"
+
+
+class PerformanceCostClass(str, Enum):
+    LOW = "LOW"
+    MODERATE = "MODERATE"
+    HIGH = "HIGH"
 
 
 class PracticeStatus(str, Enum):
@@ -57,6 +73,90 @@ def classify_capability_transition(
 def capability_loss_preserves_demand(transition: CapabilityTransition) -> bool:
     """Temporary capability loss preserves the original strategic identity."""
     return transition is CapabilityTransition.LOST
+
+
+def classify_evidence_source(source: str) -> EvidenceLineage:
+    """Classify a source into a conservative provenance family."""
+    value = source.strip().lower()
+    if value.startswith("repo://"):
+        return EvidenceLineage.REPO_ARCHAEOLOGY
+    if "airef.github.io" in value:
+        return EvidenceLineage.AIREF
+    if "userpatch.aiscripters.net" in value:
+        return EvidenceLineage.USERPATCH
+    if "forums.ageofempires.com" in value:
+        return EvidenceLineage.COMMUNITY_FORUM
+    if "ageofempires.com" in value:
+        return EvidenceLineage.OFFICIAL
+    if value.startswith("https://github.com/") or value.startswith("http://github.com/"):
+        return EvidenceLineage.COMMUNITY_TOOLING
+    return EvidenceLineage.UNKNOWN
+
+
+@dataclass(frozen=True)
+class EvidenceConvergence:
+    practice_identity: str
+    source_count: int
+    source_families: tuple[EvidenceLineage, ...]
+    independent_source_family_count: int
+    status: str
+
+
+def practice_evidence_convergence(practice: "EnginePractice") -> EvidenceConvergence:
+    families = tuple(
+        sorted(
+            {classify_evidence_source(source) for source in practice.sources},
+            key=lambda item: item.value,
+        )
+    )
+    known = tuple(item for item in families if item is not EvidenceLineage.UNKNOWN)
+    if not known:
+        status = "UNKNOWN_LINEAGE"
+    elif len(known) == 1 and EvidenceLineage.UNKNOWN not in families:
+        status = "SINGLE_FAMILY"
+    elif len(known) > 1 and EvidenceLineage.UNKNOWN not in families:
+        status = "MULTI_FAMILY"
+    else:
+        status = "UNKNOWN_LINEAGE"
+    return EvidenceConvergence(
+        practice_identity=practice.identity,
+        source_count=len(practice.sources),
+        source_families=families,
+        independent_source_family_count=len(known),
+        status=status,
+    )
+
+
+_PERFORMANCE_COST_RANK = {
+    PerformanceCostClass.LOW: 0,
+    PerformanceCostClass.MODERATE: 1,
+    PerformanceCostClass.HIGH: 2,
+}
+
+_PERFORMANCE_COST_HEADS = {
+    "up-find-local": PerformanceCostClass.MODERATE,
+    "up-find-remote": PerformanceCostClass.MODERATE,
+    "up-get-distance": PerformanceCostClass.HIGH,
+    "up-set-position": PerformanceCostClass.HIGH,
+    "up-target-objects": PerformanceCostClass.HIGH,
+    "build-at-point": PerformanceCostClass.HIGH,
+    "move": PerformanceCostClass.MODERATE,
+    "attack-now": PerformanceCostClass.MODERATE,
+    "attack-groups": PerformanceCostClass.MODERATE,
+}
+
+
+def performance_cost_for_head(head: str) -> PerformanceCostClass:
+    """Return an advisory qualitative cost class for a native command head."""
+    return _PERFORMANCE_COST_HEADS.get(head, PerformanceCostClass.LOW)
+
+
+def max_performance_cost(heads: Iterable[str]) -> PerformanceCostClass:
+    return max(
+        (performance_cost_for_head(head) for head in heads),
+        key=_PERFORMANCE_COST_RANK.__getitem__,
+        default=PerformanceCostClass.LOW,
+    )
 
 
 @dataclass(frozen=True)
