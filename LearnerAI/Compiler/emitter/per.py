@@ -242,7 +242,7 @@ def _emit_native_voice_plan(
             f"    { _render_runtime_expression(rule.trigger) }",
             f"    (goal {rule.latch_state} 0)",
             f"    {global_guard}",
-            f"    (goal {plan.match_count_state} < {count_limit})",
+            f"    (up-compare-goal {plan.match_count_state} g:< {count_limit})",
             "=>",
             f"    (set-goal {rule.latch_state} 1)",
             f"    (set-goal {plan.global_lock_state} {lock_value})",
