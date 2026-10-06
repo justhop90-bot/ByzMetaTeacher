@@ -132,7 +132,7 @@ def lower_opening_selector(
     water_path_lost = (
         f"(and {water_proven} "
         f"(and (current-age < castle-age) "
-        f"(and {water} (not {transport_capable})))"
+        f"(and {water} (not {transport_capable}))))"
     )
     base_defense_lost = f"(and (current-age < castle-age) {base_defense})"
 
