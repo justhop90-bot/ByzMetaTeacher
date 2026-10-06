@@ -911,6 +911,7 @@ def community_strategy_demands(
     stable = _building(effective, "stable")
     archery_range = _building(effective, "archery-range")
     university = _building(effective, "university")
+    dock = _building(effective, "dock")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
@@ -1877,6 +1878,29 @@ def community_strategy_demands(
                     initial_state=LifecycleState.RELEASED,
                 )
             )
+
+    # The first dock is the enabling capability for an Islands opening. Keep
+    # this demand separate from fishing continuity so water strategy cannot
+    # deadlock on a provider that its own fishing demand requires first.
+    demands.append(
+        _build_demand(
+            identity="water-dock-capability",
+            owner="water-economy",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.CORE,
+            reason_ref="strategy-water-islands",
+            reason_label="Islands opening requires a first dock before water economy can execute",
+            building=dock,
+            requirements=(
+                "(current-age >= dark-age)",
+                "(map-type islands)",
+                "(building-type-count-total dock < 1)",
+                "(can-build dock)",
+            ),
+            target_witness="(building-type-count dock >= 1)",
+            release="(building-type-count dock >= 1)",
+        )
+    )
 
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
