@@ -227,7 +227,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             for rule in self.rules
             if "(current-age >= imperial-age)" in rule
             and "(attack-soldier-count <= 0)" in rule
-            and "(unit-type-count-total cataphract-line >= 4)" in rule
+            and "(military-population >= 4)" in rule
             and "(attack-now)" in rule
         ]
         self.assertEqual(len(matching), 1)
