@@ -732,7 +732,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-water-islands",
-            "(map-type islands)",
+            "(or (map-type islands) (map-type pacific-islands))",
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
@@ -911,6 +911,7 @@ def community_strategy_demands(
     stable = _building(effective, "stable")
     archery_range = _building(effective, "archery-range")
     university = _building(effective, "university")
+    dock = _building(effective, "dock")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
@@ -1878,6 +1879,29 @@ def community_strategy_demands(
                 )
             )
 
+    # The first dock is the enabling capability for an Islands opening. Keep
+    # this demand separate from fishing continuity so water strategy cannot
+    # deadlock on a provider that its own fishing demand requires first.
+    demands.append(
+        _build_demand(
+            identity="water-dock-capability",
+            owner="water-economy",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.CORE,
+            reason_ref="strategy-water-islands",
+            reason_label="Islands opening requires a first dock before water economy can execute",
+            building=dock,
+            requirements=(
+                "(current-age >= dark-age)",
+                "(or (map-type islands) (map-type pacific-islands))",
+                "(building-type-count-total dock < 1)",
+                "(can-build dock)",
+            ),
+            target_witness="(building-type-count dock >= 1)",
+            release="(building-type-count dock >= 1)",
+        )
+    )
+
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
     # requires a proven environmental predicate and remains OPEN.
@@ -1964,7 +1988,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= dark-age)",
-                    "(map-type islands)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow transport-ship)",
                     "(unit-type-count-total transport-ship < 1)",
@@ -2020,7 +2044,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
-                    "(map-type islands)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(players-unit-type-count any-enemy galley-line >= 2)",
                     "(can-train-with-escrow fire-galley)",
@@ -2073,7 +2097,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(map-type islands)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(players-unit-type-count any-enemy galley-line >= 2)",
                     "(can-train-with-escrow galley)",

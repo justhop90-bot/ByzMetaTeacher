@@ -33,6 +33,7 @@ _CANONICAL_BUILDING_ID_OVERRIDES = {
     "outpost": 598,
     "lumber-camp": 562,
     "mining-camp": 584,
+    "dock": 45,
 }
 
 
