@@ -70,7 +70,13 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             controller = by_identity[identity]
             self.assertEqual(controller.native_strategic_number_id, 227)
             self.assertEqual(controller.value, value)
-            self.assertEqual(controller.postures, (posture,))
+            expected_posture_guard = {
+                StrategyPosture.FLUSH: "(goal strategy-posture 1)",
+                StrategyPosture.RUSH: "(goal strategy-posture 2)",
+                StrategyPosture.BOOM: "(goal strategy-posture 3)",
+                StrategyPosture.CASTLE_POWER: "(goal strategy-posture 4)",
+            }[posture]
+            self.assertIn(expected_posture_guard, controller.activation_guard.source)
             self.assertIs(controller.layer, StrategicNumberControllerLayer.STRATEGY)
             self.assertEqual(controller.native_state_name, "sn-native-227")
 
