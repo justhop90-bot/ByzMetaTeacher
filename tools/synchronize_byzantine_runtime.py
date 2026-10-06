@@ -36,6 +36,10 @@ ELITE_SKIRMISHER_PRODUCTION_RULES = (
     "imperial-trash-elite-skirmisher-high",
 )
 
+CIVILIAN_VILLAGER_SECTION_START = "; Persistent civilian production"
+CIVILIAN_VILLAGER_SECTION_END = "; Pending diagnostics: early-defensive-spears"
+
+
 ECONOMY_RULES = (
     "economy-controller-select-counter-pressure",
     "economy-controller-select-fast-castle",
@@ -92,6 +96,22 @@ def _block(source: str, start_marker: str, end_marker: str) -> str:
     if end < 0:
         raise RuntimeError(f"generated artifact is missing end marker: {end_marker}")
     return source[start:end].rstrip() + "\n"
+
+
+def _replace_section(
+    source: str,
+    generated: str,
+    start_marker: str,
+    end_marker: str,
+) -> str:
+    generated_block = _block(generated, start_marker, end_marker)
+    start = source.find(start_marker)
+    if start < 0:
+        raise RuntimeError(f"runtime artifact is missing section: {start_marker}")
+    end = source.find(end_marker, start)
+    if end < 0:
+        raise RuntimeError(f"runtime artifact is missing section end: {end_marker}")
+    return source[:start] + generated_block + source[end:]
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -488,6 +508,12 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _replace_section(
+        runtime,
+        generated,
+        CIVILIAN_VILLAGER_SECTION_START,
+        CIVILIAN_VILLAGER_SECTION_END,
+    )
 
     defense_block = _block(
         generated,
