@@ -601,7 +601,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(goal opening-recovery-gold-proven 1)",
             " ".join(gold_cause_facts),
         )
-        self.assertIn("(current-age < castle-age)", gold_cause_facts)
+        self.assertIn("(current-age < castle-age)", " ".join(gold_cause_facts))
         self.assertIn("(goal opening-recovery-cause -1)", gold_cause_facts)
         self.assertTrue(all(len(fact.source) <= 255 for fact in rules["opening-recovery-cause-gold"].facts))
         defense_cause_facts = tuple(
