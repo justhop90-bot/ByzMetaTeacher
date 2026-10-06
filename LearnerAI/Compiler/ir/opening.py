@@ -139,6 +139,14 @@ def lower_opening_selector(
         f"(and {water} (not {transport_capable}))))"
     )
     base_defense_lost = f"(and (current-age < castle-age) {base_defense})"
+    fortification_defense_siege = (
+        f"(and (current-age < castle-age) "
+        f"(and (town-under-attack) {profile.observation('strategy-enemy-siege').expression}))"
+    )
+    fortification_defense_castle = (
+        f"(and (current-age < castle-age) "
+        f"(and (town-under-attack) {profile.observation('strategy-enemy-castle').expression}))"
+    )
 
     def native_facts(*expressions: str):
         return tuple(
@@ -249,12 +257,44 @@ def lower_opening_selector(
             ),
         ),
         NativeControlRule(
+            "opening-recovery-cause-defense-siege",
+            facts=native_facts(
+                opening_plan_selected,
+                recovery_cause_clear,
+                recovery_origin_unset,
+                fortification_defense_siege,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause 3)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-cause-defense-castle",
+            facts=native_facts(
+                opening_plan_selected,
+                recovery_cause_clear,
+                recovery_origin_unset,
+                fortification_defense_castle,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause 3)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
             "opening-recovery-cause-gold",
             facts=native_facts(
                 opening_plan_selected,
                 recovery_cause_clear,
                 recovery_origin_unset,
                 f"(not {base_defense_lost})",
+                f"(not {fortification_defense_siege})",
+                f"(not {fortification_defense_castle})",
                 gold_front_lost,
             ),
             actions=(
@@ -271,6 +311,8 @@ def lower_opening_selector(
                 recovery_cause_clear,
                 recovery_origin_unset,
                 f"(not {base_defense_lost})",
+                f"(not {fortification_defense_siege})",
+                f"(not {fortification_defense_castle})",
                 f"(not {gold_front_lost})",
                 water_path_lost,
             ),
@@ -327,6 +369,8 @@ def lower_opening_selector(
                     gold_front_recovered,
                     f"(not {water_path_lost})",
                     f"(not {base_defense_lost})",
+                    f"(not {fortification_defense_siege})",
+                    f"(not {fortification_defense_castle})",
                 ),
                 actions=(
                     parse_expression(
@@ -354,6 +398,8 @@ def lower_opening_selector(
                 gold_front_recovered,
                 f"(not {water_path_lost})",
                 f"(not {base_defense_lost})",
+                f"(not {fortification_defense_siege})",
+                f"(not {fortification_defense_castle})",
             ),
             actions=(
                 parse_expression(
