@@ -18,6 +18,10 @@ from ..ir import (
     NativeEscrowReleasePlan,
     SemanticDemand,
     StrategicNumberOrigin,
+    NativeVoicePlan,
+    VoiceAudience,
+    VoicePriority,
+    validate_native_voice_plan,
 )
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..runtime_binding import (
@@ -120,6 +124,148 @@ def _validate_artifact_budget(text: str) -> None:
             )
 
 
+def _emit_native_voice_plan(
+    out: list[str],
+    plan: NativeVoicePlan,
+    bindings: BindingResult,
+    registry: PrimitiveRegistry,
+) -> None:
+    """Emit the latency-safe, transition-driven Strategos voice block."""
+    validate_native_voice_plan(plan, registry)
+
+    out.extend(["", "; Native Strategos voice plan"])
+    emitted_defconsts = _defconst_bindings(out)
+    goal_states = []
+    timer_states = []
+    for state in sorted(plan.states, key=lambda item: item.identifier):
+        binding = bindings.binding_for(state.request.request_id)
+        if isinstance(binding, GoalSlot):
+            goal_states.append((state, binding))
+        elif isinstance(binding, TimerSlot):
+            timer_states.append((state, binding))
+        else:
+            raise CompileError(
+                f"VOICE-BINDING: state '{state.identifier}' resolved to "
+                f"'{type(binding).__name__}', expected GoalSlot or TimerSlot"
+            )
+        existing = emitted_defconsts.get(state.identifier)
+        value = binding.id.value if isinstance(binding, GoalSlot) else binding.id
+        if existing is not None:
+            if existing != str(value):
+                raise CompileError(
+                    f"VOICE-SYMBOL: duplicate '{state.identifier}' has {existing}, expected {value}"
+                )
+            continue
+        emitted_defconsts[state.identifier] = str(value)
+        out.append(f"(defconst {state.identifier} {value})")
+
+    if goal_states:
+        out.extend(["; Voice Goal initialization", "(defrule", "    (true)", "=>"])
+        for state, _binding in goal_states:
+            out.append(f"    (set-goal {state.identifier} 0)")
+        out.extend(["    (disable-self)", ")", ""])
+
+    if timer_states:
+        out.extend(["; Voice Timer initialization", "(defrule", "    (true)", "=>"])
+        for state, _binding in timer_states:
+            out.append(f"    (disable-timer {state.identifier})")
+        out.extend(["    (disable-self)", ")", ""])
+
+    out.extend([
+        "; Voice global cooldown release",
+        "(defrule",
+        f"    (timer-triggered {plan.global_cooldown_timer})",
+        f"    (or (goal {plan.global_lock_state} 1) "
+        f"(goal {plan.global_lock_state} 2))",
+        "=>",
+        f"    (disable-timer {plan.global_cooldown_timer})",
+        f"    (set-goal {plan.global_lock_state} 0)",
+        ")",
+        "",
+    ])
+
+    ordered = tuple(sorted(plan.rules, key=lambda item: (item.order, item.identity)))
+    for rule in ordered:
+        out.extend([
+            f"; Voice rearm timer: {rule.identity}",
+            "(defrule",
+            f"    (timer-triggered {rule.rearm_timer})",
+            f"    (goal {rule.latch_state} 1)",
+            "=>",
+            f"    (disable-timer {rule.rearm_timer})",
+            f"    (set-goal {rule.latch_state} 2)",
+            ")",
+            "",
+            f"; Voice clear witness: {rule.identity}",
+            "(defrule",
+            f"    (goal {rule.latch_state} 2)",
+            f"    {_render_runtime_expression(rule.clear)}",
+            "=>",
+            f"    (set-goal {rule.latch_state} 0)",
+            ")",
+            "",
+        ])
+
+    for index, rule in enumerate(sorted(
+        ordered,
+        key=lambda item: (-int(item.priority), item.order, item.identity),
+    )):
+        remaining = len(ordered) - index - 1
+        ordinary = rule.priority < VoicePriority.RECOVERY
+        global_guard = (
+            f"(goal {plan.global_lock_state} 0)"
+            if ordinary
+            else (
+                f"(or (goal {plan.global_lock_state} 0) "
+                f"(goal {plan.global_lock_state} 1))"
+            )
+        )
+        count_limit = (
+            plan.budget.soft_match_limit
+            if rule.priority < VoicePriority.RECOVERY
+            else plan.budget.hard_match_limit
+        )
+        lock_value = 2 if rule.critical else 1
+        global_seconds = (
+            plan.budget.critical_global_cooldown_seconds
+            if rule.critical
+            else plan.budget.ordinary_global_cooldown_seconds
+        )
+        chat = (
+            f'(chat-to-player my-player-number "{rule.message}")'
+            if rule.audience is VoiceAudience.PLAYER
+            else f'(chat-to-allies "{rule.message}")'
+        )
+        out.extend([
+            f"; Voice candidate: {rule.identity}",
+            "(defrule",
+            f"    { _render_runtime_expression(rule.trigger) }",
+            f"    (goal {rule.latch_state} 0)",
+            f"    {global_guard}",
+            f"    (goal {plan.match_count_state} < {count_limit})",
+            "=>",
+            f"    (set-goal {rule.latch_state} 1)",
+            f"    (set-goal {plan.global_lock_state} {lock_value})",
+            f"    (up-modify-goal {plan.match_count_state} g:+ 1)",
+            f"    (enable-timer {rule.rearm_timer} {rule.cooldown_seconds})",
+            f"    (enable-timer {plan.global_cooldown_timer} {global_seconds})",
+            f"    {chat}",
+            f"    (up-jump-rule {remaining})",
+            ")",
+            "",
+        ])
+
+    out.extend([
+        "; Voice candidate sentinel",
+        "(defrule",
+        "    (true)",
+        "=>",
+        "    (disable-self)",
+        ")",
+        "",
+    ])
+
+
 def emit(
     demands: list[SemanticDemand],
     bindings: BindingResult,
@@ -131,6 +277,7 @@ def emit(
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
     role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    voice_plan: NativeVoicePlan | None = None,
 ) -> str:
     registry = registry or default_de_registry()
     if control_plan is not None:
@@ -1146,6 +1293,9 @@ def emit(
             ")",
             "",
         ]
+
+    if voice_plan is not None:
+        _emit_native_voice_plan(out, voice_plan, bindings, registry)
 
     result = "\n".join(out).rstrip() + "\n"
     _validate_artifact_budget(result)

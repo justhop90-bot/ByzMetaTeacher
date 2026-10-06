@@ -369,3 +369,16 @@ from .strategic_number_arbitration import (
     StrategicNumberReleaseEvidence,
     StrategicNumberRestorationPolicy,
 )
+
+
+from .strategic_voice import (
+    NativeVoiceBudget,
+    NativeVoicePlan,
+    VoiceAudience,
+    VoiceLatchMode,
+    VoicePriority,
+    VoiceRule,
+    make_voice_goal_state,
+    make_voice_timer_state,
+    validate_native_voice_plan,
+)

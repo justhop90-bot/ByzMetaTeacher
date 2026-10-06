@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from .camp_control import ByzantineCampControllerPlan
     from .role_separation import NativeRoleSeparationPlan
     from .endgame import EndgamePlan
+    from .strategic_voice import NativeVoicePlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -401,6 +402,7 @@ class StrategyProfile:
     camp_controller: "ByzantineCampControllerPlan | None" = None
     role_separation_plan: "NativeRoleSeparationPlan | None" = None
     endgame_plan: "EndgamePlan | None" = None
+    voice_plan: "NativeVoicePlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -483,6 +485,7 @@ class StrategyCompilation:
     camp_controller: "ByzantineCampControllerPlan | None" = None
     role_separation_plan: "NativeRoleSeparationPlan | None" = None
     endgame_plan: "EndgamePlan | None" = None
+    voice_plan: "NativeVoicePlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1103,6 +1106,7 @@ def lower_strategy_profile(
         camp_controller=profile.camp_controller,
         role_separation_plan=profile.role_separation_plan,
         endgame_plan=profile.endgame_plan,
+        voice_plan=profile.voice_plan,
     )
 
 

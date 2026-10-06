@@ -40,6 +40,7 @@ def compile_strategy_profile(
         duc_plan=effective_duc_plan,
         role_plan=compilation.role_separation_plan,
         escrow_plan=compilation.escrow_plan,
+        voice_plan=compilation.voice_plan,
     )
 
 
@@ -113,4 +114,5 @@ def compile_strategy_runtime_profile(
         duc_plan=effective_duc_plan,
         role_plan=compilation.role_separation_plan,
         escrow_plan=escrow_plan,
+        voice_plan=compilation.voice_plan,
     )

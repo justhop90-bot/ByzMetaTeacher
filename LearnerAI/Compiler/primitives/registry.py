@@ -1621,6 +1621,16 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
             native_witness_ids=("research-completion-witness",),
             native_storage_use_ids=("lifecycle-goal-storage",),
         ),
+        Primitive(
+            "chat-to-player", "ACTION", "VOICE", 2, 2,
+            completion_witness=False,
+            engine_semantics_id="voice.chat-to-player",
+        ),
+        Primitive(
+            "chat-to-allies", "ACTION", "VOICE", 1, 1,
+            completion_witness=False,
+            engine_semantics_id="voice.chat-to-allies",
+        ),
     ]
     native_registry = (
         load_default_native_schema()
