@@ -94,6 +94,13 @@ def _block(source: str, start_marker: str, end_marker: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
+def _replace_tail_section(source: str, marker: str, block: str) -> str:
+    position = source.find(marker)
+    if position < 0:
+        return source.rstrip() + "\n\n" + block.rstrip() + "\n"
+    return source[:position].rstrip() + "\n\n" + block.rstrip() + "\n"
+
+
 def _install_once(source: str, marker: str, block: str) -> str:
     if block.strip() in source:
         return source
@@ -352,6 +359,13 @@ def synchronize() -> bool:
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
+
+    voice_marker = "; Native Strategos voice plan"
+    voice_start = generated.find(voice_marker)
+    if voice_start < 0:
+        raise RuntimeError("generated artifact is missing Native Strategos voice plan")
+    generated_voice = generated[voice_start:]
+    runtime = _replace_tail_section(runtime, voice_marker, generated_voice)
 
     if runtime == before:
         return False
