@@ -12,6 +12,10 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 
 
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
+    def test_goal_slot_allocator_returns_empty_for_zero_requests(self) -> None:
+        runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        self.assertEqual(sync_runtime._choose_goal_slots(runtime, 0), [])
+    
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
