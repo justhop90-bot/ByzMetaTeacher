@@ -162,6 +162,24 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", self.runtime)
         self.assertIn("(goal counter-package-infantry_pressure_castle 1)", self.runtime)
 
+    def test_hussar_research_uses_light_cavalry_bootstrap_and_both_escrow_resources(self) -> None:
+        matching = [
+            rule
+            for rule in self.rules
+            if "(goal demand-research-hussar 1)" in rule
+            and "(research hussar)" in rule
+            and "(can-research-with-escrow hussar)" in rule
+        ]
+        self.assertEqual(len(matching), 1)
+        rule = matching[0]
+        self.assertIn("(current-age >= imperial-age)", rule)
+        self.assertIn("(unit-type-count 546 >= 6)", rule)
+        self.assertIn("(release-escrow food)", rule)
+        self.assertIn("(release-escrow gold)", rule)
+        self.assertNotIn("(unit-type-count hussar >= 1)", rule)
+        self.assertNotIn("(players-unit-type-count any-enemy mangonel-line >= 2)", rule)
+        self.assertNotIn("byzantine-imperial-posture-siege", rule)
+
     def test_no_dark_age_stone_camp_issuance(self) -> None:
         for rule in self.rules:
             if "(build mining-camp)" not in rule:

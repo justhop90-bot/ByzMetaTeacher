@@ -23248,18 +23248,12 @@
     (not (research-completed 428))
     (goal research-retry-barrier-research-hussar 0)
     (not (up-research-status c: 428 >= 2))
-    (not (research-completed 428))
-    (or
-        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
-        (or
-            (players-unit-type-count any-enemy mangonel-line >= 2)
-            (unit-type-count hussar >= 1)
-        )
-    )
     (current-age >= imperial-age)
+    (unit-type-count 546 >= 6)
     (can-research-with-escrow hussar)
 =>
     (release-escrow food)
+    (release-escrow gold)
     (research hussar)
     (set-goal demand-research-hussar 118)
 )
