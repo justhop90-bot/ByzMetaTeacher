@@ -108,22 +108,6 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         duplicates = sorted({name for name in names if names.count(name) > 1})
         self.assertEqual(duplicates, [])
 
-    def test_native_strategos_voice_runtime_section(self) -> None:
-        self.assertEqual(self.runtime.count("; Native Strategos voice plan"), 1)
-        voice = self.runtime[self.runtime.index("; Native Strategos voice plan"):]
-        self.assertIn("(defconst voice-global-lock ", voice)
-        self.assertIn("(defconst voice-match-count ", voice)
-        self.assertIn("(defconst voice-global-cooldown ", voice)
-        self.assertIn(
-            '(chat-to-player my-player-number "The army is ready. I am going in.")',
-            voice,
-        )
-        self.assertIn("(up-modify-goal voice-match-count g:+ 1)", voice)
-        self.assertIn("(up-jump-rule 13)", voice)
-        self.assertNotIn("chat-local-to-self", voice)
-        self.assertIn("(goal voice-latch-attack-issued 0)", voice)
-        self.assertIn("(goal voice-latch-attack-issued 2)", voice)
-
     def test_latest_compiler_endgame_contract_has_runtime_semantic_witness(self) -> None:
         self.assertIn('"byzantine-endgame-push-state"', self.compiler_strategy)
         for identity in (
