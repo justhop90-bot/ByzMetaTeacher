@@ -65,7 +65,7 @@ class SemanticDiagnosticsTests(unittest.TestCase):
  (true)
  (timer-triggered 1)
 =>
- (up-get-distance 1 2)
+ (up-get-path-distance 1 2)
  (move 1 2)
 )
 """
@@ -75,11 +75,11 @@ class SemanticDiagnosticsTests(unittest.TestCase):
             manifest = semantic.build_semantic_manifest(path)
 
         rule = manifest.rules[0]
-        self.assertIn("up-get-distance", rule.operation_heads)
+        self.assertIn("up-get-path-distance", rule.operation_heads)
         self.assertIn("move", rule.operation_heads)
         self.assertEqual(rule.performance_cost, "HIGH")
         self.assertEqual(manifest.high_cost_recurrent_rules, (1,))
-        self.assertIn("up-get-distance", dict(manifest.operation_counts))
+        self.assertIn("up-get-path-distance", dict(manifest.operation_counts))
 
 
 if __name__ == "__main__":
