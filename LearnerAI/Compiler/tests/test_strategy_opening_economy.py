@@ -423,6 +423,50 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             horse_rule,
         )
 
+    def test_all_optional_feudal_economic_research_yields_to_castle_feasibility(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        for identity in (
+            "research-double-bit-axe",
+            "research-horse-collar",
+            "research-wheelbarrow",
+            "research-gold-mining",
+        ):
+            demand = profile.demand(identity)
+            self.assertIn(
+                "(not (can-research-with-escrow castle-age))",
+                demand.execution.requirements,
+            )
+
+    def test_feudal_research_priority_preserves_economic_multipliers_above_support(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        for identity in ("research-double-bit-axe", "research-horse-collar", "research-wheelbarrow"):
+            self.assertEqual(
+                profile.demand(identity).priority.name,
+                "ECONOMIC_MULTIPLIER",
+            )
+
+        for identity in ("research-gold-mining", "research-fletching"):
+            self.assertEqual(profile.demand(identity).priority.name, "SUPPORT")
+
+    def test_feudal_economic_opportunity_cost_keeps_emergency_overrides(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        for identity in (
+            "research-double-bit-axe",
+            "research-horse-collar",
+            "research-wheelbarrow",
+            "research-gold-mining",
+        ):
+            policy = profile.demand(identity).opportunity_cost
+            self.assertIsNotNone(policy)
+            assert policy is not None
+            self.assertEqual(
+                tuple(posture.name for posture in policy.emergency_override_postures),
+                ("FLUSH", "RUSH"),
+            )
+
     def test_opening_selection_materially_changes_native_economy_writers(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
