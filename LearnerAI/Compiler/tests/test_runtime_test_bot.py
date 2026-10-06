@@ -250,6 +250,10 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         ]
         self.assertEqual(len(matching), 1)
         self.assertNotIn("(goal byzantine-army-attack-ready 1)", matching[0])
+        self.assertIn("(set-strategic-number sn-number-attack-groups 200)", matching[0])
+        self.assertIn("(set-strategic-number sn-percent-attack-soldiers 100)", matching[0])
+        self.assertIn("(set-strategic-number sn-minimum-attack-group-size 4)", matching[0])
+        self.assertIn("(set-strategic-number sn-maximum-attack-group-size 40)", matching[0])
 
     def test_reposition_controller_has_single_town_under_attack_guard(self) -> None:
         matching = [
