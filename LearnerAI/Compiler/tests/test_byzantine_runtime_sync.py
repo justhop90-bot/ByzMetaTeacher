@@ -103,6 +103,37 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         )
 
 
+    def test_synchronization_replaces_civilian_villager_castle_admission_section(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        start = synchronized.index("; Persistent civilian production")
+        end = synchronized.index("; Pending diagnostics: early-defensive-spears", start)
+        section = synchronized[start:end]
+        self.assertIn("(can-afford-research castle-age)", section)
+        self.assertNotIn("(can-research-with-escrow castle-age)", section)
+
     def test_checked_in_runtime_voice_storage_is_disjoint(self) -> None:
         source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
         definitions = {
