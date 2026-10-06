@@ -5191,7 +5191,7 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
                 actions=(parse_expression("(attack-now)", SourceLocation(1)),),
                 lifecycle=lifecycle,
             ),
-            NativeAttackRule(\n            NativeAttackRule(
+            NativeAttackRule(
                 identity="byzantine-castle-attack-now-cataphract",
                 order=100,
                 facts=(
