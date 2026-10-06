@@ -48,7 +48,7 @@ class SemanticManifestTests(unittest.TestCase):
             for item in manifest.rules
             if item.identity == "economy-controller-select-counter-pressure"
         )
-        self.assertIn("(map-type arena)", rule.fact_expressions)
+        self.assertIn("(map-type arena)", rule.facts)
         self.assertIn("goal:economy-posture", rule.goal_writes)
         self.assertEqual(rule.annotation_kind, "NATIVE_CONTROL")
 
