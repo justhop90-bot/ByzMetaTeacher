@@ -542,6 +542,68 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertTrue(all(len(fact.source) <= 255 for fact in fast_selection.facts))
 
+    def test_arena_mild_pressure_preserves_fast_castle_trajectory(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        counter = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-counter-pressure"
+        )
+        counter_facts = tuple(fact.source for fact in counter.facts)
+        self.assertIn("(not (map-type arena))", counter_facts)
+
+        output = compile_strategy_profile(profile, self.effective)
+        counter_start = output.index("; Native control rule: economy-controller-select-counter-pressure")
+        counter_end = output.index("; Native control rule: economy-controller-select-fast-castle", counter_start)
+        counter_block = output[counter_start:counter_end]
+        self.assertIn("(not (map-type arena))", counter_block)
+
+    def test_arena_pressure_runtime_boundary_preserves_castle_until_base_defense_collapses(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        counter = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-counter-pressure"
+        )
+
+        mild_snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                (counter.facts[0].source, True),
+                (counter.facts[1].source, False),
+                (counter.facts[2].source, True),
+                ("(map-type arena)", True),
+            )
+        )
+        self.assertFalse(
+            all(
+                _evaluate_expression(fact, mild_snapshot) is EvidenceTruth.TRUE
+                for fact in counter.facts
+            )
+        )
+
+        defense = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "opening-recovery-cause-defense"
+        )
+        severe_snapshot = RuntimeObservationSnapshot(
+            fact_results=tuple((fact.source, True) for fact in defense.facts)
+        )
+        self.assertTrue(
+            all(
+                _evaluate_expression(fact, severe_snapshot) is EvidenceTruth.TRUE
+                for fact in defense.facts
+            )
+        )
+
     def test_economy_controller_uses_only_documented_civilian_allocation_sns(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
