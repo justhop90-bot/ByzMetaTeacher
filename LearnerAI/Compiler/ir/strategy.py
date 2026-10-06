@@ -5098,35 +5098,11 @@ def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePla
     )
 
 def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
+    # SN4 is the engine's civilian-builder cap. The checked-in Byzantine
+    # runtime owns it at 200 so the resource/build controller can assign
+    # multiple builders without a compiler mode continually overwriting it.
+    # Do not emit a second compiler owner for this native state.
     return (
-        StrategicNumberMode(
-            "civilian-builders-dark",
-            native_strategic_number_id=4,
-            value=3,
-            minimum_age=Age.DARK,
-            maximum_age=Age.DARK,
-        ),
-        StrategicNumberMode(
-            "civilian-builders-feudal",
-            native_strategic_number_id=4,
-            value=5,
-            minimum_age=Age.FEUDAL,
-            maximum_age=Age.FEUDAL,
-        ),
-        StrategicNumberMode(
-            "civilian-builders-castle",
-            native_strategic_number_id=4,
-            value=8,
-            minimum_age=Age.CASTLE,
-            maximum_age=Age.CASTLE,
-        ),
-        StrategicNumberMode(
-            "civilian-builders-imperial",
-            native_strategic_number_id=4,
-            value=12,
-            minimum_age=Age.IMPERIAL,
-            maximum_age=Age.IMPERIAL,
-        ),
         StrategicNumberMode(
             "attack-allocation-flush",
             native_strategic_number_id=227,
