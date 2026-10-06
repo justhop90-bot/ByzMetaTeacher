@@ -593,10 +593,30 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(current-age < castle-age)", gold_cause_facts)
         self.assertIn("(goal opening-recovery-cause -1)", gold_cause_facts)
         self.assertTrue(all(len(fact.source) <= 255 for fact in rules["opening-recovery-cause-gold"].facts))
+        defense_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-defense"].facts
+        )
+        self.assertIn("(goal opening-recovery-cause -1)", defense_cause_facts)
+
+        water_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-water"].facts
+        )
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
+            water_cause_facts,
+        )
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy archer-line >= 4))",
+            water_cause_facts,
+        )
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy militia-line >= 5))",
+            water_cause_facts,
+        )
 
         entry = rules["opening-recovery-enter-counter-feudal"]
         entry_facts = tuple(fact.source for fact in entry.facts)
-        self.assertIn("(up-compare-goal opening-recovery-cause != 0)", entry_facts)
+        self.assertIn("(up-compare-goal opening-recovery-cause != -1)", entry_facts)
         self.assertIn("(goal opening-recovery-origin -1)", entry_facts)
         self.assertTrue(
             all("timer-triggered" not in fact for fact in entry_facts)
@@ -609,7 +629,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         exit_facts = tuple(fact.source for fact in exit_rule.facts)
         self.assertIn("(goal opening-plan 6)", exit_facts)
         self.assertIn("(goal opening-recovery-origin 2)", exit_facts)
-        self.assertIn("(goal opening-recovery-cause 0)", exit_facts)
+        self.assertIn("(goal opening-recovery-cause -1)", exit_facts)
         self.assertTrue(
             all("timer-triggered" not in fact for fact in exit_facts)
         )
