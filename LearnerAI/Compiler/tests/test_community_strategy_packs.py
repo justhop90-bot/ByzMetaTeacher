@@ -48,11 +48,20 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertEqual(demand.capability_intent.kind.name, "BUILD")
         self.assertEqual(demand.capability_intent.entity_type, "building")
         self.assertEqual(demand.execution.action, "(build dock)")
-        self.assertIn("(map-type islands)", demand.execution.requirements)
+        self.assertIn("(or (map-type islands) (map-type pacific-islands))", demand.execution.requirements)
         self.assertIn("(building-type-count-total dock < 1)", demand.execution.requirements)
         self.assertIn("(can-build dock)", demand.execution.requirements)
         self.assertEqual(demand.execution.witness, "(building-type-count dock >= 1)")
         self.assertEqual(demand.execution.release, "(building-type-count dock >= 1)")
+
+    def test_water_map_observation_includes_pacific_islands(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        observation = profile.observation("strategy-water-islands")
+
+        self.assertEqual(
+            observation.expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
 
     def test_stock_profile_contains_complete_research_witnesses(self):
         profile = build_byzantine_stock_strategy(self.effective)
