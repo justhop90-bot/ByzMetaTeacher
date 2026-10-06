@@ -1,0 +1,73 @@
+{
+  "$schema": "../reference/runtime-witness.schema.json",
+  "schema_version": 1,
+  "record_type": "SCENARIO",
+  "scenario_id": "resource-camp-placement",
+  "status": "OPEN",
+  "artifact": {
+    "path": "Byzantine.per",
+    "sha256": null,
+    "sha256_required_at_capture": true
+  },
+  "match": {
+    "map": "ARABIA",
+    "difficulty": null,
+    "our_civ": "BYZANTINES",
+    "opponent_civ": null,
+    "population": null
+  },
+  "claims": [
+    {
+      "id": "dark-age-gold-camp",
+      "lifecycle_edge": "DEMAND -> ACTION",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "economy-gold-camp-floor-1"
+      ],
+      "expected": {
+        "resource": "gold",
+        "builder": "mining-camp",
+        "dark_age_allowed": true,
+        "stone_allowed": false
+      }
+    },
+    {
+      "id": "dark-age-wood-camp",
+      "lifecycle_edge": "DEMAND -> ACTION",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "economy-wood-camp-floor-1"
+      ],
+      "expected": {
+        "resource": "wood",
+        "builder": "lumber-camp",
+        "nearby_viable_front_preferred": true
+      }
+    },
+    {
+      "id": "distinct-later-gold-source",
+      "lifecycle_edge": "RECOVERY -> REASSESSMENT",
+      "evidence_class": "OPEN / UNKNOWN",
+      "rule_identities": [
+        "economy-gold-camp-floor-2"
+      ],
+      "expected": {
+        "new_source_required": true,
+        "same_source_reuse_not_sufficient": true
+      }
+    },
+    {
+      "id": "resource-building-witness",
+      "lifecycle_edge": "ACTION -> WORLD-STATE WITNESS",
+      "evidence_class": "ENGINE FACT",
+      "rule_identities": [
+        "economy-gold-camp-floor-1",
+        "economy-wood-camp-floor-1"
+      ],
+      "expected": {
+        "building_completion_required": true
+      }
+    }
+  ],
+  "checkpoint": []
+}
