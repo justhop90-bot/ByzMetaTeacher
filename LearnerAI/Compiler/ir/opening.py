@@ -250,6 +250,7 @@ def lower_opening_selector(
                 opening_plan_selected,
                 recovery_cause_clear,
                 recovery_origin_unset,
+                f"(not {base_defense_lost})",
                 gold_front_lost,
             ),
             actions=(
@@ -265,6 +266,8 @@ def lower_opening_selector(
                 opening_plan_selected,
                 recovery_cause_clear,
                 recovery_origin_unset,
+                f"(not {base_defense_lost})",
+                f"(not {gold_front_lost})",
                 water_path_lost,
             ),
             actions=(
