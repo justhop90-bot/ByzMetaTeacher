@@ -15,6 +15,7 @@ from .model import SemanticDemand
 from .military_composition import MilitaryCompositionProofPath
 from .native_attack import NativeAttackLifecyclePlan
 from .native_control import NativeControlPlan
+from .strategic_voice import NativeVoicePlan
 from .role_separation import NativeRoleSeparationPlan
 from .operational import OperationalSemanticsPlan
 from .persistent_control import PersistentControlRef
@@ -35,6 +36,7 @@ class CompilerSemanticProgram:
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None
     military_proof_path: MilitaryCompositionProofPath | None = None
     persistent_controls: tuple[PersistentControlRef, ...] = ()
+    voice_plan: NativeVoicePlan | None = None
 
     def __post_init__(self) -> None:
         # Domain-specific plan validators run at their existing compiler
@@ -72,6 +74,7 @@ class CompilerSemanticProgram:
             or self.escrow_plan is not None
             or self.military_proof_path is not None
             or self.persistent_controls
+            or self.voice_plan is not None
         )
 
     def with_operational_plan(
