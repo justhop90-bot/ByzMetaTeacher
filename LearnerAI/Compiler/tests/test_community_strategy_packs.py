@@ -56,7 +56,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
 
     def test_water_map_observation_includes_pacific_islands(self):
         profile = build_byzantine_stock_strategy(self.effective)
-        observation = profile.observation("strategy-water-islands")
+        observation = profile.observation("strategy-water-map")
 
         self.assertEqual(
             observation.expression,
@@ -67,6 +67,11 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             island_profile.native_map_expression,
             "(or (map-type islands) (map-type pacific-islands))",
         )
+
+        self.assertIn("(goal water-transport-objective 1)", {
+            item.expression for item in profile.observations
+            if item.identity == "strategy-transport-required"
+        })
 
     def test_stock_profile_contains_complete_research_witnesses(self):
         profile = build_byzantine_stock_strategy(self.effective)

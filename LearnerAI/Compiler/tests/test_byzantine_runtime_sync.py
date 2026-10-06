@@ -12,6 +12,10 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 
 
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
+    def test_goal_slot_allocator_returns_empty_for_zero_requests(self) -> None:
+        runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        self.assertEqual(sync_runtime._choose_goal_slots(runtime, 0), [])
+    
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -164,6 +168,15 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
 
         self.assertEqual(before_second_sync, after_second_sync)
         self.assertIn("; Action issuance: water-dock-capability", synchronized)
+        self.assertEqual(
+            synchronized.count("; Action issuance: water-dock-capability | ACTIVE -> ISSUED"),
+            1,
+        )
+        self.assertIn("(defconst demand-water-dock-capability ", synchronized)
+        self.assertIn(
+            "(defconst construction-retry-barrier-water-dock-capability ",
+            synchronized,
+        )
         self.assertIn("(build dock)", synchronized)
         self.assertIn(
             "; Completion witness: water-dock-capability | PENDING/ISSUED -> COMPLETE",
@@ -181,6 +194,32 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "(set-goal construction-retry-barrier-water-dock-capability 0)",
             synchronized,
         )
+        definitions = {
+            match.group(1): int(match.group(2))
+            for match in re.finditer(
+                r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+                synchronized,
+            )
+        }
+        water_goal_names = (
+            "demand-water-dock-capability",
+            "issued-water-dock-capability",
+            "pending-water-dock-capability",
+            "complete-water-dock-capability",
+            "construction-retry-barrier-water-dock-capability",
+        )
+        recovery_goal_names = (
+            "opening-recovery",
+            "opening-recovery-cause",
+            "opening-recovery-defense-clear",
+            "opening-recovery-gold-proven",
+            "opening-recovery-origin",
+            "opening-recovery-water-proven",
+        )
+        water_ids = {definitions[name] for name in water_goal_names}
+        recovery_ids = {definitions[name] for name in recovery_goal_names}
+        self.assertEqual(len(water_ids), len(water_goal_names))
+        self.assertEqual(water_ids & recovery_ids, set())
 
     def test_checked_in_runtime_voice_storage_is_disjoint(self) -> None:
         source = sync_runtime.RUNTIME.read_text(encoding="utf-8")

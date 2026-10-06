@@ -732,6 +732,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(goal opening-recovery-defense-clear 1)",
             water_cause_text,
         )
+        self.assertIn(
+            "(goal transport-phase 3)",
+            water_cause_text,
+        )
+        self.assertNotIn(
+            "(not (unit-type-count transport-ship >= 1))",
+            water_cause_text,
+        )
+
         defense_clear_rule = rules["opening-recovery-defense-clear-pressure-absent"]
         defense_clear_text = " ".join(
             fact.source for fact in defense_clear_rule.facts
@@ -957,7 +966,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             " ".join(water_cause_facts),
         )
         self.assertIn(
-            "(not (unit-type-count transport-ship >= 1))",
+            "(goal transport-phase 3)",
             " ".join(water_cause_facts),
         )
         self.assertIn("(current-age < castle-age)", water_cause_facts)

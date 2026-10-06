@@ -39,6 +39,13 @@ ELITE_SKIRMISHER_PRODUCTION_RULES = (
 CIVILIAN_VILLAGER_SECTION_START = "; Persistent civilian production"
 CIVILIAN_VILLAGER_SECTION_END = "; Pending diagnostics: early-defensive-spears"
 WATER_DOCK_DEMAND = "water-dock-capability"
+WATER_DOCK_GOAL_NAMES = (
+    "demand-water-dock-capability",
+    "issued-water-dock-capability",
+    "pending-water-dock-capability",
+    "complete-water-dock-capability",
+    "construction-retry-barrier-water-dock-capability",
+)
 
 
 ECONOMY_RULES = (
@@ -197,8 +204,39 @@ def _demand_lifecycle_block(source: str, identity: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
+def _ensure_water_dock_defconsts(runtime: str, generated: str) -> tuple[str, dict[str, int]]:
+    names = (
+        WATER_DOCK_DEMAND,
+        f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
+    )
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
+    if all(value is not None and 1 <= value <= 16_000 for value in values.values()):
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if (
+            len(set(resolved.values())) == len(resolved)
+            and all(not (occupants.get(value, set()) - {name}) for name, value in resolved.items())
+        ):
+            return runtime, resolved
+    missing = [name for name in names if values[name] is None]
+    chosen = _choose_goal_slots(runtime, len(missing), reserved_source=generated)
+    resolved = {name: int(value) for name, value in values.items() if value is not None}
+    additions = []
+    for name, value in zip(missing, chosen):
+        resolved[name] = value
+        additions.append(f"(defconst {name} {value})")
+    marker = "(defconst opening-plan "
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing opening-plan defconst")
+    line_end = runtime.find("\n", position)
+    runtime = runtime[: line_end + 1] + "\n".join(additions) + "\n" + runtime[line_end + 1:]
+    return runtime, resolved
+
 def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     identity = WATER_DOCK_DEMAND
+    runtime, dock_constants = _ensure_water_dock_defconsts(runtime, generated)
     action_block = _rule_block(
         generated,
         identity,
@@ -210,26 +248,27 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     if "(building-type-count dock >= 1)" not in lifecycle_block:
         raise RuntimeError("generated first-dock lifecycle is missing its dock witness")
 
-    install_block = lifecycle_block + "\n" + action_block
-    runtime = _install_once(
-        runtime,
-        "; Native Strategos voice plan",
-        install_block,
-    )
-
-    initial_match = re.search(
-        rf"\(set-goal demand-{re.escape(identity)} (\d+)\)",
-        generated[generated.find("; Demand initialization"):],
-    )
-    if initial_match is None:
-        raise RuntimeError("generated first-dock demand has no initialization value")
-    initial_value = int(initial_match.group(1))
+    install_block = lifecycle_block
+    if f"; Action issuance: {identity} | ACTIVE -> ISSUED" not in install_block:
+        install_block += "\n" + action_block
+    start_marker = f"; Pending diagnostics: {identity}"
+    end_marker = "; Native Strategos voice plan"
+    start = runtime.find(start_marker)
+    end = runtime.find(end_marker, start + len(start_marker)) if start >= 0 else -1
+    if start >= 0 and end >= 0:
+        runtime = runtime[:start] + install_block.rstrip() + "\n\n" + runtime[end:]
+    else:
+        runtime = _install_once(
+            runtime,
+            end_marker,
+            install_block,
+        )
 
     init_start, init_end, init_rule = _first_rule_block(
         runtime,
         "; Demand initialization",
     )
-    init_line = f"    (set-goal demand-{identity} {initial_value})"
+    init_line = f"    (set-goal demand-{identity} 1)"
     if init_line not in init_rule:
         disable_line = "    (disable-self)"
         if disable_line not in init_rule:
@@ -461,27 +500,25 @@ def _defconst_values(source: str) -> dict[str, int]:
     }
 
 
-def _choose_goal_slots(runtime: str, count: int) -> list[int]:
-    recovery_names = set(RECOVERY_NAMES)
-    used: set[int] = set()
-    for start, end, _kind in _storage_intervals(runtime):
-        if any(start <= 16_000 and end >= 1 for _ in (0,)):
-            for value in range(max(1, start), min(16_000, end) + 1):
-                used.add(value)
-
-    # The recovery slots themselves are relocatable, so remove their current
-    # intervals from the exclusion set before selecting replacement slots.
-    definitions = {
-        match.group(1): int(match.group(2))
-        for match in re.finditer(
-            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
-            runtime,
-        )
+def _choose_goal_slots(
+    runtime: str,
+    count: int,
+    *,
+    relocatable_names: tuple[str, ...] = (),
+    reserved_source: str = "",
+) -> list[int]:
+    if count <= 0:
+        return []
+    relocatable_names_set = set(relocatable_names)
+    occupants = _goal_slot_occupants(runtime)
+    if reserved_source:
+        for value, names in _goal_slot_occupants(reserved_source).items():
+            occupants.setdefault(value, set()).update(names)
+    used: set[int] = {
+        value
+        for value, names in occupants.items()
+        if not (names & relocatable_names_set)
     }
-    for name in recovery_names:
-        current = definitions.get(name)
-        if current is not None and 1 <= current <= 16_000:
-            used.discard(current)
 
     chosen: list[int] = []
     for candidate in range(16_000, 0, -1):
@@ -491,6 +528,80 @@ def _choose_goal_slots(runtime: str, count: int) -> list[int]:
         if len(chosen) == count:
             return chosen
     raise RuntimeError("no free native Goal slots remain in 1..16000")
+
+
+def _goal_slot_occupants(source: str) -> dict[int, set[str]]:
+    """Return Goal-slot users keyed by resolved native Goal id."""
+    definitions = _defconst_values(source)
+    occupants: dict[int, set[str]] = {}
+    pattern = re.compile(
+        r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)"
+    )
+    for match in pattern.finditer(source):
+        name = match.group(1)
+        value = definitions.get(name)
+        if value is None or not 1 <= value <= 16_000:
+            continue
+        occupants.setdefault(value, set()).add(name)
+    return occupants
+
+
+def _ensure_named_defconsts(
+    runtime: str,
+    generated: str,
+    names: tuple[str, ...],
+) -> str:
+    for name in names:
+        match = re.search(
+            rf"^\(defconst {re.escape(name)} (-?\d+)\)$",
+            generated,
+            flags=re.MULTILINE,
+        )
+        if not match:
+            raise RuntimeError(f"generated artifact is missing defconst: {name}")
+
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            runtime,
+        )
+    }
+    current = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        values = [value for value in current.values() if value is not None]
+        if len(values) != len(names) or any(not 1 <= value <= 16_000 for value in values):
+            return False
+        if len(set(values)) != len(values):
+            return False
+        for name, value in current.items():
+            assert value is not None
+            other_users = occupants.get(value, set()) - {name}
+            if other_users:
+                return False
+        return True
+
+    if valid_current():
+        return runtime
+
+    chosen = _choose_goal_slots(runtime, len(names), reserved_source=generated)
+    for name, value in zip(names, chosen):
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            marker = "(defconst opening-plan "
+            position = runtime.find(marker)
+            if position < 0:
+                raise RuntimeError("runtime artifact is missing opening-plan defconst")
+            line_end = runtime.find("\n", position)
+            runtime = runtime[: line_end + 1] + new_line + "\n" + runtime[line_end + 1 :]
+    return runtime
 
 
 def _ensure_defconsts(runtime: str, generated: str) -> str:
@@ -537,7 +648,12 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
     if valid_current():
         return runtime
 
-    chosen = _choose_goal_slots(runtime, len(RECOVERY_NAMES))
+    chosen = _choose_goal_slots(
+        runtime,
+        len(RECOVERY_NAMES),
+        relocatable_names=RECOVERY_NAMES,
+        reserved_source=generated,
+    )
     replacements = dict(zip(RECOVERY_NAMES, chosen))
     for name, value in replacements.items():
         old_pattern = re.compile(
@@ -553,7 +669,7 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
                 raise RuntimeError("runtime artifact is missing opening-plan defconst")
             line_end = runtime.find("\n", position)
             runtime = runtime[: line_end + 1] + new_line + "\n" + runtime[line_end + 1 :]
-    return runtime
+    return _ensure_named_defconsts(runtime, generated, RECOVERY_NAMES)
 
 
 def _ensure_rule_requirement(
@@ -651,6 +767,7 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _ensure_named_defconsts(runtime, generated, WATER_DOCK_GOAL_NAMES)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
 
