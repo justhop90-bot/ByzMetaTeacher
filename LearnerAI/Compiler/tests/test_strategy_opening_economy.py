@@ -577,7 +577,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         mild_snapshot = RuntimeObservationSnapshot(
             fact_results=(
                 (counter.facts[0].source, True),
-                (counter.facts[-1].source, False),
+                (counter.facts[1].source, False),
+                (counter.facts[2].source, True),
                 ("(map-type arena)", True),
             )
         )
