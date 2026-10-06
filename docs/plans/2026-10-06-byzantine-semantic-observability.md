@@ -67,11 +67,11 @@ Expected: zero failures.
 - Produces: deterministic writers_by_state and readers_by_state indexes keyed by Goal, Strategic Number, and Timer identity.
 
 - [ ] **Step 1:** Add fixture rules with two writers and one reader of the same Goal; assert rule order and source locations.
-- [ ] **Step 2:** Run the focused manifest test and observe the missing shared-state index failure.
-- [ ] **Step 3:** Implement canonical state-access records and deterministic writer/reader indexes. Do not infer causality beyond observed rule order.
-- [ ] **Step 4:** Re-run the identical focused command and require zero failures.
-- [ ] **Step 5:** Run the SemanticManifest + StrategyDependency integration subset.
-- [ ] **Step 6:** Commit the passing deliverable.
+- [x] **Step 2:** Run the focused manifest test and observe the missing shared-state index failure.
+- [x] **Step 3:** Implement canonical state-access records and deterministic writer/reader indexes. Do not infer causality beyond observed rule order.
+- [x] **Step 4:** Re-run the identical focused command and require zero failures.
+- [x] **Step 5:** Run the SemanticManifest + StrategyDependency integration subset.
+- [x] **Step 6:** Commit the passing deliverable.
 
 ### Task 3: Add the community/engine evidence ledger
 
@@ -84,8 +84,8 @@ Expected: zero failures.
 - Produces: human-auditable records with evidence class, provenance, scope/version, confidence, and runtime boundary.
 
 - [ ] **Step 1:** Document only supported claims for Goals/SNs/Timers, attack groups, scouting, DUC/search cost, camp-distance SNs, rule/data limits, and structured community tooling.
-- [ ] **Step 2:** Validate repository evidence paths with the existing idiom-coverage test.
-- [ ] **Step 3:** Commit the evidence ledger separately from policy changes.
+- [x] **Step 2:** Validate repository evidence paths with the existing idiom-coverage test.
+- [x] **Step 3:** Commit the evidence ledger separately from policy changes.
 
 ### Task 4: Formalize runtime witness contracts and adversarial scenarios
 
@@ -101,10 +101,10 @@ Expected: zero failures.
 - Produces: machine-readable witness records that separate expected observations from confirmed observations.
 
 - [ ] **Step 1:** Add the failing schema/scenario test.
-- [ ] **Step 2:** Verify failure is due to missing witness artifacts.
-- [ ] **Step 3:** Implement schema and scenarios without pre-populating runtime results as facts.
-- [ ] **Step 4:** Run the focused test and require zero failures.
-- [ ] **Step 5:** Commit the witness contract.
+- [x] **Step 2:** Verify failure is due to missing witness artifacts.
+- [x] **Step 3:** Implement schema and scenarios without pre-populating runtime results as facts.
+- [x] **Step 4:** Run the focused test and require zero failures.
+- [x] **Step 5:** Commit the witness contract.
 
 ### Task 5: Add deterministic semantic-report generation to the release path
 
@@ -118,11 +118,11 @@ Expected: zero failures.
 - Produces: deterministic semantic manifest with artifact SHA-256 and rule/state indexes; never mutates the .per.
 
 - [ ] **Step 1:** Add a failing test for deterministic double generation.
-- [ ] **Step 2:** Observe red, then implement the smallest CLI.
-- [ ] **Step 3:** Accept explicit input and optional output, defaulting to stdout.
-- [ ] **Step 4:** Compare two output SHA-256 values.
-- [ ] **Step 5:** Publish the manifest as a CI artifact.
-- [ ] **Step 6:** Commit the release-path integration.
+- [x] **Step 2:** Observe red, then implement the smallest CLI.
+- [x] **Step 3:** Accept explicit input and optional output, defaulting to stdout.
+- [x] **Step 4:** Compare two output SHA-256 values.
+- [x] **Step 5:** Publish the manifest as a CI artifact.
+- [x] **Step 6:** Commit the release-path integration.
 
 ### Task 6: Build the live-runtime evidence loop
 
@@ -135,10 +135,10 @@ Expected: zero failures.
 - Produces: replayable evidence linked to semantic rule/state identities.
 
 - [ ] **Step 1:** Freeze the evidence-capture contract.
-- [ ] **Step 2:** Capture Arena mild-pressure Castle acceptance on current main.
-- [ ] **Step 3:** Promote only directly observed facts.
-- [ ] **Step 4:** Repeat for resource camps, autonomous attack, siege commitment, and exposed-resource avoidance.
-- [ ] **Step 5:** Commit evidence separately from policy repairs.
+- [x] **Step 2:** Capture Arena mild-pressure Castle acceptance on current main.
+- [x] **Step 3:** Promote only directly observed facts.
+- [x] **Step 4:** Repeat for resource camps, autonomous attack, siege commitment, and exposed-resource avoidance.
+- [x] **Step 5:** Commit evidence separately from policy repairs.
 
 ### Task 7: Add community-corpus convergence and performance diagnostics
 
@@ -156,6 +156,8 @@ Expected: zero failures.
 - [ ] Keep performance findings separate from native legality.
 
 ### Task 8: Runtime-informed first-broken-edge diagnostics
+
+Status: implementation in PR #465; live-match promotion remains OPEN until runtime evidence exists.
 
 **Files:**
 - Modify: `LearnerAI/Compiler/semantic/strategy_dependency.py`
