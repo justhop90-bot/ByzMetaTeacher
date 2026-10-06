@@ -607,17 +607,23 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         water_cause_facts = tuple(
             fact.source for fact in rules["opening-recovery-cause-water"].facts
         )
+        water_cause_text = " ".join(water_cause_facts)
+        self.assertIn("(town-under-attack)", water_cause_text)
         self.assertIn(
-            "(not (players-unit-type-count any-enemy knight >= 3))",
-            water_cause_facts,
+            "(players-unit-type-count any-enemy knight >= 3)",
+            water_cause_text,
         )
         self.assertIn(
-            "(not (players-unit-type-count any-enemy archer-line >= 4))",
-            water_cause_facts,
+            "(players-unit-type-count any-enemy archer-line >= 4)",
+            water_cause_text,
         )
         self.assertIn(
-            "(not (players-unit-type-count any-enemy militia-line >= 5))",
-            water_cause_facts,
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            water_cause_text,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy mangonel-line >= 2)",
+            water_cause_text,
         )
 
         entry = rules["opening-recovery-enter-counter-feudal"]
@@ -739,7 +745,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             fact.source for fact in rules["opening-recovery-exit-counter-feudal"].facts
         )
         self.assertIn(
-            "(or (not (or (dropsite-min-distance gold <= -1) "
+            "(and (not (or (dropsite-min-distance gold <= -1) "
             "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
             "(gold-amount >= 1000))",
             exit_facts,
@@ -972,7 +978,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity.startswith("opening-recovery-enter-")
         }
         self.assertTrue(recovery_rules)
-        self.assertIn("opening-recovery-clear-cause", recovery_rules)
+        self.assertFalse(
+            "(set-goal opening-plan -1)"
+            in " ".join(
+                item.source
+                for rule in recovery_rules.values()
+                for item in (*rule.facts, *rule.actions)
+            )
+        )
         for rule in recovery_rules.values():
             facts = tuple(fact.source for fact in rule.facts)
             self.assertIn("(goal opening-recovery-origin -1)", facts)
