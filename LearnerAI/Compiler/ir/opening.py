@@ -131,7 +131,7 @@ def lower_opening_selector(
         f"(and {gold_remote} (gold-amount <= 800)))"
     )
     gold_front_recovered = (
-        f"(or {gold_front_viable} (gold-amount >= 1000))"
+        f"(and {gold_front_viable} (gold-amount >= 1000))"
     )
     water_path_lost = (
         f"(and {water_proven} "
