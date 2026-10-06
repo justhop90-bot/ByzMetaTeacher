@@ -39,6 +39,13 @@ ELITE_SKIRMISHER_PRODUCTION_RULES = (
 CIVILIAN_VILLAGER_SECTION_START = "; Persistent civilian production"
 CIVILIAN_VILLAGER_SECTION_END = "; Pending diagnostics: early-defensive-spears"
 WATER_DOCK_DEMAND = "water-dock-capability"
+WATER_DOCK_GOAL_NAMES = (
+    "demand-water-dock-capability",
+    "issued-water-dock-capability",
+    "pending-water-dock-capability",
+    "complete-water-dock-capability",
+    "construction-retry-barrier-water-dock-capability",
+)
 
 
 ECONOMY_RULES = (
@@ -218,11 +225,19 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
         install_block = lifecycle_block
     else:
         install_block = lifecycle_block + "\n" + action_block
-    runtime = _install_once(
-        runtime,
-        "; Native Strategos voice plan",
-        install_block,
-    )
+
+    start_marker = f"; Pending diagnostics: {identity}"
+    end_marker = "; Native Strategos voice plan"
+    start = runtime.find(start_marker)
+    end = runtime.find(end_marker, start + len(start_marker)) if start >= 0 else -1
+    if start >= 0 and end >= 0:
+        runtime = runtime[:start] + install_block.rstrip() + "\n\n" + runtime[end:]
+    else:
+        runtime = _install_once(
+            runtime,
+            end_marker,
+            install_block,
+        )
 
     initial_match = re.search(
         rf"\(set-goal demand-{re.escape(identity)} (\d+)\)",
@@ -500,6 +515,65 @@ def _choose_goal_slots(runtime: str, count: int) -> list[int]:
     raise RuntimeError("no free native Goal slots remain in 1..16000")
 
 
+def _ensure_named_defconsts(
+    runtime: str,
+    generated: str,
+    names: tuple[str, ...],
+) -> str:
+    generated_values: dict[str, int] = {}
+    for name in names:
+        match = re.search(
+            rf"^\\(defconst {re.escape(name)} (-?\\d+)\\)$",
+            generated,
+            flags=re.MULTILINE,
+        )
+        if not match:
+            raise RuntimeError(f"generated artifact is missing defconst: {name}")
+        generated_values[name] = int(match.group(1))
+
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\\(defconst\\s+([^\\s()]+)\\s+(-?\\d+)\\)",
+            runtime,
+        )
+    }
+    current = {name: definitions.get(name) for name in names}
+    intervals = _storage_intervals(runtime)
+
+    def valid_current() -> bool:
+        values = [value for value in current.values() if value is not None]
+        if len(values) != len(names) or any(not 1 <= value <= 16_000 for value in values):
+            return False
+        if len(set(values)) != len(values):
+            return False
+        for value in values:
+            for start, end, _kind in intervals:
+                if start <= value <= end and not (start == value == end):
+                    return False
+        return True
+
+    if valid_current():
+        return runtime
+
+    chosen = _choose_goal_slots(runtime, len(names))
+    for name, value in zip(names, chosen):
+        old_pattern = re.compile(
+            rf"^\\(defconst {re.escape(name)} -?\\d+\\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            marker = "(defconst opening-plan "
+            position = runtime.find(marker)
+            if position < 0:
+                raise RuntimeError("runtime artifact is missing opening-plan defconst")
+            line_end = runtime.find("\\n", position)
+            runtime = runtime[: line_end + 1] + new_line + "\\n" + runtime[line_end + 1 :]
+    return runtime
+
+
 def _ensure_defconsts(runtime: str, generated: str) -> str:
     generated_values: dict[str, int] = {}
     for name in RECOVERY_NAMES:
@@ -560,7 +634,7 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
                 raise RuntimeError("runtime artifact is missing opening-plan defconst")
             line_end = runtime.find("\n", position)
             runtime = runtime[: line_end + 1] + new_line + "\n" + runtime[line_end + 1 :]
-    return runtime
+    return _ensure_named_defconsts(runtime, generated, RECOVERY_NAMES)
 
 
 def _ensure_rule_requirement(
@@ -658,6 +732,7 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _ensure_named_defconsts(runtime, generated, WATER_DOCK_GOAL_NAMES)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
 
