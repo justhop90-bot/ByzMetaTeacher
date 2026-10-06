@@ -104,11 +104,11 @@ def lower_opening_selector(
     )
 
     unselected = f"(goal {plan.state_name} -1)"
-    recovery_idle = f"(goal {plan.recovery_state_name} 0)"
+    recovery_idle = f"(goal {plan.recovery_state_name} -1)"
     recovery_active = f"(goal {plan.recovery_state_name} 1)"
     recovery_origin_unset = f"(goal {plan.recovery_origin_state_name} -1)"
-    recovery_cause_clear = "(goal opening-recovery-cause 0)"
-    recovery_cause_active = "(up-compare-goal opening-recovery-cause != 0)"
+    recovery_cause_clear = "(goal opening-recovery-cause -1)"
+    recovery_cause_active = "(up-compare-goal opening-recovery-cause != -1)"
     gold_proven = f"(goal {plan.recovery_gold_proven_state_name} 1)"
     water_proven = f"(goal {plan.recovery_water_proven_state_name} 1)"
 
@@ -328,7 +328,7 @@ def lower_opening_selector(
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        f"(set-goal {plan.recovery_state_name} 0)",
+                        f"(set-goal {plan.recovery_state_name} -1)",
                         SourceLocation(1),
                     ),
                 ),
@@ -347,7 +347,7 @@ def lower_opening_selector(
             ),
             actions=(
                 parse_expression(
-                    "(set-goal opening-recovery-cause 0)",
+                    "(set-goal opening-recovery-cause -1)",
                     SourceLocation(1),
                 ),
             ),
