@@ -65,7 +65,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         for expression in expressions:
             for match in re.finditer(
                 rf"\({expression}\s+([^\s()]+)",
-                self.runtime,
+                source,
             ):
                 operand = match.group(1)
                 if re.fullmatch(r"-?\d+", operand):
