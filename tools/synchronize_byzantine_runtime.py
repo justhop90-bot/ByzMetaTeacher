@@ -496,8 +496,13 @@ def _defconst_values(source: str) -> dict[str, int]:
     }
 
 
-def _choose_goal_slots(runtime: str, count: int) -> list[int]:
-    recovery_names = set(RECOVERY_NAMES)
+def _choose_goal_slots(
+    runtime: str,
+    count: int,
+    *,
+    relocatable_names: tuple[str, ...] = (),
+) -> list[int]:
+    relocatable_names_set = set(relocatable_names)
     used: set[int] = set()
     for start, end, _kind in _storage_intervals(runtime):
         if any(start <= 16_000 and end >= 1 for _ in (0,)):
@@ -513,7 +518,7 @@ def _choose_goal_slots(runtime: str, count: int) -> list[int]:
             runtime,
         )
     }
-    for name in recovery_names:
+    for name in relocatable_names_set:
         current = definitions.get(name)
         if current is not None and 1 <= current <= 16_000:
             used.discard(current)
@@ -634,7 +639,11 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
     if valid_current():
         return runtime
 
-    chosen = _choose_goal_slots(runtime, len(RECOVERY_NAMES))
+    chosen = _choose_goal_slots(
+        runtime,
+        len(RECOVERY_NAMES),
+        relocatable_names=RECOVERY_NAMES,
+    )
     replacements = dict(zip(RECOVERY_NAMES, chosen))
     for name, value in replacements.items():
         old_pattern = re.compile(
