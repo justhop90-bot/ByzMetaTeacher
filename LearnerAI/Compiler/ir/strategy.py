@@ -4678,6 +4678,110 @@ def _default_byzantine_duc_plan(
             )
 
     if profile_id == "byzantine-stock-v1" and objective_control is not None:
+        dispatch_specs = (
+            (
+                "byzantine-endgame-objective-dispatch-siege",
+                "byzantine-offensive-objective-state-siege",
+                "byzantine-offensive-objective-class-siege",
+                "byzantine-offensive-objective-target-siege",
+            ),
+            (
+                "byzantine-endgame-objective-dispatch-defense",
+                "byzantine-offensive-objective-state-defense",
+                "byzantine-offensive-objective-class-defense",
+                "byzantine-offensive-objective-target-defense",
+            ),
+            (
+                "byzantine-endgame-objective-dispatch-production",
+                "byzantine-offensive-objective-state-production",
+                "byzantine-offensive-objective-class-production",
+                "byzantine-offensive-objective-target-production",
+            ),
+            (
+                "byzantine-endgame-objective-dispatch-town-center",
+                "byzantine-offensive-objective-state-town-center",
+                "byzantine-offensive-objective-class-town-center",
+                "byzantine-offensive-objective-target-town-center",
+            ),
+        )
+        executing_state = "byzantine-offensive-objective-state-executing"
+        for order, (
+            identity,
+            state_value,
+            class_value,
+            target_goal,
+        ) in enumerate(dispatch_specs, start=len(rules)):
+            dispatch_token = identity.rsplit("-", 1)[-1]
+            point_output = GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId(
+                        profile_id,
+                        f"endgame-objective-dispatch-point:{dispatch_token}",
+                    ),
+                    "up-get-point",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="up-get-point.Point",
+                start_min=41,
+                start_max=15998,
+            )
+            rules.append(
+                NativeDucRule(
+                    identity=identity,
+                    order=order,
+                    facts=(
+                        parse_expression(
+                            f"(goal byzantine-offensive-objective-state {executing_state})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(goal byzantine-offensive-objective-class {class_value})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(goal byzantine-offensive-objective-claim 1)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(goal byzantine-army-attack-ready 1)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-compare-goal {target_goal} >= 1)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    actions=(
+                        parse_expression(
+                            "(up-set-target-object search-remote c: 0)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-get-point position-object byzantine-offensive-objective-point)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-target-objects 1 action-attack-move -1 -1)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    lifecycle=(NativeDucLifecycleStage.DISPATCH,),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=identity,
+                    section="ACTION",
+                    expression_index=1,
+                    request=point_output,
+                    command="up-get-point",
+                    argument_index=1,
+                )
+            )
+
+    if profile_id == "byzantine-stock-v1" and objective_control is not None:
         target_specs = (
             (
                 "byzantine-endgame-objective-target-siege",
