@@ -2935,6 +2935,7 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
     plan = profile.endgame_plan
     if plan is None or plan.push_contract is None:
         return None
+    contract = plan.push_contract
 
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
