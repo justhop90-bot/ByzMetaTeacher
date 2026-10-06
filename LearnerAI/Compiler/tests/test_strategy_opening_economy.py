@@ -596,7 +596,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
         entry = rules["opening-recovery-enter-counter-feudal"]
         entry_facts = tuple(fact.source for fact in entry.facts)
-        self.assertIn("(goal opening-recovery-cause != 0)", entry_facts)
+        self.assertIn("(up-compare-goal opening-recovery-cause != 0)", entry_facts)
         self.assertIn("(goal opening-recovery-origin -1)", entry_facts)
         self.assertTrue(
             all("timer-triggered" not in fact for fact in entry_facts)
