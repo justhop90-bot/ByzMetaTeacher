@@ -46,8 +46,13 @@ ECONOMY_RULES = (
 )
 
 
-def _rule_block(source: str, identity: str) -> str:
-    marker = f"; Native control rule: {identity}"
+def _rule_block(
+    source: str,
+    identity: str,
+    *,
+    marker_prefix: str = "; Native control rule:",
+) -> str:
+    marker = f"{marker_prefix} {identity}"
     start = source.find(marker)
     if start < 0:
         raise RuntimeError(f"generated artifact is missing rule marker: {identity}")
