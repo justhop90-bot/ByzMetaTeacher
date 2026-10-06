@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import re
+import tempfile
 import unittest
 from pathlib import Path
+
+import tools.synchronize_byzantine_runtime as sync_runtime
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -48,12 +51,14 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         expressions: tuple[str, ...],
         *,
         label: str,
+        source: str | None = None,
     ) -> None:
+        source = self.runtime if source is None else source
         declared = {
             match.group(1)
             for match in re.finditer(
                 r"\(defconst\s+([^\s()]+)\s+([^\s()]+)\)",
-                self.runtime,
+                source,
             )
         }
         missing: list[tuple[int, str, str]] = []
@@ -65,7 +70,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
                 operand = match.group(1)
                 if re.fullmatch(r"-?\d+", operand):
                     continue
-                line = self.runtime[:match.start()].count("\n") + 1
+                line = source[:match.start()].count("\n") + 1
                 if operand not in declared:
                     missing.append((line, expression, operand))
         self.assertEqual(
@@ -75,9 +80,25 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         )
 
     def test_named_goal_references_are_declared(self) -> None:
+        runtime = self.runtime
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated = sync_runtime.GENERATED
+            if generated.exists():
+                runtime_path.write_text(runtime, encoding="utf-8")
+                original_runtime = sync_runtime.RUNTIME
+                sync_runtime.RUNTIME = runtime_path
+                try:
+                    sync_runtime.synchronize()
+                    runtime = runtime_path.read_text(encoding="utf-8")
+                finally:
+                    sync_runtime.RUNTIME = original_runtime
+
         self._assert_named_operands_are_declared(
             ("goal", "set-goal", "up-compare-goal", "up-modify-goal"),
             label="goal",
+            source=runtime,
         )
 
     def test_named_timer_references_are_declared(self) -> None:
