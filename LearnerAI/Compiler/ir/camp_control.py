@@ -6,7 +6,7 @@ from enum import Enum
 
 from ..ast import SourceLocation
 from ..runtime_binding import StrategicNumberRequest
-from .model import SemanticId, StorageRequestId
+from .model import GoalRole, SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from .strategic_number import StrategicNumberOrigin
 
