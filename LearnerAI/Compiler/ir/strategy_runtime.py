@@ -569,6 +569,7 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "can-research": StrategicObservationType.CAPABILITY_STATE,
     "can-research-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
     "dropsite-min-distance": StrategicObservationType.MAP_PROFILE,
+    "town-under-attack": StrategicObservationType.PRESSURE_STATE,
     "game-time": StrategicObservationType.TIMING,
 }
 _COMPARE_OPS = {"==", "!=", ">", ">=", "<", "<="}
