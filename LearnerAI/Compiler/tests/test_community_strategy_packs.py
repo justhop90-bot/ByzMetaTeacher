@@ -348,10 +348,12 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     demand.execution.witness,
                     f"(unit-type-count skirmisher-line >= {minimum})",
                 )
-                self.assertEqual(
-                    demand.execution.release,
-                    f"(unit-type-count 6 >= {minimum})",
+                expected_release = (
+                    demand.execution.witness
+                    if identity == "imperial-open-elite-skirmisher-severe"
+                    else f"(unit-type-count 6 >= {minimum})"
                 )
+                self.assertEqual(demand.execution.release, expected_release)
 
     def test_imperial_ranged_pressure_uses_native_archer_line(self):
         profile = build_byzantine_stock_strategy(self.effective)
