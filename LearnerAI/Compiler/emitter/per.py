@@ -133,9 +133,9 @@ def _emit_native_voice_plan(
     """Emit the latency-safe, transition-driven Strategos voice block."""
     validate_native_voice_plan(plan, registry)
 
+    out.extend(["", "; Native Strategos voice plan"])
     emitted_defconsts = _defconst_bindings(out)
     goal_states = []
-    timer_states = []
     for state in sorted(plan.states, key=lambda item: item.identifier):
         binding = bindings.binding_for(state.request.request_id)
         if isinstance(binding, GoalSlot):
@@ -157,8 +157,6 @@ def _emit_native_voice_plan(
             continue
         emitted_defconsts[state.identifier] = str(value)
         out.append(f"(defconst {state.identifier} {value})")
-
-    out.extend(["", "; Native Strategos voice plan"])
 
     if goal_states:
         out.extend(["; Voice Goal initialization", "(defrule", "    (true)", "=>"])
