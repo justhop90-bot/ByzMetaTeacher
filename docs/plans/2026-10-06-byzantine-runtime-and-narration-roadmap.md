@@ -168,6 +168,29 @@ Checklist:
 - [ ] Prune redundant voice rules after replay evidence.
 - [ ] Record exact Git SHA and acceptance evidence.
 
+## P0 diagnosis — Arena Feudal lock, corrected 2026-10-06
+
+The Arena replay with Market, Blacksmith, Barracks, Mill, two mining camps, a lumber camp, extensive housing, and 71 villagers rules out missing Feudal infrastructure as the primary blocker.
+
+The broken edge is a **feasibility/queue circularity**:
+
+`civilian-villager-continuity` uses `can-research-with-escrow castle-age` to decide when villager production should stop. Native Castle-age research feasibility requires the research provider queue to be free. The Town Center is also the continuous villager-production provider. Therefore:
+
+`train villager -> TC occupied -> can-research-with-escrow false -> villager guard stays open -> train villager`
+
+The Castle-age demand itself correctly retains `can-research-with-escrow castle-age` as its final execution gate. That predicate must remain there.
+
+Smallest repair:
+- [ ] In `LearnerAI/Compiler/ir/community_strategy_packs.py`, change only the Castle-stop guard inside `civilian-villager-continuity` from `(can-research-with-escrow castle-age)` to `(can-afford-research castle-age)`.
+- [ ] Keep the existing 28-villager, Blacksmith, and Market guards unchanged.
+- [ ] Do **not** weaken the Castle action itself: `can-research-with-escrow castle-age` remains the native execution/queue-feasibility gate.
+- [ ] Add a focused regression proving villagers stop once the Castle bank is affordable even when `can-research-with-escrow` is false because the TC is occupied.
+- [ ] Regenerate `Byzantine.per`.
+- [ ] Verify Standard Arabia still reaches/wins the existing Moderate baseline.
+- [ ] Verify Arena transitions to Castle instead of continuing toward the 60–71 villager stall.
+
+This is a queue-arbitration repair, not an Arena-specific strategy rewrite.
+
 ## Runtime repair tracks
 
 ### Track A — Arena Feudal -> Castle lock
