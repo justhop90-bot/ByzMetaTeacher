@@ -828,6 +828,16 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             for fact in rule.facts
             if "(town-under-attack)" in fact.source
         )
+        ordinary_rule = next(
+            item
+            for item in control.rules
+            if item.identity == "opening-recovery-cause-defense"
+        )
+        ordinary_defense_fact = next(
+            fact
+            for fact in ordinary_rule.facts
+            if "(town-under-attack)" in fact.source
+        )
 
         self.assertIn("(current-age < castle-age)", defense_fact.source)
         self.assertIn(pressure_expression, defense_fact.source)
@@ -850,8 +860,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
 
         self.assertIs(
+            _evaluate_expression(ordinary_defense_fact, snapshot),
+            EvidenceTruth.FALSE,
+        )
+        self.assertIs(
             _evaluate_expression(defense_fact, snapshot),
             EvidenceTruth.TRUE,
+        )
+        self.assertTrue(
+            all(len(fact.source) <= 255 for fact in rule.facts)
         )
         self.assertTrue(
             all(
