@@ -509,25 +509,12 @@ def _choose_goal_slots(
     if count <= 0:
         return []
     relocatable_names_set = set(relocatable_names)
-    used: set[int] = set()
-    for start, end, _kind in _storage_intervals(runtime):
-        if any(start <= 16_000 and end >= 1 for _ in (0,)):
-            for value in range(max(1, start), min(16_000, end) + 1):
-                used.add(value)
-
-    # The recovery slots themselves are relocatable, so remove their current
-    # intervals from the exclusion set before selecting replacement slots.
-    definitions = {
-        match.group(1): int(match.group(2))
-        for match in re.finditer(
-            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
-            runtime,
-        )
+    occupants = _goal_slot_occupants(runtime)
+    used: set[int] = {
+        value
+        for value, names in occupants.items()
+        if not (names & relocatable_names_set)
     }
-    for name in relocatable_names_set:
-        current = definitions.get(name)
-        if current is not None and 1 <= current <= 16_000:
-            used.discard(current)
 
     chosen: list[int] = []
     for candidate in range(16_000, 0, -1):
