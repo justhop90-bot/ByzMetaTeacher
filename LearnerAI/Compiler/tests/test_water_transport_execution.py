@@ -274,6 +274,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
         rule_ids = {rule.identity for rule in compilation.control_plan.rules}
         self.assertIn("transport-phase-recover-on-capability-loss", rule_ids)
+        self.assertIn("transport-phase-reopen", rule_ids)
+        self.assertIn("transport-rebuild-authorize", rule_ids)
+        self.assertIn("transport-objective-open", rule_ids)
+        self.assertIn("transport-objective-close", rule_ids)
         self.assertIn("transport-phase-ready", rule_ids)
         self.assertIn("water-posture-naval-defense", rule_ids)
         self.assertIn("water-posture-naval-control", rule_ids)
