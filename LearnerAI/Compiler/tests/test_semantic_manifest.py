@@ -52,6 +52,11 @@ class SemanticManifestTests(unittest.TestCase):
         self.assertIn("goal:economy-posture", rule.goal_writes)
         self.assertEqual(rule.annotation_kind, "NATIVE_CONTROL")
 
+    def test_manifest_json_is_deterministic(self):
+        manifest = semantic.build_semantic_manifest(Path("Byzantine.per"))
+        self.assertEqual(manifest.to_json(), manifest.to_json())
+
+
 
 if __name__ == "__main__":
     unittest.main()
