@@ -232,7 +232,7 @@ def _emit_native_voice_plan(
             else plan.budget.ordinary_global_cooldown_seconds
         )
         chat = (
-            f'(chat-to-player my-player-number "{rule.message}")'
+            f'(chat-to-player focus-player "{rule.message}")'
             if rule.audience is VoiceAudience.PLAYER
             else f'(chat-to-allies "{rule.message}")'
         )

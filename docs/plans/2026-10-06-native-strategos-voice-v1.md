@@ -150,7 +150,7 @@ In the emitter:
 8. increment `voice-match-count` with `up-modify-goal ... g:+ 1`;
 9. set the event latch and enable its cooldown timer;
 10. set the global lock and enable the global cooldown timer;
-11. emit `chat-to-player my-player-number "..."` or `chat-to-allies "..."`;
+11. emit `chat-to-player focus-player "..."` or `chat-to-allies "..."`;
 12. emit `up-jump-rule <remaining-candidate-count>` as the final action so only the highest-priority eligible voice fires during that pass;
 13. apply soft/hard budget guards before the chat action.
 
