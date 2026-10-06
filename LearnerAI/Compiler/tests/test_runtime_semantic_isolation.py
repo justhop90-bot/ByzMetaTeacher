@@ -158,6 +158,25 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
             block = self.runtime[start:end]
             self.assertIn("(up-research-status c: 98 >= 3)", block, demand_id)
 
+    def test_runtime_sync_accepts_action_rule_markers(self) -> None:
+        from tools.synchronize_byzantine_runtime import _rule_block
+
+        source = (
+            "; Action issuance: test-demand | ACTIVE -> ISSUED\\n"
+            "(defrule\\n"
+            "    (true)\\n"
+            "=>\\n"
+            "    (disable-self)\\n"
+            ")\\n"
+        )
+        block = _rule_block(
+            source,
+            "test-demand",
+            marker_prefix="; Action issuance:",
+        )
+        self.assertIn("(defrule", block)
+        self.assertIn("(disable-self)", block)
+
     def test_endgame_runtime_states_are_compiler_compatible(self) -> None:
         from Compiler.ir.endgame import EndgamePushState
 
