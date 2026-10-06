@@ -46,7 +46,7 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
 
         self.assertEqual(before_second_sync, after_second_sync)
 
-        base_source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        base_source = synchronized.split("; Native Strategos voice plan", 1)[0]
         base_goal_ids = {
             value
             for start, end, _kind in _storage_intervals(base_source)
