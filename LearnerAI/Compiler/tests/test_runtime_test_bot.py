@@ -221,6 +221,18 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(attack-now)", matching[0])
         self.assertIn("(set-goal byzantine-army-attack-ready 2)", matching[0])
 
+    def test_imperial_baseline_attack_issues_attack_now_with_minimal_force(self) -> None:
+        matching = [
+            rule
+            for rule in self.rules
+            if "(current-age >= imperial-age)" in rule
+            and "(attack-soldier-count <= 0)" in rule
+            and "(unit-type-count-total cataphract-line >= 4)" in rule
+            and "(attack-now)" in rule
+        ]
+        self.assertEqual(len(matching), 1)
+        self.assertNotIn("(goal byzantine-army-attack-ready 1)", matching[0])
+
     def test_reposition_controller_has_single_town_under_attack_guard(self) -> None:
         matching = [
             rule
