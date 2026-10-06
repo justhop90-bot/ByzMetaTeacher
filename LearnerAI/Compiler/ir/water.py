@@ -73,8 +73,12 @@ class WaterExecutionPlan:
             ("plan_id", self.plan_id),
             ("water_posture_state", self.water_posture_state),
             ("transport_phase_state", self.transport_phase_state),
+            ("transport_objective_state", self.transport_objective_state),
+            ("transport_rebuild_state", self.transport_rebuild_state),
+            ("water_map_observation", self.water_map_observation),
             ("transport_required_observation", self.transport_required_observation),
             ("transport_capable_observation", self.transport_capable_observation),
+            ("transport_rebuild_open_observation", self.transport_rebuild_open_observation),
             ("dock_observation", self.dock_observation),
             ("naval_pressure_observation", self.naval_pressure_observation),
             ("naval_pressure_cleared_observation", self.naval_pressure_cleared_observation),
@@ -263,6 +267,38 @@ def lower_water_execution_plan(
                 set_goal(plan.transport_rebuild_state, 0),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
+        ),
+        NativeControlRule(
+            "transport-objective-open",
+            facts=(
+                water_map,
+                parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                goal(plan.transport_objective_state, 0),
+            ),
+            actions=(set_goal(plan.transport_objective_state, 1),),
+        ),
+        NativeControlRule(
+            "transport-objective-close",
+            facts=(
+                parse_expression(
+                    f"(or (not {water_map.source}) "
+                    f"(not (goal byzantine-army-attack-ready 1)))",
+                    SourceLocation(1),
+                ),
+                goal(plan.transport_objective_state, 1),
+            ),
+            actions=(set_goal(plan.transport_objective_state, 0),),
+        ),
+        NativeControlRule(
+            "transport-rebuild-authorize",
+            facts=(
+                water_map,
+                required,
+                goal(phase_state, int(TransportExecutionPhase.RECOVER)),
+                parse_expression(f"(not {capable.source})", SourceLocation(1)),
+                goal(plan.transport_rebuild_state, 0),
+            ),
+            actions=(set_goal(plan.transport_rebuild_state, 1),),
         ),
         NativeControlRule(
             "transport-phase-no-longer-required",
