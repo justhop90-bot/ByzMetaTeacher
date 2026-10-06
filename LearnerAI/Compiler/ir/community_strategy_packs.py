@@ -2001,14 +2001,22 @@ def community_strategy_demands(
             priority=_StrategicPriority.DEFENSE,
             reason=(
                 _persistent(
-                    "Islands map requires protected transport capability",
+                    "Supported water map establishes the transport policy scope",
                     "strategy-water-map",
+                ),
+                _persistent(
+                    "Verified transport objective requires a protected transport capability",
+                    "strategy-transport-required",
                 ),
             ),
             admissibility=(
                 _persistent(
-                    "Transport is admissible on a disconnected water map",
+                    "Transport is admissible only within the supported water-map policy",
                     "strategy-water-map",
+                ),
+                _persistent(
+                    "Transport objective is the explicit execution admission",
+                    "strategy-transport-required",
                 ),
             ),
             invalidation=(
