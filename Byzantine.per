@@ -7965,6 +7965,13 @@
     (set-goal byzantine-university-research-claim 0)
 )
 
+; Native control rule: water-dock-capability-construction-retry-reset
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-water-dock-capability 0)
+)
+
 ; Per-pass production retry barriers
 (defrule
     (true)
@@ -13404,6 +13411,7 @@
     (set-goal demand-economy-farm-floor-feudal-8 1)
     (set-goal demand-economy-farm-boom-castle 1)
     (set-goal demand-economy-farm-boom-imperial 0)
+    (set-goal demand-water-dock-capability 1)
     (disable-self)
 )
 
@@ -29954,6 +29962,113 @@
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-trash-hussar-high 123)
+)
+
+; Pending diagnostics: water-dock-capability
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 158 and cannot reissue from pending goal 159
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 159 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 160 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: water-dock-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-water-dock-capability in ACTIVE; it is not PENDING.
+; Release: water-dock-capability | COMPLETE -> RELEASED
+(defrule
+    (goal demand-water-dock-capability 160)
+    (building-type-count dock >= 1)
+=>
+    (set-goal demand-water-dock-capability 0)
+)
+
+; Construction observation: water-dock-capability
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: water-dock-capability | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-water-dock-capability 161)
+        (goal demand-water-dock-capability 159)
+    )
+    (building-type-count dock >= 1)
+=>
+    (set-goal demand-water-dock-capability 160)
+)
+
+; Pending admission: water-dock-capability | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-water-dock-capability 161)
+        (goal demand-water-dock-capability 159)
+    )
+    (not (building-type-count dock >= 1))
+    (up-pending-objects c: 45 >= 1)
+=>
+    (set-goal demand-water-dock-capability 159)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-water-dock-capability 161)
+        (goal demand-water-dock-capability 159)
+    )
+    (not (building-type-count dock >= 1))
+    (up-pending-objects c: 45 == 0)
+    (up-pending-placement c: 45)
+=>
+    (set-goal demand-water-dock-capability 159)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-water-dock-capability 161)
+        (goal demand-water-dock-capability 159)
+    )
+    (not (building-type-count dock >= 1))
+    (up-pending-objects c: 45 == 0)
+    (not (up-pending-placement c: 45))
+=>
+    (set-goal demand-water-dock-capability 1)
+    (set-goal construction-retry-barrier-water-dock-capability 1)
+)
+
+; Action issuance: water-dock-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-water-dock-capability 1)
+    (not (building-type-count dock >= 1))
+    (goal construction-retry-barrier-water-dock-capability 0)
+    (up-pending-objects c: 45 == 0)
+    (not (up-pending-placement c: 45))
+    (not (building-type-count dock >= 1))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (or (map-type islands) (map-type pacific-islands))
+    (building-type-count-total dock < 1)
+    (can-build dock)
+=>
+    (build dock)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-water-dock-capability 161)
+)
+
+; Action issuance: water-dock-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-water-dock-capability 1)
+    (not (building-type-count dock >= 1))
+    (goal construction-retry-barrier-water-dock-capability 0)
+    (up-pending-objects c: 45 == 0)
+    (not (up-pending-placement c: 45))
+    (not (building-type-count dock >= 1))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (or (map-type islands) (map-type pacific-islands))
+    (building-type-count-total dock < 1)
+    (can-build dock)
+=>
+    (build dock)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-water-dock-capability 161)
 )
 
 ; Native Strategos voice plan
