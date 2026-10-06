@@ -17,14 +17,18 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             root = Path(tmp)
             runtime_path = root / "Byzantine.per"
             generated_path = root / "generated.per"
-            runtime_path.write_text(
-                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
-                encoding="utf-8",
+            base_runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+            generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
+            marker = "; Native Strategos voice plan"
+            voice_start = generated.find(marker)
+            self.assertGreaterEqual(voice_start, 0)
+            stale_runtime = (
+                base_runtime.split(marker, 1)[0].rstrip()
+                + "\n\n"
+                + generated[voice_start:].lstrip()
             )
-            generated_path.write_text(
-                sync_runtime.GENERATED.read_text(encoding="utf-8"),
-                encoding="utf-8",
-            )
+            runtime_path.write_text(stale_runtime, encoding="utf-8")
+            generated_path.write_text(generated, encoding="utf-8")
 
             original_runtime = sync_runtime.RUNTIME
             original_generated = sync_runtime.GENERATED
