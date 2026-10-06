@@ -6915,6 +6915,7 @@
 
 
 
+
 ; Native control rule: economy-controller-select-fast-castle
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
@@ -6926,6 +6927,7 @@
 =>
     (set-goal economy-posture 3)
 )
+
 
 
 
@@ -6951,6 +6953,7 @@
 
 
 
+
 ; Native control rule: economy-controller-select-water-economy
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
@@ -6962,6 +6965,7 @@
 =>
     (set-goal economy-posture 4)
 )
+
 
 
 
@@ -6987,6 +6991,7 @@
 
 
 
+
 ; Native control rule: economy-controller-select-base
 (defrule
     (current-age < castle-age)
@@ -6994,6 +6999,7 @@
 =>
     (set-goal economy-posture 1)
 )
+
 
 
 
