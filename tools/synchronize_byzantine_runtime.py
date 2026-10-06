@@ -194,7 +194,7 @@ def _demand_lifecycle_block(source: str, identity: str) -> str:
     if not candidates:
         raise RuntimeError(f"generated artifact has no following demand boundary: {identity}")
     end = min(candidates)
-    return source[start:end].rstrip() + "\\n"
+    return source[start:end].rstrip() + "\n"
 
 
 def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
@@ -218,7 +218,7 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     )
 
     initial_match = re.search(
-        rf"\\(set-goal demand-{re.escape(identity)} (\\d+)\\)",
+        rf"\(set-goal demand-{re.escape(identity)} (\d+)\)",
         generated[generated.find("; Demand initialization"):],
     )
     if initial_match is None:
@@ -236,18 +236,18 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
             raise RuntimeError("runtime demand initialization rule is missing disable-self")
         patched_rule = init_rule.replace(
             disable_line,
-            init_line + "\\n" + disable_line,
+            init_line + "\n" + disable_line,
             1,
         )
         runtime = runtime[:init_start] + runtime[init_start:init_end].replace(init_rule, patched_rule, 1) + runtime[init_end:]
 
     retry_reset = (
-        "; Native control rule: water-dock-capability-construction-retry-reset\\n"
-        "(defrule\\n"
-        "    (true)\\n"
-        "=>\\n"
-        "    (set-goal construction-retry-barrier-water-dock-capability 0)\\n"
-        ")\\n"
+        "; Native control rule: water-dock-capability-construction-retry-reset\n"
+        "(defrule\n"
+        "    (true)\n"
+        "=>\n"
+        "    (set-goal construction-retry-barrier-water-dock-capability 0)\n"
+        ")\n"
     )
     runtime = _install_once(
         runtime,
