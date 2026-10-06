@@ -145,6 +145,7 @@ class ConstructionTransitionTests(unittest.TestCase):
                 "siege-workshop": resolve_building_id("siege-workshop"),
                 "university": resolve_building_id("university"),
                 "outpost": resolve_building_id("outpost"),
+                "dock": resolve_building_id("dock"),
             },
             {
                 "town-center": 621,
@@ -152,6 +153,7 @@ class ConstructionTransitionTests(unittest.TestCase):
                 "siege-workshop": 49,
                 "university": 209,
                 "outpost": 598,
+                "dock": 45,
             },
         )
 
