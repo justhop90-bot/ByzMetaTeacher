@@ -2777,6 +2777,62 @@ def _byzantine_endgame_objective_control_plan(profile: StrategyProfile):
             ),
         ),
         NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-siege",
+            facts=(
+                expr(f"(goal {objective_state} {siege})"),
+                expr(f"(goal {objective_class} {class_siege})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_siege} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-defense",
+            facts=(
+                expr(f"(goal {objective_state} {defense})"),
+                expr(f"(goal {objective_class} {objective_class}-defense)"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_defense} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-production",
+            facts=(
+                expr(f"(goal {objective_state} {production})"),
+                expr(f"(goal {objective_class} {objective_class}-production)"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_production} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-endgame-objective-enter-executing-town-center",
+            facts=(
+                expr(f"(goal {objective_state} {town_center})"),
+                expr(f"(goal {objective_class} {class_town_center})"),
+                expr(f"(goal {claim} 1)"),
+                expr(f"(up-compare-goal {target_town_center} >= 1)"),
+            ),
+            actions=(
+                expr("(disable-timer byzantine-army-stale-timer)"),
+                expr(f"(enable-timer {timer} 20)"),
+                expr(f"(set-goal {objective_state} {executing})"),
+            ),
+        ),
+        NativeControlRule(
             "byzantine-endgame-objective-executing-to-witness",
             facts=(
                 expr(f"(goal {objective_state} {executing})"),
@@ -4661,7 +4717,7 @@ def _default_byzantine_duc_plan(
                     order=order,
                     facts=(
                         parse_expression(
-                            f"(goal byzantine-offensive-objective-state {state_value})",
+                            f"(goal byzantine-offensive-objective-state {executing_state})",
                             SourceLocation(1),
                         ),
                         parse_expression(
@@ -4692,18 +4748,6 @@ def _default_byzantine_duc_plan(
                         ),
                         parse_expression(
                             "(up-target-objects 1 action-attack-move -1 -1)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
-                            "(disable-timer byzantine-army-stale-timer)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
-                            f"(enable-timer {objective_control.timer_name} 20)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
-                            f"(set-goal byzantine-offensive-objective-state {executing_state})",
                             SourceLocation(1),
                         ),
                     ),
