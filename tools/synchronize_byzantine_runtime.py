@@ -472,7 +472,13 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
         elif char == ")":
             depth -= 1
             if depth == 0:
-                return runtime[:start] + generated_block + runtime[index + 1 :]
+                suffix = runtime[index + 1 :].lstrip("\n")
+                return (
+                    runtime[:start]
+                    + generated_block.rstrip()
+                    + "\n\n"
+                    + suffix
+                )
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
