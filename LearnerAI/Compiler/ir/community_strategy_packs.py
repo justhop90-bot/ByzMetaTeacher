@@ -1410,7 +1410,7 @@ def community_strategy_demands(
                 witness_symbol="skirmisher-line",
                 release_symbol="6",
                 additional_requirements=(
-                    "(research-completed 98)",
+                    "(up-research-status c: 98 >= 3)",
                     "(unit-type-count 6 < 18)",
                 ),
             ),
@@ -1636,7 +1636,7 @@ def community_strategy_demands(
             witness_symbol = "skirmisher-line"
             release_symbol = "6"
             exact_requirement = f"(unit-type-count 6 < {minimum})"
-            requirements = (*requirements, "(research-completed 98)")
+            requirements = (*requirements, "(up-research-status c: 98 >= 3)")
             reason_ref = "strategy-imperial-age"
         elif "halberdier" in identity:
             unit_line = "spearman-line"
