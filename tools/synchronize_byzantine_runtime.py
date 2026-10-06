@@ -38,6 +38,7 @@ ELITE_SKIRMISHER_PRODUCTION_RULES = (
 
 CIVILIAN_VILLAGER_SECTION_START = "; Persistent civilian production"
 CIVILIAN_VILLAGER_SECTION_END = "; Pending diagnostics: early-defensive-spears"
+WATER_DOCK_DEMAND = "water-dock-capability"
 
 
 ECONOMY_RULES = (
@@ -145,6 +146,115 @@ def _sync_civilian_villager_castle_admission(
         )
     patched_section = section.replace(old, new, 1)
     return runtime[:start] + patched_section + runtime[end:]
+
+
+def _first_rule_block(source: str, marker: str) -> tuple[int, int, str]:
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError(f"source is missing section marker: {marker}")
+    rule_start = source.find("(defrule", start)
+    if rule_start < 0:
+        raise RuntimeError(f"source is missing defrule after marker: {marker}")
+
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(rule_start, len(source)):
+        char = source[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == chr(92):
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return start, index + 1, source[rule_start:index + 1]
+    raise RuntimeError(f"source has unterminated defrule after marker: {marker}")
+
+
+def _demand_lifecycle_block(source: str, identity: str) -> str:
+    start_marker = f"; Pending diagnostics: {identity}"
+    start = source.find(start_marker)
+    if start < 0:
+        raise RuntimeError(f"generated artifact is missing demand lifecycle: {identity}")
+
+    candidates = []
+    for marker in ("; Invalidation: ", "; Pending diagnostics: "):
+        cursor = source.find(marker, start + len(start_marker))
+        if cursor >= 0:
+            candidates.append(cursor)
+    if not candidates:
+        raise RuntimeError(f"generated artifact has no following demand boundary: {identity}")
+    end = min(candidates)
+    return source[start:end].rstrip() + "\n"
+
+
+def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
+    identity = WATER_DOCK_DEMAND
+    action_block = _rule_block(
+        generated,
+        identity,
+        marker_prefix="; Action issuance:",
+    )
+    lifecycle_block = _demand_lifecycle_block(generated, identity)
+    if "(build dock)" not in action_block:
+        raise RuntimeError("generated first-dock action is not a dock build")
+    if "(building-type-count dock >= 1)" not in lifecycle_block:
+        raise RuntimeError("generated first-dock lifecycle is missing its dock witness")
+
+    install_block = lifecycle_block + "\n" + action_block
+    runtime = _install_once(
+        runtime,
+        "; Native Strategos voice plan",
+        install_block,
+    )
+
+    initial_match = re.search(
+        rf"\(set-goal demand-{re.escape(identity)} (\d+)\)",
+        generated[generated.find("; Demand initialization"):],
+    )
+    if initial_match is None:
+        raise RuntimeError("generated first-dock demand has no initialization value")
+    initial_value = int(initial_match.group(1))
+
+    init_start, init_end, init_rule = _first_rule_block(
+        runtime,
+        "; Demand initialization",
+    )
+    init_line = f"    (set-goal demand-{identity} {initial_value})"
+    if init_line not in init_rule:
+        disable_line = "    (disable-self)"
+        if disable_line not in init_rule:
+            raise RuntimeError("runtime demand initialization rule is missing disable-self")
+        patched_rule = init_rule.replace(
+            disable_line,
+            init_line + "\n" + disable_line,
+            1,
+        )
+        runtime = runtime[:init_start] + runtime[init_start:init_end].replace(init_rule, patched_rule, 1) + runtime[init_end:]
+
+    retry_reset = (
+        "; Native control rule: water-dock-capability-construction-retry-reset\n"
+        "(defrule\n"
+        "    (true)\n"
+        "=>\n"
+        "    (set-goal construction-retry-barrier-water-dock-capability 0)\n"
+        ")\n"
+    )
+    runtime = _install_once(
+        runtime,
+        "; Per-pass production retry barriers",
+        retry_reset,
+    )
+    return runtime
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -542,6 +652,7 @@ def synchronize() -> bool:
 
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
+    runtime = _sync_first_dock_lifecycle(runtime, generated)
 
     defense_block = _block(
         generated,
