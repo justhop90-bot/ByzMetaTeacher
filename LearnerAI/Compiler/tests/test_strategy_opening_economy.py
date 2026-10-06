@@ -669,6 +669,39 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             base_facts,
         )
 
+    def test_opening_recovery_gold_loss_uses_hysteresis_band(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        }
+
+        gold_cause = tuple(
+            fact.source for fact in rules["opening-recovery-cause-gold"].facts
+        )
+        self.assertIn("(gold-amount <= 800)", gold_cause)
+        self.assertIn(
+            "(or (not (or (dropsite-min-distance gold <= -1) "
+            "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
+            "(gold-amount >= 1000))",
+            tuple(fact.source for fact in rules["opening-recovery-clear-cause"].facts),
+        )
+
+        exit_facts = tuple(
+            fact.source for fact in rules["opening-recovery-exit-counter-feudal"].facts
+        )
+        self.assertIn(
+            "(or (not (or (dropsite-min-distance gold <= -1) "
+            "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
+            "(gold-amount >= 1000))",
+            exit_facts,
+        )
+
     def test_opening_recovery_handoffs_to_existing_base_economy_control(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
