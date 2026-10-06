@@ -1205,10 +1205,18 @@ def _evaluate_demand(
     )
 
     execution_truths: list[EvidenceTruth] = []
+    from ..ast import SourceLocation
+    from ..semantic.analyzer import parse_expression
+
     for execution in demand.execution_demands:
         for index, expression in enumerate(execution.requirements):
-            if expression.head in {"goal", "up-compare-goal"}:
-                execution_truths.append(snapshot.result_for(expression))
+            parsed_expression = (
+                parse_expression(expression, SourceLocation(1))
+                if isinstance(expression, str)
+                else expression
+            )
+            if parsed_expression.head in {"goal", "up-compare-goal"}:
+                execution_truths.append(snapshot.result_for(parsed_expression))
                 continue
             binding = bind_strategic_evidence(
                 StrategicEvidence(
