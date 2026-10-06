@@ -47,7 +47,7 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
 
             state_name = f"byzantine-dark-gold-camp-search-state-{floor}"
             remote_name = f"byzantine-dark-gold-camp-search-remote-count-{floor}"
-            point_name = f"byzantine-dark-gold-camp-point-{floor}"
+            point_name = "byzantine-dark-gold-camp-point"
 
             self.assertIn(f"(up-get-search-state {state_name})", section)
             self.assertIn("(up-filter-status c: status-resource c: list-active)", section)
