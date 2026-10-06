@@ -108,7 +108,7 @@ def lower_opening_selector(
     recovery_active = f"(goal {plan.recovery_state_name} 1)"
     recovery_origin_unset = f"(goal {plan.recovery_origin_state_name} -1)"
     recovery_cause_clear = "(goal opening-recovery-cause 0)"
-    recovery_cause_active = "(goal opening-recovery-cause != 0)"
+    recovery_cause_active = "(up-compare-goal opening-recovery-cause != 0)"
     gold_proven = f"(goal {plan.recovery_gold_proven_state_name} 1)"
     water_proven = f"(goal {plan.recovery_water_proven_state_name} 1)"
 
