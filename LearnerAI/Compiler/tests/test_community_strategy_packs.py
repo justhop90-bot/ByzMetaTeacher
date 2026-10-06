@@ -276,6 +276,27 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     f"(unit-type-count 6 >= {minimum})",
                 )
 
+    def test_imperial_open_elite_skirmisher_severe_release_matches_completion_witness(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = next(
+            item
+            for item in profile.demands
+            if item.identity == "imperial-open-elite-skirmisher-severe"
+        )
+
+        self.assertEqual(
+            demand.execution.witness,
+            "(unit-type-count skirmisher-line >= 36)",
+        )
+        self.assertEqual(
+            demand.execution.release,
+            demand.execution.witness,
+        )
+        self.assertNotEqual(
+            demand.execution.release,
+            "(unit-type-count 6 >= 36)",
+        )
+
     def test_imperial_elite_skirmisher_production_requires_completed_upgrade(self):
         profile = build_byzantine_stock_strategy(self.effective)
         by_id = {item.identity: item for item in profile.demands}
