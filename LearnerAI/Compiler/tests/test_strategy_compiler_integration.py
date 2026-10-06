@@ -245,6 +245,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertNotIn("chat-local-to-self", voice)
         self.assertIn("(goal voice-latch-attack-issued 0)", voice)
         self.assertIn("(goal voice-latch-attack-issued 2)", voice)
+        self.assertIn(
+            "(up-compare-goal voice-match-count g:< 48)",
+            voice,
+        )
+        self.assertNotIn("(goal voice-match-count < 48)", voice)
 
     def test_byzantine_stock_lowers_objective_control_state_and_ownership(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
