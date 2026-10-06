@@ -291,6 +291,11 @@ _ACTION_SPECS = (
     ("research", "execution.research.request"),
 )
 
+_VOICE_ACTION_SPECS = (
+    ("chat-to-player", "voice.chat-to-player"),
+    ("chat-to-allies", "voice.chat-to-allies"),
+)
+
 _ESCROW_COMMAND_SPECS = (
     ("release-escrow", "escrow.execution.release"),
     ("set-escrow-percentage", "escrow.execution.set-percentage"),
@@ -394,6 +399,34 @@ def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
         completion=f"completion requires world-state witness '{witness}'",
         recovery="preserve strategic demand and reassess through native feasibility after temporary blockage or failure",
         practice_references=("actions.request-not-completion",),
+    )
+
+
+def _voice_action_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    evidence_sources = {
+        "chat-to-player": (
+            "https://airef.github.io/commands/commands-details.html#chat-to-player",
+            "repo://ByzMetaTeacher/docs/reference/engine/commands/chat-to-player.md",
+        ),
+        "chat-to-allies": (
+            "https://airef.github.io/commands/commands-details.html#chat-to-allies",
+            "repo://ByzMetaTeacher/docs/reference/engine/commands/chat-to-allies.md",
+        ),
+    }[command]
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=evidence_sources,
+        state_effects="emits chat output without mutating strategic state",
+        lifetime="one native chat action",
+        ordering="executes in emitted action order within the current rule",
+        admission="native chat Action; caller owns all strategic admission semantics",
+        completion="not a strategic completion witness",
+        recovery="no strategic recovery semantics",
+        practice_references=(),
     )
 
 
@@ -839,6 +872,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.append(_pending_mapping())
     mappings.append(_pending_placement_mapping())
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
+    mappings.extend(_voice_action_mapping(command, identity) for command, identity in _VOICE_ACTION_SPECS)
     mappings.extend(
         (
             _duc_group_mapping(command, identity)
@@ -920,6 +954,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _WITNESS_SPECS)
         + ("up-pending-objects", "up-pending-placement")
         + tuple(command for command, _identity in _ACTION_SPECS)
+        + tuple(command for command, _identity in _VOICE_ACTION_SPECS)
         + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
     )
