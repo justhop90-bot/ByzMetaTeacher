@@ -966,7 +966,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             " ".join(water_cause_facts),
         )
         self.assertIn(
-            "(not (unit-type-count transport-ship >= 1))",
+            "(goal transport-phase 3)",
             " ".join(water_cause_facts),
         )
         self.assertIn("(current-age < castle-age)", water_cause_facts)
