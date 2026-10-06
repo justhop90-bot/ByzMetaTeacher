@@ -731,14 +731,53 @@ def community_strategy_observations(
             dock.provenance,
         ),
         _observation(
-            "strategy-water-islands",
+            "strategy-water-map",
             "(or (map-type islands) (map-type pacific-islands))",
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-transport-required",
+            "(goal water-transport-objective 1)",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/water.py",
+                    revision="main",
+                    locator="transport objective state: water-transport-objective",
+                    patch=effective.patch,
+                ),
+            ),
         ),
         _observation(
             "strategy-own-transport-capable",
             "(unit-type-count transport-ship >= 1)",
             effective.unit(545).provenance,
+        ),
+        _observation(
+            "strategy-transport-recovery",
+            "(goal transport-phase 3)",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/water.py",
+                    revision="main",
+                    locator="transport phase recovery state",
+                    patch=effective.patch,
+                ),
+            ),
+        ),
+        _observation(
+            "strategy-transport-rebuild-open",
+            "(goal water-transport-rebuild 1)",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/water.py",
+                    revision="main",
+                    locator="transport rebuild authorization state",
+                    patch=effective.patch,
+                ),
+            ),
         ),
         _observation(
             "strategy-enemy-naval-pressure",
@@ -1888,7 +1927,7 @@ def community_strategy_demands(
             owner="water-economy",
             posture=_StrategyPosture.BOOM,
             priority=_StrategicPriority.CORE,
-            reason_ref="strategy-water-islands",
+            reason_ref="strategy-water-map",
             reason_label="Islands opening requires a first dock before water economy can execute",
             building=dock,
             requirements=(
@@ -1942,6 +1981,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
                     "(unit-type-count-total fishing-ship < 2)",
@@ -1962,16 +2002,21 @@ def community_strategy_demands(
             reason=(
                 _persistent(
                     "Islands map requires protected transport capability",
-                    "strategy-water-islands",
+                    "strategy-water-map",
                 ),
             ),
             admissibility=(
                 _persistent(
                     "Transport is admissible on a disconnected water map",
-                    "strategy-water-islands",
+                    "strategy-water-map",
                 ),
             ),
-            invalidation=(),
+            invalidation=(
+                _persistent(
+                    "Transport capability was lost after the transport became ready",
+                    "strategy-transport-recovery",
+                ),
+            ),
             capability_intent=_CapabilityIntent(
                 _CapabilityIntentKind.TRAIN,
                 "unit-line",
@@ -1989,6 +2034,7 @@ def community_strategy_demands(
                 requirements=(
                     "(current-age >= dark-age)",
                     "(or (map-type islands) (map-type pacific-islands))",
+                    "(goal water-transport-objective 1)",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow transport-ship)",
                     "(unit-type-count-total transport-ship < 1)",
@@ -2015,7 +2061,7 @@ def community_strategy_demands(
             admissibility=(
                 _persistent(
                     "Island water makes defensive naval production strategically admissible",
-                    "strategy-water-islands",
+                    "strategy-water-map",
                 ),
                 _persistent(
                     "Enemy naval pressure justifies the defensive floor",
@@ -2072,7 +2118,7 @@ def community_strategy_demands(
                 ),
             ),
             admissibility=(
-                _persistent("Water control is admissible on Islands", "strategy-water-islands"),
+                _persistent("Water control is admissible on Islands", "strategy-water-map"),
                 _persistent("Enemy naval pressure is active", "strategy-enemy-naval-pressure"),
             ),
             invalidation=(
@@ -2305,8 +2351,12 @@ def community_water_execution_plan():
         plan_id="byzantine-water-v1",
         water_posture_state="water-posture",
         transport_phase_state="transport-phase",
-        transport_required_observation="strategy-water-islands",
+        transport_objective_state="water-transport-objective",
+        transport_rebuild_state="water-transport-rebuild",
+        water_map_observation="strategy-water-map",
+        transport_required_observation="strategy-transport-required",
         transport_capable_observation="strategy-own-transport-capable",
+        transport_rebuild_open_observation="strategy-transport-rebuild-open",
         dock_observation="strategy-dock-exists",
         naval_pressure_observation="strategy-enemy-naval-pressure",
         naval_pressure_cleared_observation="strategy-enemy-naval-pressure-cleared",
