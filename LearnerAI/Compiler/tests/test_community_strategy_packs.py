@@ -62,6 +62,11 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             observation.expression,
             "(or (map-type islands) (map-type pacific-islands))",
         )
+        island_profile = next(item for item in profile.map_profile if item.identity.value == "ISLANDS")
+        self.assertEqual(
+            island_profile.native_map_expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
 
     def test_stock_profile_contains_complete_research_witnesses(self):
         profile = build_byzantine_stock_strategy(self.effective)
