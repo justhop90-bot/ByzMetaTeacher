@@ -6904,6 +6904,7 @@
 ; Native control rule: economy-controller-select-counter-pressure
 (defrule
     (and (and (current-age >= feudal-age) (current-age < castle-age)) (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5))))
+    (not (map-type arena))
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 2)
