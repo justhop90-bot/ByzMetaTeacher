@@ -53,7 +53,7 @@ def _rule_block(source: str, identity: str) -> str:
         if in_string:
             if escape:
                 escape = False
-            elif char == "\":
+            elif char == chr(92):
                 escape = True
             elif char == '"':
                 in_string = False
@@ -150,7 +150,7 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
         if in_string:
             if escape:
                 escape = False
-            elif char == "\":
+            elif char == chr(92):
                 escape = True
             elif char == '"':
                 in_string = False
