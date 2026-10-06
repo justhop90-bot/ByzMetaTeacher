@@ -29,6 +29,18 @@ class NativeFactRegistryTests(unittest.TestCase):
         self.assertEqual(facts.names(), tuple(sorted(primitive_facts)))
         self.assertIsInstance(facts, NativeFactRegistry)
 
+    def test_zero_argument_town_under_attack_fact_has_zero_arity_adapter(self):
+        registry = default_de_registry()
+        adapter = registry.fact_registry.require("town-under-attack")
+
+        self.assertEqual(adapter.native_command, "town-under-attack")
+        self.assertEqual(adapter.semantic_id, "observation.threat.town-under-attack")
+        self.assertEqual(adapter.arity, 0)
+
+        fact = registry.normalize_fact("town-under-attack", ())
+        self.assertEqual(fact.semantic_id, "observation.threat.town-under-attack")
+        self.assertEqual(fact.canonical_args, ())
+
     def test_default_fact_adapter_is_bound_to_engine_semantic_identity(self):
         registry = default_de_registry()
         adapter = registry.fact_registry.require("current-age")

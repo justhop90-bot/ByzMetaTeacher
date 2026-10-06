@@ -8,6 +8,11 @@ from LearnerAI.Compiler.clients.basilisk import (
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
+from LearnerAI.Compiler.ir.strategy_runtime import (
+    EvidenceTruth,
+    RuntimeObservationSnapshot,
+    _evaluate_expression,
+)
 
 
 class ByzantineStrategyControlSliceTests(unittest.TestCase):
@@ -516,6 +521,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "(not (players-unit-type-count any-enemy archer-line >= 4))",
                 "(not (players-unit-type-count any-enemy militia-line >= 5))",
                 "(goal opening-plan 3)",
+                "(not (goal opening-plan 6))",
             ),
         )
         self.assertTrue(all(len(fact.source) <= 255 for fact in fast_selection.facts))
@@ -560,6 +566,449 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(defconst sn-gold-gatherer-percentage 118)", output)
         self.assertIn("(defconst sn-percent-civilian-builders 1)", output)
 
+
+    def test_opening_recovery_has_verified_entry_and_exit_paths(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("opening-plan", state_ids)
+        self.assertIn("opening-recovery", state_ids)
+        self.assertIn("opening-recovery-origin", state_ids)
+        self.assertIn("opening-recovery-cause", state_ids)
+        self.assertIn("opening-recovery-gold-proven", state_ids)
+        self.assertIn("opening-recovery-water-proven", state_ids)
+        self.assertIn("opening-recovery-defense-clear", state_ids)
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        }
+        self.assertIn("opening-recovery-prove-gold", rules)
+        self.assertIn("opening-recovery-prove-water", rules)
+        self.assertIn("opening-recovery-cause-defense", rules)
+        self.assertIn("opening-recovery-cause-gold", rules)
+        self.assertIn("opening-recovery-cause-water", rules)
+        self.assertIn("opening-recovery-clear-cause-castle", rules)
+
+        gold_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-gold"].facts
+        )
+        self.assertIn(
+            "(goal opening-recovery-gold-proven 1)",
+            " ".join(gold_cause_facts),
+        )
+        self.assertIn("(current-age < castle-age)", " ".join(gold_cause_facts))
+        self.assertIn("(goal opening-recovery-cause -1)", gold_cause_facts)
+        self.assertTrue(all(len(fact.source) <= 255 for fact in rules["opening-recovery-cause-gold"].facts))
+        defense_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-defense"].facts
+        )
+        self.assertIn("(goal opening-recovery-cause -1)", defense_cause_facts)
+
+        water_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-water"].facts
+        )
+        water_cause_text = " ".join(water_cause_facts)
+        self.assertIn(
+            "(goal opening-recovery-defense-clear 1)",
+            water_cause_text,
+        )
+        defense_clear_rule = rules["opening-recovery-defense-clear-pressure-absent"]
+        defense_clear_text = " ".join(
+            fact.source for fact in defense_clear_rule.facts
+        )
+        self.assertIn("(town-under-attack)", defense_clear_text)
+        self.assertIn(
+            "(not (or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5))))",
+            defense_clear_text,
+        )
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy mangonel-line >= 2))",
+            defense_clear_text,
+        )
+
+        entry = rules["opening-recovery-enter-counter-feudal"]
+        entry_facts = tuple(fact.source for fact in entry.facts)
+        self.assertIn("(up-compare-goal opening-recovery-cause != -1)", entry_facts)
+        self.assertIn("(goal opening-recovery-origin -1)", entry_facts)
+        self.assertTrue(
+            all("timer-triggered" not in fact for fact in entry_facts)
+        )
+        entry_actions = tuple(action.source for action in entry.actions)
+        self.assertIn("(set-goal opening-recovery-origin 2)", entry_actions)
+        self.assertIn("(set-goal opening-plan 6)", entry_actions)
+
+        exit_rule = rules["opening-recovery-exit-counter-feudal"]
+        exit_facts = tuple(fact.source for fact in exit_rule.facts)
+        self.assertIn("(goal opening-plan 6)", exit_facts)
+        self.assertIn("(goal opening-recovery-origin 2)", exit_facts)
+        self.assertIn("(goal opening-recovery-cause -1)", exit_facts)
+        self.assertTrue(any("gold-amount >= 1000" in fact for fact in exit_facts))
+        self.assertIn("(goal opening-recovery-defense-clear 1)", exit_facts)
+        self.assertTrue(
+            all("timer-triggered" not in fact for fact in exit_facts)
+        )
+        castle_exit = rules["opening-recovery-exit-counter-feudal-castle"]
+        castle_exit_facts = tuple(fact.source for fact in castle_exit.facts)
+        self.assertIn("(current-age >= castle-age)", castle_exit_facts)
+        self.assertIn("(gold-amount >= 1000)", " ".join(castle_exit_facts))
+        exit_actions = tuple(action.source for action in exit_rule.actions)
+        self.assertIn("(set-goal opening-plan 2)", exit_actions)
+        self.assertIn("(set-goal opening-recovery-origin -1)", exit_actions)
+
+    def test_emergency_recovery_excludes_pressure_overrides_and_selects_base(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        counter = next(
+            item
+            for item in control.rules
+            if item.identity == "economy-controller-select-counter-pressure"
+        )
+        counter_facts = tuple(fact.source for fact in counter.facts)
+        self.assertIn("(not (goal opening-plan 6))", counter_facts)
+
+        base = next(
+            item
+            for item in control.rules
+            if item.identity == "economy-controller-select-base"
+        )
+        base_facts = tuple(fact.source for fact in base.facts)
+        self.assertIn(
+            "(or (goal opening-plan 1) (goal opening-plan 6))",
+            base_facts,
+        )
+        self.assertNotIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
+            base_facts,
+        )
+
+    def test_opening_recovery_rules_respect_native_element_budget(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        recovery_rules = [
+            rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        ]
+        self.assertTrue(recovery_rules)
+        for rule in recovery_rules:
+            elements = sum(
+                item.source.count("(")
+                for item in (*rule.facts, *rule.actions)
+            )
+            self.assertLessEqual(
+                elements,
+                32,
+                msg=f"{rule.identity} emits {elements} native rule elements",
+            )
+
+        clear_castle = next(
+            rule
+            for rule in recovery_rules
+            if rule.identity == "opening-recovery-clear-cause-castle"
+        )
+        self.assertIn(
+            "(current-age >= castle-age)",
+            tuple(fact.source for fact in clear_castle.facts),
+        )
+
+    def test_opening_recovery_gold_loss_uses_hysteresis_band(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        }
+
+        gold_cause = tuple(
+            fact.source for fact in rules["opening-recovery-cause-gold"].facts
+        )
+        self.assertIn("(gold-amount <= 800)", " ".join(gold_cause))
+        self.assertIn(
+            "(and (not (or (dropsite-min-distance gold <= -1) "
+            "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
+            "(gold-amount >= 1000))",
+            tuple(fact.source for fact in rules["opening-recovery-clear-cause"].facts),
+        )
+
+        exit_facts = tuple(
+            fact.source for fact in rules["opening-recovery-exit-counter-feudal"].facts
+        )
+        self.assertIn(
+            "(and (not (or (dropsite-min-distance gold <= -1) "
+            "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
+            "(gold-amount >= 1000))",
+            exit_facts,
+        )
+
+    def test_opening_recovery_gold_1000_requires_front_recovery(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        clear_rule = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "opening-recovery-clear-cause"
+        )
+        gold_clear_fact = next(
+            fact
+            for fact in clear_rule.facts
+            if "gold-amount >= 1000" in fact.source
+        )
+
+        self.assertEqual(gold_clear_fact.head, "and")
+        gold_front_expression = gold_clear_fact.args[0]
+        gold_amount_expression = gold_clear_fact.args[1]
+
+        remote_snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                (gold_front_expression.source, False),
+                (gold_amount_expression.source, True),
+            )
+        )
+        viable_snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                (gold_front_expression.source, True),
+                (gold_amount_expression.source, True),
+            )
+        )
+
+        self.assertIs(
+            _evaluate_expression(gold_clear_fact, remote_snapshot),
+            EvidenceTruth.FALSE,
+        )
+        self.assertIs(
+            _evaluate_expression(gold_clear_fact, viable_snapshot),
+            EvidenceTruth.TRUE,
+        )
+
+    def test_opening_recovery_handoffs_to_existing_base_economy_control(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item
+            for item in control.rules
+            if item.identity == "economy-controller-select-base"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn("(current-age < castle-age)", facts)
+        self.assertIn(
+            "(or (goal opening-plan 1) (goal opening-plan 6))",
+            facts,
+        )
+        self.assertNotIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
+            facts,
+        )
+
+    def test_opening_recovery_covers_water_loss_and_base_defense_collapse(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        }
+
+        water_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-water"].facts
+        )
+        self.assertIn(
+            "(goal opening-recovery-water-proven 1)",
+            " ".join(water_cause_facts),
+        )
+        self.assertIn(
+            "(not (unit-type-count transport-ship >= 1))",
+            " ".join(water_cause_facts),
+        )
+        self.assertIn("(current-age < castle-age)", water_cause_facts)
+
+        defense_cause_facts = tuple(
+            fact.source for fact in rules["opening-recovery-cause-defense"].facts
+        )
+        self.assertIn("(town-under-attack)", " ".join(defense_cause_facts))
+        self.assertIn(
+            "(players-unit-type-count any-enemy knight >= 3)",
+            " ".join(defense_cause_facts),
+        )
+        self.assertIn("(goal opening-recovery-cause -1)", defense_cause_facts)
+
+
+
+    def _assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
+        self,
+        *,
+        fortification: str,
+    ):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule_identity = f"opening-recovery-cause-defense-{fortification}"
+        pressure_expression = profile.observation(
+            f"strategy-enemy-{fortification}"
+        ).expression
+        rule = next(
+            item
+            for item in control.rules
+            if item.identity == rule_identity
+        )
+        defense_fact = next(
+            fact
+            for fact in rule.facts
+            if "(town-under-attack)" in fact.source
+        )
+        ordinary_rule = next(
+            item
+            for item in control.rules
+            if item.identity == "opening-recovery-cause-defense"
+        )
+        ordinary_defense_fact = next(
+            fact
+            for fact in ordinary_rule.facts
+            if "(town-under-attack)" in fact.source
+        )
+
+        self.assertIn("(current-age < castle-age)", defense_fact.source)
+        self.assertIn(pressure_expression, defense_fact.source)
+
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(players-unit-type-count any-enemy knight >= 3)", False),
+                ("(players-unit-type-count any-enemy archer-line >= 4)", False),
+                ("(players-unit-type-count any-enemy militia-line >= 5)", False),
+                (pressure_expression, True),
+                ("(town-under-attack)", True),
+                ("(current-age < castle-age)", True),
+                *tuple(
+                    (fact.source, True)
+                    for fact in rule.facts
+                    if fact is not defense_fact
+                    and fact.source != "(current-age < castle-age)"
+                ),
+            )
+        )
+
+        self.assertIs(
+            _evaluate_expression(ordinary_defense_fact, snapshot),
+            EvidenceTruth.FALSE,
+        )
+        self.assertIs(
+            _evaluate_expression(defense_fact, snapshot),
+            EvidenceTruth.TRUE,
+        )
+        self.assertTrue(
+            all(len(fact.source) <= 255 for fact in rule.facts)
+        )
+        self.assertTrue(
+            all(
+                _evaluate_expression(fact, snapshot) is EvidenceTruth.TRUE
+                for fact in rule.facts
+            )
+        )
+
+    def test_opening_recovery_defense_triggers_on_enemy_siege_below_pressure_floors(self):
+        self._assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
+            fortification="siege",
+        )
+
+    def test_opening_recovery_defense_triggers_on_enemy_castle_below_pressure_floors(self):
+        self._assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
+            fortification="castle",
+        )
+
+    def test_opening_recovery_clear_requires_all_disasters_to_be_absent(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item
+            for item in control.rules
+            if item.identity == "opening-recovery-clear-cause"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn("(goal opening-recovery 1)", facts)
+        self.assertIn(
+            "(up-compare-goal opening-recovery-cause != -1)",
+            facts,
+        )
+        self.assertTrue(any("gold-amount >= 1000" in fact for fact in facts))
+        self.assertTrue(any("opening-recovery-water-proven" in fact for fact in facts))
+        self.assertIn("(goal opening-recovery-defense-clear 1)", facts)
+        self.assertNotIn("timer-triggered", " ".join(facts))
+
+    def test_opening_recovery_preserves_sticky_identity_and_cannot_oscillate(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        normal_rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-selector-")
+        }
+        self.assertTrue(
+            all(
+                "(goal opening-plan -1)"
+                in tuple(fact.source for fact in rule.facts)
+                for rule in normal_rules.values()
+            )
+        )
+
+        recovery_rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-enter-")
+        }
+        self.assertTrue(recovery_rules)
+        self.assertFalse(
+            "(set-goal opening-plan -1)"
+            in " ".join(
+                item.source
+                for rule in recovery_rules.values()
+                for item in (*rule.facts, *rule.actions)
+            )
+        )
+        for rule in recovery_rules.values():
+            facts = tuple(fact.source for fact in rule.facts)
+            self.assertIn("(goal opening-recovery-origin -1)", facts)
+            actions = tuple(action.source for action in rule.actions)
+            self.assertNotIn("(set-goal opening-plan -1)", actions)
+
+        for rule in control.rules:
+            if rule.identity.startswith("opening-recovery-"):
+                text = " ".join(
+                    item.source for item in (*rule.facts, *rule.actions)
+                )
+                self.assertNotIn("timer-triggered", text)
 
 if __name__ == "__main__":
     unittest.main()

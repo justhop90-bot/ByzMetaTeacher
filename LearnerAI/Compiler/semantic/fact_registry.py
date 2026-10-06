@@ -198,10 +198,6 @@ class FactSemanticAdapter:
             raise ValueError("fact semantic adapter semantic_id is required")
         if not self.role:
             raise ValueError("fact semantic adapter role is required")
-        if not self.parameter_contexts:
-            raise ValueError(
-                f"fact semantic adapter '{self.native_command}' requires parameters"
-            )
         if not self.provenance:
             raise ValueError(
                 f"fact semantic adapter '{self.native_command}' requires provenance"

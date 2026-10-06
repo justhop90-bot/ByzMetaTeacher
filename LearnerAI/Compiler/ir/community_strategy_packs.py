@@ -636,6 +636,23 @@ def community_strategy_observations(
             ),
         ),
         _observation(
+            "strategy-opening-base-defense-collapse",
+            f"(and (town-under-attack) {opening_pressure})",
+            tuple(
+                dict.fromkeys(
+                    (
+                        *_airef_provenance(
+                            effective,
+                            "commands/commands-details.html#town-under-attack",
+                        ),
+                        *effective.unit_line("knight-line").provenance,
+                        *effective.unit_line("archer-line").provenance,
+                        *effective.unit_line("militia-line").provenance,
+                    )
+                )
+            ),
+        ),
+        _observation(
             "strategy-enemy-infantry-pressure",
             "(players-unit-type-count any-enemy militia-line >= 5)",
             effective.unit_line("militia-line").provenance,
