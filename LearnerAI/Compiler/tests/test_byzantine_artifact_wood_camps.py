@@ -68,25 +68,68 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         self.assertIn("(goal action-claim-build-pass-singleton 0)", fallback)
 
     def test_point_search_constants_are_unique_and_bound_to_unused_goal_slots(self):
-        expected = {
-            "byzantine-dark-wood-camp-point-1": 15000,
-            "byzantine-dark-wood-camp-search-state-1": 15001,
-            "byzantine-dark-wood-camp-search-remote-count-1": 15002,
-            "byzantine-dark-wood-camp-point-2": 15003,
-            "byzantine-dark-wood-camp-search-state-2": 15004,
-            "byzantine-dark-wood-camp-search-remote-count-2": 15005,
-        }
-        for name, value in expected.items():
-            self.assertEqual(
-                len(re.findall(rf"\(defconst {re.escape(name)} \d+\)", self.source)),
-                1,
-                name,
+        names = (
+            "byzantine-dark-wood-camp-point-1",
+            "byzantine-dark-wood-camp-search-state-1",
+            "byzantine-dark-wood-camp-search-remote-count-1",
+            "byzantine-dark-wood-camp-point-2",
+            "byzantine-dark-wood-camp-search-state-2",
+            "byzantine-dark-wood-camp-search-remote-count-2",
+        )
+        values = {}
+        for name in names:
+            matches = re.findall(
+                rf"\(defconst {re.escape(name)} (\d+)\)",
+                self.source,
             )
-            self.assertEqual(
-                len(re.findall(rf"\(defconst [^\s()]+ {value}\)", self.source)),
-                1,
-                f"goal id {value} must be unique",
-            )
+            self.assertEqual(len(matches), 1, name)
+            values[name] = int(matches[0])
+
+        self.assertEqual(len(values), len(set(values.values())))
+
+        intervals = (
+            (
+                values["byzantine-dark-wood-camp-point-1"],
+                values["byzantine-dark-wood-camp-point-1"] + 1,
+            ),
+            (
+                values["byzantine-dark-wood-camp-search-state-1"],
+                values["byzantine-dark-wood-camp-search-state-1"] + 3,
+            ),
+            (
+                values["byzantine-dark-wood-camp-search-remote-count-1"],
+                values["byzantine-dark-wood-camp-search-remote-count-1"],
+            ),
+            (
+                values["byzantine-dark-wood-camp-point-2"],
+                values["byzantine-dark-wood-camp-point-2"] + 1,
+            ),
+            (
+                values["byzantine-dark-wood-camp-search-state-2"],
+                values["byzantine-dark-wood-camp-search-state-2"] + 3,
+            ),
+            (
+                values["byzantine-dark-wood-camp-search-remote-count-2"],
+                values["byzantine-dark-wood-camp-search-remote-count-2"],
+            ),
+        )
+
+        for index, (start, end) in enumerate(intervals):
+            if index in (0, 3):
+                self.assertTrue(41 <= start <= 15998)
+            elif index in (1, 4):
+                self.assertTrue(41 <= start <= 15996)
+            else:
+                self.assertTrue(1 <= start <= 16000)
+            self.assertTrue(start <= end <= 16000)
+
+        for index, (start, end) in enumerate(intervals):
+            for other_start, other_end in intervals[index + 1 :]:
+                self.assertTrue(
+                    end < other_start or other_end < start,
+                    f"wood-camp storage overlaps: {(start, end)} with "
+                    f"{(other_start, other_end)}",
+                )
 
     def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
         for floor, point, state, remote, old_distance in (

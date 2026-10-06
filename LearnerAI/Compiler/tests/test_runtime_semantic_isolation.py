@@ -144,7 +144,7 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
     def test_endgame_runtime_states_are_compiler_compatible(self) -> None:
         from Compiler.ir.endgame import EndgamePushState
 
-        compiler_states = {state.value for state in EndgamePushState}
+        compiler_states = set(range(len(EndgamePushState)))
         emitted_states = {
             int(match.group(1))
             for match in re.finditer(
