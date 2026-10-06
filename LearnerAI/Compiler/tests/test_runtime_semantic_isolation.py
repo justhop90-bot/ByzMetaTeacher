@@ -141,6 +141,23 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
         self.assertIn("(defconst bt-offensive-objective-witness-seconds 20)", self.runtime)
         self.assertIn("(defconst bt-resource-productivity-seconds 30)", self.runtime)
 
+    def test_imperial_elite_skirmisher_production_is_upgrade_gated(self) -> None:
+        demand_ids = (
+            "imperial-elite-skirmisher-floor",
+            "imperial-open-elite-skirmisher-standard",
+            "imperial-open-elite-skirmisher-pressure",
+            "imperial-open-elite-skirmisher-severe",
+            "imperial-fortified-elite-skirmisher",
+            "imperial-trash-elite-skirmisher-standard",
+            "imperial-trash-elite-skirmisher-high",
+        )
+        for demand_id in demand_ids:
+            start = self.runtime.index(f"; Action issuance: {demand_id}")
+            end = self.runtime.find("; Pending diagnostics:", start)
+            self.assertGreater(end, start, demand_id)
+            block = self.runtime[start:end]
+            self.assertIn("(up-research-status c: 98 >= 3)", block, demand_id)
+
     def test_endgame_runtime_states_are_compiler_compatible(self) -> None:
         from Compiler.ir.endgame import EndgamePushState
 
