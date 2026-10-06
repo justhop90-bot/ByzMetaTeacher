@@ -164,6 +164,10 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
 
         self.assertEqual(before_second_sync, after_second_sync)
         self.assertIn("; Action issuance: water-dock-capability", synchronized)
+        self.assertEqual(
+            synchronized.count("; Action issuance: water-dock-capability | ACTIVE -> ISSUED"),
+            1,
+        )
         self.assertIn("(build dock)", synchronized)
         self.assertIn(
             "; Completion witness: water-dock-capability | PENDING/ISSUED -> COMPLETE",
