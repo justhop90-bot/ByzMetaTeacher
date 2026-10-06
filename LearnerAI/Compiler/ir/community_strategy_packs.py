@@ -2383,7 +2383,7 @@ def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _Nat
                  "byzantine-offensive-objective-state-witness)"),
             expr("(not (goal byzantine-offensive-objective-state "
                  "byzantine-offensive-objective-state-witness))"),
-            "The defense is open. Now the siege can work.",
+            "The objective is open. Now I can press the advantage.",
             "voice-latch-attack-witness", "voice-rearm-attack-witness", 30,
         ),
         _VoiceRule(
