@@ -98,20 +98,53 @@ def _block(source: str, start_marker: str, end_marker: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
-def _replace_section(
-    source: str,
+def _sync_civilian_villager_castle_admission(
+    runtime: str,
     generated: str,
-    start_marker: str,
-    end_marker: str,
 ) -> str:
-    generated_block = _block(generated, start_marker, end_marker)
-    start = source.find(start_marker)
+    demand_marker = "; Action issuance: civilian-villager-continuity"
+    demand_start = generated.find(demand_marker)
+    if demand_start < 0:
+        raise RuntimeError(
+            "generated artifact is missing civilian-villager-continuity action issuance"
+        )
+    demand_end = generated.find("; Pending diagnostics:", demand_start)
+    if demand_end < 0:
+        raise RuntimeError(
+            "generated artifact is missing civilian-villager-continuity pending diagnostics"
+        )
+    generated_block = generated[demand_start:demand_end]
+    if "(can-afford-research castle-age)" not in generated_block:
+        raise RuntimeError(
+            "generated civilian villager lifecycle is missing Castle affordability admission"
+        )
+    if "(can-research-with-escrow castle-age)" in generated_block:
+        raise RuntimeError(
+            "generated civilian villager lifecycle still couples admission to research provider readiness"
+        )
+
+    start = runtime.find(CIVILIAN_VILLAGER_SECTION_START)
     if start < 0:
-        raise RuntimeError(f"runtime artifact is missing section: {start_marker}")
-    end = source.find(end_marker, start)
+        raise RuntimeError(
+            f"runtime artifact is missing section: {CIVILIAN_VILLAGER_SECTION_START}"
+        )
+    end = runtime.find(CIVILIAN_VILLAGER_SECTION_END, start)
     if end < 0:
-        raise RuntimeError(f"runtime artifact is missing section end: {end_marker}")
-    return source[:start] + generated_block + source[end:]
+        raise RuntimeError(
+            f"runtime artifact is missing section end: {CIVILIAN_VILLAGER_SECTION_END}"
+        )
+
+    section = runtime[start:end]
+    old = "(can-research-with-escrow castle-age)"
+    new = "(can-afford-research castle-age)"
+    if new in section and old not in section:
+        return runtime
+    if old not in section:
+        raise RuntimeError(
+            "runtime civilian villager lifecycle is missing both Castle admission predicates"
+        )
+    patched_section = section.replace(old, new, 1)
+    return runtime[:start] + patched_section + runtime[end:]
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -508,12 +541,7 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
-    runtime = _replace_section(
-        runtime,
-        generated,
-        CIVILIAN_VILLAGER_SECTION_START,
-        CIVILIAN_VILLAGER_SECTION_END,
-    )
+    runtime = _sync_civilian_villager_castle_admission(runtime, generated)
 
     defense_block = _block(
         generated,
