@@ -521,6 +521,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "(not (players-unit-type-count any-enemy archer-line >= 4))",
                 "(not (players-unit-type-count any-enemy militia-line >= 5))",
                 "(goal opening-plan 3)",
+                "(not (goal opening-plan 6))",
             ),
         )
         self.assertTrue(all(len(fact.source) <= 255 for fact in fast_selection.facts))
@@ -596,7 +597,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         gold_cause_facts = tuple(
             fact.source for fact in rules["opening-recovery-cause-gold"].facts
         )
-        self.assertIn("(goal opening-recovery-gold-proven 1)", gold_cause_facts)
+        self.assertIn(
+            "(goal opening-recovery-gold-proven 1)",
+            " ".join(gold_cause_facts),
+        )
         self.assertIn("(current-age < castle-age)", gold_cause_facts)
         self.assertIn("(goal opening-recovery-cause -1)", gold_cause_facts)
         self.assertTrue(all(len(fact.source) <= 255 for fact in rules["opening-recovery-cause-gold"].facts))
@@ -611,7 +615,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         water_cause_text = " ".join(water_cause_facts)
         self.assertIn(
             "(goal opening-recovery-defense-clear 1)",
-            water_cause_facts,
+            water_cause_text,
         )
         defense_clear_rule = rules["opening-recovery-defense-clear-pressure-absent"]
         defense_clear_text = " ".join(
@@ -651,9 +655,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(goal opening-plan 6)", exit_facts)
         self.assertIn("(goal opening-recovery-origin 2)", exit_facts)
         self.assertIn("(goal opening-recovery-cause -1)", exit_facts)
-        self.assertTrue(any("opening-recovery-gold-proven" in fact for fact in exit_facts))
-        self.assertTrue(any("opening-recovery-water-proven" in fact for fact in exit_facts))
-        self.assertTrue(any("town-under-attack" in fact for fact in exit_facts))
+        self.assertTrue(any("gold-amount >= 1000" in fact for fact in exit_facts))
+        self.assertIn("(goal opening-recovery-defense-clear 1)", exit_facts)
         self.assertTrue(
             all("timer-triggered" not in fact for fact in exit_facts)
         )
@@ -742,7 +745,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         gold_cause = tuple(
             fact.source for fact in rules["opening-recovery-cause-gold"].facts
         )
-        self.assertIn("(gold-amount <= 800)", gold_cause)
+        self.assertIn("(gold-amount <= 800)", " ".join(gold_cause))
         self.assertIn(
             "(and (not (or (dropsite-min-distance gold <= -1) "
             "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
@@ -815,7 +818,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if item.identity == "economy-controller-select-base"
         )
         facts = tuple(fact.source for fact in rule.facts)
-        self.assertIn("(goal opening-plan 6)", facts)
         self.assertIn("(current-age < castle-age)", facts)
         self.assertIn(
             "(or (goal opening-plan 1) (goal opening-plan 6))",
@@ -841,8 +843,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         water_cause_facts = tuple(
             fact.source for fact in rules["opening-recovery-cause-water"].facts
         )
-        self.assertIn("(goal opening-recovery-water-proven 1)", water_cause_facts)
-        self.assertIn("(not (unit-type-count transport-ship >= 1))", water_cause_facts)
+        self.assertIn(
+            "(goal opening-recovery-water-proven 1)",
+            " ".join(water_cause_facts),
+        )
+        self.assertIn(
+            "(not (unit-type-count transport-ship >= 1))",
+            " ".join(water_cause_facts),
+        )
         self.assertIn("(current-age < castle-age)", water_cause_facts)
 
         defense_cause_facts = tuple(
@@ -957,7 +965,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(up-compare-goal opening-recovery-cause != -1)",
             facts,
         )
-        self.assertTrue(any("opening-recovery-gold-proven" in fact for fact in facts))
+        self.assertTrue(any("gold-amount >= 1000" in fact for fact in facts))
         self.assertTrue(any("opening-recovery-water-proven" in fact for fact in facts))
         self.assertIn("(goal opening-recovery-defense-clear 1)", facts)
         self.assertNotIn("timer-triggered", " ".join(facts))

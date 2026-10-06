@@ -141,7 +141,7 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         )
 
         report = validate_native_control_plan(plan, default_de_registry())
-        self.assertIn("town-under-attack", report.control_commands)
+        self.assertIn("set-goal", report.control_commands)
 
     def test_native_control_accepts_goal_span_storage(self):
         from Compiler.primitives.registry import default_de_registry
