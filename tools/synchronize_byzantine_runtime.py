@@ -216,7 +216,7 @@ def _ensure_water_dock_defconsts(runtime: str) -> tuple[str, dict[str, int]]:
         if len(set(resolved.values())) == len(resolved):
             return runtime, resolved
     missing = [name for name in names if values[name] is None]
-    chosen = _choose_voice_goal_slots(runtime, len(missing))
+    chosen = _choose_goal_slots(runtime, len(missing))
     resolved = {name: int(value) for name, value in values.items() if value is not None}
     additions = []
     for name, value in zip(missing, chosen):
