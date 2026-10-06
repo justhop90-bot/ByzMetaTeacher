@@ -241,6 +241,47 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ((Resource.FOOD, 800), (Resource.GOLD, 200)),
         )
 
+    def test_dark_age_first_resource_camps_are_core_checkpoints(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        wood = profile.demand("economy-wood-camp-floor-1")
+        gold = profile.demand("economy-gold-camp-floor-1")
+        stone = profile.demand("economy-stone-camp-floor-1")
+
+        self.assertEqual(wood.priority.name, "CORE")
+        self.assertEqual(gold.priority.name, "CORE")
+        self.assertEqual(wood.initial_state.name, "ACTIVE")
+        self.assertEqual(gold.initial_state.name, "ACTIVE")
+        self.assertEqual(stone.initial_state.name, "RELEASED")
+
+        for demand, resource, building in (
+            (wood, "wood", "lumber-camp"),
+            (gold, "gold", "mining-camp"),
+        ):
+            requirements = tuple(demand.execution.requirements)
+            self.assertIn(f"(resource-found {resource})", requirements)
+            self.assertIn(f"(can-build {building})", requirements)
+            self.assertNotIn("dropsite-min-distance", " ".join(requirements))
+
+    def test_feudal_economic_research_preserves_protected_transition_bank(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        expected = {
+            "research-double-bit-axe": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
+            "research-horse-collar": ((Resource.FOOD, 900), (Resource.GOLD, 250)),
+            "research-wheelbarrow": ((Resource.FOOD, 1000), (Resource.GOLD, 250)),
+        }
+
+        for identity, floors in expected.items():
+            demand = profile.demand(identity)
+            self.assertEqual(
+                tuple(
+                    (floor.resource, floor.minimum)
+                    for floor in demand.opportunity_cost.protected_floors
+                ),
+                floors,
+            )
+
     def test_camp_floor_two_requires_remote_resource_front_and_starts_released(self):
         profile = build_byzantine_strategy(self.effective)
 
