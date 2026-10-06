@@ -210,7 +210,14 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     if "(building-type-count dock >= 1)" not in lifecycle_block:
         raise RuntimeError("generated first-dock lifecycle is missing its dock witness")
 
-    install_block = lifecycle_block + "\n" + action_block
+    if f"; Action issuance: {identity} | ACTIVE -> ISSUED" in lifecycle_block:
+        if action_block.strip() not in lifecycle_block:
+            raise RuntimeError(
+                "generated first-dock lifecycle contains a divergent action issuance block"
+            )
+        install_block = lifecycle_block
+    else:
+        install_block = lifecycle_block + "\n" + action_block
     runtime = _install_once(
         runtime,
         "; Native Strategos voice plan",
