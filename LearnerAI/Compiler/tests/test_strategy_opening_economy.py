@@ -619,6 +619,30 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(set-goal opening-plan 2)", exit_actions)
         self.assertIn("(set-goal opening-recovery-origin -1)", exit_actions)
 
+    def test_opening_recovery_handoffs_to_existing_base_economy_control(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item
+            for item in control.rules
+            if item.identity == "economy-controller-select-base"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn("(goal opening-plan 6)", facts)
+        self.assertIn("(current-age < castle-age)", facts)
+        self.assertIn("(not (players-unit-type-count any-enemy knight >= 3))", facts)
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy archer-line >= 4))",
+            facts,
+        )
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy militia-line >= 5))",
+            facts,
+        )
+
     def test_opening_recovery_covers_water_loss_and_base_defense_collapse(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
