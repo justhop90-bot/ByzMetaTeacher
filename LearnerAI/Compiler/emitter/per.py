@@ -496,6 +496,17 @@ def emit(
             out += [")", ""]
 
     if duc_plan is not None and not duc_plan.empty:
+        used_duc_action_values = {
+            expression.head
+            for rule in duc_plan.rules
+            for expression in (*rule.facts, *rule.actions)
+            if expression.head == "up-target-objects"
+            and any(str(argument) == "action-attack-move" for argument in expression.args)
+        }
+        if used_duc_action_values:
+            emitted_defconsts = _defconst_bindings(out)
+            if "action-attack-move" not in emitted_defconsts:
+                out.append("(defconst action-attack-move 19)")
         out.append("; Native DUC execution plan")
         output_requests = {
             request.site_key: request
