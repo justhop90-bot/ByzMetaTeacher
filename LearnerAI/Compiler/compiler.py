@@ -71,7 +71,9 @@ if __package__ in (None, ""):
         NativeEscrowPolicyPlan,
         NativeEscrowReleasePlan,
         CompilerSemanticProgram,
+        NativeVoicePlan,
         validate_native_role_separation_plan,
+        validate_native_voice_plan,
     )
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -135,7 +137,9 @@ else:
         NativeRoleSeparationPlan,
         NativeEscrowPolicyPlan,
         NativeEscrowReleasePlan,
+        NativeVoicePlan,
         validate_native_role_separation_plan,
+        validate_native_voice_plan,
     )
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -178,7 +182,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
     return frozenset(ignored)
 
 
-def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None, role_plan=None):
+def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None, role_plan=None, voice_plan=None):
     requests = []
     seen = set()
     for demand in ir:
@@ -230,6 +234,12 @@ def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None, ro
                 continue
             seen.add(request.request_id)
             requests.append(request)
+    if voice_plan is not None:
+        for request in voice_plan.storage_requests:
+            if request.request_id in seen:
+                continue
+            seen.add(request.request_id)
+            requests.append(request)
     return tuple(requests)
 
 def _semantic_compile_failure(
@@ -273,6 +283,7 @@ def _compile_ir_parts(
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
     role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    voice_plan: NativeVoicePlan | None = None,
 ):
     reports = []
 
@@ -366,6 +377,7 @@ def _compile_ir_parts(
         attack_plan=attack_plan,
         role_separation_plan=role_plan,
         escrow_plan=escrow_plan,
+        voice_plan=voice_plan,
         persistent_controls=tuple(
             control
             for demand in ir
@@ -389,6 +401,12 @@ def _compile_ir_parts(
         except (TypeError, ValueError) as exc:
             raise CompileError(f"ROLE-PLAN-VALIDATION: {exc}") from exc
 
+    if program.voice_plan is not None:
+        try:
+            validate_native_voice_plan(program.voice_plan, registry)
+        except (TypeError, ValueError) as exc:
+            raise CompileError(f"VOICE-PLAN-VALIDATION: {exc}") from exc
+
     context = binding_context or BindingContext()
     if duc_plan is not None and not isinstance(duc_plan, NativeDucPlan):
         raise TypeError("duc_plan must be a NativeDucPlan")
@@ -405,6 +423,7 @@ def _compile_ir_parts(
         program.duc_plan,
         program.attack_plan,
         program.role_separation_plan,
+        program.voice_plan,
     )
     if any(
         isinstance(request, StrategicNumberRequest)
@@ -449,6 +468,7 @@ def _compile_ir_parts(
             attack_plan=program.attack_plan,
             role_plan=program.role_separation_plan,
             escrow_plan=program.escrow_plan,
+            voice_plan=program.voice_plan,
         ),
         bindings,
         context,
@@ -551,6 +571,7 @@ def compile_semantic_demands(
     attack_plan: NativeAttackLifecyclePlan | None = None,
     role_plan: NativeRoleSeparationPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    voice_plan: NativeVoicePlan | None = None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
     registry = registry or default_de_registry()
@@ -564,6 +585,7 @@ def compile_semantic_demands(
         attack_plan=attack_plan,
         role_plan=role_plan,
         escrow_plan=escrow_plan,
+        voice_plan=voice_plan,
     )
     return result
 
