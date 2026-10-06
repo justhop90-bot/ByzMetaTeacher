@@ -73,6 +73,19 @@ class StrategyRuntimeTests(unittest.TestCase):
             expression.args[1].source,
             "(players-unit-type-count any-enemy archer-line >= 3)",
         )
+    def test_town_under_attack_binds_to_pressure_state_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(town-under-attack)",
+            "opening-base-defense-collapse",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.PRESSURE_STATE,
+        )
+        self.assertEqual(binding.observations[0].primitive, "town-under-attack")
+
     def test_sn3_binds_to_civilian_explorer_cap_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
