@@ -91,13 +91,13 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         expected_opening_facts = {
             "opening-selector-water-control": (
                 "(goal opening-plan -1)",
-                "(map-type islands)",
+                "(or (map-type islands) (map-type pacific-islands))",
                 "(or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2))",
             ),
             "opening-selector-water-economy": (
                 "(goal opening-plan -1)",
-                "(map-type islands)",
+                "(or (map-type islands) (map-type pacific-islands))",
                 "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
             ),
@@ -110,7 +110,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             "opening-selector-counter-feudal": (
                 "(goal opening-plan -1)",
-                "(not (map-type islands))",
+                "(not (or (map-type islands) (map-type pacific-islands)))",
                 "(not (map-type arena))",
                 "(or (players-unit-type-count any-enemy knight >= 3) "
                 "(or (players-unit-type-count any-enemy archer-line >= 4) "
@@ -118,7 +118,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             "opening-selector-defensive-standard": (
                 "(goal opening-plan -1)",
-                "(not (map-type islands))",
+                "(not (or (map-type islands) (map-type pacific-islands)))",
                 "(not (map-type arena))",
                 "(not (or (players-unit-type-count any-enemy knight >= 3) "
                 "(or (players-unit-type-count any-enemy archer-line >= 4) "
