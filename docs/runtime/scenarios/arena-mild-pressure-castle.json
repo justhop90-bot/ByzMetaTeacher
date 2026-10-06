@@ -1,0 +1,81 @@
+{
+  "$schema": "../reference/runtime-witness.schema.json",
+  "schema_version": 1,
+  "record_type": "SCENARIO",
+  "scenario_id": "arena-mild-pressure-castle",
+  "status": "OPEN",
+  "artifact": {
+    "path": "Byzantine.per",
+    "sha256": null,
+    "sha256_required_at_capture": true
+  },
+  "match": {
+    "map": "ARENA",
+    "difficulty": null,
+    "our_civ": "BYZANTINES",
+    "opponent_civ": null,
+    "population": null
+  },
+  "claims": [
+    {
+      "id": "opening-fast-castle",
+      "lifecycle_edge": "OBSERVATION -> ARBITRATION",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "opening-selector-fast-castle"
+      ],
+      "expected": {
+        "goal": "opening-plan",
+        "value": 3
+      }
+    },
+    {
+      "id": "mild-pressure-does-not-divert-arena",
+      "lifecycle_edge": "ARBITRATION -> EXECUTION",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "economy-controller-select-counter-pressure"
+      ],
+      "expected": {
+        "counter_pressure_selected": false,
+        "arena_exclusion": "(not (map-type arena))"
+      }
+    },
+    {
+      "id": "castle-admission-separates-affordability-from-readiness",
+      "lifecycle_edge": "ADMISSIBILITY -> CAPABILITY",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "civilian-villager-continuity"
+      ],
+      "expected": {
+        "villager_stop_guard": "(can-afford-research castle-age)",
+        "not": "(can-research-with-escrow castle-age)"
+      }
+    },
+    {
+      "id": "castle-action-remains-native-feasibility-gated",
+      "lifecycle_edge": "FEASIBILITY -> ACTION",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "castle-age-transition"
+      ],
+      "expected": {
+        "action": "(research castle-age)",
+        "guard": "(can-research-with-escrow castle-age)"
+      }
+    },
+    {
+      "id": "castle-completes-in-world",
+      "lifecycle_edge": "ACTION -> WORLD-STATE WITNESS",
+      "evidence_class": "OPEN / UNKNOWN",
+      "rule_identities": [
+        "castle-age-transition"
+      ],
+      "expected": {
+        "world_state": "current-age >= castle-age"
+      }
+    }
+  ],
+  "checkpoint": []
+}

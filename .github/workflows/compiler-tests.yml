@@ -100,6 +100,11 @@ jobs:
           else
             echo "Checked-in Byzantine.per already matches the current controlled runtime slice."
           fi
+      - name: Build deterministic semantic shadow for checked-in Byzantine.per
+        run: |
+          PYTHONPATH=LearnerAI python tools/build_byzantine_semantic_manifest.py             --input Byzantine.per             --output /tmp/byzantine-semantic-manifest.json
+          PYTHONPATH=LearnerAI python tools/build_byzantine_semantic_manifest.py             --input Byzantine.per             --output /tmp/byzantine-semantic-manifest-repeat.json
+          cmp /tmp/byzantine-semantic-manifest.json /tmp/byzantine-semantic-manifest-repeat.json
       - name: Canonical Byzantine Core v1 build regression
         run: PYTHONPATH=LearnerAI python -m unittest LearnerAI.Compiler.tests.test_byzantine_bot_build -v
       - name: Native zero-findings acceptance - canonical Byzantine Core v1 artifact
@@ -328,6 +333,8 @@ jobs:
           name: native-validation-evidence
           path: |
             /tmp/native-reports
+            /tmp/byzantine-semantic-manifest.json
+            /tmp/byzantine-semantic-manifest-repeat.json
             /tmp/CompilerFixture.per
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
