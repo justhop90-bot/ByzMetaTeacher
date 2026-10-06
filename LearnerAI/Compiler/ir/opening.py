@@ -320,6 +320,9 @@ def lower_opening_selector(
                     recovery_active,
                     f"(goal {plan.recovery_origin_state_name} {value})",
                     recovery_cause_clear,
+                    f"(not {gold_front_lost})",
+                    f"(not {water_path_lost})",
+                    f"(not {base_defense_lost})",
                 ),
                 actions=(
                     parse_expression(
