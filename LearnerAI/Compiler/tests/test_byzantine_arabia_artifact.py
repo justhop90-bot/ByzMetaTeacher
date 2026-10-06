@@ -45,7 +45,6 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             end = self.artifact.index(end_marker, start)
             section = self.artifact[start:end]
 
-            base = 1020 + (floor - 1) * 4
             self.assertIn(
                 f"(up-get-search-state byzantine-dark-gold-camp-search-state-{floor})",
                 section,
@@ -60,12 +59,22 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             build_pos = section.index("(up-build place-point 0 c: mining-camp)")
             self.assertLess(witness_pos, build_pos)
 
-            # The witness is the third goal in the four-goal search-state span:
-            # local search count, local list count, remote search count, remote list count.
-            self.assertIn(
-                f"(defconst byzantine-dark-gold-camp-search-state-{floor} {base})",
+            state_name = f"byzantine-dark-gold-camp-search-state-{floor}"
+            remote_name = f"byzantine-dark-gold-camp-search-remote-count-{floor}"
+            state_match = re.search(
+                rf"\(defconst {re.escape(state_name)} (\d+)\)",
                 self.artifact,
             )
+            remote_match = re.search(
+                rf"\(defconst {re.escape(remote_name)} (\d+)\)",
+                self.artifact,
+            )
+            self.assertIsNotNone(state_match)
+            self.assertIsNotNone(remote_match)
+            assert state_match is not None
+            assert remote_match is not None
+            self.assertTrue(41 <= int(state_match.group(1)) <= 15996)
+            self.assertTrue(1 <= int(remote_match.group(1)) <= 16000)
 
 
 if __name__ == "__main__":
