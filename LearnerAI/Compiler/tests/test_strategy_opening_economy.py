@@ -238,6 +238,44 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             tuple(castle.execution.requirements),
         )
 
+    def test_water_opening_yields_to_fast_castle_at_feudal_maturity(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        fast = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-fast-castle"
+        )
+        water_economy = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-economy"
+        )
+        water_control = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-control"
+        )
+
+        fast_text = " ".join(fact.source for fact in fast.facts)
+        water_economy_text = " ".join(fact.source for fact in water_economy.facts)
+        water_control_text = " ".join(fact.source for fact in water_control.facts)
+
+        castle_bank_ready = (
+            "(and (unit-type-count-total villager >= 28) "
+            "(and (building-type-count-total blacksmith >= 1) "
+            "(and (building-type-count-total market >= 1) "
+            "(can-afford-research castle-age))))"
+        )
+        self.assertIn("(goal opening-plan 4)", fast_text)
+        self.assertIn("(goal opening-plan 5)", fast_text)
+        self.assertIn(castle_bank_ready, fast_text)
+        self.assertIn(f"(not {castle_bank_ready})", water_economy_text)
+        self.assertIn(f"(not {castle_bank_ready})", water_control_text)
+
     def test_castle_age_transition_is_compiler_owned_and_protected(self):
         profile = build_byzantine_strategy(self.effective)
         transition = profile.demand("castle-age-transition")
