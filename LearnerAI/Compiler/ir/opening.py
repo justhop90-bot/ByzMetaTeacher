@@ -36,7 +36,7 @@ class OpeningSelectorPlan:
     recovery_origin_state_name: str = "opening-recovery-origin"
     recovery_gold_proven_state_name: str = "opening-recovery-gold-proven"
     recovery_water_proven_state_name: str = "opening-recovery-water-proven"
-    water_observation: str = "strategy-water-islands"
+    water_observation: str = "strategy-water-map"
     naval_pressure_observation: str = "strategy-enemy-naval-pressure"
     arena_observation: str = "strategy-arena-map"
     enemy_pressure_observation: str = "strategy-opening-pressure"
@@ -136,7 +136,8 @@ def lower_opening_selector(
     )
     water_path_lost = (
         f"(and {water_proven} "
-        f"(and {water} (not {transport_capable})))"
+        f"(and {water} "
+        f"(and {plan.water_observation} (goal transport-phase 3))))"
     )
     base_defense_lost = f"(and (current-age < castle-age) {base_defense})"
     fortification_defense_siege = (
