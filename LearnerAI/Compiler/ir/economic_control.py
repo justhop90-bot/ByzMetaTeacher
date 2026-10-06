@@ -160,6 +160,7 @@ def lower_economy_controller(
         no_infantry_pressure,
     )
     opening = lambda value: f"(goal {plan.opening_state} {value})"
+    not_emergency_recovery = f"(not {opening(6)})"
 
     def select_rule(
         identity: str,
@@ -211,34 +212,36 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-counter-pressure",
             EconomyMode.COUNTER_FEUDAL,
-            f"(and {feudal_window} {pressure})",
+            (
+                f"(and {feudal_window} {pressure})",
+                not_emergency_recovery,
+            ),
         ),
         select_rule(
             "economy-controller-select-fast-castle",
             EconomyMode.FAST_CASTLE,
-            (feudal_window, *no_pressure, opening(3)),
+            (feudal_window, *no_pressure, opening(3), not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-counter-feudal",
             EconomyMode.COUNTER_FEUDAL,
-            (feudal_window, *no_pressure, opening(2)),
+            (feudal_window, *no_pressure, opening(2), not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            (feudal_window, *no_pressure, opening(4)),
+            (feudal_window, *no_pressure, opening(4), not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            (feudal_window, *no_pressure, opening(5)),
+            (feudal_window, *no_pressure, opening(5), not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-base",
             EconomyMode.BASE,
             (
                 "(current-age < castle-age)",
-                *no_pressure,
                 f"(or {opening(1)} {opening(6)})",
             ),
         ),
