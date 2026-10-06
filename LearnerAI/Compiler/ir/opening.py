@@ -128,7 +128,7 @@ def lower_opening_selector(
     gold_front_lost = (
         f"(and {gold_proven} "
         f"(and (current-age < castle-age) "
-        f"(and {gold_remote} (gold-amount <= 800)))"
+        f"(and {gold_remote} (gold-amount <= 800))))"
     )
     gold_front_recovered = (
         f"(and {gold_front_viable} (gold-amount >= 1000))"
