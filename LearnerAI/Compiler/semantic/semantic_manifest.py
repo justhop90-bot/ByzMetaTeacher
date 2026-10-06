@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -16,6 +17,7 @@ from typing import Iterable
 
 from ..ast import Expression
 from ..source_graph import SourceGraphRequest, SourceGraphResolver
+from .community_engine import PerformanceCostClass, max_performance_cost
 from .rule_execution import EffectiveRule, RulePassBehavior, analyze_effective_rules
 
 
@@ -84,6 +86,8 @@ class SemanticRuleRecord:
     strategic_number_writes: tuple[str, ...]
     timer_reads: tuple[str, ...]
     timer_writes: tuple[str, ...]
+    operation_heads: tuple[str, ...]
+    performance_cost: str
     element_count: int
 
     @property
@@ -107,6 +111,8 @@ class SemanticManifest:
     annotation_counts: tuple[tuple[str, int], ...]
     writers_by_state: tuple[tuple[str, tuple[int, ...]], ...]
     readers_by_state: tuple[tuple[str, tuple[int, ...]], ...]
+    operation_counts: tuple[tuple[str, int], ...]
+    high_cost_recurrent_rules: tuple[int, ...]
     rules: tuple[SemanticRuleRecord, ...]
 
     def to_dict(self) -> dict[str, object]:
@@ -120,6 +126,8 @@ class SemanticManifest:
                 "max_element_count": self.max_element_count,
                 "over_32_element_rules": list(self.over_32_element_rules),
                 "annotation_counts": dict(self.annotation_counts),
+                "operation_counts": dict(self.operation_counts),
+                "high_cost_recurrent_rules": list(self.high_cost_recurrent_rules),
             },
             "writers_by_state": {
                 key: list(orders)
@@ -247,6 +255,7 @@ def build_semantic_manifest(path: Path) -> SemanticManifest:
     annotation_counts: dict[str, int] = {}
     writers: dict[str, list[int]] = {}
     readers: dict[str, list[int]] = {}
+    operation_counts: Counter[str] = Counter()
 
     for rule in report.rules:
         source = sources[Path(rule.source_location.source_unit).resolve()]
@@ -264,6 +273,10 @@ def build_semantic_manifest(path: Path) -> SemanticManifest:
             timer_reads,
             timer_writes,
         ) = _collect_state_accesses(rule)
+        fact_heads = tuple(expression.head for expression in rule.facts)
+        action_heads = tuple(action.expression.head for action in rule.actions)
+        operation_heads = tuple(sorted(set((*fact_heads, *action_heads))))
+        performance_cost = max_performance_cost(operation_heads)
         record = SemanticRuleRecord(
             rule_order=rule.rule_order,
             identity=identity,
@@ -275,14 +288,16 @@ def build_semantic_manifest(path: Path) -> SemanticManifest:
             pass_behavior=rule.pass_behavior.value,
             facts=tuple(expression.source for expression in rule.facts),
             actions=tuple(action.expression.source for action in rule.actions),
-            fact_heads=tuple(expression.head for expression in rule.facts),
-            action_heads=tuple(action.expression.head for action in rule.actions),
+            fact_heads=fact_heads,
+            action_heads=action_heads,
             goal_reads=tuple(sorted(goal_reads)),
             goal_writes=tuple(sorted(goal_writes)),
             strategic_number_reads=tuple(sorted(sn_reads)),
             strategic_number_writes=tuple(sorted(sn_writes)),
             timer_reads=tuple(sorted(timer_reads)),
             timer_writes=tuple(sorted(timer_writes)),
+            operation_heads=operation_heads,
+            performance_cost=performance_cost.value,
             element_count=_elements(rule),
         )
         records.append(record)
@@ -291,6 +306,7 @@ def build_semantic_manifest(path: Path) -> SemanticManifest:
             writers.setdefault(state, []).append(record.rule_order)
         for state in record.state_reads:
             readers.setdefault(state, []).append(record.rule_order)
+        operation_counts.update(record.operation_heads)
 
     artifact_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
     ordered_records = tuple(records)
@@ -317,6 +333,13 @@ def build_semantic_manifest(path: Path) -> SemanticManifest:
         readers_by_state=tuple(
             (state, tuple(sorted(orders)))
             for state, orders in sorted(readers.items())
+        ),
+        operation_counts=tuple(sorted(operation_counts.items())),
+        high_cost_recurrent_rules=tuple(
+            rule.rule_order
+            for rule in ordered_records
+            if rule.pass_behavior == RulePassBehavior.RECURRENT.value
+            and rule.performance_cost == PerformanceCostClass.HIGH.value
         ),
         rules=ordered_records,
     )
