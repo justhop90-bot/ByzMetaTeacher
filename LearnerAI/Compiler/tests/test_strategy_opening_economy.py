@@ -561,5 +561,131 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(defconst sn-percent-civilian-builders 1)", output)
 
 
+    def test_opening_recovery_has_verified_entry_and_exit_paths(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("opening-plan", state_ids)
+        self.assertIn("opening-recovery", state_ids)
+        self.assertIn("opening-recovery-origin", state_ids)
+        self.assertIn("opening-recovery-gold-proven", state_ids)
+        self.assertIn("opening-recovery-water-proven", state_ids)
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        }
+        self.assertIn("opening-recovery-prove-gold", rules)
+        self.assertIn("opening-recovery-prove-water", rules)
+
+        entry = rules["opening-recovery-enter-counter-feudal"]
+        entry_facts = tuple(fact.source for fact in entry.facts)
+        self.assertIn("(goal opening-recovery-gold-proven 1)", entry_facts)
+        self.assertIn("(current-age < castle-age)", entry_facts)
+        self.assertIn(
+            "(and (resource-found gold) (dropsite-min-distance gold <= -1))",
+            entry_facts,
+        )
+        self.assertIn(
+            "(or (and (map-type islands) "
+            "(goal opening-recovery-water-proven 1) "
+            "(not (unit-type-count transport-ship >= 1))) "
+            "(and (town-under-attack) "
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5))))))",
+            entry_facts,
+        )
+        self.assertIn("(goal opening-recovery-origin -1)", entry_facts)
+        self.assertTrue(
+            all("timer-triggered" not in fact for fact in entry_facts)
+        )
+        entry_actions = tuple(action.source for action in entry.actions)
+        self.assertIn("(set-goal opening-recovery-origin 2)", entry_actions)
+        self.assertIn("(set-goal opening-plan 6)", entry_actions)
+
+        exit_rule = rules["opening-recovery-exit-counter-feudal"]
+        exit_facts = tuple(fact.source for fact in exit_rule.facts)
+        self.assertIn("(goal opening-plan 6)", exit_facts)
+        self.assertIn("(goal opening-recovery-origin 2)", exit_facts)
+        self.assertTrue(
+            all("timer-triggered" not in fact for fact in exit_facts)
+        )
+        exit_actions = tuple(action.source for action in exit_rule.actions)
+        self.assertIn("(set-goal opening-plan 2)", exit_actions)
+        self.assertIn("(set-goal opening-recovery-origin -1)", exit_actions)
+
+    def test_opening_recovery_covers_water_loss_and_base_defense_collapse(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-")
+        }
+
+        water_entry_facts = tuple(
+            fact.source for fact in rules["opening-recovery-enter-water-economy"].facts
+        )
+        self.assertIn("(goal opening-recovery-water-proven 1)", water_entry_facts)
+        self.assertIn(
+            "(not (unit-type-count transport-ship >= 1))",
+            water_entry_facts,
+        )
+
+        defense_entry_facts = tuple(
+            fact.source for fact in rules["opening-recovery-enter-defensive-standard"].facts
+        )
+        self.assertIn("(town-under-attack)", " ".join(defense_entry_facts))
+        self.assertIn(
+            "(players-unit-type-count any-enemy knight >= 3)",
+            " ".join(defense_entry_facts),
+        )
+
+    def test_opening_recovery_preserves_sticky_identity_and_cannot_oscillate(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        normal_rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-selector-")
+        }
+        self.assertTrue(
+            all(
+                "(goal opening-plan -1)"
+                in tuple(fact.source for fact in rule.facts)
+                for rule in normal_rules.values()
+            )
+        )
+
+        recovery_rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("opening-recovery-enter-")
+        }
+        self.assertTrue(recovery_rules)
+        for rule in recovery_rules.values():
+            facts = tuple(fact.source for fact in rule.facts)
+            self.assertIn("(goal opening-recovery-origin -1)", facts)
+            actions = tuple(action.source for action in rule.actions)
+            self.assertNotIn("(set-goal opening-plan -1)", actions)
+
+        for rule in control.rules:
+            if rule.identity.startswith("opening-recovery-"):
+                text = " ".join(
+                    item.source for item in (*rule.facts, *rule.actions)
+                )
+                self.assertNotIn("timer-triggered", text)
+
 if __name__ == "__main__":
     unittest.main()
