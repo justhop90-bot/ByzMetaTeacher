@@ -732,7 +732,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-water-islands",
-            "(map-type islands)",
+            "(or (map-type islands) (map-type pacific-islands))",
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
