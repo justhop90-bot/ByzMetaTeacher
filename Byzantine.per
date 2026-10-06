@@ -6376,6 +6376,313 @@
     (set-goal opening-recovery-cause -1)
 )
 
+; Native control rule: opening-recovery-prove-gold
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 5))
+    (current-age >= feudal-age)
+    (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)))
+    (goal opening-recovery-gold-proven -1)
+=>
+    (set-goal opening-recovery-gold-proven 1)
+)
+
+; Native control rule: opening-recovery-prove-water
+(defrule
+    (or (goal opening-plan 4) (goal opening-plan 5))
+    (or (map-type islands) (map-type pacific-islands))
+    (building-type-count-total 45 >= 1)
+    (unit-type-count transport-ship >= 1)
+    (goal opening-recovery-water-proven -1)
+=>
+    (set-goal opening-recovery-water-proven 1)
+)
+
+; Native control rule: opening-recovery-cause-defense
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 5))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (and (current-age < castle-age) (and (town-under-attack) (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))))
+=>
+    (set-goal opening-recovery-cause 3)
+)
+
+; Native control rule: opening-recovery-cause-defense-siege
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 5))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (and (current-age < castle-age) (and (town-under-attack) (players-unit-type-count any-enemy mangonel-line >= 2)))
+=>
+    (set-goal opening-recovery-cause 3)
+)
+
+; Native control rule: opening-recovery-cause-defense-castle
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 5))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (and (current-age < castle-age) (and (town-under-attack) (players-building-type-count any-enemy 82 >= 1)))
+=>
+    (set-goal opening-recovery-cause 3)
+)
+
+; Native control rule: opening-recovery-cause-gold
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 5))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (goal opening-recovery-defense-clear 1)
+    (and (goal opening-recovery-gold-proven 1) (and (current-age < castle-age) (and (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)) (gold-amount <= 800))))
+=>
+    (set-goal opening-recovery-cause 2)
+)
+
+; Native control rule: opening-recovery-cause-water
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 5))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (current-age < castle-age)
+    (goal opening-recovery-defense-clear 1)
+    (not (and (goal opening-recovery-gold-proven 1) (and (current-age < castle-age) (and (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)) (gold-amount <= 800)))))
+    (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1))))
+=>
+    (set-goal opening-recovery-cause 1)
+)
+
+; Native control rule: opening-recovery-enter-defensive-standard
+(defrule
+    (goal opening-plan 1)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 1)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-defensive-standard
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 1)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1)))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 1)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-defensive-standard-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 1)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 1)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-counter-feudal
+(defrule
+    (goal opening-plan 2)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 2)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-counter-feudal
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 2)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1)))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 2)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-counter-feudal-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 2)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 2)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-fast-castle
+(defrule
+    (goal opening-plan 3)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 3)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-fast-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 3)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1)))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 3)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-fast-castle-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 3)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 3)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-water-economy
+(defrule
+    (goal opening-plan 4)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 4)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-water-economy
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 4)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1)))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 4)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-water-economy-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 4)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 4)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-water-control
+(defrule
+    (goal opening-plan 5)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 5)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-water-control
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 5)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1)))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 5)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-water-control-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 5)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 5)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-clear-cause
+(defrule
+    (goal opening-recovery 1)
+    (up-compare-goal opening-recovery-cause != -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (not (unit-type-count transport-ship >= 1)))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-recovery-cause -1)
+)
+
+; Native control rule: opening-recovery-clear-cause-castle
+(defrule
+    (goal opening-recovery 1)
+    (up-compare-goal opening-recovery-cause != -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-recovery-cause -1)
+)
+
 ; Native economy rule: byzantine-community-economy-initialize
 (defrule
     (true)
@@ -6916,7 +7223,7 @@
     (not (players-unit-type-count any-enemy knight >= 3))
     (not (players-unit-type-count any-enemy archer-line >= 4))
     (not (players-unit-type-count any-enemy militia-line >= 5))
-    (goal opening-plan 3)
+    (or (goal opening-plan 3) (and (or (goal opening-plan 4) (goal opening-plan 5)) (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1)))))
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 3)
@@ -6941,6 +7248,7 @@
     (not (players-unit-type-count any-enemy archer-line >= 4))
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 4)
+    (not (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1))))
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 4)
@@ -6953,6 +7261,7 @@
     (not (players-unit-type-count any-enemy archer-line >= 4))
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 5)
+    (not (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1))))
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 5)
