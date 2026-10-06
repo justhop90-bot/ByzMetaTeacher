@@ -427,6 +427,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 actions,
             )
+            self.assertNotIn("up-modify-sn sn-focus-player-number", " ".join(actions))
             self.assertIn(
                 "(set-goal byzantine-offensive-objective-state "
                 "byzantine-offensive-objective-state-executing)",
