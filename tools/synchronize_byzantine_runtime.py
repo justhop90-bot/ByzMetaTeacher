@@ -767,6 +767,62 @@ WATER_EXECUTION_STATE_NAMES = (
     "water-transport-objective",
     "water-transport-rebuild",
 )
+WATER_EXECUTION_NEW_STATE_NAMES = (
+    "water-transport-objective",
+    "water-transport-rebuild",
+)
+
+
+def _ensure_water_execution_state_defconsts(
+    runtime: str,
+) -> str:
+    names = WATER_EXECUTION_NEW_STATE_NAMES
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if len(resolved) != len(names):
+            return False
+        if len(set(resolved.values())) != len(resolved):
+            return False
+        return all(
+            not (occupants.get(value, set()) - {name})
+            for name, value in resolved.items()
+        )
+
+    if valid_current():
+        return runtime
+
+    missing = [name for name in names if values[name] is None]
+    chosen = _choose_goal_slots(
+        runtime,
+        len(missing),
+        relocatable_names=tuple(name for name in names if values[name] is not None),
+    )
+    replacements = dict(zip(missing, chosen))
+    for name, value in replacements.items():
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced:
+            continue
+
+        anchor = re.compile(
+            r"^\(defconst water-posture -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        match = anchor.search(runtime)
+        if match is None:
+            raise RuntimeError("runtime artifact is missing water-posture defconst")
+        insert_at = match.end()
+        runtime = runtime[:insert_at] + "\n" + new_line + runtime[insert_at:]
+
+    return runtime
 
 
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
@@ -791,12 +847,7 @@ def _sync_water_execution_control(runtime: str, generated: str) -> str:
         + "\n\n"
         + runtime[runtime_end:]
     )
-    return _ensure_named_defconsts(
-        runtime,
-        generated,
-        WATER_EXECUTION_STATE_NAMES,
-    )
-
+    return _ensure_water_execution_state_defconsts(runtime)
 
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
