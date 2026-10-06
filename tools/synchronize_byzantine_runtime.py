@@ -761,6 +761,43 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
+WATER_EXECUTION_STATE_NAMES = (
+    "transport-phase",
+    "water-posture",
+    "water-transport-objective",
+    "water-transport-rebuild",
+)
+
+
+def _sync_water_execution_control(runtime: str, generated: str) -> str:
+    """Synchronize the canonical water state machine into the checked-in runtime."""
+
+    water_start = "; Native control rule: water-execution-initialize"
+    water_end = "; Native control rule: opening-recovery-defense-clear-initialize"
+
+    generated_start = generated.find(water_start)
+    generated_end = generated.find(water_end, generated_start)
+    runtime_start = runtime.find(water_start)
+    runtime_end = runtime.find(water_end, runtime_start)
+
+    if generated_start < 0 or generated_end < 0:
+        raise RuntimeError("generated artifact is missing the canonical water control block")
+    if runtime_start < 0 or runtime_end < 0:
+        raise RuntimeError("runtime artifact is missing the water control insertion boundaries")
+
+    runtime = (
+        runtime[:runtime_start]
+        + generated[generated_start:generated_end].rstrip()
+        + "\n\n"
+        + runtime[runtime_end:]
+    )
+    return _ensure_named_defconsts(
+        runtime,
+        generated,
+        WATER_EXECUTION_STATE_NAMES,
+    )
+
+
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
     generated = GENERATED.read_text(encoding="utf-8")
@@ -768,6 +805,7 @@ def synchronize() -> bool:
 
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _ensure_named_defconsts(runtime, generated, WATER_DOCK_GOAL_NAMES)
+    runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
 
