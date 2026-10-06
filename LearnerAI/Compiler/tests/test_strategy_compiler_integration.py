@@ -295,9 +295,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(defconst byzantine-offensive-objective-claim ",
             output,
         )
-        self.assertNotIn(
-            "(up-target-objects 1 action-attack-move -1 -1)",
-            output,
+        self.assertEqual(
+            output.count("(up-target-objects 1 action-attack-move -1 -1)"),
+            4,
         )
 
     def test_byzantine_endgame_objective_target_control_is_class_priority_and_fail_closed(self):
@@ -394,6 +394,31 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(up-compare-goal byzantine-offensive-objective-target-town-center >= 1)",
             enter_rules["byzantine-endgame-objective-enter-executing-town-center"],
         )
+
+        for identity in (
+            "byzantine-endgame-objective-enter-executing-siege",
+            "byzantine-endgame-objective-enter-executing-defense",
+            "byzantine-endgame-objective-enter-executing-production",
+            "byzantine-endgame-objective-enter-executing-town-center",
+        ):
+            actions = tuple(
+                action.source
+                for action in control.rules[
+                    next(
+                        index
+                        for index, rule in enumerate(control.rules)
+                        if rule.identity == identity
+                    )
+                ].actions
+            )
+            self.assertIn(
+                "(up-target-objects 1 action-attack-move -1 -1)",
+                actions,
+            )
+            self.assertIn(
+                "(up-get-point position-object byzantine-offensive-objective-point)",
+                actions,
+            )
 
     def test_byzantine_endgame_objective_witness_release_lifecycle(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
