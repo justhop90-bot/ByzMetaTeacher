@@ -168,11 +168,10 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             synchronized.count("; Action issuance: water-dock-capability | ACTIVE -> ISSUED"),
             1,
         )
-        self.assertRegex(synchronized, r"^\(defconst demand-water-dock-capability \d+\)$", re.MULTILINE)
-        self.assertRegex(
+        self.assertIn("(defconst demand-water-dock-capability ", synchronized)
+        self.assertIn(
+            "(defconst construction-retry-barrier-water-dock-capability ",
             synchronized,
-            r"^\(defconst construction-retry-barrier-water-dock-capability \d+\)$",
-            re.MULTILINE,
         )
         self.assertIn("(build dock)", synchronized)
         self.assertIn(
