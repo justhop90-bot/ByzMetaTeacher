@@ -754,19 +754,6 @@ def community_strategy_observations(
             effective.unit(545).provenance,
         ),
         _observation(
-            "strategy-transport-recovery",
-            "(goal transport-phase 3)",
-            (
-                EvidenceRef(
-                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
-                    source="LearnerAI/Compiler/ir/water.py",
-                    revision="main",
-                    locator="transport phase recovery state",
-                    patch=effective.patch,
-                ),
-            ),
-        ),
-        _observation(
             "strategy-transport-rebuild-open",
             "(goal water-transport-rebuild 1)",
             (
@@ -778,6 +765,11 @@ def community_strategy_observations(
                     patch=effective.patch,
                 ),
             ),
+        ),
+        _observation(
+            "strategy-transport-capability-lost",
+            "(unit-type-count transport-ship < 1)",
+            effective.unit(545).provenance,
         ),
         _observation(
             "strategy-enemy-naval-pressure",
@@ -2004,25 +1996,17 @@ def community_strategy_demands(
                     "Supported water map establishes the transport policy scope",
                     "strategy-water-map",
                 ),
-                _persistent(
-                    "Verified transport objective requires a protected transport capability",
-                    "strategy-transport-required",
-                ),
             ),
             admissibility=(
                 _persistent(
                     "Transport is admissible only within the supported water-map policy",
                     "strategy-water-map",
                 ),
-                _persistent(
-                    "Transport objective is the explicit execution admission",
-                    "strategy-transport-required",
-                ),
             ),
             invalidation=(
                 _persistent(
-                    "Transport capability was lost after the transport became ready",
-                    "strategy-transport-recovery",
+                    "Transport capability loss invalidates the released transport contract",
+                    "strategy-transport-capability-lost",
                 ),
             ),
             capability_intent=_CapabilityIntent(
