@@ -964,7 +964,7 @@ def community_strategy_demands(
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
                 "(and (building-type-count-total market >= 1) "
-                "(can-research-with-escrow castle-age))))))",
+                "(can-afford-research castle-age))))))",
             ),
             action="(train villager)",
             witness="(unit-type-count villager >= 110)",
