@@ -3054,8 +3054,14 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-offensive-objective-claim 0)", SourceLocation(1)),
             ),
             actions=(
-                parse_expression("(set-strategic-number sn-native-16 6)", SourceLocation(1)),
-                parse_expression("(set-strategic-number sn-native-26 40)", SourceLocation(1)),
+                parse_expression(
+                    f"(set-strategic-number sn-native-16 {contract.minimum_group_size})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(set-strategic-number sn-native-26 {contract.maximum_group_size})",
+                    SourceLocation(1),
+                ),
                 parse_expression(f"(disable-timer {push_timer_name})", SourceLocation(1)),
                 parse_expression("(set-goal byzantine-endgame-push-state 1)", SourceLocation(1)),
             ),
@@ -3122,8 +3128,14 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 ),
                 parse_expression("(up-compare-goal byzantine-imperial-band-state != 2)", SourceLocation(1)),
                 parse_expression(standard_siege_ready, SourceLocation(1)),
-                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
-                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+                parse_expression(
+                    f"(strategic-number sn-native-16 >= {contract.minimum_group_size})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(strategic-number sn-native-26 >= {contract.maximum_group_size})",
+                    SourceLocation(1),
+                ),
             ),
             actions=(
                 parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
@@ -3141,8 +3153,14 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                 parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
                 parse_expression("(goal byzantine-imperial-band-state 2)", SourceLocation(1)),
                 parse_expression(fortified_siege_ready, SourceLocation(1)),
-                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
-                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+                parse_expression(
+                    f"(strategic-number sn-native-16 >= {contract.minimum_group_size})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(strategic-number sn-native-26 >= {contract.maximum_group_size})",
+                    SourceLocation(1),
+                ),
             ),
             actions=(
                 parse_expression(f"(enable-timer {push_timer_name} {plan.push_contract.active_window_seconds})", SourceLocation(1)),
@@ -3161,8 +3179,14 @@ def _byzantine_endgame_push_control_plan(profile: StrategyProfile):
                     parse_expression(fact, SourceLocation(1))
                     for fact in imperial_floor_ready_facts
                 ),
-                parse_expression("(strategic-number sn-native-16 >= 6)", SourceLocation(1)),
-                parse_expression("(strategic-number sn-native-26 >= 40)", SourceLocation(1)),
+                parse_expression(
+                    f"(strategic-number sn-native-16 >= {contract.minimum_group_size})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(strategic-number sn-native-26 >= {contract.maximum_group_size})",
+                    SourceLocation(1),
+                ),
                 parse_expression(standard_siege_ready, SourceLocation(1)),
             ),
             actions=(
