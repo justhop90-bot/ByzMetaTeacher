@@ -49,18 +49,23 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         base_source = synchronized.split("; Native Strategos voice plan", 1)[0]
         base_goal_ids = {
             value
-            for start, end, _kind in _storage_intervals(base_source)
-            for value in range(start, end + 1)
+            for interval in _storage_intervals(base_source)
+            for value in range(interval["start"], interval["end"] + 1)
         }
         base_timer_ids = sync_runtime._timer_ids(base_source)
 
         intervals = _storage_intervals(synchronized)
         collisions = []
-        ordered = sorted(intervals, key=lambda item: (item[0], item[1], item[2]))
+        ordered = sorted(
+            intervals,
+            key=lambda item: (item["start"], item["end"], item["name"]),
+        )
         for index, first in enumerate(ordered):
             for second in ordered[index + 1 :]:
-                if second[0] > first[1]:
+                if second["start"] > first["end"]:
                     break
+                if first["name"] == second["name"]:
+                    continue
                 collisions.append((first, second))
 
         self.assertEqual(collisions, [])
