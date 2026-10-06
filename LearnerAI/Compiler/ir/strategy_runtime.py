@@ -1207,6 +1207,9 @@ def _evaluate_demand(
     execution_truths: list[EvidenceTruth] = []
     for execution in demand.execution_demands:
         for index, expression in enumerate(execution.requirements):
+            if expression.head in {"goal", "up-compare-goal"}:
+                execution_truths.append(snapshot.result_for(expression))
+                continue
             binding = bind_strategic_evidence(
                 StrategicEvidence(
                     StrategicEvidenceKind.EXECUTION,
