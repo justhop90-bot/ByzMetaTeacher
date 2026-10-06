@@ -503,11 +503,11 @@ def emit(
             if expression.head == "up-target-objects"
             and any(str(argument) == "action-attack-move" for argument in expression.args)
         }
+        out.append("; Native DUC execution plan")
         if used_duc_action_values:
             emitted_defconsts = _defconst_bindings(out)
             if "action-attack-move" not in emitted_defconsts:
                 out.append("(defconst action-attack-move 19)")
-        out.append("; Native DUC execution plan")
         output_requests = {
             request.site_key: request
             for request in duc_plan.output_requests
