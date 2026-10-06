@@ -1221,7 +1221,7 @@ def _evaluate_demand(
             binding = bind_strategic_evidence(
                 StrategicEvidence(
                     StrategicEvidenceKind.EXECUTION,
-                    parsed_expression,
+                    parsed_expression.source,
                     f"{demand.identity}:execution:{index}",
                 ),
                 effective,
