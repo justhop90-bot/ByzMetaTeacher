@@ -4494,6 +4494,7 @@
 (defconst fisher-food 17)
 (defconst hunting-food 15)
 (defconst byzantine-resource-claim 269)
+(defconst byzantine-attack-phase 15978)
 (defconst byzantine-scout-phase 270)
 ; NAGA-derived scouting intelligence state. Observation stays separate from
 ; military execution: the scout records what it has actually searched, while
@@ -5950,6 +5951,7 @@
     (true)
 =>
     (set-goal byzantine-resource-claim 0)
+    (set-goal byzantine-attack-phase 0)
     (set-goal byzantine-scout-phase 0)
     (set-goal byzantine-scout-focus-player 0)
     (set-goal byzantine-scout-search-state 0)
