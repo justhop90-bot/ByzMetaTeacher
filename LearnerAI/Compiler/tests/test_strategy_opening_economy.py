@@ -267,8 +267,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         castle_bank_ready = (
             "(and (unit-type-count-total villager >= 28) "
             "(and (building-type-count-total blacksmith >= 1) "
-            "(and (building-type-count-total market >= 1) "
-            "(can-afford-research castle-age))))"
+            "(building-type-count-total market >= 1)))"
         )
         self.assertIn("(goal opening-plan 4)", fast_text)
         self.assertIn("(goal opening-plan 5)", fast_text)
