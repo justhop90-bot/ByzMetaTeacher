@@ -127,7 +127,11 @@ def lower_opening_selector(
     gold_front_viable = f"(not {gold_remote})"
     gold_front_lost = (
         f"(and {gold_proven} "
-        f"(and (current-age < castle-age) {gold_remote}))"
+        f"(and (current-age < castle-age) "
+        f"(and {gold_remote} (gold-amount <= 800)))"
+    )
+    gold_front_recovered = (
+        f"(or {gold_front_viable} (gold-amount >= 1000))"
     )
     water_path_lost = (
         f"(and {water_proven} "
@@ -320,7 +324,7 @@ def lower_opening_selector(
                     recovery_active,
                     f"(goal {plan.recovery_origin_state_name} {value})",
                     recovery_cause_clear,
-                    f"(not {gold_front_lost})",
+                    gold_front_recovered,
                     f"(not {water_path_lost})",
                     f"(not {base_defense_lost})",
                 ),
@@ -347,7 +351,7 @@ def lower_opening_selector(
             facts=native_facts(
                 recovery_active,
                 recovery_cause_active,
-                f"(not {gold_front_lost})",
+                gold_front_recovered,
                 f"(not {water_path_lost})",
                 f"(not {base_defense_lost})",
             ),
