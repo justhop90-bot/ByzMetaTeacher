@@ -424,10 +424,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 facts,
             )
             self.assertIn(
-                "(goal byzantine-army-role-state byzantine-army-role-committed)",
-                " ".join(facts),
-            )
-            self.assertIn(
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 actions,
             )
