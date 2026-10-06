@@ -136,8 +136,7 @@ def lower_opening_selector(
     )
     water_path_lost = (
         f"(and {water_proven} "
-        f"(and {water} "
-        f"(and {plan.water_observation} (goal transport-phase 3))))"
+        f"(and {water} (goal transport-phase 3)))"
     )
     base_defense_lost = f"(and (current-age < castle-age) {base_defense})"
     fortification_defense_siege = (
