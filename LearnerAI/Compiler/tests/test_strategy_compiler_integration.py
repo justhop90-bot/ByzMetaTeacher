@@ -381,42 +381,59 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-offensive-objective-release-reason-tc-exhausted)",
             misses["byzantine-endgame-objective-target-miss-town-center"],
         )
-        enter_rules = {
-            rule.identity: tuple(fact.source for fact in rule.facts)
-            for rule in control.rules
-            if rule.identity.startswith("byzantine-endgame-objective-enter-executing-")
+        dispatch_rules = {
+            rule.identity: rule
+            for rule in duc.rules
+            if rule.identity.startswith("byzantine-endgame-objective-dispatch-")
         }
-        self.assertIn(
-            "(up-compare-goal byzantine-offensive-objective-target-siege >= 1)",
-            enter_rules["byzantine-endgame-objective-enter-executing-siege"],
+        self.assertEqual(
+            set(dispatch_rules),
+            {
+                "byzantine-endgame-objective-dispatch-siege",
+                "byzantine-endgame-objective-dispatch-defense",
+                "byzantine-endgame-objective-dispatch-production",
+                "byzantine-endgame-objective-dispatch-town-center",
+            },
         )
-        self.assertIn(
-            "(up-compare-goal byzantine-offensive-objective-target-town-center >= 1)",
-            enter_rules["byzantine-endgame-objective-enter-executing-town-center"],
-        )
-
-        for identity in (
-            "byzantine-endgame-objective-enter-executing-siege",
-            "byzantine-endgame-objective-enter-executing-defense",
-            "byzantine-endgame-objective-enter-executing-production",
-            "byzantine-endgame-objective-enter-executing-town-center",
+        for identity, target_goal in (
+            (
+                "byzantine-endgame-objective-dispatch-siege",
+                "byzantine-offensive-objective-target-siege",
+            ),
+            (
+                "byzantine-endgame-objective-dispatch-defense",
+                "byzantine-offensive-objective-target-defense",
+            ),
+            (
+                "byzantine-endgame-objective-dispatch-production",
+                "byzantine-offensive-objective-target-production",
+            ),
+            (
+                "byzantine-endgame-objective-dispatch-town-center",
+                "byzantine-offensive-objective-target-town-center",
+            ),
         ):
-            actions = tuple(
-                action.source
-                for action in control.rules[
-                    next(
-                        index
-                        for index, rule in enumerate(control.rules)
-                        if rule.identity == identity
-                    )
-                ].actions
+            facts = tuple(fact.source for fact in dispatch_rules[identity].facts)
+            actions = tuple(action.source for action in dispatch_rules[identity].actions)
+            self.assertIn(
+                f"(up-compare-goal {target_goal} >= 1)",
+                facts,
+            )
+            self.assertIn(
+                "(goal byzantine-army-attack-ready 1)",
+                facts,
+            )
+            self.assertIn(
+                "(goal byzantine-army-role-state byzantine-army-role-committed)",
+                " ".join(facts),
             )
             self.assertIn(
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 actions,
             )
             self.assertIn(
-                "(up-get-point position-object byzantine-offensive-objective-point)",
+                "(set-goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-executing)",
                 actions,
             )
 
@@ -428,16 +445,24 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         assert duc is not None
 
         rules = {rule.identity: rule for rule in control.rules}
+        dispatch_rules = {rule.identity: rule for rule in duc.rules}
+        for identity in (
+            "byzantine-endgame-objective-dispatch-siege",
+            "byzantine-endgame-objective-dispatch-defense",
+            "byzantine-endgame-objective-dispatch-production",
+            "byzantine-endgame-objective-dispatch-town-center",
+        ):
+            self.assertIn(identity, dispatch_rules)
+            self.assertIn(
+                "(up-target-objects 1 action-attack-move -1 -1)",
+                tuple(action.source for action in dispatch_rules[identity].actions),
+            )
         for identity in (
             "byzantine-endgame-objective-admit",
             "byzantine-endgame-objective-target-miss-siege",
             "byzantine-endgame-objective-target-miss-defense",
             "byzantine-endgame-objective-target-miss-production",
             "byzantine-endgame-objective-target-miss-town-center",
-            "byzantine-endgame-objective-enter-executing-siege",
-            "byzantine-endgame-objective-enter-executing-defense",
-            "byzantine-endgame-objective-enter-executing-production",
-            "byzantine-endgame-objective-enter-executing-town-center",
             "byzantine-endgame-objective-executing-to-witness",
             "byzantine-endgame-objective-witness-live-rearm",
             "byzantine-endgame-objective-witness-failed-execution",
