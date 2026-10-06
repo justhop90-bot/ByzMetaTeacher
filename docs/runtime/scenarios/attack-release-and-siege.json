@@ -1,0 +1,79 @@
+{
+  "$schema": "../reference/runtime-witness.schema.json",
+  "schema_version": 1,
+  "record_type": "SCENARIO",
+  "scenario_id": "attack-release-and-siege",
+  "status": "OPEN",
+  "artifact": {
+    "path": "Byzantine.per",
+    "sha256": null,
+    "sha256_required_at_capture": true
+  },
+  "match": {
+    "map": "ARENA",
+    "difficulty": null,
+    "our_civ": "BYZANTINES",
+    "opponent_civ": null,
+    "population": null
+  },
+  "claims": [
+    {
+      "id": "target-visible-before-attack",
+      "lifecycle_edge": "OBSERVATION -> ARBITRATION",
+      "evidence_class": "COMMUNITY PRACTICE",
+      "rule_identities": [
+        "byzantine-army-attack-ready"
+      ],
+      "expected": {
+        "enemy_target_scoped": true
+      }
+    },
+    {
+      "id": "autonomous-attack-issued",
+      "lifecycle_edge": "ARBITRATION -> EXECUTION",
+      "evidence_class": "COMPILER POLICY",
+      "rule_identities": [
+        "byzantine-army-attack-ready"
+      ],
+      "expected": {
+        "attack_action_issued": true
+      }
+    },
+    {
+      "id": "attack-has-world-witness",
+      "lifecycle_edge": "ACTION -> WORLD-STATE WITNESS",
+      "evidence_class": "OPEN / UNKNOWN",
+      "rule_identities": [
+        "byzantine-army-attack-ready"
+      ],
+      "expected": {
+        "attack_soldier_count_positive": true
+      }
+    },
+    {
+      "id": "attack-releases-and-can-reassert",
+      "lifecycle_edge": "WORLD-STATE WITNESS -> RELEASE",
+      "evidence_class": "OPEN / UNKNOWN",
+      "rule_identities": [
+        "byzantine-endgame-push-release",
+        "byzantine-endgame-push-recovery-release"
+      ],
+      "expected": {
+        "expired_or_complete_state_observed": true
+      }
+    },
+    {
+      "id": "siege-converts-to-battlefield-action",
+      "lifecycle_edge": "DEMAND -> ACTION",
+      "evidence_class": "OPEN / UNKNOWN",
+      "rule_identities": [
+        "counter-castle-siege-response"
+      ],
+      "expected": {
+        "siege_produced": true,
+        "siege_used_against_structure": true
+      }
+    }
+  ],
+  "checkpoint": []
+}
