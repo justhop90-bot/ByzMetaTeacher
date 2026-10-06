@@ -72,6 +72,7 @@ def lower_opening_selector(
 ) -> NativeControlPlan:
     from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
+
     water = profile.observation(plan.water_observation).expression
     naval = profile.observation(plan.naval_pressure_observation).expression
     arena = profile.observation(plan.arena_observation).expression
@@ -100,6 +101,7 @@ def lower_opening_selector(
         goal_state(plan.recovery_gold_proven_state_name, "opening-recovery-proof"),
         goal_state(plan.recovery_water_proven_state_name, "opening-recovery-proof"),
     )
+
     unselected = f"(goal {plan.state_name} -1)"
     recovery_idle = f"(goal {plan.recovery_state_name} 0)"
     recovery_active = f"(goal {plan.recovery_state_name} 1)"
@@ -108,24 +110,26 @@ def lower_opening_selector(
     water_proven = f"(goal {plan.recovery_water_proven_state_name} 1)"
 
     opening_plan_selected = (
-        f"(or {f'(goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})'} "
-        f"{f'(or (goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})'} "
-        f"{f'(or (goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})'} "
-        f"{f'(or (goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})'} "
-        f"(goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL}))))"
+        f"(or (goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD}) "
+        f"(or (goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL}) "
+        f"(or (goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE}) "
+        f"(or (goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY}) "
+        f"(goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL})))))"
     )
     water_plan_selected = (
         f"(or (goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY}) "
         f"(goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL}))"
     )
+
     gold_front_viable = f"(not {gold_remote})"
     gold_front_lost = (
-        f"(and {gold_proven} (current-age < castle-age) "
+        f"(and {gold_proven} "
+        "(and (current-age < castle-age) "
         "(and (resource-found gold) (dropsite-min-distance gold <= -1)))"
     )
     water_path_lost = (
-        f"(and {water_proven} {water}) "
-        f"(not {transport_capable})"
+        f"(and {water_proven} {water} "
+        f"(not {transport_capable}))"
     )
     recovery_disaster = (
         f"(or {gold_front_lost} "
@@ -136,38 +140,67 @@ def lower_opening_selector(
         f"(and (not {water_path_lost}) (not {base_defense}))"
     )
 
-    rules = [
     def native_facts(*expressions: str):
         return tuple(
             parse_expression(expression, SourceLocation(1))
             for expression in expressions
         )
 
-    rules = (
+    rules: list[NativeControlRule] = [
         NativeControlRule(
             "opening-selector-water-control",
             facts=native_facts(unselected, water, naval),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL})", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "opening-selector-water-economy",
             facts=native_facts(unselected, water, f"(not {naval})"),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "opening-selector-fast-castle",
             facts=native_facts(unselected, arena, f"(not {pressure})"),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "opening-selector-counter-feudal",
             facts=native_facts(unselected, f"(not {water})", f"(not {arena})", pressure),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "opening-selector-defensive-standard",
-            facts=native_facts(unselected, f"(not {water})", f"(not {arena})", f"(not {pressure})"),
-            actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})", SourceLocation(1)),),
+            facts=native_facts(
+                unselected,
+                f"(not {water})",
+                f"(not {arena})",
+                f"(not {pressure})",
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD})",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "opening-recovery-prove-gold",
