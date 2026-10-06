@@ -17217,10 +17217,6 @@
     (goal demand-economy-gold-camp-floor-2 0)
     (resource-found gold)
     (not (building-type-count mining-camp >= 2))
-    (or
-        (dropsite-min-distance gold <= -1)
-        (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)
-    )
 =>
     (set-goal demand-economy-gold-camp-floor-2 1)
 )
