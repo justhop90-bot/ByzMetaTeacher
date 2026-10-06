@@ -520,26 +520,27 @@ def _ensure_named_defconsts(
     generated: str,
     names: tuple[str, ...],
 ) -> str:
-    generated_values: dict[str, int] = {}
     for name in names:
         match = re.search(
-            rf"^\\(defconst {re.escape(name)} (-?\\d+)\\)$",
+            rf"^\(defconst {re.escape(name)} (-?\d+)\)$",
             generated,
             flags=re.MULTILINE,
         )
         if not match:
             raise RuntimeError(f"generated artifact is missing defconst: {name}")
-        generated_values[name] = int(match.group(1))
 
     definitions = {
         match.group(1): int(match.group(2))
         for match in re.finditer(
-            r"\\(defconst\\s+([^\\s()]+)\\s+(-?\\d+)\\)",
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
             runtime,
         )
     }
     current = {name: definitions.get(name) for name in names}
     intervals = _storage_intervals(runtime)
+    names_by_slot = {
+        value: name for name, value in current.items() if value is not None
+    }
 
     def valid_current() -> bool:
         values = [value for value in current.values() if value is not None]
@@ -547,10 +548,12 @@ def _ensure_named_defconsts(
             return False
         if len(set(values)) != len(values):
             return False
-        for value in values:
+        for name, value in current.items():
+            assert value is not None
             for start, end, _kind in intervals:
-                if start <= value <= end and not (start == value == end):
-                    return False
+                if start <= value <= end:
+                    if not (start == value == end and names_by_slot.get(value) == name):
+                        return False
         return True
 
     if valid_current():
@@ -559,7 +562,7 @@ def _ensure_named_defconsts(
     chosen = _choose_goal_slots(runtime, len(names))
     for name, value in zip(names, chosen):
         old_pattern = re.compile(
-            rf"^\\(defconst {re.escape(name)} -?\\d+\\)$",
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
             flags=re.MULTILINE,
         )
         new_line = f"(defconst {name} {value})"
@@ -569,8 +572,8 @@ def _ensure_named_defconsts(
             position = runtime.find(marker)
             if position < 0:
                 raise RuntimeError("runtime artifact is missing opening-plan defconst")
-            line_end = runtime.find("\\n", position)
-            runtime = runtime[: line_end + 1] + new_line + "\\n" + runtime[line_end + 1 :]
+            line_end = runtime.find("\n", position)
+            runtime = runtime[: line_end + 1] + new_line + "\n" + runtime[line_end + 1 :]
     return runtime
 
 
