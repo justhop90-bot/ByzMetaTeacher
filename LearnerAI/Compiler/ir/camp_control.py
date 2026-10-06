@@ -6,7 +6,7 @@ from enum import Enum
 
 from ..ast import SourceLocation
 from ..runtime_binding import StrategicNumberRequest
-from .model import SemanticId, StorageRequestId
+from .model import GoalRole, SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from .strategic_number import StrategicNumberOrigin
 
@@ -215,17 +215,48 @@ def lower_byzantine_camp_controller(
             )
         )
 
+    from ..runtime_binding import GoalSlotRequest
+
     for policy in plan.policies:
-        remote = profile.observation(f"camp-front-{policy.resource.value}-remote").expression
-        rules.append(
-            rule(
-                f"camp-placement-widen-{policy.resource.value}",
-                (
-                    remote,
-                    f"(strategic-number {policy.distance_sn} < {policy.max_distance})",
+        remote = profile.observation(
+            f"camp-front-{policy.resource.value}-remote"
+        ).expression
+        latch = f"camp-placement-widened-{policy.resource.value}"
+        states.append(
+            NativeControlState(
+                latch,
+                GoalSlotRequest(
+                    StorageRequestId(
+                        SemanticId(plan.controller_id, latch),
+                        "camp-placement-widen-latch",
+                    ),
+                    role=GoalRole.PERSISTENT_STATE,
                 ),
-                (
-                    f"(up-modify-sn {policy.distance_sn} c:+ {policy.widening_step})",
+            )
+        )
+        rules.extend(
+            (
+                rule(
+                    f"camp-placement-widen-{policy.resource.value}",
+                    (
+                        remote,
+                        f"(goal {latch} 0)",
+                        f"(strategic-number {policy.distance_sn} < {policy.max_distance})",
+                    ),
+                    (
+                        f"(up-modify-sn {policy.distance_sn} c:+ {policy.widening_step})",
+                        f"(set-goal {latch} 1)",
+                    ),
+                ),
+                rule(
+                    f"camp-placement-rearm-{policy.resource.value}",
+                    (
+                        f"(not {remote})",
+                        f"(goal {latch} 1)",
+                    ),
+                    (
+                        f"(set-goal {latch} 0)",
+                    ),
                 ),
             )
         )
