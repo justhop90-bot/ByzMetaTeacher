@@ -183,14 +183,6 @@ def _timer_ids(source: str) -> set[int]:
 def _choose_voice_timer_slots(runtime: str, count: int) -> list[int]:
     """Choose deterministic Timer ids free in the non-voice runtime overlay."""
     used = _timer_ids(runtime)
-    definitions = {
-        match.group(1): int(match.group(2))
-        for match in re.finditer(
-            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
-            runtime,
-        )
-    }
-    used.update(value for value in definitions.values() if 1 <= value <= 50)
 
     chosen: list[int] = []
     for candidate in range(50, 0, -1):
