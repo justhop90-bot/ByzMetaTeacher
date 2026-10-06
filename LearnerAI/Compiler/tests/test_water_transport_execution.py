@@ -36,6 +36,109 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertTrue(recovered.transport_required)
         self.assertFalse(recovered.transport_capable)
 
+
+    def test_recovery_holds_until_rebuild_authorization(self):
+        ready = WaterExecutionState(
+            transport_required=True,
+            transport_capable=True,
+            transport_phase=TransportExecutionPhase.READY,
+        )
+        recovered = transition_transport_execution(
+            ready,
+            transport_required=True,
+            transport_capable=False,
+        )
+        self.assertEqual(recovered.transport_phase, TransportExecutionPhase.RECOVER)
+
+        held = transition_transport_execution(
+            recovered,
+            transport_required=True,
+            transport_capable=False,
+        )
+        self.assertEqual(held.transport_phase, TransportExecutionPhase.RECOVER)
+
+    def test_water_map_and_transport_requirement_are_separate_observations(self):
+        profile = build_byzantine_strategy(self.effective)
+        plan = profile.water_execution_plan
+        self.assertIsNotNone(plan)
+        assert plan is not None
+
+        self.assertEqual(plan.water_map_observation, "strategy-water-map")
+        self.assertEqual(plan.transport_required_observation, "strategy-transport-required")
+        self.assertNotEqual(plan.water_map_observation, plan.transport_required_observation)
+        self.assertEqual(
+            profile.observation("strategy-water-map").expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
+        self.assertEqual(
+            profile.observation("strategy-transport-required").expression,
+            "(goal water-transport-objective 1)",
+        )
+
+    def test_water_posture_transport_requires_both_map_and_objective(self):
+        self.assertEqual(
+            derive_water_posture(
+                water_map=False,
+                transport_required=True,
+                dock_exists=True,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.NONE,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=False,
+                dock_exists=True,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.FISHING,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=True,
+                dock_exists=True,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.TRANSPORT_SUPPORT,
+        )
+
+    def test_water_posture_precedence_is_transport_then_naval_then_fishing(self):
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=True,
+                dock_exists=True,
+                naval_pressure=True,
+                warboat_floor_met=True,
+            ),
+            WaterPosture.TRANSPORT_SUPPORT,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=False,
+                dock_exists=True,
+                naval_pressure=True,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.NAVAL_DEFENSE,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=False,
+                dock_exists=True,
+                naval_pressure=True,
+                warboat_floor_met=True,
+            ),
+            WaterPosture.NAVAL_CONTROL,
+        )
+
     def test_unknown_water_evidence_fails_closed(self):
         self.assertEqual(
             derive_water_posture(
@@ -96,6 +199,32 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertTrue(WaterExecutionPlan)
         self.assertTrue(WaterExecutionState)
         self.assertTrue(WaterPosture)
+
+
+    def test_transport_demand_is_objective_driven_not_map_driven(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-transport-capability")
+        req_text = " ".join(demand.execution.requirements)
+        self.assertIn(profile.observation("strategy-transport-required").expression, req_text)
+        self.assertIn("(building-type-count-total dock >= 1)", req_text)
+        self.assertNotIn(profile.observation("strategy-water-map").expression, req_text)
+
+    def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        transport = rules["water-posture-transport"]
+        transport_facts = tuple(fact.source for fact in transport.facts)
+        self.assertIn(profile.observation("strategy-water-map").expression, transport_facts)
+        self.assertIn(profile.observation("strategy-transport-required").expression, transport_facts)
+        self.assertIn("transport-phase-reopen", rules)
+
+        prepare = rules["transport-phase-prepare"]
+        prepare_text = " ".join(fact.source for fact in prepare.facts)
+        self.assertNotIn("(goal transport-phase 3)", prepare_text)
 
     def test_stock_strategy_exposes_typed_water_execution_plan(self):
         profile = build_byzantine_strategy(self.effective)
