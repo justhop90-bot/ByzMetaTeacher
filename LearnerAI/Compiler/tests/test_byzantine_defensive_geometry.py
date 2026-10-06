@@ -628,13 +628,25 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             if "(current-age == dark-age)" in rule
             and "(up-build place-point 0 c: mill)" in rule
         )
-        self.assertIn(
-            "(defconst byzantine-dark-mill-search-state 1040)",
-            self.per,
-        )
-        self.assertIn(
-            "(defconst byzantine-dark-mill-search-remote-count 1042)",
-            self.per,
+        def defconst_value(name):
+            matches = re.findall(
+                rf"\\(defconst {re.escape(name)} (-?\\d+)\\)",
+                self.per,
+            )
+            self.assertEqual(len(matches), 1, f"expected exactly one defconst for {name}")
+            return int(matches[0])
+
+        search_state = defconst_value("byzantine-dark-mill-search-state")
+        remote_count = defconst_value("byzantine-dark-mill-search-remote-count")
+
+        # Native up-get-search-state consumes a contiguous four-Goal span.
+        self.assertGreaterEqual(search_state, 41)
+        self.assertLessEqual(search_state, 15996)
+        self.assertGreaterEqual(remote_count, 1)
+        self.assertLessEqual(remote_count, 16000)
+        self.assertTrue(
+            remote_count < search_state or remote_count > search_state + 3,
+            "remote-count Goal must not overlap the four-slot search-state span",
         )
         self.assertIn(
             "(up-compare-goal byzantine-dark-mill-search-remote-count > 0)",
