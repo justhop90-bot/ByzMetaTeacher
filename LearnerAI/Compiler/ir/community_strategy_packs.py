@@ -1305,7 +1305,7 @@ def community_strategy_demands(
             resources=resources,
             minimum_floors=(
                 ((Resource.FOOD, 900), (Resource.GOLD, 250))
-                if tech_name in {"double-bit-axe", "horse-collar"}
+                if tech_name in {"double-bit-axe", "horse-collar", "gold-mining"}
                 and age == "feudal-age"
                 else (
                     ((Resource.FOOD, 1000), (Resource.GOLD, 250))
@@ -1315,8 +1315,7 @@ def community_strategy_demands(
             ),
             additional_requirements=(
                 ("(not (can-research-with-escrow castle-age))",)
-                if tech_name in {"double-bit-axe", "horse-collar", "wheelbarrow"}
-                and age == "feudal-age"
+                if owner == "economy" and age == "feudal-age"
                 else ()
             ),
         )
