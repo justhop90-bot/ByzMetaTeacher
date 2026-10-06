@@ -204,8 +204,35 @@ def _demand_lifecycle_block(source: str, identity: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
+def _ensure_water_dock_defconsts(runtime: str) -> tuple[str, dict[str, int]]:
+    names = (
+        WATER_DOCK_DEMAND,
+        f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
+    )
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in names}
+    if all(value is not None and 1 <= value <= 16_000 for value in values.values()):
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if len(set(resolved.values())) == len(resolved):
+            return runtime, resolved
+    missing = [name for name in names if values[name] is None]
+    chosen = _choose_voice_goal_slots(runtime, len(missing))
+    resolved = {name: int(value) for name, value in values.items() if value is not None}
+    additions = []
+    for name, value in zip(missing, chosen):
+        resolved[name] = value
+        additions.append(f"(defconst {name} {value})")
+    marker = "(defconst opening-plan "
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing opening-plan defconst")
+    line_end = runtime.find("\n", position)
+    runtime = runtime[: line_end + 1] + "\n".join(additions) + "\n" + runtime[line_end + 1:]
+    return runtime, resolved
+
 def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     identity = WATER_DOCK_DEMAND
+    runtime, dock_constants = _ensure_water_dock_defconsts(runtime)
     action_block = _rule_block(
         generated,
         identity,
@@ -217,14 +244,15 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     if "(building-type-count dock >= 1)" not in lifecycle_block:
         raise RuntimeError("generated first-dock lifecycle is missing its dock witness")
 
-    if f"; Action issuance: {identity} | ACTIVE -> ISSUED" in lifecycle_block:
-        if action_block.strip() not in lifecycle_block:
-            raise RuntimeError(
-                "generated first-dock lifecycle contains a divergent action issuance block"
-            )
-        install_block = lifecycle_block
-    else:
-        install_block = lifecycle_block + "\n" + action_block
+    install_block = lifecycle_block
+    if f"; Action issuance: {identity} | ACTIVE -> ISSUED" not in install_block:
+        install_block += "\n" + action_block
+    for name, value in dock_constants.items():
+        install_block = re.sub(
+            rf"(?<![A-Za-z0-9_-]){re.escape(name)}(?![A-Za-z0-9_-])",
+            str(value),
+            install_block,
+        )
 
     start_marker = f"; Pending diagnostics: {identity}"
     end_marker = "; Native Strategos voice plan"
@@ -239,19 +267,11 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
             install_block,
         )
 
-    initial_match = re.search(
-        rf"\(set-goal demand-{re.escape(identity)} (\d+)\)",
-        generated[generated.find("; Demand initialization"):],
-    )
-    if initial_match is None:
-        raise RuntimeError("generated first-dock demand has no initialization value")
-    initial_value = int(initial_match.group(1))
-
     init_start, init_end, init_rule = _first_rule_block(
         runtime,
         "; Demand initialization",
     )
-    init_line = f"    (set-goal demand-{identity} {initial_value})"
+    init_line = f"    (set-goal {dock_constants[identity]} 1)"
     if init_line not in init_rule:
         disable_line = "    (disable-self)"
         if disable_line not in init_rule:
@@ -268,7 +288,7 @@ def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
         "(defrule\n"
         "    (true)\n"
         "=>\n"
-        "    (set-goal construction-retry-barrier-water-dock-capability 0)\n"
+        f"    (set-goal {dock_constants[f'construction-retry-barrier-{identity}']} 0)\n"
         ")\n"
     )
     runtime = _install_once(
