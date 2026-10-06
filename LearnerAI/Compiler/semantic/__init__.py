@@ -86,10 +86,17 @@ from .community_engine import (
     EngineLifecycleContract,
     EnginePractice,
     EvidenceClass,
+    EvidenceConvergence,
+    EvidenceLineage,
+    PerformanceCostClass,
     PracticeStatus,
     capability_loss_preserves_demand,
     classify_capability_transition,
+    classify_evidence_source,
     default_community_engine_registry,
+    max_performance_cost,
+    performance_cost_for_head,
+    practice_evidence_convergence,
 )
 
 from .source_graph_validation import (
