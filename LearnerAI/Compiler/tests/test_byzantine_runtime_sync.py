@@ -12,6 +12,68 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 
 
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
+
+    def test_synchronization_installs_canonical_water_execution_control(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                first_sync = synchronized
+                sync_runtime.synchronize()
+                second_sync = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(first_sync, second_sync)
+        self.assertIn(
+            "(defconst water-transport-objective ",
+            synchronized,
+        )
+        self.assertIn(
+            "(defconst water-transport-rebuild ",
+            synchronized,
+        )
+        self.assertIn(
+            "(or (map-type islands) (map-type pacific-islands))",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: transport-objective-open",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: transport-phase-reopen",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: water-posture-naval-defense",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: water-posture-fishing",
+            synchronized,
+        )
+        self.assertNotIn(
+            "(defrule\\n    (map-type islands)\\n=>\\n    (set-goal water-posture 4)",
+            synchronized,
+        )
     def test_goal_slot_allocator_returns_empty_for_zero_requests(self) -> None:
         runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
         self.assertEqual(sync_runtime._choose_goal_slots(runtime, 0), [])
