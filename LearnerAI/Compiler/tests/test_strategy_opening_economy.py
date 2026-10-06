@@ -573,7 +573,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "(not (players-unit-type-count any-enemy knight >= 3))",
                 "(not (players-unit-type-count any-enemy archer-line >= 4))",
                 "(not (players-unit-type-count any-enemy militia-line >= 5))",
-                "(goal opening-plan 3)",
+                "(or (goal opening-plan 3) (and (or (goal opening-plan 4) (goal opening-plan 5)) (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1)))))",
                 "(not (goal opening-plan 6))",
             ),
         )
