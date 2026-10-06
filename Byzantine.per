@@ -6909,15 +6909,6 @@
     (set-goal economy-posture 2)
 )
 
-
-
-
-
-
-
-
-
-
 ; Native control rule: economy-controller-select-fast-castle
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
@@ -6929,15 +6920,6 @@
 =>
     (set-goal economy-posture 3)
 )
-
-
-
-
-
-
-
-
-
 
 ; Native control rule: economy-controller-select-counter-feudal
 (defrule
@@ -6951,15 +6933,6 @@
     (set-goal economy-posture 2)
 )
 
-
-
-
-
-
-
-
-
-
 ; Native control rule: economy-controller-select-water-economy
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
@@ -6971,15 +6944,6 @@
 =>
     (set-goal economy-posture 4)
 )
-
-
-
-
-
-
-
-
-
 
 ; Native control rule: economy-controller-select-water-control
 (defrule
@@ -6993,15 +6957,6 @@
     (set-goal economy-posture 5)
 )
 
-
-
-
-
-
-
-
-
-
 ; Native control rule: economy-controller-select-base
 (defrule
     (current-age < castle-age)
@@ -7009,15 +6964,6 @@
 =>
     (set-goal economy-posture 1)
 )
-
-
-
-
-
-
-
-
-
 
 ; Native control rule: economy-controller-select-castle-conversion
 (defrule
@@ -7625,8 +7571,6 @@
     (set-goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
 )
 
-
-
 (defrule
     (true)
 =>
@@ -8005,7 +7949,6 @@
     (set-goal byzantine-army-overmatch-state byzantine-army-overmatch-none)
 )
 
-
 (defrule
     (goal byzantine-army-stale-state -1)
 =>
@@ -8154,7 +8097,6 @@
 =>
     (set-goal byzantine-late-resource-burn 0)
 )
-
 
 (defrule
     (goal byzantine-siege-scale -1)
@@ -9794,8 +9736,6 @@
 =>
     (set-goal byzantine-market-state byzantine-market-idle)
 )
-
-
 
 ; -----------------------------------------------------------------------------
 ; LATE-GAME SPEND / RECOVERY OVERLAY
@@ -11470,7 +11410,6 @@
     (set-goal byzantine-siege-breach-witness 0)
 )
 
-
 (defrule
     (current-age >= castle-age)
     (goal byzantine-siege-approach byzantine-siege-approach-normal)
@@ -11550,7 +11489,6 @@
     (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
     (set-goal byzantine-army-attack-ready 2)
 )
-
 
 ; Breach truth is world-state truth, not action issuance. The current evidence
 ; contract is conservative and only releases after the relevant static-defense
@@ -12216,7 +12154,6 @@
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
     (set-goal byzantine-army-stale-state byzantine-army-stale-armed)
 )
-
 
 ; ----------------------------------------------------------------
 ; LATEST COMPILER CROSS-REF: IMPERIAL ENDGAME PUSH CONTRACT
@@ -13130,7 +13067,6 @@
 =>
     (set-goal construction-retry-barrier-imperial-siege-depth-4 0)
 )
-
 
 ; Demand initialization
 (defrule
@@ -20508,7 +20444,6 @@
     (set-goal demand-water-greek-fire 1)
 )
 
-
 ; Pending diagnostics: adaptive-outpost
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 42 and cannot reissue from pending goal 43
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 43 is active
@@ -20714,7 +20649,6 @@
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-adaptive-watch-tower 47)
 )
-
 
 ; =============================================================================
 ; PROFESSIONAL BYZANTINE WALL CONTROL
@@ -22386,7 +22320,6 @@
     (set-goal demand-research-conscription 105)
 )
 
-
 ;----------------------------------------------------------------
 ; PROFESSIONAL BYZANTINE UNIVERSITY RESEARCH LIFECYCLES
 ;----------------------------------------------------------------
@@ -22797,7 +22730,6 @@
     (set-goal byzantine-university-research-claim 1)
     (set-goal demand-byzantine-university-arrowslits 546)
 )
-
 
 ; Pending diagnostics: research-chemistry
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 101 and cannot reissue from pending goal 102
@@ -24267,7 +24199,6 @@
     (set-goal demand-research-theocracy 123)
 )
 
-
 ; Pending diagnostics: research-redemption
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1 and cannot reissue from pending goal 1008
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1008 is active
@@ -24881,7 +24812,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-castle-monk-floor 55)
 )
-
 
 ; Pending diagnostics: castle-monk-defense-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1 and cannot reissue from pending goal 1003
@@ -28229,8 +28159,6 @@
     (enable-timer byzantine-imperial-band-dwell-timer 60)
 )
 
-
-
 (defrule
     (true)
 =>
@@ -28254,7 +28182,6 @@
     (set-goal demand-imperial-trash-hussar-high 1)
     (disable-self)
 )
-
 
 ; Imperial standing-floor activation and replacement reconciliation
 (defrule
@@ -28487,8 +28414,6 @@
     (set-goal demand-imperial-elite-skirmisher-floor 94)
 )
 
-
-
 ; Pending diagnostics: imperial-open-halberdier-standard
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 106 and cannot reissue from pending goal 107
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 107 is active
@@ -28560,7 +28485,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-open-halberdier-standard 109)
 )
-
 
 ; Pending diagnostics: imperial-open-halberdier-pressure
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 104 and cannot reissue from pending goal 105
@@ -28635,7 +28559,6 @@
     (set-goal demand-imperial-open-halberdier-pressure 107)
 )
 
-
 ; Pending diagnostics: imperial-open-halberdier-severe
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 105 and cannot reissue from pending goal 106
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 106 is active
@@ -28707,7 +28630,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-open-halberdier-severe 108)
 )
-
 
 ; Pending diagnostics: imperial-open-elite-skirmisher-standard
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 103 and cannot reissue from pending goal 104
@@ -28781,7 +28703,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-open-elite-skirmisher-standard 106)
 )
-
 
 ; Pending diagnostics: imperial-open-elite-skirmisher-pressure
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 101 and cannot reissue from pending goal 102
@@ -28857,7 +28778,6 @@
     (set-goal demand-imperial-open-elite-skirmisher-pressure 104)
 )
 
-
 ; Pending diagnostics: imperial-open-elite-skirmisher-severe
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 102 and cannot reissue from pending goal 103
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 103 is active
@@ -28931,7 +28851,6 @@
     (set-goal demand-imperial-open-elite-skirmisher-severe 105)
 )
 
-
 ; Pending diagnostics: imperial-open-hussar-standard
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 108 and cannot reissue from pending goal 109
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 109 is active
@@ -29003,7 +28922,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-open-hussar-standard 111)
 )
-
 
 ; Pending diagnostics: imperial-open-hussar-mobile
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 107 and cannot reissue from pending goal 108
@@ -29077,7 +28995,6 @@
     (set-goal demand-imperial-open-hussar-mobile 110)
 )
 
-
 ; Pending diagnostics: imperial-fortified-halberdier
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 93 and cannot reissue from pending goal 94
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 94 is active
@@ -29148,7 +29065,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-fortified-halberdier 96)
 )
-
 
 ; Pending diagnostics: imperial-fortified-elite-skirmisher
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 92 and cannot reissue from pending goal 93
@@ -29222,7 +29138,6 @@
     (set-goal demand-imperial-fortified-elite-skirmisher 95)
 )
 
-
 ; Pending diagnostics: imperial-fortified-hussar
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 94 and cannot reissue from pending goal 95
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 95 is active
@@ -29293,7 +29208,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-fortified-hussar 97)
 )
-
 
 ; Pending diagnostics: imperial-trash-halberdier-standard
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 119 and cannot reissue from pending goal 120
@@ -29366,7 +29280,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-trash-halberdier-standard 122)
 )
-
 
 ; Pending diagnostics: imperial-trash-halberdier-high
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 118 and cannot reissue from pending goal 119
@@ -29441,7 +29354,6 @@
     (set-goal demand-imperial-trash-halberdier-high 121)
 )
 
-
 ; Pending diagnostics: imperial-trash-elite-skirmisher-standard
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 117 and cannot reissue from pending goal 118
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 118 is active
@@ -29514,7 +29426,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-trash-elite-skirmisher-standard 120)
 )
-
 
 ; Pending diagnostics: imperial-trash-elite-skirmisher-high
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 116 and cannot reissue from pending goal 117
@@ -29590,7 +29501,6 @@
     (set-goal demand-imperial-trash-elite-skirmisher-high 119)
 )
 
-
 ; Pending diagnostics: imperial-trash-hussar-standard
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 121 and cannot reissue from pending goal 122
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 122 is active
@@ -29662,7 +29572,6 @@
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-trash-hussar-standard 124)
 )
-
 
 ; Pending diagnostics: imperial-trash-hussar-high
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 120 and cannot reissue from pending goal 121
@@ -29738,37 +29647,37 @@
 )
 
 ; Native Strategos voice plan
-(defconst voice-global-cooldown 8)
-(defconst voice-global-lock 206)
-(defconst voice-latch-army-preparation 207)
-(defconst voice-latch-army-ready 208)
-(defconst voice-latch-attack-issued 209)
-(defconst voice-latch-attack-witness 210)
-(defconst voice-latch-cavalry-pressure 211)
-(defconst voice-latch-endgame-advance 212)
-(defconst voice-latch-gold-recovery 213)
-(defconst voice-latch-push-failed 214)
-(defconst voice-latch-ranged-pressure 215)
-(defconst voice-latch-reassessment 216)
-(defconst voice-latch-resource-abundance 217)
-(defconst voice-latch-severe-counter 218)
-(defconst voice-latch-siege-blocker 219)
-(defconst voice-latch-strategos-posture 220)
-(defconst voice-match-count 221)
-(defconst voice-rearm-army-preparation 9)
-(defconst voice-rearm-army-ready 10)
-(defconst voice-rearm-attack-issued 11)
-(defconst voice-rearm-attack-witness 12)
-(defconst voice-rearm-cavalry-pressure 13)
-(defconst voice-rearm-endgame-advance 14)
-(defconst voice-rearm-gold-recovery 15)
-(defconst voice-rearm-push-failed 16)
-(defconst voice-rearm-ranged-pressure 17)
-(defconst voice-rearm-reassessment 18)
-(defconst voice-rearm-resource-abundance 19)
-(defconst voice-rearm-severe-counter 20)
-(defconst voice-rearm-siege-blocker 21)
-(defconst voice-rearm-strategos-posture 22)
+(defconst voice-global-cooldown 50)
+(defconst voice-global-lock 15994)
+(defconst voice-latch-army-preparation 15993)
+(defconst voice-latch-army-ready 15992)
+(defconst voice-latch-attack-issued 15991)
+(defconst voice-latch-attack-witness 15990)
+(defconst voice-latch-cavalry-pressure 15989)
+(defconst voice-latch-endgame-advance 15988)
+(defconst voice-latch-gold-recovery 15987)
+(defconst voice-latch-push-failed 15986)
+(defconst voice-latch-ranged-pressure 15985)
+(defconst voice-latch-reassessment 15984)
+(defconst voice-latch-resource-abundance 15983)
+(defconst voice-latch-severe-counter 15982)
+(defconst voice-latch-siege-blocker 15981)
+(defconst voice-latch-strategos-posture 15980)
+(defconst voice-match-count 15979)
+(defconst voice-rearm-army-preparation 49)
+(defconst voice-rearm-army-ready 48)
+(defconst voice-rearm-attack-issued 47)
+(defconst voice-rearm-attack-witness 46)
+(defconst voice-rearm-cavalry-pressure 45)
+(defconst voice-rearm-endgame-advance 44)
+(defconst voice-rearm-gold-recovery 43)
+(defconst voice-rearm-push-failed 42)
+(defconst voice-rearm-ranged-pressure 41)
+(defconst voice-rearm-reassessment 40)
+(defconst voice-rearm-resource-abundance 39)
+(defconst voice-rearm-severe-counter 38)
+(defconst voice-rearm-siege-blocker 37)
+(defconst voice-rearm-strategos-posture 36)
 ; Voice Goal initialization
 (defrule
     (true)
@@ -29920,7 +29829,7 @@
 ; Voice clear witness: strategos-army-preparation
 (defrule
     (goal voice-latch-army-preparation 2)
-    (or (current-age < castle-age) (not (goal byzantine-attack-phase 1)))
+    (or (current-age < castle-age) (not (goal byzantine-endgame-push-state 1)))
 =>
     (set-goal voice-latch-army-preparation 0)
 )
@@ -30039,7 +29948,7 @@
 ; Voice clear witness: strategos-reassessment
 (defrule
     (goal voice-latch-reassessment 2)
-    (not (goal byzantine-attack-phase 5))
+    (not (goal byzantine-endgame-push-state 5))
 =>
     (set-goal voice-latch-reassessment 0)
 )
@@ -30175,7 +30084,7 @@
 
 ; Voice candidate: strategos-reassessment
 (defrule
-    (goal byzantine-attack-phase 5)
+    (goal byzantine-endgame-push-state 5)
     (goal voice-latch-reassessment 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
     (goal voice-match-count < 48)
@@ -30239,7 +30148,7 @@
 
 ; Voice candidate: strategos-army-preparation
 (defrule
-    (and (current-age >= castle-age) (goal byzantine-attack-phase 1))
+    (and (current-age >= castle-age) (goal byzantine-endgame-push-state 1))
     (goal voice-latch-army-preparation 0)
     (goal voice-global-lock 0)
     (goal voice-match-count < 36)

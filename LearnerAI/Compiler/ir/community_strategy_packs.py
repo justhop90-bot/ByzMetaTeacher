@@ -2349,8 +2349,8 @@ def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _Nat
         ),
         _VoiceRule(
             "strategos-army-preparation", 5, _VoicePriority.TACTICAL,
-            expr("(and (current-age >= castle-age) (goal byzantine-attack-phase 1))"),
-            expr("(or (current-age < castle-age) (not (goal byzantine-attack-phase 1)))"),
+            expr("(and (current-age >= castle-age) (goal byzantine-endgame-push-state 1))"),
+            expr("(or (current-age < castle-age) (not (goal byzantine-endgame-push-state 1)))"),
             "The force is almost ready. I am finishing the missing piece.",
             "voice-latch-army-preparation", "voice-rearm-army-preparation", 45,
         ),
@@ -2402,8 +2402,8 @@ def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _Nat
         ),
         _VoiceRule(
             "strategos-reassessment", 12, _VoicePriority.DECISION,
-            expr("(goal byzantine-attack-phase 5)"),
-            expr("(not (goal byzantine-attack-phase 5))"),
+            expr("(goal byzantine-endgame-push-state 5)"),
+            expr("(not (goal byzantine-endgame-push-state 5))"),
             "The old answer solved the old problem. It is no longer the right answer.",
             "voice-latch-reassessment", "voice-rearm-reassessment", 90,
         ),
