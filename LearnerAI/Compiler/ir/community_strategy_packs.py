@@ -1634,7 +1634,11 @@ def community_strategy_demands(
             unit_line = "skirmisher-line"
             action_symbol = "skirmisher-line"
             witness_symbol = "skirmisher-line"
-            release_symbol = "6"
+            release_symbol = (
+                "skirmisher-line"
+                if identity == "imperial-open-elite-skirmisher-severe"
+                else "6"
+            )
             exact_requirement = f"(unit-type-count 6 < {minimum})"
             requirements = (*requirements, "(up-research-status c: 98 >= 3)")
             reason_ref = "strategy-imperial-age"
