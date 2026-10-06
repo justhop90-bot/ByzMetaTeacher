@@ -688,7 +688,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(players-unit-type-count any-enemy knight >= 3)",
             " ".join(defense_cause_facts),
         )
-        self.assertIn("(goal opening-recovery-cause 0)", defense_cause_facts)
+        self.assertIn("(goal opening-recovery-cause -1)", defense_cause_facts)
 
     def test_opening_recovery_preserves_sticky_identity_and_cannot_oscillate(self):
         profile = build_byzantine_strategy(self.effective)
