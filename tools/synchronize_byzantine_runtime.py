@@ -204,7 +204,7 @@ def _demand_lifecycle_block(source: str, identity: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
-def _ensure_water_dock_defconsts(runtime: str) -> tuple[str, dict[str, int]]:
+def _ensure_water_dock_defconsts(runtime: str, generated: str) -> tuple[str, dict[str, int]]:
     names = (
         WATER_DOCK_DEMAND,
         f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
@@ -220,7 +220,7 @@ def _ensure_water_dock_defconsts(runtime: str) -> tuple[str, dict[str, int]]:
         ):
             return runtime, resolved
     missing = [name for name in names if values[name] is None]
-    chosen = _choose_goal_slots(runtime, len(missing))
+    chosen = _choose_goal_slots(runtime, len(missing), reserved_source=generated)
     resolved = {name: int(value) for name, value in values.items() if value is not None}
     additions = []
     for name, value in zip(missing, chosen):
@@ -236,7 +236,7 @@ def _ensure_water_dock_defconsts(runtime: str) -> tuple[str, dict[str, int]]:
 
 def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     identity = WATER_DOCK_DEMAND
-    runtime, dock_constants = _ensure_water_dock_defconsts(runtime)
+    runtime, dock_constants = _ensure_water_dock_defconsts(runtime, generated)
     action_block = _rule_block(
         generated,
         identity,
@@ -505,11 +505,15 @@ def _choose_goal_slots(
     count: int,
     *,
     relocatable_names: tuple[str, ...] = (),
+    reserved_source: str = "",
 ) -> list[int]:
     if count <= 0:
         return []
     relocatable_names_set = set(relocatable_names)
     occupants = _goal_slot_occupants(runtime)
+    if reserved_source:
+        for value, names in _goal_slot_occupants(reserved_source).items():
+            occupants.setdefault(value, set()).update(names)
     used: set[int] = {
         value
         for value, names in occupants.items()
@@ -582,7 +586,7 @@ def _ensure_named_defconsts(
     if valid_current():
         return runtime
 
-    chosen = _choose_goal_slots(runtime, len(names))
+    chosen = _choose_goal_slots(runtime, len(names), reserved_source=generated)
     for name, value in zip(names, chosen):
         old_pattern = re.compile(
             rf"^\(defconst {re.escape(name)} -?\d+\)$",
@@ -648,6 +652,7 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
         runtime,
         len(RECOVERY_NAMES),
         relocatable_names=RECOVERY_NAMES,
+        reserved_source=generated,
     )
     replacements = dict(zip(RECOVERY_NAMES, chosen))
     for name, value in replacements.items():
