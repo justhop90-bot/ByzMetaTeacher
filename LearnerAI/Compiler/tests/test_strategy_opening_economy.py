@@ -189,7 +189,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(and (unit-type-count-total villager >= 28) "
             "(and (building-type-count-total blacksmith >= 1) "
             "(and (building-type-count-total market >= 1) "
-            "(can-research-with-escrow castle-age))))))",
+            "(can-afford-research castle-age))))))",
             demand.execution.requirements,
         )
         self.assertEqual(demand.execution.action, "(train villager)")
@@ -218,6 +218,25 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertIn("(building-type-count-total blacksmith >= 1)", block)
         self.assertIn("(building-type-count-total market >= 1)", block)
+
+    def test_arena_castle_admission_does_not_depend_on_tc_research_provider_readiness(self):
+        profile = build_byzantine_strategy(self.effective)
+        villager = profile.demand("civilian-villager-continuity")
+        castle = profile.demand("castle-age-transition")
+
+        villager_requirements = tuple(villager.execution.requirements)
+        castle_stop = next(
+            requirement
+            for requirement in villager_requirements
+            if "(current-age == feudal-age)" in requirement
+        )
+
+        self.assertIn("(can-afford-research castle-age)", castle_stop)
+        self.assertNotIn("(can-research-with-escrow castle-age)", castle_stop)
+        self.assertIn(
+            "(can-research-with-escrow castle-age)",
+            tuple(castle.execution.requirements),
+        )
 
     def test_castle_age_transition_is_compiler_owned_and_protected(self):
         profile = build_byzantine_strategy(self.effective)
