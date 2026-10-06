@@ -4711,6 +4711,22 @@ def _default_byzantine_duc_plan(
             class_value,
             target_goal,
         ) in enumerate(dispatch_specs, start=len(rules)):
+            dispatch_token = identity.rsplit("-", 1)[-1]
+            point_output = GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId(
+                        profile_id,
+                        f"endgame-objective-dispatch-point:{dispatch_token}",
+                    ),
+                    "up-get-point",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="up-get-point.Point",
+                start_min=41,
+                start_max=15998,
+            )
             rules.append(
                 NativeDucRule(
                     identity=identity,
@@ -4752,6 +4768,16 @@ def _default_byzantine_duc_plan(
                         ),
                     ),
                     lifecycle=(NativeDucLifecycleStage.DISPATCH,),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=identity,
+                    section="ACTION",
+                    expression_index=1,
+                    request=point_output,
+                    command="up-get-point",
+                    argument_index=1,
                 )
             )
 
