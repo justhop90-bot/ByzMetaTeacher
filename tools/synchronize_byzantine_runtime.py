@@ -211,9 +211,13 @@ def _ensure_water_dock_defconsts(runtime: str) -> tuple[str, dict[str, int]]:
     )
     definitions = _defconst_values(runtime)
     values = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
     if all(value is not None and 1 <= value <= 16_000 for value in values.values()):
         resolved = {name: int(value) for name, value in values.items() if value is not None}
-        if len(set(resolved.values())) == len(resolved):
+        if (
+            len(set(resolved.values())) == len(resolved)
+            and all(not (occupants.get(value, set()) - {name}) for name, value in resolved.items())
+        ):
             return runtime, resolved
     missing = [name for name in names if values[name] is None]
     chosen = _choose_goal_slots(runtime, len(missing))
@@ -533,6 +537,22 @@ def _choose_goal_slots(
     raise RuntimeError("no free native Goal slots remain in 1..16000")
 
 
+def _goal_slot_occupants(source: str) -> dict[int, set[str]]:
+    """Return Goal-slot users keyed by resolved native Goal id."""
+    definitions = _defconst_values(source)
+    occupants: dict[int, set[str]] = {}
+    pattern = re.compile(
+        r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)"
+    )
+    for match in pattern.finditer(source):
+        name = match.group(1)
+        value = definitions.get(name)
+        if value is None or not 1 <= value <= 16_000:
+            continue
+        occupants.setdefault(value, set()).add(name)
+    return occupants
+
+
 def _ensure_named_defconsts(
     runtime: str,
     generated: str,
@@ -555,10 +575,7 @@ def _ensure_named_defconsts(
         )
     }
     current = {name: definitions.get(name) for name in names}
-    intervals = _storage_intervals(runtime)
-    names_by_slot = {
-        value: name for name, value in current.items() if value is not None
-    }
+    occupants = _goal_slot_occupants(runtime)
 
     def valid_current() -> bool:
         values = [value for value in current.values() if value is not None]
@@ -568,10 +585,9 @@ def _ensure_named_defconsts(
             return False
         for name, value in current.items():
             assert value is not None
-            for start, end, _kind in intervals:
-                if start <= value <= end:
-                    if not (start == value == end and names_by_slot.get(value) == name):
-                        return False
+            other_users = occupants.get(value, set()) - {name}
+            if other_users:
+                return False
         return True
 
     if valid_current():
