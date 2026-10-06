@@ -807,23 +807,17 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
     def _assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
         self,
         *,
-        siege_active: bool,
+        fortification: str,
     ):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
         control = compilation.control_plan
         assert control is not None
 
-        rule_identity = (
-            "opening-recovery-cause-defense-siege"
-            if siege_active
-            else "opening-recovery-cause-defense-castle"
-        )
-        pressure_expression = (
-            profile.observation("strategy-enemy-siege").expression
-            if siege_active
-            else profile.observation("strategy-enemy-castle").expression
-        )
+        rule_identity = f"opening-recovery-cause-defense-{fortification}"
+        pressure_expression = profile.observation(
+            f"strategy-enemy-{fortification}"
+        ).expression
         rule = next(
             item
             for item in control.rules
@@ -843,7 +837,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 ("(players-unit-type-count any-enemy knight >= 3)", False),
                 ("(players-unit-type-count any-enemy archer-line >= 4)", False),
                 ("(players-unit-type-count any-enemy militia-line >= 5)", False),
-                (pressure_expression, siege_active),
+                (pressure_expression, True),
                 ("(town-under-attack)", True),
                 ("(current-age < castle-age)", True),
                 *tuple(
@@ -868,12 +862,12 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
     def test_opening_recovery_defense_triggers_on_enemy_siege_below_pressure_floors(self):
         self._assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
-            siege_active=True,
+            fortification="siege",
         )
 
     def test_opening_recovery_defense_triggers_on_enemy_castle_below_pressure_floors(self):
         self._assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
-            siege_active=False,
+            fortification="castle",
         )
 
     def test_opening_recovery_clear_requires_all_disasters_to_be_absent(self):
