@@ -630,6 +630,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(goal opening-plan 6)", exit_facts)
         self.assertIn("(goal opening-recovery-origin 2)", exit_facts)
         self.assertIn("(goal opening-recovery-cause -1)", exit_facts)
+        self.assertTrue(any("opening-recovery-gold-proven" in fact for fact in exit_facts))
+        self.assertTrue(any("opening-recovery-water-proven" in fact for fact in exit_facts))
+        self.assertTrue(any("town-under-attack" in fact for fact in exit_facts))
         self.assertTrue(
             all("timer-triggered" not in fact for fact in exit_facts)
         )
