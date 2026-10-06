@@ -131,6 +131,23 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         ):
             self.assertIn(expr, self.runtime)
 
+    def test_endgame_push_runtime_uses_the_bounded_land_group_policy(self) -> None:
+        ready = next(
+            rule
+            for rule in self.rules
+            if "(goal byzantine-endgame-push-state 0)" in rule
+            and "(current-age >= imperial-age)" in rule
+            and "(set-strategic-number sn-minimum-attack-group-size 6)" in rule
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-attack-group-size 20)",
+            ready,
+        )
+        self.assertNotIn(
+            "(set-strategic-number sn-maximum-attack-group-size 40)",
+            ready,
+        )
+
     def test_varangian_floor_matches_current_compiler_pressure_model(self) -> None:
         self.assertIn(
             'reason_ref="strategy-enemy-infantry-pressure"',
