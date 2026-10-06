@@ -1,4 +1,5 @@
 from .analyzer import analyze, parse_expression
+from .semantic_manifest import SemanticManifest, SemanticRuleRecord, build_semantic_manifest
 from .capability_validation import (
     AdmissibilityValidationPass,
     CapabilityDiagnosticCode,
