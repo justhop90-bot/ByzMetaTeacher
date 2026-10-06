@@ -424,15 +424,17 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 facts,
             )
             self.assertIn(
+                "(goal byzantine-offensive-objective-state "
+                "byzantine-offensive-objective-state-executing)",
+                facts,
+            )
+            self.assertIn(
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 actions,
             )
             self.assertNotIn("up-modify-sn sn-focus-player-number", " ".join(actions))
-            self.assertIn(
-                "(set-goal byzantine-offensive-objective-state "
-                "byzantine-offensive-objective-state-executing)",
-                actions,
-            )
+            self.assertNotIn("(disable-timer ", " ".join(actions))
+            self.assertNotIn("(enable-timer ", " ".join(actions))
 
     def test_byzantine_endgame_objective_witness_release_lifecycle(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
@@ -454,6 +456,13 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(up-target-objects 1 action-attack-move -1 -1)",
                 tuple(action.source for action in dispatch_rules[identity].actions),
             )
+        for identity in (
+            "byzantine-endgame-objective-enter-executing-siege",
+            "byzantine-endgame-objective-enter-executing-defense",
+            "byzantine-endgame-objective-enter-executing-production",
+            "byzantine-endgame-objective-enter-executing-town-center",
+        ):
+            self.assertIn(identity, rules)
         for identity in (
             "byzantine-endgame-objective-admit",
             "byzantine-endgame-objective-target-miss-siege",
