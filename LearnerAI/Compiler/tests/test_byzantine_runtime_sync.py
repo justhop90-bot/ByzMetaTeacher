@@ -119,7 +119,7 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         }
         live_timers = sync_runtime._timer_ids(base)
         voice_goals = [
-            int(match.group(2))
+            int(match.group(1))
             for match in re.finditer(
                 r"^\(defconst\s+(?:voice-global-lock|voice-match-count|voice-latch-[^\s()]+)\s+(-?\d+)\)$",
                 source,
@@ -127,7 +127,7 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             )
         ]
         voice_timers = [
-            int(match.group(2))
+            int(match.group(1))
             for match in re.finditer(
                 r"^\(defconst\s+(?:voice-global-cooldown|voice-rearm-[^\s()]+)\s+(-?\d+)\)$",
                 source,
