@@ -637,6 +637,35 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(set-goal opening-plan 2)", exit_actions)
         self.assertIn("(set-goal opening-recovery-origin -1)", exit_actions)
 
+    def test_emergency_recovery_excludes_pressure_overrides_and_selects_base(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        counter = next(
+            item
+            for item in control.rules
+            if item.identity == "economy-controller-select-counter-pressure"
+        )
+        counter_facts = tuple(fact.source for fact in counter.facts)
+        self.assertIn("(not (goal opening-plan 6))", counter_facts)
+
+        base = next(
+            item
+            for item in control.rules
+            if item.identity == "economy-controller-select-base"
+        )
+        base_facts = tuple(fact.source for fact in base.facts)
+        self.assertIn(
+            "(or (goal opening-plan 1) (goal opening-plan 6))",
+            base_facts,
+        )
+        self.assertNotIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
+            base_facts,
+        )
+
     def test_opening_recovery_handoffs_to_existing_base_economy_control(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
