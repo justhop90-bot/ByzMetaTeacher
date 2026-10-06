@@ -107,6 +107,21 @@ class RuntimeEvidenceTests(unittest.TestCase):
         self.assertEqual(result.confirmed_claims, ("pressure-arbitration", "castle-completion"))
         self.assertEqual(result.artifact_sha256, "a" * 64)
 
+    def test_checked_in_arena_scenario_remains_open_until_live_checkpoint(self):
+        from pathlib import Path
+        import json
+
+        root = Path(__file__).resolve().parents[3]
+        record = json.loads(
+            (root / "docs" / "runtime" / "scenarios" / "arena-mild-pressure-castle.json")
+            .read_text(encoding="utf-8")
+        )
+        result = assess_runtime_witness(record)
+        self.assertEqual(result.status, RuntimeEvidenceStatus.OPEN)
+        self.assertIsNone(result.first_broken_edge)
+
+
+
     def test_claim_status_enum_is_exported(self):
         self.assertEqual(RuntimeClaimStatus.CONFIRMED.value, "CONFIRMED")
 
