@@ -109,6 +109,40 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
 
 
 
+    def test_native_control_accepts_town_under_attack_pressure_fact(self):
+        from Compiler.primitives.registry import default_de_registry
+
+        owner = SemanticId("control.fixture", "pressure")
+        plan = NativeControlPlan(
+            states=(
+                NativeControlState(
+                    "pressure-state",
+                    GoalSlotRequest(
+                        StorageRequestId(owner, "pressure-state"),
+                        role=GoalRole.PERSISTENT_STATE,
+                    ),
+                ),
+            ),
+            rules=(
+                NativeControlRule(
+                    "pressure-entry",
+                    facts=(
+                        Expression("(town-under-attack)", "town-under-attack", ()),
+                    ),
+                    actions=(
+                        Expression(
+                            "(set-goal pressure-state 1)",
+                            "set-goal",
+                            ("pressure-state", "1"),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        report = validate_native_control_plan(plan, default_de_registry())
+        self.assertIn("town-under-attack", report.control_commands)
+
     def test_native_control_accepts_goal_span_storage(self):
         from Compiler.primitives.registry import default_de_registry
 
