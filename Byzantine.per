@@ -4466,12 +4466,12 @@
 (defconst counter-package-siege_pressure_castle 147)
 (defconst economy-posture 141)
 (defconst opening-plan 142)
-(defconst opening-recovery 30728)
-(defconst opening-recovery-cause 30729)
-(defconst opening-recovery-defense-clear 30730)
-(defconst opening-recovery-gold-proven 30731)
-(defconst opening-recovery-origin 30732)
-(defconst opening-recovery-water-proven 30733)
+(defconst opening-recovery 16000)
+(defconst opening-recovery-cause 15999)
+(defconst opening-recovery-defense-clear 15998)
+(defconst opening-recovery-gold-proven 15997)
+(defconst opening-recovery-origin 15996)
+(defconst opening-recovery-water-proven 15995)
 (defconst sn-food-gatherer-percentage 117)
 (defconst sn-gold-gatherer-percentage 118)
 (defconst sn-native-18 18)
@@ -6910,6 +6910,7 @@
 )
 
 
+
 ; Native control rule: economy-controller-select-fast-castle
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
@@ -6921,6 +6922,7 @@
 =>
     (set-goal economy-posture 3)
 )
+
 
 
 ; Native control rule: economy-controller-select-counter-feudal
@@ -6936,6 +6938,7 @@
 )
 
 
+
 ; Native control rule: economy-controller-select-water-economy
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
@@ -6947,6 +6950,7 @@
 =>
     (set-goal economy-posture 4)
 )
+
 
 
 ; Native control rule: economy-controller-select-water-control
@@ -6962,6 +6966,7 @@
 )
 
 
+
 ; Native control rule: economy-controller-select-base
 (defrule
     (current-age < castle-age)
@@ -6969,6 +6974,7 @@
 =>
     (set-goal economy-posture 1)
 )
+
 
 
 ; Native control rule: economy-controller-select-castle-conversion
