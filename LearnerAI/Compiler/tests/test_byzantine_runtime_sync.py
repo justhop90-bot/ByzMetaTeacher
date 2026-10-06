@@ -134,6 +134,54 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         self.assertIn("(can-afford-research castle-age)", section)
         self.assertNotIn("(can-research-with-escrow castle-age)", section)
 
+    def test_synchronization_installs_first_dock_construction_lifecycle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                before_second_sync = synchronized
+                sync_runtime.synchronize()
+                after_second_sync = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(before_second_sync, after_second_sync)
+        self.assertIn("; Action issuance: water-dock-capability", synchronized)
+        self.assertIn("(build dock)", synchronized)
+        self.assertIn(
+            "; Completion witness: water-dock-capability | PENDING/ISSUED -> COMPLETE",
+            synchronized,
+        )
+        self.assertIn(
+            "; Release: water-dock-capability | COMPLETE -> RELEASED",
+            synchronized,
+        )
+        self.assertRegex(
+            synchronized,
+            r"\(set-goal demand-water-dock-capability 1\)",
+        )
+        self.assertIn(
+            "(set-goal construction-retry-barrier-water-dock-capability 0)",
+            synchronized,
+        )
+
     def test_checked_in_runtime_voice_storage_is_disjoint(self) -> None:
         source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
         definitions = {
