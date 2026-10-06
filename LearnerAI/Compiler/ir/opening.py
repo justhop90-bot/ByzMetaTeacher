@@ -98,6 +98,7 @@ def lower_opening_selector(
         goal_state(plan.state_name, "opening-selection"),
         goal_state(plan.recovery_state_name, "opening-recovery"),
         goal_state(plan.recovery_origin_state_name, "opening-recovery-origin"),
+        goal_state("opening-recovery-cause", "opening-recovery-cause"),
         goal_state(plan.recovery_gold_proven_state_name, "opening-recovery-proof"),
         goal_state(plan.recovery_water_proven_state_name, "opening-recovery-proof"),
     )
@@ -106,6 +107,8 @@ def lower_opening_selector(
     recovery_idle = f"(goal {plan.recovery_state_name} 0)"
     recovery_active = f"(goal {plan.recovery_state_name} 1)"
     recovery_origin_unset = f"(goal {plan.recovery_origin_state_name} -1)"
+    recovery_cause_clear = "(goal opening-recovery-cause 0)"
+    recovery_cause_active = "(goal opening-recovery-cause != 0)"
     gold_proven = f"(goal {plan.recovery_gold_proven_state_name} 1)"
     water_proven = f"(goal {plan.recovery_water_proven_state_name} 1)"
 
@@ -124,22 +127,14 @@ def lower_opening_selector(
     gold_front_viable = f"(not {gold_remote})"
     gold_front_lost = (
         f"(and {gold_proven} "
-        "(and (current-age < castle-age) "
-        "(and (resource-found gold) (dropsite-min-distance gold <= -1)))"
+        f"(and (current-age < castle-age) {gold_remote}))"
     )
     water_path_lost = (
-        f"(and {water_proven} {water} "
-        f"(not {transport_capable}))"
+        f"(and {water_proven} "
+        f"(and (current-age < castle-age) "
+        f"(and {water} (not {transport_capable})))"
     )
-    recovery_disaster = (
-        "(and (current-age < castle-age) "
-        f"(or {gold_front_lost} "
-        f"(or {water_path_lost} {base_defense})))"
-    )
-    recovery_clear = (
-        f"(and (not {gold_front_lost}) "
-        f"(and (not {water_path_lost}) (not {base_defense}))"
-    )
+    base_defense_lost = f"(and (current-age < castle-age) {base_defense})"
 
     def native_facts(*expressions: str):
         return tuple(
@@ -234,6 +229,51 @@ def lower_opening_selector(
                 ),
             ),
         ),
+        NativeControlRule(
+            "opening-recovery-cause-defense",
+            facts=native_facts(
+                opening_plan_selected,
+                recovery_cause_clear,
+                recovery_origin_unset,
+                base_defense_lost,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause 3)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-cause-gold",
+            facts=native_facts(
+                opening_plan_selected,
+                recovery_cause_clear,
+                recovery_origin_unset,
+                gold_front_lost,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause 2)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "opening-recovery-cause-water",
+            facts=native_facts(
+                opening_plan_selected,
+                recovery_cause_clear,
+                recovery_origin_unset,
+                water_path_lost,
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause 1)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
     ]
 
     recovery_plans = (
@@ -251,7 +291,7 @@ def lower_opening_selector(
                     f"(goal {plan.state_name} {value})",
                     recovery_idle,
                     recovery_origin_unset,
-                    recovery_disaster,
+                    recovery_cause_active,
                 ),
                 actions=(
                     parse_expression(
@@ -276,7 +316,7 @@ def lower_opening_selector(
                     f"(goal {plan.state_name} {OpeningPlanValue.EMERGENCY_RECOVERY})",
                     recovery_active,
                     f"(goal {plan.recovery_origin_state_name} {value})",
-                    recovery_clear,
+                    recovery_cause_clear,
                 ),
                 actions=(
                     parse_expression(
@@ -294,6 +334,25 @@ def lower_opening_selector(
                 ),
             )
         )
+
+    rules.append(
+        NativeControlRule(
+            "opening-recovery-clear-cause",
+            facts=native_facts(
+                recovery_active,
+                recovery_cause_active,
+                f"(not {gold_front_lost})",
+                f"(not {water_path_lost})",
+                f"(not {base_defense_lost})",
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        )
+    )
 
     return NativeControlPlan(states=states, rules=tuple(rules))
 
