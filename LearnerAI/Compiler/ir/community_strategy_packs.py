@@ -1001,9 +1001,13 @@ def community_strategy_demands(
                     ),
                     posture=_StrategyPosture.BOOM,
                     priority=(
-                        _StrategicPriority.SUPPORT
-                        if floor <= 2
-                        else _StrategicPriority.OPTIONAL
+                        _StrategicPriority.CORE
+                        if floor == 1 and resource in {CampResource.WOOD, CampResource.GOLD}
+                        else (
+                            _StrategicPriority.SUPPORT
+                            if floor <= 2
+                            else _StrategicPriority.OPTIONAL
+                        )
                     ),
                     reason=(
                         _persistent(
@@ -1299,6 +1303,16 @@ def community_strategy_demands(
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
+            minimum_floors=(
+                ((Resource.FOOD, 900), (Resource.GOLD, 250))
+                if tech_name in {"double-bit-axe", "horse-collar"}
+                and age == "feudal-age"
+                else (
+                    ((Resource.FOOD, 1000), (Resource.GOLD, 250))
+                    if tech_name == "wheelbarrow" and age == "feudal-age"
+                    else ()
+                )
+            ),
             additional_requirements=(
                 ("(not (can-research-with-escrow castle-age))",)
                 if tech_name in {"double-bit-axe", "horse-collar", "wheelbarrow"}
