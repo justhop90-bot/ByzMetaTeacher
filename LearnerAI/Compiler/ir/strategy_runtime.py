@@ -1293,8 +1293,10 @@ def _evaluate_water_execution_state(
         return None, ()
 
     refs = (
+        ("water:map", plan.water_map_observation),
         ("water:transport-required", plan.transport_required_observation),
         ("water:transport-capable", plan.transport_capable_observation),
+        ("water:transport-rebuild-open", plan.transport_rebuild_open_observation),
         ("water:dock", plan.dock_observation),
         ("water:naval-pressure", plan.naval_pressure_observation),
         ("water:naval-pressure-cleared", plan.naval_pressure_cleared_observation),
@@ -1330,10 +1332,13 @@ def _evaluate_water_execution_state(
     prior = snapshot.previous_water_execution_state or WaterExecutionState()
     transport_state = transition_transport_execution(
         prior,
+        water_map=tri(plan.water_map_observation),
         transport_required=tri(plan.transport_required_observation),
         transport_capable=tri(plan.transport_capable_observation),
+        transport_rebuild_open=tri(plan.transport_rebuild_open_observation),
     )
     posture = derive_water_posture(
+        water_map=tri(plan.water_map_observation),
         transport_required=tri(plan.transport_required_observation),
         dock_exists=tri(plan.dock_observation),
         naval_pressure=tri(plan.naval_pressure_observation),
@@ -1343,8 +1348,10 @@ def _evaluate_water_execution_state(
         WaterExecutionState(
             posture=posture,
             transport_phase=transport_state.transport_phase,
+            water_map=transport_state.water_map,
             transport_required=transport_state.transport_required,
             transport_capable=transport_state.transport_capable,
+            transport_rebuild_open=transport_state.transport_rebuild_open,
             dock_exists=tri(plan.dock_observation),
             naval_pressure=tri(plan.naval_pressure_observation),
             warboat_floor_met=tri(plan.warboat_floor_observation),
