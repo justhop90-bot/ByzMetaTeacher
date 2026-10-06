@@ -41,8 +41,10 @@ class WaterExecutionState:
 
     posture: WaterPosture = WaterPosture.NONE
     transport_phase: TransportExecutionPhase = TransportExecutionPhase.INACTIVE
+    water_map: bool | None = False
     transport_required: bool | None = False
     transport_capable: bool | None = False
+    transport_rebuild_open: bool | None = False
     dock_exists: bool | None = False
     naval_pressure: bool | None = False
     warboat_floor_met: bool | None = False
@@ -55,8 +57,12 @@ class WaterExecutionPlan:
     plan_id: str
     water_posture_state: str
     transport_phase_state: str
+    transport_objective_state: str
+    transport_rebuild_state: str
+    water_map_observation: str
     transport_required_observation: str
     transport_capable_observation: str
+    transport_rebuild_open_observation: str
     dock_observation: str
     naval_pressure_observation: str
     naval_pressure_cleared_observation: str
@@ -81,18 +87,31 @@ class WaterExecutionPlan:
 def transition_transport_execution(
     current: WaterExecutionState,
     *,
-    transport_required: bool,
-    transport_capable: bool,
+    water_map: bool | None = False,
+    transport_required: bool | None = False,
+    transport_capable: bool | None = False,
+    transport_rebuild_open: bool | None = False,
 ) -> WaterExecutionState:
-    """Advance transport execution without treating dispatch as landing proof."""
+    """Advance transport execution with explicit objective and recovery reopening."""
 
-    if transport_required is None or transport_capable is None:
-        phase = current.transport_phase if current.transport_phase is not TransportExecutionPhase.INACTIVE else TransportExecutionPhase.UNKNOWN
-    elif not transport_required:
+    if water_map is None or transport_required is None or transport_capable is None:
+        phase = (
+            current.transport_phase
+            if current.transport_phase is not TransportExecutionPhase.INACTIVE
+            else TransportExecutionPhase.UNKNOWN
+        )
+    elif not water_map or not transport_required:
         phase = TransportExecutionPhase.INACTIVE
     elif transport_capable:
         phase = TransportExecutionPhase.READY
     elif current.transport_phase is TransportExecutionPhase.READY:
+        phase = TransportExecutionPhase.RECOVER
+    elif (
+        current.transport_phase is TransportExecutionPhase.RECOVER
+        and transport_rebuild_open is True
+    ):
+        phase = TransportExecutionPhase.PREPARE
+    elif current.transport_phase is TransportExecutionPhase.RECOVER:
         phase = TransportExecutionPhase.RECOVER
     else:
         phase = TransportExecutionPhase.PREPARE
@@ -100,8 +119,10 @@ def transition_transport_execution(
     return WaterExecutionState(
         posture=current.posture,
         transport_phase=phase,
+        water_map=water_map,
         transport_required=transport_required,
         transport_capable=transport_capable,
+        transport_rebuild_open=transport_rebuild_open,
         dock_exists=current.dock_exists,
         naval_pressure=current.naval_pressure,
         warboat_floor_met=current.warboat_floor_met,
@@ -110,17 +131,25 @@ def transition_transport_execution(
 
 def derive_water_posture(
     *,
-    transport_required: bool,
-    dock_exists: bool,
-    naval_pressure: bool,
-    warboat_floor_met: bool,
+    water_map: bool | None,
+    transport_required: bool | None,
+    dock_exists: bool | None,
+    naval_pressure: bool | None,
+    warboat_floor_met: bool | None,
 ) -> WaterPosture:
-    """Derive deterministic water posture from typed strategic observations."""
-    if transport_required is True:
-        return WaterPosture.TRANSPORT_SUPPORT
+    """Derive deterministic water posture with environment/objective precedence."""
+
+    if water_map is None:
+        return WaterPosture.UNKNOWN
+    if not water_map:
+        return WaterPosture.NONE
     if transport_required is None:
         return WaterPosture.UNKNOWN
-    if naval_pressure is True:
+    if transport_required:
+        return WaterPosture.TRANSPORT_SUPPORT
+    if naval_pressure is None:
+        return WaterPosture.UNKNOWN
+    if naval_pressure:
         if warboat_floor_met is None:
             return WaterPosture.UNKNOWN
         return (
@@ -128,13 +157,9 @@ def derive_water_posture(
             if warboat_floor_met
             else WaterPosture.NAVAL_DEFENSE
         )
-    if naval_pressure is None:
-        return WaterPosture.UNKNOWN
-    if dock_exists is True:
-        return WaterPosture.FISHING
     if dock_exists is None:
         return WaterPosture.UNKNOWN
-    return WaterPosture.NONE
+    return WaterPosture.FISHING if dock_exists else WaterPosture.NONE
 
 
 def lower_water_execution_plan(
@@ -145,8 +170,16 @@ def lower_water_execution_plan(
     from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
 
+    water_map = parse_expression(
+        profile.observation(plan.water_map_observation).expression,
+        SourceLocation(1),
+    )
     required = parse_expression(
         profile.observation(plan.transport_required_observation).expression,
+        SourceLocation(1),
+    )
+    rebuild_open = parse_expression(
+        profile.observation(plan.transport_rebuild_open_observation).expression,
         SourceLocation(1),
     )
     capable = parse_expression(
@@ -186,6 +219,26 @@ def lower_water_execution_plan(
                 role=GoalRole.PERSISTENT_STATE,
             ),
         ),
+        NativeControlState(
+            plan.transport_objective_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.transport_objective_state),
+                    "transport-objective",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            plan.transport_rebuild_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.transport_rebuild_state),
+                    "transport-rebuild",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
     )
 
     def goal(name: str, value: int):
@@ -197,17 +250,24 @@ def lower_water_execution_plan(
     rules = [
         NativeControlRule(
             "water-execution-initialize",
-            facts=(goal(phase_state, 0), goal(posture_state, 0)),
+            facts=(
+                goal(phase_state, 0),
+                goal(posture_state, 0),
+                goal(plan.transport_objective_state, 0),
+                goal(plan.transport_rebuild_state, 0),
+            ),
             actions=(
                 set_goal(phase_state, 0),
                 set_goal(posture_state, 0),
+                set_goal(plan.transport_objective_state, 0),
+                set_goal(plan.transport_rebuild_state, 0),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
             "transport-phase-no-longer-required",
             facts=(
-                parse_expression(f"(not {required.source})", SourceLocation(1)),
+                parse_expression(f"(or (not {water_map.source}) (not {required.source}))", SourceLocation(1)),
                 parse_expression(
                     f"(or {goal(phase_state, 1).source} "
                     f"(or {goal(phase_state, 2).source} {goal(phase_state, 3).source}))",
@@ -219,6 +279,7 @@ def lower_water_execution_plan(
         NativeControlRule(
             "transport-phase-recover-on-capability-loss",
             facts=(
+                water_map,
                 required,
                 goal(phase_state, int(TransportExecutionPhase.READY)),
                 parse_expression(f"(not {capable.source})", SourceLocation(1)),
@@ -226,13 +287,25 @@ def lower_water_execution_plan(
             actions=(set_goal(phase_state, int(TransportExecutionPhase.RECOVER)),),
         ),
         NativeControlRule(
+            "transport-phase-reopen",
+            facts=(
+                water_map,
+                required,
+                goal(phase_state, int(TransportExecutionPhase.RECOVER)),
+                parse_expression(f"(not {capable.source})", SourceLocation(1)),
+                rebuild_open,
+            ),
+            actions=(
+                set_goal(phase_state, int(TransportExecutionPhase.PREPARE)),
+                set_goal(plan.transport_rebuild_state, 0),
+            ),
+        ),
+        NativeControlRule(
             "transport-phase-prepare",
             facts=(
+                water_map,
                 required,
-                parse_expression(
-                    f"(or {goal(phase_state, 0).source} {goal(phase_state, 3).source})",
-                    SourceLocation(1),
-                ),
+                goal(phase_state, int(TransportExecutionPhase.INACTIVE)),
                 parse_expression(f"(not {capable.source})", SourceLocation(1)),
             ),
             actions=(set_goal(phase_state, int(TransportExecutionPhase.PREPARE)),),
@@ -240,6 +313,7 @@ def lower_water_execution_plan(
         NativeControlRule(
             "transport-phase-ready",
             facts=(
+                water_map,
                 required,
                 capable,
                 parse_expression(
@@ -250,22 +324,19 @@ def lower_water_execution_plan(
             actions=(set_goal(phase_state, int(TransportExecutionPhase.READY)),),
         ),
         NativeControlRule(
-            "water-posture-transport",
-            facts=(required,),
-            actions=(set_goal(posture_state, int(WaterPosture.TRANSPORT_SUPPORT)),),
+            "water-posture-none-nonwater",
+            facts=(parse_expression(f"(not {water_map.source})", SourceLocation(1)),),
+            actions=(set_goal(posture_state, int(WaterPosture.NONE)),),
         ),
         NativeControlRule(
-            "water-posture-naval-defense",
-            facts=(
-                parse_expression(f"(not {required.source})", SourceLocation(1)),
-                naval,
-                parse_expression(f"(not {warboats.source})", SourceLocation(1)),
-            ),
-            actions=(set_goal(posture_state, int(WaterPosture.NAVAL_DEFENSE)),),
+            "water-posture-transport",
+            facts=(water_map, required),
+            actions=(set_goal(posture_state, int(WaterPosture.TRANSPORT_SUPPORT)),),
         ),
         NativeControlRule(
             "water-posture-naval-control",
             facts=(
+                water_map,
                 parse_expression(f"(not {required.source})", SourceLocation(1)),
                 naval,
                 warboats,
@@ -273,8 +344,19 @@ def lower_water_execution_plan(
             actions=(set_goal(posture_state, int(WaterPosture.NAVAL_CONTROL)),),
         ),
         NativeControlRule(
+            "water-posture-naval-defense",
+            facts=(
+                water_map,
+                parse_expression(f"(not {required.source})", SourceLocation(1)),
+                naval,
+                parse_expression(f"(not {warboats.source})", SourceLocation(1)),
+            ),
+            actions=(set_goal(posture_state, int(WaterPosture.NAVAL_DEFENSE)),),
+        ),
+        NativeControlRule(
             "water-posture-fishing",
             facts=(
+                water_map,
                 parse_expression(f"(not {required.source})", SourceLocation(1)),
                 parse_expression(f"(not {naval.source})", SourceLocation(1)),
                 dock,
@@ -284,12 +366,14 @@ def lower_water_execution_plan(
         NativeControlRule(
             "water-posture-none",
             facts=(
+                water_map,
                 parse_expression(f"(not {required.source})", SourceLocation(1)),
                 parse_expression(f"(not {naval.source})", SourceLocation(1)),
                 parse_expression(f"(not {dock.source})", SourceLocation(1)),
             ),
             actions=(set_goal(posture_state, int(WaterPosture.NONE)),),
         ),
+
     ]
 
     return NativeControlPlan(states=states, rules=tuple(rules))
