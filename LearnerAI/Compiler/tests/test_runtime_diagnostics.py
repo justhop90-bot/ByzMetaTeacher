@@ -40,12 +40,18 @@ class RuntimeDiagnosticTests(unittest.TestCase):
     def test_rejected_runtime_claim_maps_to_first_broken_edge(self):
         builder = FeatureTraceBuilder("castle-age-transition")
         builder.add_node(FeatureNode(
-            "castle-age-transition", FeatureStage.NATIVE_LOWERING,
-            FeatureNodeStatus.PASS, rule_orders=(41,),
+            feature_id="castle-age-transition",
+            stage=FeatureStage.NATIVE_LOWERING,
+            identity="castle-age-transition",
+            status=FeatureNodeStatus.PASS,
+            rule_orders=(41,),
         ))
         builder.add_node(FeatureNode(
-            "castle-age-transition", FeatureStage.EMISSION,
-            FeatureNodeStatus.INVALID, rule_orders=(41,),
+            feature_id="castle-age-transition",
+            stage=FeatureStage.EMISSION,
+            identity="castle-age-transition",
+            status=FeatureNodeStatus.INVALID,
+            rule_orders=(41,),
         ))
         builder.add_edge(FeatureEdge(
             feature_id="castle-age-transition",
@@ -65,7 +71,11 @@ class RuntimeDiagnosticTests(unittest.TestCase):
     def test_runtime_rejection_without_broken_feature_trace_stays_open(self):
         builder = FeatureTraceBuilder("resource-camp-gold")
         builder.add_node(FeatureNode(
-            "resource-camp-gold", FeatureStage.RUNTIME, FeatureNodeStatus.PASS, rule_orders=(77,),
+            feature_id="resource-camp-gold",
+            stage=FeatureStage.RUNTIME,
+            identity="resource-camp-gold",
+            status=FeatureNodeStatus.PASS,
+            rule_orders=(77,),
         ))
         trace = builder.build(root_stage=FeatureStage.RUNTIME)
         claim = {"id":"camp-visible","rule_identities":["resource-camp-gold"]}
