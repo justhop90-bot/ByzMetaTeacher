@@ -630,7 +630,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         )
         def defconst_value(name):
             matches = re.findall(
-                rf"\\(defconst {re.escape(name)} (-?\\d+)\\)",
+                rf"\(defconst {re.escape(name)} (-?\d+)\)",
                 self.per,
             )
             self.assertEqual(len(matches), 1, f"expected exactly one defconst for {name}")
