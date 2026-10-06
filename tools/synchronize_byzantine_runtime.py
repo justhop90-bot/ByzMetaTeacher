@@ -245,7 +245,7 @@ def synchronize() -> bool:
     generated = GENERATED.read_text(encoding="utf-8")
     before = runtime
 
-    runtime = _add_defconsts(runtime, generated)
+    runtime = _ensure_defconsts(runtime, generated)
 
     defense_block = _block(
         generated,
