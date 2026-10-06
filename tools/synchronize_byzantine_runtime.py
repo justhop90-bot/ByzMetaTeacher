@@ -53,7 +53,7 @@ def _rule_block(source: str, identity: str) -> str:
         if in_string:
             if escape:
                 escape = False
-            elif char == "\\\\":
+            elif char == "\":
                 escape = True
             elif char == '"':
                 in_string = False
@@ -79,14 +79,12 @@ def _block(source: str, start_marker: str, end_marker: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
-def _install_once(source: str, marker: str, block: str, *, before: bool) -> str:
+def _install_once(source: str, marker: str, block: str) -> str:
     if block.strip() in source:
         return source
     position = source.find(marker)
     if position < 0:
         raise RuntimeError(f"runtime artifact is missing insertion marker: {marker}")
-    if before:
-        return source[:position] + block + "\n" + source[position:]
     return source[:position] + block + "\n" + source[position:]
 
 
@@ -94,7 +92,7 @@ def _available_goal_values(runtime: str, generated: str) -> dict[str, int]:
     generated_values: dict[str, int] = {}
     for name in RECOVERY_NAMES:
         match = re.search(
-            rf"^\\(defconst {re.escape(name)} (-?\\d+)\\)$",
+            rf"^\(defconst {re.escape(name)} (-?\d+)\)$",
             generated,
             flags=re.MULTILINE,
         )
@@ -102,10 +100,7 @@ def _available_goal_values(runtime: str, generated: str) -> dict[str, int]:
             raise RuntimeError(f"generated artifact is missing defconst: {name}")
         generated_values[name] = int(match.group(1))
 
-    used = {
-        int(value)
-        for value in re.findall(r"\\b-?\\d+\\b", runtime)
-    }
+    used = {int(value) for value in re.findall(r"\b-?\d+\b", runtime)}
     if all(value not in used for value in generated_values.values()):
         return generated_values
 
@@ -137,26 +132,6 @@ def _add_defconsts(runtime: str, generated: str) -> str:
     return runtime[:line_end + 1] + insertion + runtime[line_end + 1 :]
 
 
-def _rename_goal_constants(block: str, values: dict[str, int], generated: str) -> str:
-    generated_values: dict[str, int] = {}
-    for name in RECOVERY_NAMES:
-        match = re.search(
-            rf"^\\(defconst {re.escape(name)} (-?\\d+)\\)$",
-            generated,
-            flags=re.MULTILINE,
-        )
-        assert match is not None
-        generated_values[name] = int(match.group(1))
-
-    if generated_values == values:
-        return block
-
-    result = block
-    for name in RECOVERY_NAMES:
-        result = result.replace(name, name)
-    return result
-
-
 def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     generated_block = _rule_block(generated, identity)
     marker = f"; Native control rule: {identity}"
@@ -170,13 +145,12 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     depth = 0
     in_string = False
     escape = False
-    end = None
     for index in range(rule_start, len(runtime)):
         char = runtime[index]
         if in_string:
             if escape:
                 escape = False
-            elif char == "\\\\":
+            elif char == "\":
                 escape = True
             elif char == '"':
                 in_string = False
@@ -188,17 +162,14 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
         elif char == ")":
             depth -= 1
             if depth == 0:
-                end = index + 1
-                break
-    if end is None:
-        raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
-
-    return runtime[:start] + generated_block + runtime[end:]
+                return runtime[:start] + generated_block + runtime[index + 1 :]
+    raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
     generated = GENERATED.read_text(encoding="utf-8")
+    before = runtime
 
     runtime = _add_defconsts(runtime, generated)
 
@@ -217,21 +188,16 @@ def synchronize() -> bool:
         runtime,
         "; Native control rule: opening-selector-water-control",
         defense_block,
-        before=True,
     )
-
-    economy_marker = "; Native economy rule: byzantine-community-economy-initialize"
     runtime = _install_once(
         runtime,
-        economy_marker,
+        "; Native economy rule: byzantine-community-economy-initialize",
         recovery_block,
-        before=True,
     )
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
 
-    before = RUNTIME.read_text(encoding="utf-8")
     if runtime == before:
         return False
     RUNTIME.write_text(runtime, encoding="utf-8", newline="")
@@ -239,5 +205,4 @@ def synchronize() -> bool:
 
 
 if __name__ == "__main__":
-    changed = synchronize()
-    print("updated" if changed else "already synchronized")
+    print("updated" if synchronize() else "already synchronized")
