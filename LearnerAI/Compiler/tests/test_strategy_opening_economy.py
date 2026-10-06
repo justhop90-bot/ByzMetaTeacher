@@ -690,6 +690,28 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertIn("(goal opening-recovery-cause -1)", defense_cause_facts)
 
+    def test_opening_recovery_clear_requires_all_disasters_to_be_absent(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item
+            for item in control.rules
+            if item.identity == "opening-recovery-clear-cause"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn("(goal opening-recovery 1)", facts)
+        self.assertIn(
+            "(up-compare-goal opening-recovery-cause != -1)",
+            facts,
+        )
+        self.assertTrue(any("opening-recovery-gold-proven" in fact for fact in facts))
+        self.assertTrue(any("opening-recovery-water-proven" in fact for fact in facts))
+        self.assertTrue(any("town-under-attack" in fact for fact in facts))
+        self.assertNotIn("timer-triggered", " ".join(facts))
+
     def test_opening_recovery_preserves_sticky_identity_and_cannot_oscillate(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
