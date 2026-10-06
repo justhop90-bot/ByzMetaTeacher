@@ -802,6 +802,79 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertIn("(goal opening-recovery-cause -1)", defense_cause_facts)
 
+
+    def _assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
+        self,
+        *,
+        siege_active: bool,
+        castle_active: bool,
+    ):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item
+            for item in control.rules
+            if item.identity == "opening-recovery-cause-defense"
+        )
+        base_defense_fact = next(
+            fact
+            for fact in rule.facts
+            if "(town-under-attack)" in fact.source
+        )
+
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(players-unit-type-count any-enemy knight >= 3)", False),
+                ("(players-unit-type-count any-enemy archer-line >= 4)", False),
+                ("(players-unit-type-count any-enemy militia-line >= 5)", False),
+                (
+                    profile.observation("strategy-enemy-siege").expression,
+                    siege_active,
+                ),
+                (
+                    profile.observation("strategy-enemy-castle").expression,
+                    castle_active,
+                ),
+                ("(town-under-attack)", True),
+                (
+                    "(current-age < castle-age)",
+                    True,
+                ),
+                *tuple(
+                    (fact.source, True)
+                    for fact in rule.facts
+                    if fact is not base_defense_fact
+                    and fact.source != "(current-age < castle-age)"
+                ),
+            )
+        )
+
+        self.assertIs(
+            _evaluate_expression(base_defense_fact, snapshot),
+            EvidenceTruth.TRUE,
+        )
+        self.assertTrue(
+            all(
+                _evaluate_expression(fact, snapshot) is EvidenceTruth.TRUE
+                for fact in rule.facts
+            )
+        )
+
+    def test_opening_recovery_defense_triggers_on_enemy_siege_below_pressure_floors(self):
+        self._assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
+            siege_active=True,
+            castle_active=False,
+        )
+
+    def test_opening_recovery_defense_triggers_on_enemy_castle_below_pressure_floors(self):
+        self._assert_opening_recovery_defense_cause_triggers_with_fortification_pressure(
+            siege_active=False,
+            castle_active=True,
+        )
+
     def test_opening_recovery_clear_requires_all_disasters_to_be_absent(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
