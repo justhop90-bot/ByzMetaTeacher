@@ -435,6 +435,18 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             self.assertNotIn("up-modify-sn sn-focus-player-number", " ".join(actions))
             self.assertNotIn("(disable-timer ", " ".join(actions))
             self.assertNotIn("(enable-timer ", " ".join(actions))
+            point_outputs = tuple(
+                request
+                for request in duc.output_requests
+                if request.rule_identity == identity
+                and request.command == "up-get-point"
+            )
+            self.assertEqual(len(point_outputs), 1)
+            self.assertEqual(point_outputs[0].expression_index, 1)
+            self.assertEqual(point_outputs[0].argument_index, 1)
+            self.assertEqual(point_outputs[0].request.width, 2)
+            self.assertEqual(point_outputs[0].request.shape, GoalSpanKind.POINT_PAIR)
+            self.assertEqual(point_outputs[0].request.contract_id, "up-get-point.Point")
 
     def test_byzantine_endgame_objective_witness_release_lifecycle(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
