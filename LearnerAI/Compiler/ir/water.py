@@ -91,9 +91,9 @@ class WaterExecutionPlan:
 def transition_transport_execution(
     current: WaterExecutionState,
     *,
-    water_map: bool | None = False,
-    transport_required: bool | None = False,
-    transport_capable: bool | None = False,
+    water_map: bool | None,
+    transport_required: bool | None,
+    transport_capable: bool | None,
     transport_rebuild_open: bool | None = False,
 ) -> WaterExecutionState:
     """Advance transport execution with explicit objective and recovery reopening."""
