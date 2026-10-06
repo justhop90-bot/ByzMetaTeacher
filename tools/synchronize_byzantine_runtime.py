@@ -26,6 +26,16 @@ RECOVERY_NAMES = (
     "opening-recovery-water-proven",
 )
 
+ELITE_SKIRMISHER_PRODUCTION_RULES = (
+    "imperial-elite-skirmisher-floor",
+    "imperial-open-elite-skirmisher-standard",
+    "imperial-open-elite-skirmisher-pressure",
+    "imperial-open-elite-skirmisher-severe",
+    "imperial-fortified-elite-skirmisher",
+    "imperial-trash-elite-skirmisher-standard",
+    "imperial-trash-elite-skirmisher-high",
+)
+
 ECONOMY_RULES = (
     "economy-controller-select-counter-pressure",
     "economy-controller-select-fast-castle",
@@ -206,6 +216,55 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
     return runtime
 
 
+def _ensure_rule_requirement(
+    source: str,
+    identity: str,
+    requirement: str,
+    *,
+    marker_prefix: str,
+) -> str:
+    marker = f"{marker_prefix} {identity}"
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError(f"runtime artifact is missing rule: {identity}")
+    rule_start = source.find("(defrule", start)
+    if rule_start < 0:
+        raise RuntimeError(f"runtime artifact is missing defrule: {identity}")
+
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(rule_start, len(source)):
+        char = source[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == chr(92):
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                block_end = index + 1
+                block = source[start:block_end]
+                if requirement in block:
+                    return source
+                anchor = "    (current-age >= imperial-age)\\n"
+                if anchor not in block:
+                    raise RuntimeError(
+                        f"runtime artifact rule lacks Imperial age anchor: {identity}"
+                    )
+                patched = block.replace(anchor, anchor + f"    {requirement}\\n", 1)
+                return source[:start] + patched + source[block_end:]
+    raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
+
+
 def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     generated_block = _rule_block(generated, identity)
     marker = f"; Native control rule: {identity}"
@@ -268,6 +327,23 @@ def synchronize() -> bool:
         "; Native economy rule: byzantine-community-economy-initialize",
         recovery_block,
     )
+
+    for identity in ELITE_SKIRMISHER_PRODUCTION_RULES:
+        generated_block = _rule_block(
+            generated,
+            identity,
+            marker_prefix="; Action issuance:",
+        )
+        if "(up-research-status c: 98 >= 3)" not in generated_block:
+            raise RuntimeError(
+                f"generated artifact is missing Elite Skirmisher research gate: {identity}"
+            )
+        runtime = _ensure_rule_requirement(
+            runtime,
+            identity,
+            "(up-research-status c: 98 >= 3)",
+            marker_prefix="; Action issuance:",
+        )
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
