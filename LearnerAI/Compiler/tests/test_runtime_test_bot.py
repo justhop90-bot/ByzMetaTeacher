@@ -215,6 +215,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             and "(goal byzantine-offensive-objective-state "
             "byzantine-offensive-objective-state-idle)" in rule
             and "(goal byzantine-offensive-objective-claim 0)" in rule
+            and "(set-strategic-number sn-number-attack-groups 200)" in rule
         ]
         self.assertEqual(len(matching), 1)
         self.assertIn("(attack-now)", matching[0])
