@@ -39,6 +39,8 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.runtime = RUNTIME.read_text(encoding="utf-8")
+        compiled_runtime = ROOT / "dist" / "byzantine" / "Byzantine.per"
+        cls.generated_runtime = (compiled_runtime if compiled_runtime.exists() else RUNTIME).read_text(encoding="utf-8")
         cls.compiler_strategy = COMPILER_STRATEGY.read_text(encoding="utf-8")
         cls.compiler_pack = COMPILER_PACK.read_text(encoding="utf-8")
         cls.rules = defrule_blocks(cls.runtime)
@@ -208,7 +210,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
     def test_open_ground_attack_ready_path_issues_attack_now(self) -> None:
         matching = [
             rule
-            for rule in self.rules
+            for rule in defrule_blocks(self.generated_runtime)
             if "(current-age >= castle-age)" in rule
             and "(goal byzantine-army-attack-ready 1)" in rule
             and "(goal byzantine-siege-approach byzantine-siege-approach-normal)" in rule
