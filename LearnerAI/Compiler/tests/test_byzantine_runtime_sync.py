@@ -33,9 +33,22 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             try:
                 sync_runtime.synchronize()
                 synchronized = runtime_path.read_text(encoding="utf-8")
+                before_second_sync = synchronized
+                sync_runtime.synchronize()
+                after_second_sync = runtime_path.read_text(encoding="utf-8")
             finally:
                 sync_runtime.RUNTIME = original_runtime
                 sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(before_second_sync, after_second_sync)
+
+        base_source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        base_goal_ids = {
+            value
+            for start, end, _kind in _storage_intervals(base_source)
+            for value in range(start, end + 1)
+        }
+        base_timer_ids = sync_runtime._timer_ids(base_source)
 
         intervals = _storage_intervals(synchronized)
         collisions = []
@@ -63,7 +76,10 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             or name.startswith("voice-latch-")
         }
         self.assertEqual(len(voice_goals), 16)
-        self.assertTrue(all(value > 512 for value in voice_goals.values()))
+        self.assertEqual(len(set(voice_goals.values())), 16)
+        self.assertTrue(
+            all(1 <= value <= 16_000 and value not in base_goal_ids for value in voice_goals.values())
+        )
 
         voice_timers = {
             name: definitions[name]
@@ -72,7 +88,10 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             or name.startswith("voice-rearm-")
         }
         self.assertEqual(len(voice_timers), 15)
-        self.assertTrue(all(value > 22 for value in voice_timers.values()))
+        self.assertEqual(len(set(voice_timers.values())), 15)
+        self.assertTrue(
+            all(1 <= value <= 50 and value not in base_timer_ids for value in voice_timers.values())
+        )
 
 
 if __name__ == "__main__":
