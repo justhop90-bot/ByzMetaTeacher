@@ -4677,12 +4677,6 @@ def _default_byzantine_duc_plan(
                             SourceLocation(1),
                         ),
                         parse_expression(
-                            "(or "
-                            "(goal byzantine-army-role-state byzantine-army-role-committed) "
-                            "(goal byzantine-army-role-state byzantine-army-role-raid-split))",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
                             f"(up-compare-goal {target_goal} >= 1)",
                             SourceLocation(1),
                         ),
