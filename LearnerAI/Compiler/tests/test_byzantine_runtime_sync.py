@@ -190,6 +190,32 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "(set-goal construction-retry-barrier-water-dock-capability 0)",
             synchronized,
         )
+        definitions = {
+            match.group(1): int(match.group(2))
+            for match in re.finditer(
+                r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+                synchronized,
+            )
+        }
+        water_goal_names = (
+            "demand-water-dock-capability",
+            "issued-water-dock-capability",
+            "pending-water-dock-capability",
+            "complete-water-dock-capability",
+            "construction-retry-barrier-water-dock-capability",
+        )
+        recovery_goal_names = (
+            "opening-recovery",
+            "opening-recovery-cause",
+            "opening-recovery-defense-clear",
+            "opening-recovery-gold-proven",
+            "opening-recovery-origin",
+            "opening-recovery-water-proven",
+        )
+        water_ids = {definitions[name] for name in water_goal_names}
+        recovery_ids = {definitions[name] for name in recovery_goal_names}
+        self.assertEqual(len(water_ids), len(water_goal_names))
+        self.assertEqual(water_ids & recovery_ids, set())
 
     def test_checked_in_runtime_voice_storage_is_disjoint(self) -> None:
         source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
