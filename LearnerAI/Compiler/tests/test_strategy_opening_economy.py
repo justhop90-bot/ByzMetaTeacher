@@ -680,13 +680,12 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         facts = tuple(fact.source for fact in rule.facts)
         self.assertIn("(goal opening-plan 6)", facts)
         self.assertIn("(current-age < castle-age)", facts)
-        self.assertIn("(not (players-unit-type-count any-enemy knight >= 3))", facts)
         self.assertIn(
-            "(not (players-unit-type-count any-enemy archer-line >= 4))",
+            "(or (goal opening-plan 1) (goal opening-plan 6))",
             facts,
         )
-        self.assertIn(
-            "(not (players-unit-type-count any-enemy militia-line >= 5))",
+        self.assertNotIn(
+            "(not (players-unit-type-count any-enemy knight >= 3))",
             facts,
         )
 
