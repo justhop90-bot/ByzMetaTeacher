@@ -29975,7 +29975,7 @@
     (goal byzantine-endgame-push-state 2)
     (goal voice-latch-attack-issued 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-attack-issued 1)
     (set-goal voice-global-lock 2)
@@ -29991,7 +29991,7 @@
     (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
     (goal voice-latch-attack-witness 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-attack-witness 1)
     (set-goal voice-global-lock 2)
@@ -30007,7 +30007,7 @@
     (goal byzantine-endgame-push-state 5)
     (goal voice-latch-push-failed 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-push-failed 1)
     (set-goal voice-global-lock 2)
@@ -30023,7 +30023,7 @@
     (goal byzantine-endgame-push-state 4)
     (goal voice-latch-endgame-advance 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-endgame-advance 1)
     (set-goal voice-global-lock 2)
@@ -30039,7 +30039,7 @@
     (goal strategy-posture 4)
     (goal voice-latch-strategos-posture 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-strategos-posture 1)
     (set-goal voice-global-lock 1)
@@ -30055,7 +30055,7 @@
     (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-line >= 8)))
     (goal voice-latch-cavalry-pressure 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-cavalry-pressure 1)
     (set-goal voice-global-lock 1)
@@ -30071,7 +30071,7 @@
     (players-unit-type-count any-enemy archer-line >= 8)
     (goal voice-latch-ranged-pressure 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-ranged-pressure 1)
     (set-goal voice-global-lock 1)
@@ -30087,7 +30087,7 @@
     (goal byzantine-endgame-push-state 5)
     (goal voice-latch-reassessment 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-reassessment 1)
     (set-goal voice-global-lock 1)
@@ -30103,7 +30103,7 @@
     (players-unit-type-count any-enemy archer-line >= 12)
     (goal voice-latch-severe-counter 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-severe-counter 1)
     (set-goal voice-global-lock 1)
@@ -30119,7 +30119,7 @@
     (and (goal byzantine-army-attack-ready 1) (goal byzantine-siege-approach 0))
     (goal voice-latch-siege-blocker 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-siege-blocker 1)
     (set-goal voice-global-lock 1)
@@ -30135,7 +30135,7 @@
     (goal byzantine-imperial-band-state 3)
     (goal voice-latch-gold-recovery 0)
     (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (goal voice-match-count < 48)
+    (up-compare-goal voice-match-count g:< 48)
 =>
     (set-goal voice-latch-gold-recovery 1)
     (set-goal voice-global-lock 1)
@@ -30151,7 +30151,7 @@
     (and (current-age >= castle-age) (goal byzantine-endgame-push-state 1))
     (goal voice-latch-army-preparation 0)
     (goal voice-global-lock 0)
-    (goal voice-match-count < 36)
+    (up-compare-goal voice-match-count g:< 36)
 =>
     (set-goal voice-latch-army-preparation 1)
     (set-goal voice-global-lock 1)
@@ -30167,7 +30167,7 @@
     (goal byzantine-army-attack-ready 1)
     (goal voice-latch-army-ready 0)
     (goal voice-global-lock 0)
-    (goal voice-match-count < 36)
+    (up-compare-goal voice-match-count g:< 36)
 =>
     (set-goal voice-latch-army-ready 1)
     (set-goal voice-global-lock 1)
@@ -30183,7 +30183,7 @@
     (and (current-age >= imperial-age) (and (food-amount >= 2400) (wood-amount >= 2000)))
     (goal voice-latch-resource-abundance 0)
     (goal voice-global-lock 0)
-    (goal voice-match-count < 36)
+    (up-compare-goal voice-match-count g:< 36)
 =>
     (set-goal voice-latch-resource-abundance 1)
     (set-goal voice-global-lock 1)
