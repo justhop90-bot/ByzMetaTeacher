@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..diagnostics import DiagnosticSeverity
 from .semantic_manifest import SemanticManifest
 from .strategy_dependency import FeatureTrace, first_broken_edge
 
@@ -62,7 +63,7 @@ def diagnose_runtime_claim(
             status="COMPILER_EDGE_BROKEN",
             feature_id=trace.feature_id,
             diagnostic_code=broken.diagnostic_code,
-            severity="ERROR",
+            severity=DiagnosticSeverity.ERROR.value,
             message=broken.message,
         )
 
