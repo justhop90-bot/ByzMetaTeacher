@@ -1893,7 +1893,7 @@ def community_strategy_demands(
             building=dock,
             requirements=(
                 "(current-age >= dark-age)",
-                "(map-type islands)",
+                "(or (map-type islands) (map-type pacific-islands))",
                 "(building-type-count-total dock < 1)",
                 "(can-build dock)",
             ),
@@ -1988,7 +1988,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= dark-age)",
-                    "(map-type islands)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow transport-ship)",
                     "(unit-type-count-total transport-ship < 1)",
@@ -2044,7 +2044,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
-                    "(map-type islands)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(players-unit-type-count any-enemy galley-line >= 2)",
                     "(can-train-with-escrow fire-galley)",
@@ -2097,7 +2097,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(map-type islands)",
+                    "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(players-unit-type-count any-enemy galley-line >= 2)",
                     "(can-train-with-escrow galley)",
