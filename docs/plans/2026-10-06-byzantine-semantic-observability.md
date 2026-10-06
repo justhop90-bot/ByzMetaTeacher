@@ -25,148 +25,95 @@
 
 ### Task 1: Build the artifact semantic shadow manifest
 
-**Files:**
-- Create: `LearnerAI/Compiler/semantic/semantic_manifest.py`
-- Modify: `LearnerAI/Compiler/semantic/__init__.py`
-- Test: `LearnerAI/Compiler/tests/test_semantic_manifest.py`
+Status: COMPLETE on main.
 
-**Interfaces:**
-- Consumes: Path to a .per entrypoint; existing SourceGraphResolver and analyze_effective_rules().
-- Produces: immutable SemanticRuleRecord, SemanticManifest, build_semantic_manifest(path), and deterministic to_json()/write_json().
+**Files:** `LearnerAI/Compiler/semantic/semantic_manifest.py`, `LearnerAI/Compiler/semantic/__init__.py`, `LearnerAI/Compiler/tests/test_semantic_manifest.py`.
 
-- [ ] **Step 1: Add the focused failing test**
-Assert that the public builder exists, parses a native-control annotation, extracts Goal reads/writes, records recurrent pass behavior, counts rule elements, and parses the real Byzantine.per Arena pressure rule.
-
-- [ ] **Step 2: Verify red**
-Run: `PYTHONPATH=LearnerAI python -m unittest LearnerAI/Compiler/tests/test_semantic_manifest.py`
-Expected: failure because Compiler.semantic.build_semantic_manifest does not exist.
-
-- [ ] **Step 3: Implement**
-Build from the existing effective source graph. Extract generated semantic comments, preserve source path/line/order, classify annotation kind, index Goal/SN/Timer reads and writes, calculate expression-node element count, and emit deterministic sorted records and shared-state indexes.
-
-- [ ] **Step 4: Verify green**
-Run the same focused command. Expected: all manifest tests pass, including parsing the real 1.05 MB artifact.
-
-- [ ] **Step 5: Integration**
-Run: `PYTHONPATH=LearnerAI python -m unittest discover -s LearnerAI/Compiler/tests -p 'test_*.py' -k 'SemanticManifest or StrategyDependency or FeatureTrace'`
-Expected: zero failures.
-
-- [ ] **Step 6: Commit**
-`git add LearnerAI/Compiler/semantic/semantic_manifest.py LearnerAI/Compiler/semantic/__init__.py LearnerAI/Compiler/tests/test_semantic_manifest.py`
-`git commit -m 'feat: add deterministic Byzantine semantic shadow'`
+- [x] Focused contract added.
+- [x] Effective source graph, annotations, Goal/SN/Timer state accesses, element counts, deterministic serialization, and artifact SHA-256 implemented.
+- [x] Focused and full compiler verification passed.
+- [x] Merged in commit `809bf110f9ce7c0956b0d233a1eb046f5ca262bf`.
 
 ### Task 2: Connect shared-state ownership to the semantic shadow
 
-**Files:**
-- Modify: `LearnerAI/Compiler/semantic/semantic_manifest.py`
-- Test: `LearnerAI/Compiler/tests/test_semantic_manifest.py`
-- Existing integration: `LearnerAI/Compiler/semantic/strategy_dependency.py`
+Status: COMPLETE on main.
 
-**Interfaces:**
-- Consumes: manifest rule records plus existing StrategyDependencyReport.
-- Produces: deterministic writers_by_state and readers_by_state indexes keyed by Goal, Strategic Number, and Timer identity.
+The shared-state index was implemented in the semantic shadow itself and pinned against the checked-in artifact.
 
-- [ ] **Step 1:** Add fixture rules with two writers and one reader of the same Goal; assert rule order and source locations.
-- [ ] **Step 2:** Run the focused manifest test and observe the missing shared-state index failure.
-- [ ] **Step 3:** Implement canonical state-access records and deterministic writer/reader indexes. Do not infer causality beyond observed rule order.
-- [ ] **Step 4:** Re-run the identical focused command and require zero failures.
-- [ ] **Step 5:** Run the SemanticManifest + StrategyDependency integration subset.
-- [ ] **Step 6:** Commit the passing deliverable.
+- [x] Goal/SN/Timer readers and writers indexed deterministically.
+- [x] Shared `goal:opening-plan` ownership regression added.
+- [x] Existing strategy-dependency/feature-trace machinery remains the causal analysis layer. The manifest does not invent precedence.
+- [x] Covered by the full green compiler/native/determinism run merged with Task 1.
 
 ### Task 3: Add the community/engine evidence ledger
 
-**Files:**
-- Create: `docs/research/2026-10-06-byzantine-community-cross-reference.md`
-- Test: `LearnerAI/Compiler/tests/test_idiom_coverage.py` only if the repository evidence-path checker requires a new reference.
+Status: COMPLETE on main.
 
-**Interfaces:**
-- Consumes: the existing community-engine checklist/spec/registry plus cited AIRef and community sources.
-- Produces: human-auditable records with evidence class, provenance, scope/version, confidence, and runtime boundary.
+**File:** `docs/research/2026-10-06-byzantine-community-cross-reference.md`.
 
-- [ ] **Step 1:** Document only supported claims for Goals/SNs/Timers, attack groups, scouting, DUC/search cost, camp-distance SNs, rule/data limits, and structured community tooling.
-- [ ] **Step 2:** Validate repository evidence paths with the existing idiom-coverage test.
-- [ ] **Step 3:** Commit the evidence ledger separately from policy changes.
+- [x] Evidence classes kept separate.
+- [x] Native limits, Goals/SNs/Timers, attack machinery, DUC cost, resource-camp controls, structured .per tooling, provenance lineage, and runtime-open boundaries documented.
+- [x] Runtime priority order frozen around Arena Castle, resource camps, research continuity, attack release, siege conversion, and defensive geometry.
 
 ### Task 4: Formalize runtime witness contracts and adversarial scenarios
 
-**Files:**
-- Create: `docs/reference/runtime-witness.schema.json`
-- Create: `docs/runtime/scenarios/arena-mild-pressure-castle.json`
-- Create: `docs/runtime/scenarios/resource-camp-placement.json`
-- Create: `docs/runtime/scenarios/attack-release-and-siege.json`
-- Test: `LearnerAI/Compiler/tests/test_runtime_witness_schema.py`
+Status: COMPLETE on main.
 
-**Interfaces:**
-- Consumes: semantic rule identities, Goal/SN ownership, roadmap claims, and real match checkpoints.
-- Produces: machine-readable witness records that separate expected observations from confirmed observations.
+**Files:** `docs/reference/runtime-witness.schema.json`, `docs/runtime/scenarios/*.json`, `LearnerAI/Compiler/tests/test_runtime_witness_schema.py`, `docs/runtime/README.md`.
 
-- [ ] **Step 1:** Add the failing schema/scenario test.
-- [ ] **Step 2:** Verify failure is due to missing witness artifacts.
-- [ ] **Step 3:** Implement schema and scenarios without pre-populating runtime results as facts.
-- [ ] **Step 4:** Run the focused test and require zero failures.
-- [ ] **Step 5:** Commit the witness contract.
+- [x] Machine-readable witness schema added.
+- [x] Arena, resource-camp, and attack/siege scenarios added as OPEN contracts.
+- [x] Scenarios require exact artifact SHA-256 at runtime capture and distinguish expected claims from confirmed observations.
+- [x] Compiler verification passed.
 
 ### Task 5: Add deterministic semantic-report generation to the release path
 
-**Files:**
-- Create or modify: `tools/build_byzantine_semantic_manifest.py` or the existing Byzantine build tool.
-- Test: `LearnerAI/Compiler/tests/test_semantic_manifest.py`
-- Modify: `.github/workflows/compiler-tests.yml`
+Status: COMPLETE on main.
 
-**Interfaces:**
-- Consumes: checked-in `Byzantine.per`.
-- Produces: deterministic semantic manifest with artifact SHA-256 and rule/state indexes; never mutates the .per.
+**Files:** `tools/build_byzantine_semantic_manifest.py`, `.github/workflows/compiler-tests.yml`, semantic-manifest tests.
 
-- [ ] **Step 1:** Add a failing test for deterministic double generation.
-- [ ] **Step 2:** Observe red, then implement the smallest CLI.
-- [ ] **Step 3:** Accept explicit input and optional output, defaulting to stdout.
-- [ ] **Step 4:** Compare two output SHA-256 values.
-- [ ] **Step 5:** Publish the manifest as a CI artifact.
-- [ ] **Step 6:** Commit the release-path integration.
+- [x] CLI added with explicit input and optional output.
+- [x] CI generates the manifest twice and compares byte-for-byte.
+- [x] Manifest includes exact artifact SHA-256.
+- [x] Workflow archives semantic-manifest output with native evidence.
+- [x] Full native/determinism gate passed.
 
 ### Task 6: Build the live-runtime evidence loop
 
-**Files:**
-- Create: `docs/runtime/README.md`
-- Create: runtime traces only after actual matches produce them.
+Status: OPEN.
 
-**Interfaces:**
-- Consumes: match screenshots/checkpoints, exact bot SHA, exact Byzantine.per SHA, map/civ/difficulty/population metadata, observed actions and witnesses.
-- Produces: replayable evidence linked to semantic rule/state identities.
+**Files:** `docs/runtime/README.md`, `docs/runtime/scenarios/`, future `docs/runtime/traces/`.
 
-- [ ] **Step 1:** Freeze the evidence-capture contract.
-- [ ] **Step 2:** Capture Arena mild-pressure Castle acceptance on current main.
-- [ ] **Step 3:** Promote only directly observed facts.
-- [ ] **Step 4:** Repeat for resource camps, autonomous attack, siege commitment, and exposed-resource avoidance.
-- [ ] **Step 5:** Commit evidence separately from policy repairs.
+- [ ] Capture an Arena match on current main with exact bot/artifact SHA, pressure checkpoint, Castle admission/issuance, and Castle completion.
+- [ ] Capture resource-camp placement and later distinct-gold reacquisition.
+- [ ] Capture autonomous attack, release/relaunch, siege conversion, and exposed-resource avoidance.
+- [ ] Promote scenario status from OPEN only on direct runtime evidence.
+
+This task cannot be honestly closed by compiler CI. It requires actual DE runtime observations.
 
 ### Task 7: Add community-corpus convergence and performance diagnostics
 
-**Files:**
-- Modify: `LearnerAI/Compiler/semantic/community_engine.py`
-- Modify/Test: `LearnerAI/Compiler/tests/test_idiom_coverage.py`
+Status: COMPLETE on main.
 
-**Interfaces:**
-- Consumes: evidence records and source lineage.
-- Produces: corroboration strength and qualitative cost metadata without promoting uncertain community patterns to engine facts.
+**Files:** `LearnerAI/Compiler/semantic/community_engine.py`, `LearnerAI/Compiler/semantic/semantic_manifest.py`, focused diagnostics tests.
 
-- [ ] Require independent lineage for strong corroboration.
-- [ ] Add qualitative cost classes for DUC/pathing/movement/attack loops.
-- [ ] Add advisory hot-loop/cardinality diagnostics.
-- [ ] Keep performance findings separate from native legality.
+- [x] Evidence source families classified conservatively.
+- [x] Community convergence reports source-family breadth without treating it as engine proof.
+- [x] Advisory LOW/MODERATE/HIGH native operation-cost classes added.
+- [x] Semantic manifest exposes operation counts and high-cost recurrent rules.
+- [x] PR #463 merged as `6ab4561a519e09ce75184af144b0ffc7c83e424b`.
+- [x] Post-merge `main` run #4987 is fully green: compiler/native, nine determinism jobs, snapshot comparison, and verification gate.
 
 ### Task 8: Runtime-informed first-broken-edge diagnostics
 
-**Files:**
-- Modify: `LearnerAI/Compiler/semantic/strategy_dependency.py`
-- Modify: `LearnerAI/Compiler/semantic/semantic_manifest.py`
-- Test: new focused runtime-to-feature mapping tests
+Status: IMPLEMENTATION IN PR #465; verification pending.
 
-**Interfaces:**
-- Consumes: semantic manifest plus runtime witness records.
-- Produces: a deterministic causal diagnosis mapped to OBSERVATION -> ARBITRATION -> EXECUTION -> WITNESS -> RECOVERY -> REASSESSMENT.
+**Files:** `LearnerAI/Compiler/semantic/runtime_diagnostics.py`, `LearnerAI/Compiler/tests/test_runtime_diagnostics.py`, semantic exports.
 
-- [ ] Add the failing runtime-to-feature mapping test.
-- [ ] Map observed state to existing FeatureTrace boundaries.
-- [ ] Emit the first-broken-edge without inventing unobserved engine facts.
-- [ ] Verify an Arena failure and successful Castle witness map deterministically.
+- [x] Rejected runtime claims map only when their rule identities resolve through the semantic manifest to a FeatureTrace carrying an already-broken edge.
+- [x] Claims with no broken compiler edge remain `RUNTIME_EDGE_OPEN`; unresolved rule identity remains `UNKNOWN`.
+- [x] Focused tests added.
+- [ ] Fresh CI run for PR #465 passes.
+- [ ] Merge to main.
+- [ ] Verify live runtime evidence can consume the mapper.
+
