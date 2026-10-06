@@ -987,12 +987,16 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         attack_plan = compilation.attack_plan
         assert attack_plan is not None
         self.assertIn(
-            "(goal byzantine-attack-phase 2)",
+            "(current-age >= imperial-age)",
             tuple(fact.source for fact in attack_plan.rules[0].facts),
         )
         self.assertIn(
-            "(goal byzantine-attack-phase 4)",
+            "(goal byzantine-attack-phase 2)",
             tuple(fact.source for fact in attack_plan.rules[1].facts),
+        )
+        self.assertIn(
+            "(goal byzantine-attack-phase 4)",
+            tuple(fact.source for fact in attack_plan.rules[2].facts),
         )
 
         output = compile_strategy_profile(self.profile, self.effective)
@@ -1019,6 +1023,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertEqual(
             tuple(rule.identity for rule in plan.rules),
             (
+                "byzantine-imperial-attack-now-baseline",
                 "byzantine-castle-attack-now-cataphract",
                 "byzantine-castle-attack-now-knight",
             ),
