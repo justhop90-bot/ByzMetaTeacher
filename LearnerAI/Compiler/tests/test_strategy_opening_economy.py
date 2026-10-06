@@ -219,6 +219,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(building-type-count-total blacksmith >= 1)", block)
         self.assertIn("(building-type-count-total market >= 1)", block)
 
+    # TDD red evidence: current producer guard still uses provider-readiness feasibility.
     def test_arena_castle_admission_does_not_depend_on_tc_research_provider_readiness(self):
         profile = build_byzantine_strategy(self.effective)
         villager = profile.demand("civilian-villager-continuity")
