@@ -78,6 +78,8 @@ def lower_opening_selector(
     arena = profile.observation(plan.arena_observation).expression
     pressure = profile.observation(plan.enemy_pressure_observation).expression
     base_defense = profile.observation(plan.base_defense_observation).expression
+    enemy_siege = profile.observation("strategy-enemy-siege").expression
+    enemy_castle = profile.observation("strategy-enemy-castle").expression
     transport_capable = profile.observation(plan.transport_capable_observation).expression
     dock_exists = profile.observation("strategy-dock-exists").expression
     gold_remote = profile.observation("camp-front-gold-remote").expression
@@ -113,11 +115,8 @@ def lower_opening_selector(
     water_proven = f"(goal {plan.recovery_water_proven_state_name} 1)"
 
     opening_plan_selected = (
-        f"(or (goal {plan.state_name} {OpeningPlanValue.DEFENSIVE_STANDARD}) "
-        f"(or (goal {plan.state_name} {OpeningPlanValue.COUNTER_FEUDAL}) "
-        f"(or (goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE}) "
-        f"(or (goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY}) "
-        f"(goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL})))))"
+        f"(and (up-compare-goal {plan.state_name} >= 1) "
+        f"(up-compare-goal {plan.state_name} <= 5))"
     )
     water_plan_selected = (
         f"(or (goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY}) "
@@ -135,17 +134,20 @@ def lower_opening_selector(
     )
     water_path_lost = (
         f"(and {water_proven} "
-        f"(and (current-age < castle-age) "
-        f"(and {water} (not {transport_capable}))))"
+        f"(and {water} (not {transport_capable})))"
     )
     base_defense_lost = f"(and (current-age < castle-age) {base_defense})"
     fortification_defense_siege = (
         f"(and (current-age < castle-age) "
-        f"(and (town-under-attack) {profile.observation('strategy-enemy-siege').expression}))"
+        f"(and (town-under-attack) {enemy_siege}))"
     )
     fortification_defense_castle = (
         f"(and (current-age < castle-age) "
-        f"(and (town-under-attack) {profile.observation('strategy-enemy-castle').expression}))"
+        f"(and (town-under-attack) {enemy_castle}))"
+    )
+    recovery_defense_lost = (
+        f"(and (town-under-attack) "
+        f"(or {pressure} (or {enemy_siege} {enemy_castle})))"
     )
 
     def native_facts(*expressions: str):
@@ -292,9 +294,7 @@ def lower_opening_selector(
                 opening_plan_selected,
                 recovery_cause_clear,
                 recovery_origin_unset,
-                f"(not {base_defense_lost})",
-                f"(not {fortification_defense_siege})",
-                f"(not {fortification_defense_castle})",
+                f"(not {recovery_defense_lost})",
                 gold_front_lost,
             ),
             actions=(
@@ -310,9 +310,8 @@ def lower_opening_selector(
                 opening_plan_selected,
                 recovery_cause_clear,
                 recovery_origin_unset,
-                f"(not {base_defense_lost})",
-                f"(not {fortification_defense_siege})",
-                f"(not {fortification_defense_castle})",
+                "(current-age < castle-age)",
+                f"(not {recovery_defense_lost})",
                 f"(not {gold_front_lost})",
                 water_path_lost,
             ),
@@ -366,11 +365,37 @@ def lower_opening_selector(
                     recovery_active,
                     f"(goal {plan.recovery_origin_state_name} {value})",
                     recovery_cause_clear,
+                    "(current-age < castle-age)",
                     gold_front_recovered,
                     f"(not {water_path_lost})",
-                    f"(not {base_defense_lost})",
-                    f"(not {fortification_defense_siege})",
-                    f"(not {fortification_defense_castle})",
+                    f"(not {recovery_defense_lost})",
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {plan.state_name} {value})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(set-goal {plan.recovery_origin_state_name} -1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(set-goal {plan.recovery_state_name} -1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+        rules.append(
+            NativeControlRule(
+                f"opening-recovery-exit-{label}-castle",
+                facts=native_facts(
+                    f"(goal {plan.state_name} {OpeningPlanValue.EMERGENCY_RECOVERY})",
+                    recovery_active,
+                    f"(goal {plan.recovery_origin_state_name} {value})",
+                    recovery_cause_clear,
+                    "(current-age >= castle-age)",
+                    gold_front_recovered,
                 ),
                 actions=(
                     parse_expression(
@@ -395,11 +420,27 @@ def lower_opening_selector(
             facts=native_facts(
                 recovery_active,
                 recovery_cause_active,
+                "(current-age < castle-age)",
                 gold_front_recovered,
                 f"(not {water_path_lost})",
-                f"(not {base_defense_lost})",
-                f"(not {fortification_defense_siege})",
-                f"(not {fortification_defense_castle})",
+                f"(not {recovery_defense_lost})",
+            ),
+            actions=(
+                parse_expression(
+                    "(set-goal opening-recovery-cause -1)",
+                    SourceLocation(1),
+                ),
+            ),
+        )
+    )
+    rules.append(
+        NativeControlRule(
+            "opening-recovery-clear-cause-castle",
+            facts=native_facts(
+                recovery_active,
+                recovery_cause_active,
+                "(current-age >= castle-age)",
+                gold_front_recovered,
             ),
             actions=(
                 parse_expression(
