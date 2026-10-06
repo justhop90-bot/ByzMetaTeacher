@@ -161,6 +161,16 @@ def lower_economy_controller(
     )
     opening = lambda value: f"(goal {plan.opening_state} {value})"
     not_emergency_recovery = f"(not {opening(6)})"
+    castle_bank_maturity = (
+        "(and (unit-type-count-total villager >= 28) "
+        "(and (building-type-count-total blacksmith >= 1) "
+        "(building-type-count-total market >= 1)))"
+    )
+    water_pre_castle = f"(not {castle_bank_maturity})"
+    water_castle_opening = (
+        f"(or {opening(3)} "
+        f"(and (or {opening(4)} {opening(5)}) {castle_bank_maturity}))"
+    )
 
     def select_rule(
         identity: str,
@@ -221,7 +231,7 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-fast-castle",
             EconomyMode.FAST_CASTLE,
-            (feudal_window, *no_pressure, opening(3), not_emergency_recovery),
+            (feudal_window, *no_pressure, water_castle_opening, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-counter-feudal",
@@ -231,12 +241,12 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            (feudal_window, *no_pressure, opening(4), not_emergency_recovery),
+            (feudal_window, *no_pressure, opening(4), water_pre_castle, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            (feudal_window, *no_pressure, opening(5), not_emergency_recovery),
+            (feudal_window, *no_pressure, opening(5), water_pre_castle, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-base",
