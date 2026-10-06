@@ -4683,10 +4683,6 @@ def _default_byzantine_duc_plan(
                     ),
                     actions=(
                         parse_expression(
-                            "(up-modify-sn sn-focus-player-number g:= byzantine-offensive-enemy-player)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
                             "(up-set-target-object search-remote c: 0)",
                             SourceLocation(1),
                         ),
@@ -4696,10 +4692,6 @@ def _default_byzantine_duc_plan(
                         ),
                         parse_expression(
                             "(up-target-objects 1 action-attack-move -1 -1)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
-                            "(up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)",
                             SourceLocation(1),
                         ),
                         parse_expression(
