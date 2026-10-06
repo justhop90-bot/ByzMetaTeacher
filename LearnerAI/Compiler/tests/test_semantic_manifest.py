@@ -57,6 +57,13 @@ class SemanticManifestTests(unittest.TestCase):
         self.assertEqual(manifest.to_json(), manifest.to_json())
 
 
+    def test_manifest_exposes_shared_goal_writer_ownership(self):
+        manifest = semantic.build_semantic_manifest(Path("Byzantine.per"))
+        writers = dict(manifest.writers_by_state)
+        self.assertIn("goal:opening-plan", writers)
+        self.assertGreaterEqual(len(writers["goal:opening-plan"]), 2)
+
+
 
 if __name__ == "__main__":
     unittest.main()
