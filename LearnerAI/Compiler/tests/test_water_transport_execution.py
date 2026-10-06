@@ -51,6 +51,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         recovered = transition_transport_execution(
             ready,
+            water_map=True,
             transport_required=True,
             transport_capable=False,
         )
@@ -182,6 +183,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         rebuild_expression = profile.observation("strategy-transport-rebuild-open").expression
 
         previous = WaterExecutionState(
+            water_map=True,
             transport_required=True,
             transport_capable=True,
             transport_phase=TransportExecutionPhase.READY,
