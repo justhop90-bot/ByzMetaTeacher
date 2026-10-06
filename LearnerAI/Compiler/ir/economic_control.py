@@ -214,6 +214,7 @@ def lower_economy_controller(
             EconomyMode.COUNTER_FEUDAL,
             (
                 f"(and {feudal_window} {pressure})",
+                "(not (map-type arena))",
                 not_emergency_recovery,
             ),
         ),
