@@ -8,6 +8,11 @@ from LearnerAI.Compiler.clients.basilisk import (
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
+from LearnerAI.Compiler.ir.strategy_runtime import (
+    EvidenceTruth,
+    RuntimeObservationSnapshot,
+    _evaluate_expression,
+)
 
 
 class ByzantineStrategyControlSliceTests(unittest.TestCase):
@@ -700,6 +705,49 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) "
             "(gold-amount >= 1000))",
             exit_facts,
+        )
+
+    def test_opening_recovery_gold_1000_requires_front_recovery(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        clear_rule = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "opening-recovery-clear-cause"
+        )
+        gold_clear_fact = next(
+            fact
+            for fact in clear_rule.facts
+            if "gold-amount >= 1000" in fact.source
+        )
+
+        gold_expression = gold_clear_fact
+        gold_remote_expression = gold_expression.args[0]
+        gold_amount_expression = gold_expression.args[1]
+
+        remote_snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                (gold_remote_expression.source, True),
+                (gold_amount_expression.source, True),
+            )
+        )
+        viable_snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                (gold_remote_expression.source, False),
+                (gold_amount_expression.source, True),
+            )
+        )
+
+        self.assertIs(
+            _evaluate_expression(gold_clear_fact, remote_snapshot),
+            EvidenceTruth.FALSE,
+        )
+        self.assertIs(
+            _evaluate_expression(gold_clear_fact, viable_snapshot),
+            EvidenceTruth.TRUE,
         )
 
     def test_opening_recovery_handoffs_to_existing_base_economy_control(self):
