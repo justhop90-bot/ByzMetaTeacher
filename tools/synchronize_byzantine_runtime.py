@@ -92,7 +92,7 @@ def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
     definitions: dict[str, int] = {
         match.group(1): int(match.group(2))
         for match in re.finditer(
-            r"\(defconst\\s+([^\\s()]+)\\s+(-?\\d+)\\)",
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
             source,
         )
     }
@@ -124,7 +124,7 @@ def _choose_goal_slots(runtime: str, count: int) -> list[int]:
     definitions = {
         match.group(1): int(match.group(2))
         for match in re.finditer(
-            r"\(defconst\\s+([^\\s()]+)\\s+(-?\\d+)\\)",
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
             runtime,
         )
     }
@@ -158,7 +158,7 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
     definitions = {
         match.group(1): int(match.group(2))
         for match in re.finditer(
-            r"\(defconst\\s+([^\\s()]+)\\s+(-?\\d+)\\)",
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
             runtime,
         )
     }
