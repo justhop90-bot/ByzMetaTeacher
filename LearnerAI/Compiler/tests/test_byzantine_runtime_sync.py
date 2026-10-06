@@ -98,5 +98,49 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         )
 
 
+    def test_checked_in_runtime_voice_storage_is_disjoint(self) -> None:
+        source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        definitions = {
+            match.group(1): int(match.group(2))
+            for match in re.finditer(
+                r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+                source,
+            )
+        }
+        marker = "; Native Strategos voice plan"
+        base = source.split(marker, 1)[0]
+        live_goals = {
+            value
+            for match in re.finditer(
+                r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)",
+                base,
+            )
+            if (value := definitions.get(match.group(1))) is not None
+        }
+        live_timers = sync_runtime._timer_ids(base)
+        voice_goals = [
+            int(match.group(2))
+            for match in re.finditer(
+                r"^\(defconst\s+(?:voice-global-lock|voice-match-count|voice-latch-[^\s()]+)\s+(-?\d+)\)$",
+                source,
+                flags=re.MULTILINE,
+            )
+        ]
+        voice_timers = [
+            int(match.group(2))
+            for match in re.finditer(
+                r"^\(defconst\s+(?:voice-global-cooldown|voice-rearm-[^\s()]+)\s+(-?\d+)\)$",
+                source,
+                flags=re.MULTILINE,
+            )
+        ]
+        self.assertEqual(len(voice_goals), 16)
+        self.assertEqual(len(set(voice_goals)), 16)
+        self.assertTrue(all(1 <= value <= 16_000 and value not in live_goals for value in voice_goals))
+        self.assertEqual(len(voice_timers), 15)
+        self.assertEqual(len(set(voice_timers)), 15)
+        self.assertTrue(all(1 <= value <= 50 and value not in live_timers for value in voice_timers))
+
+
 if __name__ == "__main__":
     unittest.main()
