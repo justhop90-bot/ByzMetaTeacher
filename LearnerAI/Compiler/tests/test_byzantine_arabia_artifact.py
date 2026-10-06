@@ -12,7 +12,7 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
     def test_arabia_standard_opening_selector_is_emitted(self):
         self.assertIn(
             "(goal opening-plan -1)\n"
-            "    (not (map-type islands))\n"
+            "    (not (or (map-type islands) (map-type pacific-islands)))\n"
             "    (not (map-type arena))\n"
             "    (not (or (players-unit-type-count any-enemy knight >= 3) "
             "(or (players-unit-type-count any-enemy archer-line >= 4) "
