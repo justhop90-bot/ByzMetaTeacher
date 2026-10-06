@@ -724,19 +724,19 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if "gold-amount >= 1000" in fact.source
         )
 
-        gold_expression = gold_clear_fact
-        gold_remote_expression = gold_expression.args[0]
-        gold_amount_expression = gold_expression.args[1]
+        self.assertEqual(gold_clear_fact.head, "and")
+        gold_front_expression = gold_clear_fact.args[0]
+        gold_amount_expression = gold_clear_fact.args[1]
 
         remote_snapshot = RuntimeObservationSnapshot(
             fact_results=(
-                (gold_remote_expression.source, True),
+                (gold_front_expression.source, False),
                 (gold_amount_expression.source, True),
             )
         )
         viable_snapshot = RuntimeObservationSnapshot(
             fact_results=(
-                (gold_remote_expression.source, False),
+                (gold_front_expression.source, True),
                 (gold_amount_expression.source, True),
             )
         )
