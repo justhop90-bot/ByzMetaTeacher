@@ -232,6 +232,13 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn(profile.observation("strategy-water-map").expression, req_text)
         self.assertIn(profile.observation("strategy-transport-required").expression, req_text)
         self.assertIn("(building-type-count-total dock >= 1)", req_text)
+        invalidation_refs = {
+            evidence.observation_ref
+            for evidence in demand.invalidation
+            if evidence.observation_ref is not None
+        }
+        self.assertIn("strategy-transport-capability-lost", invalidation_refs)
+        self.assertNotIn("strategy-transport-recovery", invalidation_refs)
 
     def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
         profile = build_byzantine_strategy(self.effective)
