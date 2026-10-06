@@ -276,6 +276,25 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     f"(unit-type-count 6 >= {minimum})",
                 )
 
+    def test_imperial_elite_skirmisher_production_requires_completed_upgrade(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        by_id = {item.identity: item for item in profile.demands}
+        expected = (
+            "imperial-elite-skirmisher-floor",
+            "imperial-open-elite-skirmisher-standard",
+            "imperial-open-elite-skirmisher-pressure",
+            "imperial-open-elite-skirmisher-severe",
+            "imperial-fortified-elite-skirmisher",
+            "imperial-trash-elite-skirmisher-standard",
+            "imperial-trash-elite-skirmisher-high",
+        )
+        for identity in expected:
+            self.assertIn(
+                "(up-research-status c: 98 >= 3)",
+                by_id[identity].execution.requirements,
+                identity,
+            )
+
     def test_imperial_band_scaling_is_mutually_exclusive_and_exact(self):
         profile = build_byzantine_stock_strategy(self.effective)
         by_id = {item.identity: item for item in profile.demands}
