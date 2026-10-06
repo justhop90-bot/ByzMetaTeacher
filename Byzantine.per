@@ -12514,6 +12514,20 @@
     (set-goal byzantine-endgame-push-state 0)
 )
 
+; IMPERIAL BASELINE ATTACK DIAGNOSTIC
+; Deliberately bypasses mature attack-package and objective gates.
+; This is a runtime actuator floor, not the final Byzantine endgame policy.
+(defrule
+    (current-age >= imperial-age)
+    (military-population >= 4)
+    (attack-soldier-count <= 0)
+=>
+    (set-strategic-number sn-percent-attack-soldiers 100)
+    (set-strategic-number sn-minimum-attack-group-size 4)
+    (set-strategic-number sn-maximum-attack-group-size 40)
+    (attack-now)
+)
+
 ; Ordinary open-ground attack remains behind the tactical admission gate.
 ; Once the selected army package is ready and no DUC objective owns it, issue
 ; the native attack-now command. Attack-group SNs remain pacing controls, not
