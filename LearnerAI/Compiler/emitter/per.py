@@ -136,6 +136,7 @@ def _emit_native_voice_plan(
     out.extend(["", "; Native Strategos voice plan"])
     emitted_defconsts = _defconst_bindings(out)
     goal_states = []
+    timer_states = []
     for state in sorted(plan.states, key=lambda item: item.identifier):
         binding = bindings.binding_for(state.request.request_id)
         if isinstance(binding, GoalSlot):
