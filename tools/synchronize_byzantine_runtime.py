@@ -850,6 +850,83 @@ def _ensure_water_execution_state_defconsts(
     return runtime
 
 
+def _ensure_pacific_islands_water_arbitration(runtime: str) -> str:
+    """Treat Pacific Islands as the same persistent water-investment class as Islands."""
+
+    identities = (
+        "strategic-arbitration-observation-enable-strategy-water-islands",
+        "strategic-arbitration-observation-disable-strategy-water-islands",
+    )
+    replacement = "(or (map-type islands) (map-type pacific-islands))"
+
+    for identity in identities:
+        marker = f"; Native control rule: {identity}"
+        start = runtime.find(marker)
+        if start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing Pacific water arbitration rule: {identity}"
+            )
+        rule_start = runtime.find("(defrule", start)
+        if rule_start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing defrule for Pacific water arbitration: {identity}"
+            )
+
+        depth = 0
+        in_string = False
+        escape = False
+        end = None
+        for index in range(rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = index + 1
+                    break
+        if end is None:
+            raise RuntimeError(
+                f"runtime artifact has unterminated Pacific water arbitration rule: {identity}"
+            )
+
+        block = runtime[start:end]
+        if identity.endswith("enable-strategy-water-islands"):
+            old = "    (map-type islands)\n"
+            if old in block:
+                block = block.replace(old, f"    {replacement}\n", 1)
+            elif f"    {replacement}\n" not in block:
+                raise RuntimeError(
+                    f"runtime artifact has unexpected enable condition for {identity}"
+                )
+        else:
+            old = "    (not (map-type islands))\n"
+            if old in block:
+                block = block.replace(
+                    old,
+                    "    (not " + replacement + ")\n",
+                    1,
+                )
+            elif f"    (not {replacement})\n" not in block:
+                raise RuntimeError(
+                    f"runtime artifact has unexpected disable condition for {identity}"
+                )
+
+        runtime = runtime[:start] + block + runtime[end:]
+
+    return runtime
+
+
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
     """Synchronize the canonical water state machine into the checked-in runtime."""
 
@@ -880,6 +957,7 @@ def synchronize() -> bool:
 
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _sync_water_execution_control(runtime, generated)
+    runtime = _ensure_pacific_islands_water_arbitration(runtime)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _ensure_reserved_water_goal_defconsts(runtime)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
