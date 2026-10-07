@@ -458,6 +458,7 @@ def lower_water_execution_plan(
                 goal(plan.pacific_transport_lifecycle_state, int(PacificTransportLifecyclePhase.IDLE)),
                 goal(plan.pacific_fishing_controller_state, int(PacificFishingControllerPhase.IDLE)),
                 goal(plan.pacific_harbor_defense_state, int(PacificHarborDefensePhase.IDLE)),
+                goal(plan.pacific_transport_escort_state, int(PacificTransportEscortPhase.IDLE)),
                 goal(plan.pacific_transport_recovery_state, 0),
                 goal("pacific-transport-transit-witness", 0),
                 goal("pacific-transport-unload-witness", 0),
@@ -664,6 +665,103 @@ def lower_water_execution_plan(
                 parse_expression(
                     f"(set-strategic-number {boat_exploration_state} 1)",
                     SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-escort-open",
+            facts=(
+                pacific,
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+                dock,
+                parse_expression(
+                    "(or (unit-type-count-total transport-ship >= 1) "
+                    "(goal pacific-transport-recovery 1))",
+                    SourceLocation(1),
+                ),
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.IDLE),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.REQUIRED),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-escort-ready",
+            facts=(
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.REQUIRED),
+                ),
+                parse_expression(
+                    "(unit-type-count-total fire-galley >= 1)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.READY),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-escort-rearm-on-loss",
+            facts=(
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.READY),
+                ),
+                parse_expression(
+                    "(unit-type-count-total fire-galley < 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.REQUIRED),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-escort-close-on-pressure",
+            facts=(
+                parse_expression(
+                    f"(or {goal(plan.pacific_transport_escort_state, int(PacificTransportEscortPhase.REQUIRED)).source} "
+                    f"{goal(plan.pacific_transport_escort_state, int(PacificTransportEscortPhase.READY)).source})",
+                    SourceLocation(1),
+                ),
+                naval,
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-escort-close-nonwater",
+            facts=(
+                parse_expression(
+                    f"(or {goal(plan.pacific_transport_escort_state, int(PacificTransportEscortPhase.REQUIRED)).source} "
+                    f"{goal(plan.pacific_transport_escort_state, int(PacificTransportEscortPhase.READY)).source})",
+                    SourceLocation(1),
+                ),
+                parse_expression(f"(not {pacific.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.IDLE),
                 ),
             ),
         ),
@@ -1009,6 +1107,11 @@ def lower_water_execution_plan(
                 parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
                 parse_expression("(unit-type-count-total transport-ship >= 1)", SourceLocation(1)),
                 parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                parse_expression(
+                    f"(or (not {pacific.source}) "
+                    f"(goal {plan.pacific_transport_escort_state} {int(PacificTransportEscortPhase.READY)}))",
+                    SourceLocation(1),
+                ),
                 goal(plan.feudal_resource_island_transport_state, 0),
             ),
             actions=(set_goal(plan.feudal_resource_island_transport_state, 1),),
@@ -1047,6 +1150,18 @@ def lower_water_execution_plan(
             actions=(set_goal(plan.feudal_resource_island_transport_state, 0),),
         ),
         NativeControlRule(
+            "feudal-resource-island-transport-close-on-escort-loss",
+            facts=(
+                goal(plan.feudal_resource_island_transport_state, 1),
+                pacific,
+                parse_expression(
+                    f"(not (goal {plan.pacific_transport_escort_state} {int(PacificTransportEscortPhase.READY)}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(set_goal(plan.feudal_resource_island_transport_state, 0),),
+        ),
+        NativeControlRule(
             "feudal-resource-island-transport-close-on-naval-pressure",
             facts=(
                 goal(plan.feudal_resource_island_transport_state, 1),
@@ -1063,9 +1178,26 @@ def lower_water_execution_plan(
                     f"(not (goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
                     SourceLocation(1),
                 ),
+                parse_expression(
+                    f"(or (not {pacific.source}) "
+                    f"(goal {plan.pacific_transport_escort_state} {int(PacificTransportEscortPhase.READY)}))",
+                    SourceLocation(1),
+                ),
                 goal(plan.transport_objective_state, 0),
             ),
             actions=(set_goal(plan.transport_objective_state, 1),),
+        ),
+        NativeControlRule(
+            "transport-objective-close-on-escort-loss",
+            facts=(
+                goal(plan.transport_objective_state, 1),
+                pacific,
+                parse_expression(
+                    f"(not (goal {plan.pacific_transport_escort_state} {int(PacificTransportEscortPhase.READY)}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(set_goal(plan.transport_objective_state, 0),),
         ),
         NativeControlRule(
             "transport-objective-close",
@@ -1131,6 +1263,11 @@ def lower_water_execution_plan(
                 parse_expression(f"(not {capable.source})", SourceLocation(1)),
                 parse_expression(
                     f"(not (goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(or (not {pacific.source}) "
+                    f"(goal {plan.pacific_transport_escort_state} {int(PacificTransportEscortPhase.READY)}))",
                     SourceLocation(1),
                 ),
                 rebuild_open,

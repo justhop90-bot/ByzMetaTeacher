@@ -2115,6 +2115,32 @@ def community_strategy_demands(
         )
     )
     demands.append(
+        _training_demand(
+            effective=effective,
+            identity="water-pacific-transport-escort",
+            owner="water-transport",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason_ref="strategy-pacific-islands",
+            reason_label="Feudal Pacific transport execution requires one fire-galley escort",
+            line="fire-galley-line",
+            minimum=1,
+            age_guard="(current-age >= feudal-age)",
+            action_symbol="fire-galley",
+            witness_symbol="fire-galley",
+            release_symbol="fire-galley",
+            additional_requirements=(
+                pacific_islands,
+                "(building-type-count-total dock >= 1)",
+                "(or (unit-type-count-total transport-ship >= 1) "
+                "(goal pacific-transport-recovery 1))",
+                f"(not {enemy_naval_pressure})",
+                "(not (goal pacific-harbor-defense 1))",
+            ),
+        )
+    )
+
+    demands.append(
         _StrategicDemandSpec(
             identity="water-pacific-transport-recovery",
             owner="water-transport",
@@ -2505,6 +2531,7 @@ def community_water_execution_plan():
         pacific_transport_lifecycle_state="pacific-transport-lifecycle",
         pacific_fishing_controller_state="pacific-fishing-controller",
         pacific_harbor_defense_state="pacific-harbor-defense",
+        pacific_transport_escort_state="pacific-transport-escort",
         pacific_transport_recovery_state="pacific-transport-recovery",
         feudal_resource_island_transport_state="feudal-resource-island-transport-objective",
         water_map_observation="strategy-water-map",
