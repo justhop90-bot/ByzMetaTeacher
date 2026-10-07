@@ -1986,66 +1986,20 @@ def community_strategy_demands(
                 requirements=(
                     "(current-age >= dark-age)",
                     water_map,
+                    f"(or (and {pacific_islands} (unit-type-count-total fishing-ship < 2)) "
+                    f"(and (not {pacific_islands}) (unit-type-count-total fishing-ship < 4)))",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
-                    "(unit-type-count-total fishing-ship < 2)",
                 ),
                 action="(train fishing-ship)",
-                witness="(unit-type-count fishing-ship >= 2)",
-                release="(unit-type-count fishing-ship >= 2)",
-            ),
-        )
-    )
-    demands.append(
-        _StrategicDemandSpec(
-            identity="water-fishing-expansion",
-            owner="water-economy",
-            production_arbitration_group="production",
-            posture=_StrategyPosture.BOOM,
-            priority=_StrategicPriority.SUPPORT,
-            reason=(
-                _persistent(
-                    "Open Islands water supports a bounded four-boat fishing floor",
-                    "strategy-water-map",
+                witness=(
+                    f"(or (and {pacific_islands} (unit-type-count fishing-ship >= 2)) "
+                    f"(and (not {pacific_islands}) (unit-type-count fishing-ship >= 4)))"
                 ),
-            ),
-            admissibility=(
-                _persistent(
-                    "Pacific Islands remains land-first and does not require a full fishing boom",
-                    "strategy-pacific-islands",
+                release=(
+                    f"(or (and {pacific_islands} (unit-type-count fishing-ship >= 2)) "
+                    f"(and (not {pacific_islands}) (unit-type-count fishing-ship >= 4)))"
                 ),
-            ),
-            invalidation=(
-                _persistent(
-                    "Pacific classification disables the full fishing expansion",
-                    "strategy-pacific-islands",
-                ),
-            ),
-            capability_intent=_CapabilityIntent(
-                _CapabilityIntentKind.TRAIN,
-                "unit-line",
-                "fishing-ship-line",
-                fishing_provider,
-            ),
-            target=_StrategicTarget(
-                _StrategicTargetKind.CURRENT_QUEUED,
-                "unit-line",
-                "fishing-ship-line",
-                minimum=4,
-            ),
-            opportunity_cost=None,
-            execution=_ExecutionDemandTemplate(
-                requirements=(
-                    "(current-age >= dark-age)",
-                    water_map,
-                    f"(not {pacific_islands})",
-                    "(building-type-count-total dock >= 1)",
-                    "(can-train-with-escrow fishing-ship)",
-                    "(unit-type-count-total fishing-ship < 4)",
-                ),
-                action="(train fishing-ship)",
-                witness="(unit-type-count fishing-ship >= 4)",
-                release="(unit-type-count fishing-ship >= 4)",
             ),
         )
     )
