@@ -375,10 +375,11 @@ def lower_water_execution_plan(
             facts=(
                 goal(plan.feudal_resource_island_transport_state, 1),
                 parse_expression(
+                    f"(or "
                     f"(or (not {water_map.source}) "
-                    f"(not (current-age >= feudal-age)) "
-                    f"(not (unit-type-count-total transport-ship >= 1)) "
-                    f"{naval.source})",
+                    f"(not (current-age >= feudal-age))) "
+                    f"(or (not (unit-type-count-total transport-ship >= 1)) "
+                    f"{naval.source}))",
                     SourceLocation(1),
                 ),
             ),
