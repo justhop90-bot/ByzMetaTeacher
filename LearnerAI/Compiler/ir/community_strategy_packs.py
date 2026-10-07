@@ -2438,7 +2438,6 @@ def community_water_execution_plan():
         transport_rebuild_state="water-transport-rebuild",
         pacific_opening_transport_state="pacific-opening-transport-objective",
         feudal_resource_island_transport_state="feudal-resource-island-transport-objective",
-        feudal_resource_island_target_state="feudal-resource-island-target-state",
         water_map_observation="strategy-water-map",
         transport_required_observation="strategy-transport-required",
         transport_capable_observation="strategy-own-transport-capable",
