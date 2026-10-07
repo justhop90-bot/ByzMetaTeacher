@@ -255,7 +255,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         garrison_actions = tuple(a.source for a in garrison.actions)
         self.assertIn("(up-set-target-by-id g: 0)", garrison_actions)
         self.assertIn("(up-find-local c: 904 c: 4)", garrison_actions)
-        self.assertIn("(up-target-objects 1 c: 7 -1 -1)", garrison_actions)
+        self.assertIn("(up-target-objects 1 7 -1 -1)", garrison_actions)
 
         move = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-move")
         self.assertIn(
@@ -269,7 +269,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         unload = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-unload")
         self.assertIn(
-            "(up-target-point 0 c: 9 -1 -1)",
+            "(up-target-point 0 9 -1 -1)",
             tuple(a.source for a in unload.actions),
         )
         self.assertEqual(

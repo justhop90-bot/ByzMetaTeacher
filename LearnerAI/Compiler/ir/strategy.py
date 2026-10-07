@@ -4742,7 +4742,7 @@ def _default_byzantine_duc_plan(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression("(up-find-local c: 904 c: 4)", SourceLocation(1)),
                 parse_expression(
-                    "(up-target-objects 1 c: 7 -1 -1)",
+                    "(up-target-objects 1 7 -1 -1)",
                     SourceLocation(1),
                 ),
             ),
@@ -4934,7 +4934,7 @@ def _default_byzantine_duc_plan(
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    "(up-target-point 0 c: 9 -1 -1)",
+                    "(up-target-point 0 9 -1 -1)",
                     SourceLocation(1),
                 ),
                 parse_expression(
