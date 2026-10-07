@@ -561,6 +561,18 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlRule(
+            "pacific-fishing-continuity-bootstrap",
+            facts=(
+                pacific,
+                dock,
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                parse_expression("(current-age >= dark-age)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total fishing-ship < 2)", SourceLocation(1)),
+                goal("demand-water-fishing-continuity", 0),
+            ),
+            actions=(set_goal("demand-water-fishing-continuity", 1),),
+        ),
+        NativeControlRule(
             "pacific-fishing-controller-enter-naval-defense",
             facts=(
                 pacific,
@@ -1132,6 +1144,7 @@ def lower_water_execution_plan(
                 ),
                 set_goal("pacific-transport-transit-witness", 0),
                 set_goal("pacific-transport-unload-witness", 0),
+                parse_expression("(enable-timer pacific-transport-load-retry 20)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -1151,6 +1164,31 @@ def lower_water_execution_plan(
                     plan.pacific_transport_lifecycle_state,
                     int(PacificTransportLifecyclePhase.TRANSIT),
                 ),
+                parse_expression("(disable-timer pacific-transport-load-retry)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-load-failure-recover",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LOAD),
+                ),
+                parse_expression("(timer-triggered pacific-transport-load-retry)", SourceLocation(1)),
+                parse_expression("(up-compare-goal pacific-opening-transport-load-count < 4)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total transport-ship >= 1)", SourceLocation(1)),
+                parse_expression("(up-pending-objects c: 904 == 0)", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.RECOVERY),
+                ),
+                set_goal("pacific-opening-transport-id", 0),
+                set_goal("pacific-opening-transport-load-count", 0),
+                set_goal("pacific-transport-transit-witness", 0),
+                set_goal("pacific-transport-unload-witness", 0),
+                parse_expression("(disable-timer pacific-transport-load-retry)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
@@ -1327,6 +1365,7 @@ def lower_water_execution_plan(
                 ),
                 set_goal("pacific-transport-transit-witness", 0),
                 set_goal("pacific-transport-unload-witness", 0),
+                parse_expression("(enable-timer pacific-transport-load-retry 20)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
