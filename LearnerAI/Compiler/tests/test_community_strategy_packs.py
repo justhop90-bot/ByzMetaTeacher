@@ -16,6 +16,23 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
+    def test_pacific_fishing_continuity_is_escrow_gated_and_pressure_aware(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
+        self.assertIn(
+            "(or (not (map-type pacific-islands)) "
+            "(not (players-unit-type-count any-enemy galley-line >= 2)))",
+            requirements,
+        )
+        refs = {
+            evidence.observation_ref
+            for evidence in demand.invalidation
+            if evidence.observation_ref is not None
+        }
+        self.assertIn("strategy-enemy-naval-pressure", refs)
+
     def test_stock_profile_resolves_against_current_effective_data(self):
         profile = build_byzantine_stock_strategy(self.effective)
         resolved = resolve_strategy_profile(profile, self.effective)

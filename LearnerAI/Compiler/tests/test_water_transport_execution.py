@@ -240,6 +240,77 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("strategy-transport-capability-lost", invalidation_refs)
         self.assertNotIn("strategy-transport-recovery", invalidation_refs)
 
+    def test_pacific_fishing_controller_is_typed_and_arbitrates_pressure(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        for expected in (
+            "pacific-fishing-controller",
+            "sn-desired-number-fishing-boats",
+            "sn-maximum-fish-boat-drop-distance",
+            "sn-fishing-boat-whaling-percentage",
+            "sn-number-boat-explore-groups",
+        ):
+            self.assertIn(expected, state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for expected in (
+            "pacific-fishing-controller-open",
+            "pacific-fishing-controller-enter-naval-defense",
+            "pacific-fishing-controller-recover-from-naval-defense",
+            "pacific-fishing-controller-dark",
+            "pacific-fishing-controller-feudal",
+            "pacific-fishing-controller-castle",
+        ):
+            self.assertIn(expected, rules)
+
+        defense_text = " ".join(action.source for action in rules[
+            "pacific-fishing-controller-enter-naval-defense"
+        ].actions)
+        self.assertIn(
+            "(set-strategic-number sn-desired-number-fishing-boats 0)",
+            defense_text,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
+            defense_text,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+            defense_text,
+        )
+
+        dark_text = " ".join(action.source for action in rules[
+            "pacific-fishing-controller-dark"
+        ].actions)
+        self.assertIn(
+            "(set-strategic-number sn-desired-number-fishing-boats 2)",
+            dark_text,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-maximum-fish-boat-drop-distance 30)",
+            dark_text,
+        )
+
+        feudal_text = " ".join(action.source for action in rules[
+            "pacific-fishing-controller-feudal"
+        ].actions)
+        self.assertIn(
+            "(set-strategic-number sn-maximum-fish-boat-drop-distance 48)",
+            feudal_text,
+        )
+
+        castle_text = " ".join(action.source for action in rules[
+            "pacific-fishing-controller-castle"
+        ].actions)
+        self.assertIn(
+            "(set-strategic-number sn-maximum-fish-boat-drop-distance 96)",
+            castle_text,
+        )
+
     def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)

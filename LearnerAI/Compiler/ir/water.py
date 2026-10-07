@@ -60,6 +60,13 @@ class PacificTransportLifecyclePhase(IntEnum):
     RECOVERY = 5
 
 
+class PacificFishingControllerPhase(IntEnum):
+    UNKNOWN = -1
+    IDLE = 0
+    ACTIVE = 1
+    NAVAL_DEFENSE = 2
+
+
 @dataclass(frozen=True)
 class WaterExecutionPlan:
     """Typed strategy references for water/naval/transport execution."""
@@ -71,6 +78,7 @@ class WaterExecutionPlan:
     transport_rebuild_state: str
     pacific_opening_transport_state: str
     pacific_transport_lifecycle_state: str
+    pacific_fishing_controller_state: str
     feudal_resource_island_transport_state: str
     water_map_observation: str
     transport_required_observation: str
@@ -90,6 +98,7 @@ class WaterExecutionPlan:
             ("transport_rebuild_state", self.transport_rebuild_state),
             ("pacific_opening_transport_state", self.pacific_opening_transport_state),
             ("pacific_transport_lifecycle_state", self.pacific_transport_lifecycle_state),
+            ("pacific_fishing_controller_state", self.pacific_fishing_controller_state),
             ("feudal_resource_island_transport_state", self.feudal_resource_island_transport_state),
             ("water_map_observation", self.water_map_observation),
             ("transport_required_observation", self.transport_required_observation),
@@ -303,6 +312,64 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlState(
+            plan.pacific_fishing_controller_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.pacific_fishing_controller_state),
+                    "pacific-fishing-controller",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            "sn-desired-number-fishing-boats",
+            StrategicNumberRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "sn-desired-number-fishing-boats"),
+                    "water-strategic-number",
+                ),
+                why_not_goal=(
+                    "This state directly controls the DE Strategic Number for the "
+                    "desired Pacific fishing-boat floor."
+                ),
+                stability_key=f"{plan.plan_id}:strategic-number:213",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=213,
+            ),
+        ),
+        NativeControlState(
+            "sn-maximum-fish-boat-drop-distance",
+            StrategicNumberRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "sn-maximum-fish-boat-drop-distance"),
+                    "water-strategic-number",
+                ),
+                why_not_goal=(
+                    "This state directly controls the DE Strategic Number that bounds "
+                    "fishing-boat resource distance on Pacific water."
+                ),
+                stability_key=f"{plan.plan_id}:strategic-number:236",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=236,
+            ),
+        ),
+        NativeControlState(
+            "sn-fishing-boat-whaling-percentage",
+            StrategicNumberRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "sn-fishing-boat-whaling-percentage"),
+                    "water-strategic-number",
+                ),
+                why_not_goal=(
+                    "This state directly controls the DE Strategic Number selecting "
+                    "the share of fishing ships that may target whales."
+                ),
+                stability_key=f"{plan.plan_id}:strategic-number:316",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=316,
+            ),
+        ),
+        NativeControlState(
             "pacific-transport-transit-witness",
             GoalSlotRequest(
                 StorageRequestId(
@@ -371,6 +438,7 @@ def lower_water_execution_plan(
                 goal(plan.transport_rebuild_state, 0),
                 goal(plan.pacific_opening_transport_state, 0),
                 goal(plan.pacific_transport_lifecycle_state, int(PacificTransportLifecyclePhase.IDLE)),
+                goal(plan.pacific_fishing_controller_state, int(PacificFishingControllerPhase.IDLE)),
                 goal("pacific-transport-transit-witness", 0),
                 goal("pacific-transport-unload-witness", 0),
                 goal(plan.feudal_resource_island_transport_state, 0),
@@ -410,6 +478,225 @@ def lower_water_execution_plan(
                 parse_expression("(unit-type-count-total transport-ship < 1)", SourceLocation(1)),
             ),
             actions=(set_goal(plan.pacific_opening_transport_state, 0),),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-open",
+            facts=(
+                pacific,
+                dock,
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                parse_expression("(building-type-count-total dock >= 1)", SourceLocation(1)),
+                parse_expression(
+                    f"(goal {plan.pacific_fishing_controller_state} {int(PacificFishingControllerPhase.IDLE)})",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-enter-naval-defense",
+            facts=(
+                pacific,
+                goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+                naval,
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.NAVAL_DEFENSE),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-desired-number-fishing-boats 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(set-strategic-number {boat_exploration_state} 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-recover-from-naval-defense",
+            facts=(
+                pacific,
+                dock,
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.NAVAL_DEFENSE),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-close-nonwater",
+            facts=(
+                goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+                parse_expression(f"(not {pacific.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.IDLE),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-desired-number-fishing-boats 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-close-no-dock",
+            facts=(
+                parse_expression(
+                    f"(not (goal {plan.pacific_fishing_controller_state} {int(PacificFishingControllerPhase.IDLE)}))",
+                    SourceLocation(1),
+                ),
+                parse_expression(f"(not {dock.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.IDLE),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-desired-number-fishing-boats 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-dark",
+            facts=(
+                pacific,
+                dock,
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    "(set-strategic-number sn-desired-number-fishing-boats 2)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-maximum-fish-boat-drop-distance 30)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(set-strategic-number {boat_exploration_state} 1)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-feudal",
+            facts=(
+                pacific,
+                dock,
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    "(set-strategic-number sn-desired-number-fishing-boats 2)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-maximum-fish-boat-drop-distance 48)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(set-strategic-number {boat_exploration_state} 1)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-fishing-controller-castle",
+            facts=(
+                pacific,
+                dock,
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                goal(
+                    plan.pacific_fishing_controller_state,
+                    int(PacificFishingControllerPhase.ACTIVE),
+                ),
+                parse_expression("(current-age >= castle-age)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    "(set-strategic-number sn-desired-number-fishing-boats 2)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-maximum-fish-boat-drop-distance 96)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(set-strategic-number sn-fishing-boat-whaling-percentage 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(set-strategic-number {boat_exploration_state} 1)",
+                    SourceLocation(1),
+                ),
+            ),
         ),
         NativeControlRule(
             "pacific-transport-lifecycle-open",

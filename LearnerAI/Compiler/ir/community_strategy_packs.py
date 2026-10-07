@@ -1973,7 +1973,12 @@ def community_strategy_demands(
                     "strategy-dock-exists",
                 ),
             ),
-            invalidation=(),
+            invalidation=(
+                _persistent(
+                    "Pacific fishing suspends while enemy naval pressure is active",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
             capability_intent=_CapabilityIntent(
                 _CapabilityIntentKind.TRAIN,
                 "unit-line",
@@ -1994,6 +1999,7 @@ def community_strategy_demands(
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
                     "(unit-type-count-total fishing-ship < 2)",
+                    f"(or (not {pacific_islands}) (not {enemy_naval_pressure}))",
                 ),
                 action="(train fishing-ship)",
                 witness="(unit-type-count fishing-ship >= 2)",
@@ -2438,6 +2444,7 @@ def community_water_execution_plan():
         transport_rebuild_state="water-transport-rebuild",
         pacific_opening_transport_state="pacific-opening-transport-objective",
         pacific_transport_lifecycle_state="pacific-transport-lifecycle",
+        pacific_fishing_controller_state="pacific-fishing-controller",
         feudal_resource_island_transport_state="feudal-resource-island-transport-objective",
         water_map_observation="strategy-water-map",
         transport_required_observation="strategy-transport-required",
