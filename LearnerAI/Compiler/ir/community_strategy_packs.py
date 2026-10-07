@@ -61,6 +61,9 @@ _ENDGAME_CATAPHRACT_TARGET = 18
 _ENDGAME_VARANGIAN_TARGET = 14
 _ENDGAME_RAM_TARGET = 8
 _ENDGAME_TREBUCHET_TARGET = 8
+WATER_MAP_EXPRESSION = water_map
+PACIFIC_ISLANDS_EXPRESSION = "(map-type pacific-islands)"
+
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
@@ -732,7 +735,12 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-water-map",
-            "(or (map-type islands) (map-type pacific-islands))",
+            WATER_MAP_EXPRESSION,
+            _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-pacific-islands",
+            PACIFIC_ISLANDS_EXPRESSION,
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
@@ -946,6 +954,9 @@ def community_strategy_demands(
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
+    water_map = next(item.expression for item in observations if item.identity == "strategy-water-map")
+    pacific_islands = next(item.expression for item in observations if item.identity == "strategy-pacific-islands")
+    enemy_naval_pressure = next(item.expression for item in observations if item.identity == "strategy-enemy-naval-pressure")
     opening_pressure = (
         "(or (players-unit-type-count any-enemy knight >= 3) "
         "(or (players-unit-type-count any-enemy archer-line >= 4) "
@@ -1925,7 +1936,7 @@ def community_strategy_demands(
             building=dock,
             requirements=(
                 "(current-age >= dark-age)",
-                "(or (map-type islands) (map-type pacific-islands))",
+                water_map,
                 "(building-type-count-total dock < 1)",
                 "(can-build dock)",
             ),
@@ -1974,7 +1985,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= dark-age)",
-                    "(or (map-type islands) (map-type pacific-islands))",
+                    water_map,
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
                     "(unit-type-count-total fishing-ship < 2)",
@@ -1982,6 +1993,59 @@ def community_strategy_demands(
                 action="(train fishing-ship)",
                 witness="(unit-type-count fishing-ship >= 2)",
                 release="(unit-type-count fishing-ship >= 2)",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-fishing-expansion",
+            owner="water-economy",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.SUPPORT,
+            reason=(
+                _persistent(
+                    "Open Islands water supports a bounded four-boat fishing floor",
+                    "strategy-water-map",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Pacific Islands remains land-first and does not require a full fishing boom",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Pacific classification disables the full fishing expansion",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "fishing-ship-line",
+                fishing_provider,
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "fishing-ship-line",
+                minimum=4,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= dark-age)",
+                    water_map,
+                    f"(not {pacific_islands})",
+                    "(building-type-count-total dock >= 1)",
+                    "(can-train-with-escrow fishing-ship)",
+                    "(unit-type-count-total fishing-ship < 4)",
+                ),
+                action="(train fishing-ship)",
+                witness="(unit-type-count fishing-ship >= 4)",
+                release="(unit-type-count fishing-ship >= 4)",
             ),
         )
     )
@@ -2026,7 +2090,7 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= dark-age)",
-                    "(or (map-type islands) (map-type pacific-islands))",
+                    water_map,
                     "(goal water-transport-objective 1)",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow transport-ship)",
@@ -2083,9 +2147,9 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
-                    "(or (map-type islands) (map-type pacific-islands))",
+                    water_map,
                     "(building-type-count-total dock >= 1)",
-                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    enemy_naval_pressure,
                     "(can-train-with-escrow fire-galley)",
                     "(unit-type-count-total fire-galley < 2)",
                 ),
@@ -2136,9 +2200,9 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(or (map-type islands) (map-type pacific-islands))",
+                    water_map,
                     "(building-type-count-total dock >= 1)",
-                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    enemy_naval_pressure,
                     "(can-train-with-escrow galley)",
                     "(unit-type-count-total galley < 3)",
                 ),
