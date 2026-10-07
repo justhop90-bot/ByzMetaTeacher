@@ -3613,6 +3613,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         extra_controllers=endgame_attack_group_sn_controllers,
     )
     assertion_plan = _goal_state_control_plan(profile)
+    feudal_bank_plan = _feudal_bank_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
     endgame_objective_plan = _byzantine_endgame_objective_control_plan(profile)
     imperial_band_plan = _byzantine_imperial_band_control_plan(profile)
@@ -3671,6 +3672,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
+        feudal_bank_plan,
         attack_lifecycle_plan,
         endgame_objective_plan,
         endgame_push_plan,
@@ -3795,6 +3797,72 @@ def _posture_transition_control_plan(profile: StrategyProfile):
         )
 
     return NativeControlPlan(states=(state,), rules=tuple(rules))
+
+
+def _feudal_bank_control_plan(profile):
+    """Protect the Dark-Age Feudal food bank through the existing native control plane."""
+    from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    owner = SemanticId(profile.profile_id, "feudal-transition")
+    state = NativeControlState(
+        "feudal-bank-active",
+        GoalSlotRequest(
+            StorageRequestId(owner, "strategy-goal:feudal-bank-active"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+    def fact(source: str):
+        return parse_expression(source, SourceLocation(1))
+
+    return NativeControlPlan(
+        states=(state,),
+        rules=(
+            NativeControlRule(
+                "feudal-bank-initialize",
+                facts=(fact("(goal feudal-bank-active 0)"),),
+                actions=(fact("(set-goal feudal-bank-active 0)"), fact("(disable-self)")),
+            ),
+            NativeControlRule(
+                "feudal-bank-arm",
+                facts=(
+                    fact("(current-age == dark-age)"),
+                    fact("(unit-type-count-total villager >= 20)"),
+                    fact("(goal feudal-bank-active 0)"),
+                    fact("(not (or (goal strategy-posture 1) (goal strategy-posture 2)))"),
+                ),
+                actions=(
+                    fact("(set-escrow-percentage food 100)"),
+                    fact("(set-goal feudal-bank-active 1)"),
+                ),
+            ),
+            NativeControlRule(
+                "feudal-bank-emergency-release",
+                facts=(
+                    fact("(goal feudal-bank-active 1)"),
+                    fact("(or (goal strategy-posture 1) (goal strategy-posture 2))"),
+                ),
+                actions=(
+                    fact("(set-escrow-percentage food 0)"),
+                    fact("(set-goal feudal-bank-active 0)"),
+                ),
+            ),
+            NativeControlRule(
+                "feudal-bank-release-on-feudal-witness",
+                facts=(
+                    fact("(goal feudal-bank-active 1)"),
+                    fact("(current-age >= feudal-age)"),
+                ),
+                actions=(
+                    fact("(set-escrow-percentage food 0)"),
+                    fact("(set-goal feudal-bank-active 0)"),
+                ),
+            ),
+        ),
+    )
 
 
 def _goal_state_control_plan(profile: StrategyProfile):
