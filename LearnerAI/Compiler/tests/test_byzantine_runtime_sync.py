@@ -87,6 +87,11 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "; Native control rule: water-posture-fishing",
             synchronized,
         )
+        self.assertIn(
+            "; Native control rule: water-boat-exploration-enable",
+            synchronized,
+        )
+        self.assertIn("(set-strategic-number 61 1)", synchronized)
         self.assertNotIn(
             "(defrule\\n    (map-type islands)\\n=>\\n    (set-goal water-posture 4)",
             synchronized,
