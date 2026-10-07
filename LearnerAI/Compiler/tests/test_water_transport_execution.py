@@ -755,7 +755,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
         open_text = " ".join(fact.source for fact in rules["pacific-convoy-route-open"].facts)
         self.assertIn("(current-age >= feudal-age)", open_text)
-        self.assertIn("(building-type-count-total dock >= 1)", open_text)
+        self.assertIn(
+            profile.observation("strategy-dock-exists").expression,
+            open_text,
+        )
         self.assertIn("(unit-type-count-total transport-ship >= 1)", open_text)
         self.assertIn("(goal pacific-transport-escort 2)", open_text)
         self.assertIn(
