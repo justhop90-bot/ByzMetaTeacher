@@ -286,6 +286,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(up-target-point 0 action-move -1 -1)",
             tuple(a.source for a in move.actions),
         )
+        self.assertIn("(up-get-object-data object-data-action 0)", tuple(a.source for a in move.actions))
+        self.assertIn("(up-get-object-data object-data-distance 0)", tuple(a.source for a in move.actions))
 
         unload = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-unload")
         self.assertIn(
