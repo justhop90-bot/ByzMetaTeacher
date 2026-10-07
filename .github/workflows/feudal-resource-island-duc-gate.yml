@@ -1,0 +1,62 @@
+name: Feudal resource-island DUC gate
+
+on:
+  push:
+    branches:
+      - runtime/pacific-gold-bootstrap-20261007
+    paths:
+      - "LearnerAI/Compiler/ir/water.py"
+      - "LearnerAI/Compiler/ir/strategy.py"
+      - "LearnerAI/Compiler/ir/community_strategy_packs.py"
+      - "LearnerAI/Compiler/tests/test_water_transport_execution.py"
+      - "LearnerAI/Compiler/tests/test_strategy_compiler_integration.py"
+      - "tools/synchronize_byzantine_runtime.py"
+      - "tools/build_byzantine_bot.py"
+      - "LearnerAI/Compiler/tests/assert_native_zero.py"
+  pull_request:
+    paths:
+      - "LearnerAI/Compiler/ir/water.py"
+      - "LearnerAI/Compiler/ir/strategy.py"
+      - "LearnerAI/Compiler/ir/community_strategy_packs.py"
+      - "LearnerAI/Compiler/tests/test_water_transport_execution.py"
+      - "LearnerAI/Compiler/tests/test_strategy_compiler_integration.py"
+      - "tools/synchronize_byzantine_runtime.py"
+      - "tools/build_byzantine_bot.py"
+      - "LearnerAI/Compiler/tests/assert_native_zero.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feudal-resource-island-duc-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Feudal resource-island DUC
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: LearnerAI
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+
+      - name: Canonical Byzantine Core v1 build
+        run: PYTHONPATH=LearnerAI python tools/build_byzantine_bot.py
+
+      - name: Focused Feudal resource-island DUC regression
+        run: |
+          python -m unittest \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_feudal_resource_island_transport_state_is_feudal_and_fail_closed \
+            LearnerAI.Compiler.tests.test_strategy_compiler_integration.StrategyCompilerIntegrationTests.test_stock_strategy_lowers_feudal_resource_island_duc_target_handoff \
+            -v
+
+      - name: Native zero-findings acceptance - canonical Byzantine artifact
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/native-byzantine.json
