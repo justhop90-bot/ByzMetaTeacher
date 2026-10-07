@@ -240,6 +240,64 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("strategy-transport-capability-lost", invalidation_refs)
         self.assertNotIn("strategy-transport-recovery", invalidation_refs)
 
+    def test_pacific_fishing_bootstrap_activates_continuity_in_dark_age(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        bootstrap = rules["pacific-fishing-continuity-bootstrap"]
+        facts = tuple(fact.source for fact in bootstrap.facts)
+        self.assertIn("(map-type pacific-islands)", facts)
+        self.assertIn("(building-type-count-total dock >= 1)", facts)
+        self.assertIn("(current-age >= dark-age)", facts)
+        self.assertIn("(unit-type-count-total fishing-ship < 2)", facts)
+        self.assertIn("(goal demand-water-fishing-continuity 0)", facts)
+        self.assertIn(
+            "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
+            "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
+            facts,
+        )
+        self.assertIn(
+            "(set-goal demand-water-fishing-continuity 1)",
+            tuple(action.source for action in bootstrap.actions),
+        )
+
+    def test_pacific_transport_load_failure_uses_timer_only_for_reconsideration(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("pacific-transport-load-retry", state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        failure = rules["pacific-transport-lifecycle-load-failure-recover"]
+        facts = tuple(fact.source for fact in failure.facts)
+        self.assertIn("(goal pacific-transport-lifecycle 1)", facts)
+        self.assertIn("(timer-triggered pacific-transport-load-retry)", facts)
+        self.assertIn(
+            "(up-compare-goal pacific-opening-transport-load-count < 4)",
+            facts,
+        )
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", facts)
+        self.assertIn("(up-pending-objects c: 904 == 0)", facts)
+        actions = tuple(action.source for action in failure.actions)
+        self.assertIn("(set-goal pacific-transport-lifecycle 5)", actions)
+        self.assertIn("(set-goal pacific-opening-transport-id 0)", actions)
+        self.assertIn("(set-goal pacific-opening-transport-load-count 0)", actions)
+        self.assertIn("(disable-timer pacific-transport-load-retry)", actions)
+
+        load_witness = rules["pacific-transport-lifecycle-load-witness"]
+        witness_facts = tuple(fact.source for fact in load_witness.facts)
+        self.assertIn(
+            "(up-compare-goal pacific-opening-transport-load-count >= 4)",
+            witness_facts,
+        )
+        self.assertNotIn("(timer-triggered pacific-transport-load-retry)", witness_facts)
+
     def test_pacific_fishing_controller_is_typed_and_arbitrates_pressure(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
