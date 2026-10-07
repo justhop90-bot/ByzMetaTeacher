@@ -260,6 +260,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             garrison_actions.index("(up-full-reset-search)"),
             garrison_actions.index("(up-set-target-by-id g: 0)"),
         )
+        garrison_input = next(
+            request for request in plan.input_requests
+            if request.rule_identity == "byzantine-pacific-transport-garrison"
+        )
+        self.assertEqual(garrison_input.expression_index, 2)
 
         move = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-move")
         self.assertIn(

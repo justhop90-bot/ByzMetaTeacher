@@ -4756,7 +4756,7 @@ def _default_byzantine_duc_plan(
         NativeDucGoalInputRequest(
             rule_identity=garrison_identity,
             section="ACTION",
-            expression_index=0,
+            expression_index=2,
             argument_index=1,
             source=pacific_transport_id.request_id,
         )
