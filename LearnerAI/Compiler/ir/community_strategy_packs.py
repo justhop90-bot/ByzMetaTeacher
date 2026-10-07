@@ -2037,9 +2037,9 @@ def community_strategy_demands(
             opportunity_cost=None,
             execution=_ExecutionDemandTemplate(
                 requirements=(
-                    "(current-age >= dark-age)",
+                    "(current-age >= feudal-age)",
                     water_map,
-                    f"(not {pacific_islands})",
+                    f"(not {enemy_naval_pressure})",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
                     "(unit-type-count-total fishing-ship < 4)",
