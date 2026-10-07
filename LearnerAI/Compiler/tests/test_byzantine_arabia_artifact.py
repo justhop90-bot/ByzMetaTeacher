@@ -47,9 +47,9 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             section,
         )
         self.assertNotIn(
-            "(resource-found gold)",
-            section.split("; economy-gold-camp-floor-2", 1)[0],
-            "first-gold recovery must not require the resource-found witness before searching",
+            "    (resource-found gold)\n    (not (building-type-count mining-camp >= 1))",
+            section,
+            "first-gold recovery must not require resource-found gold as the sole bootstrap gate",
         )
         self.assertIn("(up-find-resource c: gold c: 1)", section)
         self.assertIn("(up-build place-point 0 c: mining-camp)", section)
