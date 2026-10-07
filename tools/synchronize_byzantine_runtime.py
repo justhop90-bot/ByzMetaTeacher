@@ -1229,6 +1229,17 @@ def _sync_water_demand_rules(runtime: str, generated: str) -> str:
                 insert_before="; Native control rule: counter-package-selection-reset-000",
             )
 
+    continuation_identity = "water-fishing-continuity-expand-after-baseline"
+    if generated.find(
+        f"; Native control rule: {continuation_identity}"
+    ) >= 0:
+        runtime = _replace_or_install_native_control_rule(
+            runtime,
+            generated,
+            continuation_identity,
+            insert_before="; Native control rule: counter-package-selection-reset-000",
+        )
+
     return runtime
 
 
