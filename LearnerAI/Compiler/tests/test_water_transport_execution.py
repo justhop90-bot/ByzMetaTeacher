@@ -307,7 +307,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(wood-amount >= 75)", requirements)
         self.assertIn("(can-train fishing-ship)", requirements)
         self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
-        self.assertIn("(unit-type-count-total fishing-ship < 2)", requirements)
+        self.assertEqual(demand.target.minimum, 2)
 
     def test_pacific_fishing_controller_is_typed_and_arbitrates_pressure(self):
         profile = build_byzantine_strategy(self.effective)
