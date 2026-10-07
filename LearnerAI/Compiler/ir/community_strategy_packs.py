@@ -2089,7 +2089,7 @@ def community_strategy_demands(
             opportunity_cost=None,
             execution=_ExecutionDemandTemplate(
                 requirements=(
-                    "(current-age >= dark-age)",
+                    "(current-age >= feudal-age)",
                     water_map,
                     "(goal water-transport-objective 1)",
                     "(building-type-count-total dock >= 1)",
