@@ -180,6 +180,33 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             demand.execution.requirements,
         )
 
+    def test_dark_age_villager_pause_only_fires_when_feudal_is_issuable(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        guard = next(
+            requirement
+            for requirement in demand.execution.requirements
+            if requirement.startswith("(not (and (current-age == dark-age)")
+        )
+
+        blocked_bank = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(current-age == dark-age)", True),
+                ("(unit-type-count-total villager >= 20)", True),
+                ("(can-research-with-escrow feudal-age)", False),
+            )
+        )
+        ready_bank = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(current-age == dark-age)", True),
+                ("(unit-type-count-total villager >= 20)", True),
+                ("(can-research-with-escrow feudal-age)", True),
+            )
+        )
+
+        self.assertIs(EvidenceTruth.TRUE, _evaluate_expression(guard, blocked_bank))
+        self.assertIs(EvidenceTruth.FALSE, _evaluate_expression(guard, ready_bank))
+
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("civilian-villager-continuity")
