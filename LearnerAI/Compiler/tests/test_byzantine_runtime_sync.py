@@ -315,6 +315,50 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         self.assertIn("(can-afford-research castle-age)", section)
         self.assertNotIn("(can-research-with-escrow castle-age)", section)
 
+    def test_synchronization_releases_failed_feudal_resource_claim_before_retry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                sync_runtime.synchronize()
+                second = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        marker = "; Recovery: feudal-resource-claim | FAILED ISSUANCE -> FREE"
+        self.assertIn(marker, synchronized)
+        self.assertEqual(1, synchronized.count(marker))
+        self.assertEqual(synchronized, second)
+        recovery_start = synchronized.index(marker)
+        recovery_end = synchronized.index(
+            "; RETRY | ISSUED/PENDING -> ACTIVE",
+            recovery_start,
+        )
+        recovery = synchronized[recovery_start:recovery_end]
+        self.assertIn("(goal byzantine-resource-claim 1)", recovery)
+        self.assertIn("(goal demand-feudal-transition 83)", recovery)
+        self.assertIn("(not (up-research-status c: 101 >= 2))", recovery)
+        self.assertIn("(not (current-age >= feudal-age))", recovery)
+        self.assertIn("(set-goal byzantine-resource-claim 0)", recovery)
+
+
     def test_synchronization_installs_first_dock_construction_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
