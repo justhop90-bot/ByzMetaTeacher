@@ -62,6 +62,10 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         }
         for name, value in reserved.items():
             self.assertIn(f"(defconst {name} {value})", synchronized)
+            self.assertEqual(
+                synchronized.count(f"(defconst {name} {value})"),
+                1,
+            )
         self.assertEqual(len(set(reserved.values())), len(reserved))
         self.assertIn(
             "(or (map-type islands) (map-type pacific-islands))",
