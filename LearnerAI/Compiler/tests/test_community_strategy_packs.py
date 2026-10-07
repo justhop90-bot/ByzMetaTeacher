@@ -33,6 +33,13 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         }
         self.assertIn("strategy-enemy-naval-pressure", refs)
 
+    def test_pacific_transport_recovery_is_a_standing_feudal_capability_after_landing(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-recovery")
+        self.assertIn("(goal pacific-transport-recovery 1)", demand.execution.requirements)
+        self.assertIn("(can-train-with-escrow transport-ship)", demand.execution.requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", demand.execution.requirements)
+
     def test_pacific_harbor_defense_gates_naval_demands_on_pacific(self):
         profile = build_byzantine_stock_strategy(self.effective)
         for identity in ("water-naval-defense", "water-naval-control"):

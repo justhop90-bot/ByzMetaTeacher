@@ -367,6 +367,36 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         self.assertIn("(goal pacific-harbor-defense 1)", phase_text)
 
+    def test_pacific_transport_recovery_retains_a_post_landing_rebuild_entitlement(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("pacific-transport-recovery", state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        self.assertIn("pacific-transport-recovery-open-on-landed", rules)
+        self.assertIn("pacific-transport-recovery-close-nonwater", rules)
+
+        landed_actions = " ".join(
+            action.source
+            for action in rules["pacific-transport-lifecycle-landed"].actions
+        )
+        self.assertIn("(set-goal pacific-transport-recovery 1)", landed_actions)
+
+    def test_pacific_transport_recovery_demand_uses_dock_pressure_and_escrow(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-recovery")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertIn("(map-type pacific-islands)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        self.assertIn("(not (players-unit-type-count any-enemy galley-line >= 2))", requirements)
+        self.assertIn("(can-train-with-escrow transport-ship)", requirements)
+        self.assertIn("(unit-type-count-total transport-ship < 1)", requirements)
+
     def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
