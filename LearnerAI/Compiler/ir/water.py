@@ -59,6 +59,7 @@ class WaterExecutionPlan:
     transport_phase_state: str
     transport_objective_state: str
     transport_rebuild_state: str
+    pacific_opening_transport_state: str = "pacific-opening-transport-objective"
     water_map_observation: str
     transport_required_observation: str
     transport_capable_observation: str
@@ -75,6 +76,7 @@ class WaterExecutionPlan:
             ("transport_phase_state", self.transport_phase_state),
             ("transport_objective_state", self.transport_objective_state),
             ("transport_rebuild_state", self.transport_rebuild_state),
+            ("pacific_opening_transport_state", self.pacific_opening_transport_state),
             ("water_map_observation", self.water_map_observation),
             ("transport_required_observation", self.transport_required_observation),
             ("transport_capable_observation", self.transport_capable_observation),
@@ -195,6 +197,10 @@ def lower_water_execution_plan(
         profile.observation(plan.dock_observation).expression,
         SourceLocation(1),
     )
+    pacific = parse_expression(
+        profile.observation("strategy-pacific-islands").expression,
+        SourceLocation(1),
+    )
     naval = parse_expression(
         profile.observation(plan.naval_pressure_observation).expression,
         SourceLocation(1),
@@ -262,6 +268,16 @@ def lower_water_execution_plan(
                 role=GoalRole.PERSISTENT_STATE,
             ),
         ),
+        NativeControlState(
+            plan.pacific_opening_transport_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.pacific_opening_transport_state),
+                    "pacific-opening-transport",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
     )
 
     def goal(name: str, value: int):
@@ -278,14 +294,42 @@ def lower_water_execution_plan(
                 goal(posture_state, 0),
                 goal(plan.transport_objective_state, 0),
                 goal(plan.transport_rebuild_state, 0),
+                goal(plan.pacific_opening_transport_state, 0),
             ),
             actions=(
                 set_goal(phase_state, 0),
                 set_goal(posture_state, 0),
                 set_goal(plan.transport_objective_state, 0),
                 set_goal(plan.transport_rebuild_state, 0),
+                set_goal(plan.pacific_opening_transport_state, 0),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
+        ),
+        NativeControlRule(
+            "pacific-opening-transport-open",
+            facts=(
+                pacific,
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total transport-ship >= 1)", SourceLocation(1)),
+                goal(plan.pacific_opening_transport_state, 0),
+            ),
+            actions=(set_goal(plan.pacific_opening_transport_state, 1),),
+        ),
+        NativeControlRule(
+            "pacific-opening-transport-close-at-feudal",
+            facts=(
+                goal(plan.pacific_opening_transport_state, 1),
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+            ),
+            actions=(set_goal(plan.pacific_opening_transport_state, 0),),
+        ),
+        NativeControlRule(
+            "pacific-opening-transport-close-on-loss",
+            facts=(
+                goal(plan.pacific_opening_transport_state, 1),
+                parse_expression("(unit-type-count-total transport-ship < 1)", SourceLocation(1)),
+            ),
+            actions=(set_goal(plan.pacific_opening_transport_state, 0),),
         ),
         NativeControlRule(
             "transport-objective-open",
