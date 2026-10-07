@@ -397,7 +397,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(or (not (map-type pacific-islands)) (goal pacific-transport-escort 2))", pacific_transport_open)
 
     def test_pacific_transport_escort_uses_existing_fire_galley_escrow_channel(self):
-        profile = build_byzantine_stock_strategy(self.effective)
+        profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("water-pacific-transport-escort")
         requirements = tuple(demand.execution.requirements)
         self.assertIn("(current-age >= feudal-age)", requirements)
