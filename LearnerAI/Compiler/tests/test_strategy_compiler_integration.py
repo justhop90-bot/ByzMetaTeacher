@@ -418,8 +418,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-target-point 0 action-move -1 -1)", transport_actions)
         self.assertIn("(up-set-target-point feudal-resource-island-gold-point)", escort_actions)
         self.assertIn("(up-target-point 0 action-move -1 -1)", escort_actions)
-        self.assertIn("(up-find-local c: transport-ship-class c: 1)", transport_actions)
-        self.assertIn("(up-find-local c: fire-galley c: 1)", escort_actions)
+        self.assertIn("(up-find-local c: 920 c: 1)", transport_actions)
+        self.assertIn("(up-find-local c: 1103 c: 1)", escort_actions)
 
     def test_byzantine_stock_lowers_objective_control_state_and_ownership(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)

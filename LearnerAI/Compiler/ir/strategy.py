@@ -5081,7 +5081,7 @@ def _default_byzantine_duc_plan(
             actions=(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression(
-                    "(up-find-local c: transport-ship-class c: 1)",
+                    "(up-find-local c: 920 c: 1)",
                     SourceLocation(1),
                 ),
                 parse_expression(
@@ -5114,7 +5114,7 @@ def _default_byzantine_duc_plan(
             actions=(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression(
-                    "(up-find-local c: fire-galley c: 1)",
+                    "(up-find-local c: 1103 c: 1)",
                     SourceLocation(1),
                 ),
                 parse_expression(
