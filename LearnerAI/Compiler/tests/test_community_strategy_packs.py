@@ -20,12 +20,15 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         profile = build_byzantine_stock_strategy(self.effective)
         demand = profile.demand("water-fishing-continuity")
         requirements = tuple(demand.execution.requirements)
-        self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
+        requirement_text = " ".join(requirements)
+        self.assertIn("(can-train fishing-ship)", requirements)
         self.assertIn(
             f"(or (not (map-type pacific-islands)) "
             f"(not {profile.observation('strategy-enemy-naval-pressure').expression}))",
             requirements,
         )
+        self.assertIn("(can-train-with-escrow fishing-ship)", requirement_text)
+        self.assertIn("(wood-amount >= 75)", requirement_text)
         refs = {
             evidence.observation_ref
             for evidence in demand.invalidation
