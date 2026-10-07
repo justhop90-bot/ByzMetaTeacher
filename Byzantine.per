@@ -5955,18 +5955,6 @@
     (disable-timer pacific-transport-load-retry)
 )
 
-; Native control rule: pacific-fishing-continuity-bootstrap
-(defrule
-    (map-type pacific-islands)
-    (building-type-count-total dock >= 1)
-    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
-    (current-age >= dark-age)
-    (unit-type-count-total fishing-ship < 2)
-    (goal demand-water-fishing-continuity 0)
-=>
-    (set-goal demand-water-fishing-continuity 1)
-)
-
 ; Native control rule: pacific-fishing-controller-open
 (defrule
     (map-type pacific-islands)
@@ -5976,6 +5964,18 @@
     (goal pacific-fishing-controller 0)
 =>
     (set-goal pacific-fishing-controller 1)
+)
+
+; Native control rule: pacific-fishing-continuity-bootstrap
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (current-age >= dark-age)
+    (unit-type-count-total fishing-ship < 2)
+    (goal demand-water-fishing-continuity 0)
+=>
+    (set-goal demand-water-fishing-continuity 1)
 )
 
 ; Native control rule: pacific-fishing-controller-enter-naval-defense
@@ -6354,6 +6354,7 @@
     (set-goal pacific-transport-lifecycle 1)
     (set-goal pacific-transport-transit-witness 0)
     (set-goal pacific-transport-unload-witness 0)
+    (enable-timer pacific-transport-load-retry 20)
 )
 
 ; Native control rule: pacific-transport-lifecycle-close-at-feudal
