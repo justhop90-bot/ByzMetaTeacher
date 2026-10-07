@@ -5665,12 +5665,6 @@ def _default_byzantine_duc_plan(
         output_requests=tuple(outputs),
     )
 
-    return NativeDucPlan(
-        rules=tuple((*rules, *lifecycle_rules)),
-        output_requests=tuple(outputs),
-        input_requests=tuple(inputs),
-    )
-
 
 def _byzantine_attack_phase_request(profile_id: str):
     from ..runtime_binding import GoalSlotRequest
