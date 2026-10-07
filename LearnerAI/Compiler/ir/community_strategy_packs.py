@@ -1002,8 +1002,9 @@ def community_strategy_demands(
                 "(current-age >= dark-age)",
                 "(can-train villager)",
                 "(not (and (current-age == dark-age) "
+                "(or (goal feudal-bank-active 1) "
                 "(and (unit-type-count-total villager >= 20) "
-                "(can-research-with-escrow feudal-age))))",
+                "(can-research-with-escrow feudal-age))))))",
                 "(not (and (current-age == feudal-age) "
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
