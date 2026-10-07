@@ -731,6 +731,56 @@ class WaterTransportExecutionTests(unittest.TestCase):
             escort_demand.execution.requirements,
         )
 
+    def test_pacific_convoy_route_falls_back_without_releasing_convoy_intent(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("pacific-convoy-route", state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for expected in (
+            "pacific-convoy-route-rearm-from-fallback",
+            "pacific-convoy-route-close-on-pressure",
+            "pacific-convoy-route-close-nonwater",
+        ):
+            self.assertIn(expected, rules)
+
+        escort_loss_actions = tuple(
+            action.source
+            for action in rules["pacific-convoy-route-close-on-escort-loss"].actions
+        )
+        dock_loss_actions = tuple(
+            action.source
+            for action in rules["pacific-convoy-route-close-on-dock-loss"].actions
+        )
+        self.assertIn(
+            "(set-goal pacific-convoy-route 4)",
+            escort_loss_actions,
+        )
+        self.assertIn(
+            "(set-goal pacific-convoy-route 4)",
+            dock_loss_actions,
+        )
+
+        fallback_rearm = " ".join(
+            fact.source
+            for fact in rules["pacific-convoy-route-rearm-from-fallback"].facts
+        )
+        self.assertIn("(goal pacific-convoy-route 4)", fallback_rearm)
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", fallback_rearm)
+        self.assertIn("(goal pacific-transport-escort 2)", fallback_rearm)
+        self.assertIn(
+            profile.observation("strategy-dock-exists").expression,
+            fallback_rearm,
+        )
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            fallback_rearm,
+        )
+
     def test_pacific_convoy_route_owns_transport_and_escort_dispatch(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
