@@ -5422,6 +5422,7 @@
 (defrule
     (goal arb-c01 0)
     (goal arb-o01 1)
+    (not (map-type pacific-islands))
 =>
     (set-goal arb-c01 1)
 )
@@ -5429,7 +5430,7 @@
 ; Native control rule: strategic-arbitration-candidate-disable-water-investment
 (defrule
     (goal arb-c01 1)
-    (not (goal arb-o01 1))
+    (or (not (goal arb-o01 1)) (map-type pacific-islands))
 =>
     (set-goal arb-c01 0)
 )
@@ -5437,18 +5438,15 @@
 ; Native control rule: strategic-arbitration-candidate-enable-castle-trajectory
 (defrule
     (goal arb-c02 0)
-    (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) (goal arb-o01 0))
+    (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) (or (not (goal arb-o01 1)) (map-type pacific-islands)))
 =>
     (set-goal arb-c02 1)
 )
 
 ; Native control rule: strategic-arbitration-candidate-disable-castle-trajectory
-; Castle trajectory is strategic intent, not a pressure veto.
-; Enemy pressure is owned by the military layer; it may delay execution but must not
-; erase the Castle/boom path and strand the construction demand.
 (defrule
     (goal arb-c02 1)
-    (not (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) (goal arb-o01 0)))
+    (not (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) (or (not (goal arb-o01 1)) (map-type pacific-islands))))
 =>
     (set-goal arb-c02 0)
 )
@@ -5456,7 +5454,7 @@
 ; Native control rule: strategic-arbitration-candidate-enable-two-tc-expansion
 (defrule
     (goal arb-c03 0)
-    (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) (goal arb-o01 0))
+    (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) (or (not (goal arb-o01 1)) (map-type pacific-islands)))
 =>
     (set-goal arb-c03 1)
 )
@@ -5464,7 +5462,7 @@
 ; Native control rule: strategic-arbitration-candidate-disable-two-tc-expansion
 (defrule
     (goal arb-c03 1)
-    (not (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) (goal arb-o01 0)))
+    (not (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) (or (not (goal arb-o01 1)) (map-type pacific-islands))))
 =>
     (set-goal arb-c03 0)
 )
@@ -6076,7 +6074,7 @@
 ; Native control rule: opening-selector-water-control
 (defrule
     (goal opening-plan -1)
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
     (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
 =>
     (set-goal opening-plan 5)
@@ -6085,7 +6083,7 @@
 ; Native control rule: opening-selector-water-economy
 (defrule
     (goal opening-plan -1)
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
     (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
 =>
     (set-goal opening-plan 4)
@@ -7607,6 +7605,7 @@
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 4)
     (not (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1))))
+    (not (map-type pacific-islands))
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 4)
@@ -7620,6 +7619,7 @@
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 5)
     (not (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1))))
+    (not (map-type pacific-islands))
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 5)
