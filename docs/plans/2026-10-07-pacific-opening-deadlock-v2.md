@@ -1,169 +1,58 @@
 # Pacific Opening Deadlock Repair v2 Implementation Plan
 
-> **For agentic workers:** Use the host's available task-by-task implementation workflow. Steps use checkbox (`- [ ]`) syntax for tracking.
+> For agentic workers: execute this plan task-by-task. Each task is independently testable.
 
-**Goal:** Remove the Pacific opening deadlock so villagers continue through the Feudal transition, Feudal is actually issued, the starting transport can recover from a failed load, and fishing remains an independent Pacific bootstrap capability.
+**Goal:** Break the observed Pacific Dark-Age deadlock at the actual ownership boundaries: Feudal resource-claim rollback, transport-load liveness, and first fishing-ship feasibility.
 
-**Architecture:** Preserve the existing Byzantine lifecycle model and native AIRef facts. Repair ownership boundaries rather than introducing a second planner: affordability decides when civilian production may yield, native research feasibility remains the actual Feudal execution gate, Pacific transport gets an explicit failed-load recovery edge, and fishing/dock capability remains parallel to age advancement.
+**Architecture:** Preserve the existing Byzantine lifecycle and Pacific controllers. Do not add a second planner or duplicate fishing/transport ownership. `can-*` remains capability/permission, research completion remains a world-state witness, timers are only reconsideration cadence, and transient claims must be released on failed action paths.
 
-**Tech Stack:** AoE2DE `.per`, Python compiler IR/emitter, unittest, GitHub Actions, checked-in `Byzantine.per` synchronization.
+**Tech Stack:** AoE2DE `.per`, Python compiler/runtime synchronizer, unittest, GitHub Actions, canonical checked-in `Byzantine.per`.
 
 ## Global Constraints
 
-- Keep `ENGINE FACT / COMMUNITY EVIDENCE / COMPILER POLICY / UNKNOWN` distinct.
-- `can-*` remains permission/capability, not completion truth.
-- Pending remains in-flight; world-state witnesses own completion.
-- Do not replace the existing Pacific lifecycle or add a second planner.
-- Preserve Standard Arabia behavior and the existing Pacific map classification.
-- Keep `can-research-with-escrow(feudal-age)` on the actual Feudal research action. It must not be used as the civilian-production stop predicate.
-- Pacific transport recovery must fail closed and re-enter the existing acquisition lifecycle rather than inventing a new transport command.
+- Preserve `ENGINE FACT / COMMUNITY EVIDENCE / COMPILER POLICY / UNKNOWN` separation.
+- Preserve `OBSERVATION -> ARBITRATION -> EXECUTION -> WITNESS -> RECOVERY -> REASSESSMENT`.
+- Preserve existing Pacific fishing and transport controller ownership.
+- Do not use timers as completion truth.
+- Do not weaken `can-research-with-escrow(feudal-age)` on the actual Feudal research action.
+- Do not add speculative Dark-Age building prerequisites solely to paper over the Feudal failure.
+- Standard Arabia behavior remains a regression boundary.
 
----
+## Task 1: Release the Feudal transient claim on failed issuance
 
-### Task 1: Decouple villager continuity from Feudal queue feasibility
+Modify `tools/synchronize_byzantine_runtime.py` and `LearnerAI/Compiler/tests/test_byzantine_runtime_sync.py`.
 
-**Files:**
-- Modify: `LearnerAI/Compiler/ir/community_strategy_packs.py:973-1023`
-- Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py:263-365`
-- Test: `LearnerAI/Compiler/tests/test_byzantine_runtime_sync.py`
-- Runtime: synchronized `Byzantine.per` persistent civilian production section
+The Feudal action acquires `byzantine-resource-claim = 1` and moves to issued state 83. If native research is no longer pending and Feudal has not been witnessed, release the claim before retrying. The new synchronizer rule is idempotent and guarded by `not (up-research-status c: 101 >= 2)` and `not (current-age >= feudal-age)`.
 
-**Interfaces:**
-- Consumes: `civilian-villager-continuity` execution requirements and existing Feudal transition demand.
-- Produces: villager continuity admission based on `can-afford-research feudal-age`, while Feudal execution continues to require `can-research-with-escrow feudal-age`.
+Focused regression: synchronize twice and prove the rollback rule appears exactly once with `set-goal byzantine-resource-claim 0`.
 
-- [ ] **Step 1: Update the focused regression**
-  Assert the Dark-Age villager stop guard is:
-  `(unit-type-count-total villager >= 20)` + `(can-afford-research feudal-age)`, and explicitly reject `can-research-with-escrow feudal-age`.
+## Task 2: Repair Pacific transport LOAD liveness
 
-- [ ] **Step 2: Verify the relevant failure**
-  Run the focused opening-economy test against the current branch before implementation.
-  Expected failure: the existing assertion finds `can-research-with-escrow feudal-age` in the civilian demand.
+Modify `LearnerAI/Compiler/ir/water.py` and `LearnerAI/Compiler/tests/test_water_transport_execution.py`.
 
-- [ ] **Step 3: Implement the minimum behavior**
-  Replace only the Dark-Age inner predicate in `civilian-villager-continuity`. Do not change the 20-villager threshold, action, lifecycle witness, or Feudal demand.
+Replace the Pacific LOAD failure recovery guard `up-pending-objects c:904 == 0` with `up-pending-objects c:545 == 0`. 904 is the villager class; 545 is the Transport Ship object. The transport recovery state, load-count witness, timer cadence, and rearm lifecycle remain unchanged.
 
-- [ ] **Step 4: Verify the focused pass**
-  Run the focused villager-continuity tests.
-  Expected: all selected tests pass and the Castle stop guard remains unchanged.
+Focused regression: assert c:545 is used and the old c:904 guard is absent.
 
-- [ ] **Step 5: Synchronize and verify runtime**
-  Regenerate/synchronize `Byzantine.per`; verify its `Persistent civilian production` block contains the affordability guard and no Dark-Age `can-research-with-escrow(feudal-age)` villager stop.
+## Task 3: Give the existing fishing-continuity owner a Dark-Age first-boat fallback
 
-- [ ] **Step 6: Commit the passing deliverable**
-  Commit message: `fix: decouple villager continuity from Feudal queue readiness`.
+Modify `LearnerAI/Compiler/ir/community_strategy_packs.py` and `LearnerAI/Compiler/tests/test_strategy_opening_economy.py` plus the synchronized `Byzantine.per` action block.
 
-### Task 2: Prove Feudal issuance stays separate from villager continuity
+Do not add a second demand. The existing `water-fishing-continuity` owner already has a Pacific Dark-Age bootstrap controller. Add a first-boat branch requiring `wood-amount >= 75` and native `can-train fishing-ship`; when one fishing ship exists, preserve the existing `can-train-with-escrow fishing-ship` path for later continuity.
 
-**Files:**
-- Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py`
-- Test: `LearnerAI/Compiler/tests/test_strategy_compiler_integration.py`
-- Runtime: synchronized `Byzantine.per` Feudal transition and persistent civilian production
+Focused regression: prove both first-boat and subsequent escrow paths are present.
 
-**Interfaces:**
-- Consumes: `feudal-transition` and `civilian-villager-continuity`.
-- Produces: a verified separation between affordability-based civilian arbitration and native Feudal execution feasibility.
+## Task 4: Synchronize and verify
 
-- [ ] **Step 1: Add the focused regression**
-  Assert that the civilian Dark-Age stop uses `can-afford-research feudal-age`, while the Feudal transition itself retains `can-research-with-escrow feudal-age`, `research feudal-age`, and `current-age >= feudal-age` as its action/witness contract.
+Synchronize the checked-in `Byzantine.per`, run focused tests, canonical Byzantine build, deterministic semantic shadow, native zero-findings on generated and checked-in artifacts, cross-platform determinism, and full compiler regression. Merge only after fresh CI on the exact PR head SHA.
 
-- [ ] **Step 2: Verify the relevant failure**
-  Run the focused opening-economy and strategy compiler tests.
-  Expected failure before this repair: the civilian demand couples its stop condition to `can-research-with-escrow feudal-age`.
+## Runtime acceptance matrix
 
-- [ ] **Step 3: Implement the minimum behavior**
-  Keep the existing Feudal action/retry lifecycle unchanged. Do not introduce a second research-provider controller unless a focused regression proves the native Feudal action itself can fail after the affordability split.
+1. Pacific Dark Age reaches Feudal without a stale self-owned resource claim.
+2. A failed Feudal research issuance can retry instead of remaining blocked by claim=1.
+3. The starting transport can leave LOAD recovery without waiting for the entire villager class to become non-pending.
+4. The first fishing ship can issue from a live dock before Feudal.
+5. Subsequent fishing continuity still respects escrow and production arbitration.
+6. Standard Arabia remains on its existing baseline path.
 
-- [ ] **Step 4: Verify the focused pass**
-  Expected: villager continuity contains no Dark-Age Feudal queue-readiness predicate; Feudal transition still contains native escrow feasibility and current-age completion.
-
-- [ ] **Step 5: Synchronize and verify runtime**
-  Verify `Byzantine.per` contains the same split in the persistent civilian-production and Feudal-transition sections.
-
-- [ ] **Step 6: Commit the passing deliverable**
-  Commit message: `test: prove Feudal issuance and villager arbitration stay separate`.
-
-### Task 3: Add explicit Pacific transport LOAD failure recovery
-
-**Files:**
-- Modify: `LearnerAI/Compiler/ir/strategy.py` Pacific DUC control generation.
-- Modify: `LearnerAI/Compiler/ir/water.py` Pacific transport lifecycle state/rules.
-- Test: `LearnerAI/Compiler/tests/test_water_transport_execution.py`
-- Test: `LearnerAI/Compiler/tests/test_strategy_compiler_integration.py`
-- Runtime: synchronized Pacific transport controller in `Byzantine.per`
-
-**Interfaces:**
-- Consumes: `pacific-transport-lifecycle`, transport ID, load-count goal, existing transport recovery demand.
-- Produces: a failed-load edge that reselects the transport/villager set after an absent load witness, without treating elapsed time as completion.
-
-- [ ] **Step 1: Add focused regressions**
-  Assert the lifecycle has a recover/retry state for LOAD when `garrison-count < 4` and no pending load action remains. Assert the recovery clears stale transport witness slots before re-entering LOAD.
-
-- [ ] **Step 2: Verify the relevant failure**
-  Run the focused Pacific transport tests.
-  Expected failure: lifecycle currently has LOAD -> TRANSIT only through success and has no LOAD failure transition.
-
-- [ ] **Step 3: Implement minimum recovery**
-  Add a Pacific transport LOAD-RECOVERY state and native rule:
-  current lifecycle = LOAD, transport still exists, load-count < 4, and the transport-load action is no longer in flight -> clear transport ID/load witness, return to the existing opening transport objective/lifecycle acquisition state.
-  Reuse the existing transport acquisition and DUC selectors. Do not add another movement primitive or timer-as-truth.
-
-- [ ] **Step 4: Verify focused pass**
-  Run transport lifecycle and DUC compiler tests.
-  Expected: both success path and failed-load recovery path are represented and deterministic.
-
-- [ ] **Step 5: Synchronize and verify runtime**
-  Verify `Byzantine.per` includes the new recovery state/rule and does not strand `pacific-transport-lifecycle` in LOAD after witness loss.
-
-- [ ] **Step 6: Commit the passing deliverable**
-  Commit message: `fix: recover Pacific transport load failures`.
-
-### Task 4: Make Pacific fishing a parallel bootstrap entitlement
-
-**Files:**
-- Modify: `LearnerAI/Compiler/ir/water.py` fishing controller/demand lowering.
-- Modify: `LearnerAI/Compiler/ir/economic_control.py` only where Pacific allocation presently suppresses fishing-compatible wood/food continuity.
-- Test: `LearnerAI/Compiler/tests/test_water_transport_execution.py`
-- Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py`
-- Runtime: synchronized dock/fishing lifecycle in `Byzantine.per`
-
-**Interfaces:**
-- Consumes: Pacific map classification, dock witness, `water-fishing-continuity`, existing train arbitration/escrow.
-- Produces: a Pacific fishing bootstrap that can train the first two fishing ships in Dark Age when a dock and live fish capability exist, without waiting for Feudal or transport completion.
-
-- [ ] **Step 1: Add focused regressions**
-  Assert Pacific fishing continuity remains admissible in Dark Age, requires dock + fish capability, and is not gated by Feudal or the transport lifecycle state. Assert Pacific economy posture does not block the fishing demand.
-
-- [ ] **Step 2: Verify the relevant failure**
-  Run the focused water/fishing tests.
-  Expected failure: current generated runtime has the demand, but the regression proving complete independence from Pacific transport/Feudal ownership is absent.
-
-- [ ] **Step 3: Implement minimum behavior**
-  Keep the current fishing demand and arbitration channel, but add an explicit Pacific bootstrap rule that raises fishing production entitlement when `map-type pacific-islands`, dock exists, no severe naval pressure exists, and fishing ships < 2. Do not require `pacific-transport-lifecycle`, `feudal-resource-island-transport-objective`, or Feudal Age.
-
-- [ ] **Step 4: Verify focused pass**
-  Run the water/fishing tests and opening-economy tests.
-  Expected: Pacific fishing can begin independently while Feudal and transport proceed in parallel.
-
-- [ ] **Step 5: Synchronize and verify runtime**
-  Confirm `Byzantine.per` has a Pacific Dark-Age fishing bootstrap path, while the existing Feudal naval escalation and transport escort gates remain intact.
-
-- [ ] **Step 6: Commit the passing deliverable**
-  Commit message: `fix: keep Pacific fishing bootstrap independent`.
-
-## Integration verification
-
-After Tasks 1-4 are individually green:
-
-Run the repository's focused compiler suites, canonical Byzantine build, native zero-findings validation, deterministic semantic shadow, and full compiler regression from `.github/workflows/compiler-tests.yml` plus the Pacific/Feudal DUC gate.
-
-Expected: zero parser/native findings; deterministic checked-in `Byzantine.per`; all focused Pacific, Feudal, strategy, and synchronization tests pass.
-
-Then run the runtime acceptance matrix:
-- Pacific start: villager production remains continuous through the Feudal decision boundary.
-- Pacific start with Feudal resources: Feudal research issues without requiring a timer or prior transport completion.
-- Pacific start with a starting transport: load witness or explicit LOAD recovery occurs; transport is not permanently idle.
-- Pacific start with a dock: first fishing-ship entitlement can issue before Feudal.
-- Standard Arabia: existing Moderate-win baseline remains unchanged.
-
-Unresolved product decisions: none. The runtime match itself remains empirical acceptance evidence, not a compiler fact.
+Runtime match results remain empirical evidence; compiler/native CI does not prove gameplay success.
