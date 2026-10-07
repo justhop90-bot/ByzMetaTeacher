@@ -37,6 +37,23 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
                 section,
             )
 
+    def test_first_gold_camp_bootstraps_when_gold_is_not_yet_resource_found(self):
+        start = self.artifact.index("; economy-gold-camp-floor-1")
+        end = self.artifact.index("; economy-gold-camp-floor-2", start)
+        section = self.artifact[start:end]
+        self.assertIn(
+            "(and (unit-type-count-total villager >= 8) "
+            "(building-type-count-total mining-camp < 1))",
+            section,
+        )
+        self.assertNotIn(
+            "(resource-found gold)",
+            section.split("; economy-gold-camp-floor-2", 1)[0],
+            "first-gold recovery must not require the resource-found witness before searching",
+        )
+        self.assertIn("(up-find-resource c: gold c: 1)", section)
+        self.assertIn("(up-build place-point 0 c: mining-camp)", section)
+
     def test_each_gold_camp_build_selects_an_indexed_active_resource(self):
         for floor in range(1, 6):
             start = self.artifact.index(f"; economy-gold-camp-floor-{floor}")
