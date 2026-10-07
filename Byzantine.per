@@ -5868,15 +5868,47 @@
 (defrule
     (goal transport-phase 0)
     (goal water-posture 0)
+    (goal water-transport-objective 0)
+    (goal water-transport-rebuild 0)
 =>
     (set-goal transport-phase 0)
     (set-goal water-posture 0)
+    (set-goal water-transport-objective 0)
+    (set-goal water-transport-rebuild 0)
     (disable-self)
+)
+
+; Native control rule: transport-objective-open
+(defrule
+    (or (map-type islands) (map-type pacific-islands))
+    (goal byzantine-army-attack-ready 1)
+    (goal water-transport-objective 0)
+=>
+    (set-goal water-transport-objective 1)
+)
+
+; Native control rule: transport-objective-close
+(defrule
+    (or (not (or (map-type islands) (map-type pacific-islands))) (not (goal byzantine-army-attack-ready 1)))
+    (goal water-transport-objective 1)
+=>
+    (set-goal water-transport-objective 0)
+)
+
+; Native control rule: transport-rebuild-authorize
+(defrule
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
+    (goal transport-phase 3)
+    (not (unit-type-count transport-ship >= 1))
+    (goal water-transport-rebuild 0)
+=>
+    (set-goal water-transport-rebuild 1)
 )
 
 ; Native control rule: transport-phase-no-longer-required
 (defrule
-    (not (map-type islands))
+    (or (not (or (map-type islands) (map-type pacific-islands))) (not (goal water-transport-objective 1)))
     (or (goal transport-phase 1) (or (goal transport-phase 2) (goal transport-phase 3)))
 =>
     (set-goal transport-phase 0)
@@ -5884,17 +5916,31 @@
 
 ; Native control rule: transport-phase-recover-on-capability-loss
 (defrule
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
     (goal transport-phase 2)
     (not (unit-type-count transport-ship >= 1))
 =>
     (set-goal transport-phase 3)
 )
 
+; Native control rule: transport-phase-reopen
+(defrule
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
+    (goal transport-phase 3)
+    (not (unit-type-count transport-ship >= 1))
+    (goal water-transport-rebuild 1)
+=>
+    (set-goal transport-phase 1)
+    (set-goal water-transport-rebuild 0)
+)
+
 ; Native control rule: transport-phase-prepare
 (defrule
-    (map-type islands)
-    (or (goal transport-phase 0) (goal transport-phase 3))
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
+    (goal transport-phase 0)
     (not (unit-type-count transport-ship >= 1))
 =>
     (set-goal transport-phase 1)
@@ -5902,41 +5948,53 @@
 
 ; Native control rule: transport-phase-ready
 (defrule
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
     (unit-type-count transport-ship >= 1)
     (not (goal transport-phase 2))
 =>
     (set-goal transport-phase 2)
 )
 
+; Native control rule: water-posture-none-nonwater
+(defrule
+    (not (or (map-type islands) (map-type pacific-islands)))
+=>
+    (set-goal water-posture 0)
+)
+
 ; Native control rule: water-posture-transport
 (defrule
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
 =>
     (set-goal water-posture 4)
 )
 
-; Native control rule: water-posture-naval-defense
-(defrule
-    (not (map-type islands))
-    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
-    (not (warboat-count >= 2))
-=>
-    (set-goal water-posture 2)
-)
-
 ; Native control rule: water-posture-naval-control
 (defrule
-    (not (map-type islands))
+    (or (map-type islands) (map-type pacific-islands))
+    (not (goal water-transport-objective 1))
     (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
     (warboat-count >= 2)
 =>
     (set-goal water-posture 3)
 )
 
+; Native control rule: water-posture-naval-defense
+(defrule
+    (or (map-type islands) (map-type pacific-islands))
+    (not (goal water-transport-objective 1))
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+    (not (warboat-count >= 2))
+=>
+    (set-goal water-posture 2)
+)
+
 ; Native control rule: water-posture-fishing
 (defrule
-    (not (map-type islands))
+    (or (map-type islands) (map-type pacific-islands))
+    (not (goal water-transport-objective 1))
     (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
     (building-type-count-total 45 >= 1)
 =>
@@ -5945,39 +6003,12 @@
 
 ; Native control rule: water-posture-none
 (defrule
-    (not (map-type islands))
+    (or (map-type islands) (map-type pacific-islands))
+    (not (goal water-transport-objective 1))
     (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
     (not (building-type-count-total 45 >= 1))
 =>
     (set-goal water-posture 0)
-)
-
-; Native control rule: byzantine-opening-bootstrap
-; Extended goals default to -1; initialize only the Byzantine state slots that
-; require a concrete zero-state before their consumers can run.
-(defrule
-    (true)
-=>
-    (set-goal byzantine-resource-claim 0)
-    (set-goal byzantine-scout-phase 0)
-    (set-goal byzantine-scout-focus-player 0)
-    (set-goal byzantine-scout-search-state 0)
-    (set-goal 383 0)
-    (set-goal 384 0)
-    (set-goal 385 0)
-    (set-goal byzantine-scout-sighted-stable 0)
-    (set-goal byzantine-scout-sighted-range 0)
-    (set-goal byzantine-scout-sighted-barracks 0)
-    (set-goal byzantine-scout-sighted-siege 0)
-    (set-goal byzantine-scout-wood-point 0)
-    (set-goal 391 0)
-    (set-goal byzantine-scout-gold-point 0)
-    (set-goal 393 0)
-    (disable-timer byzantine-scout-intel-timer)
-    (set-goal strategic-primary-intent 0)
-    (set-goal byzantine-natural-food-state byzantine-natural-food-stable)
-    (set-goal demand-economy-barracks-floor-1 1)
-    (disable-self)
 )
 
 ; Native control rule: opening-recovery-defense-clear-initialize
