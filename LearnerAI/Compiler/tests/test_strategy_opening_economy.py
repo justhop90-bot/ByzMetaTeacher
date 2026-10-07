@@ -279,6 +279,57 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             tuple(castle.execution.requirements),
         )
 
+    def test_pacific_uses_dedicated_land_first_economy_posture(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        pacific = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-pacific-land-first"
+        )
+        pacific_facts = tuple(fact.source for fact in pacific.facts)
+        self.assertIn(
+            profile.observation("strategy-pacific-islands").expression,
+            pacific_facts,
+        )
+        self.assertNotIn(
+            profile.observation("strategy-opening-pressure").expression,
+            pacific_facts,
+        )
+
+        water_economy = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-economy"
+        )
+        water_control = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-control"
+        )
+        self.assertIn(
+            "(not (map-type pacific-islands))",
+            tuple(fact.source for fact in water_economy.facts),
+        )
+        self.assertIn(
+            "(not (map-type pacific-islands))",
+            tuple(fact.source for fact in water_control.facts),
+        )
+
+        from LearnerAI.Compiler.clients.basilisk import EconomyMode
+        policy = next(
+            item
+            for item in profile.economy_controller.policies
+            if item.mode is EconomyMode.PACIFIC_LAND
+        )
+        self.assertEqual(
+            (policy.allocation.food, policy.allocation.wood, policy.allocation.gold),
+            (45, 40, 15),
+        )
+
     def test_water_opening_yields_to_fast_castle_at_feudal_maturity(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
