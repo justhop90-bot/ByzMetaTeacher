@@ -28,6 +28,10 @@ RECOVERY_NAMES = (
 
 ECONOMY_INSTALLABLE_RULES = (
     "economy-controller-select-pacific-land-first",
+    "economy-controller-write-pacific_land-sn-food-gatherer-percentage",
+    "economy-controller-write-pacific_land-sn-wood-gatherer-percentage",
+    "economy-controller-write-pacific_land-sn-gold-gatherer-percentage",
+    "economy-controller-write-pacific_land-sn-percent-civilian-builders",
 )
 
 ELITE_SKIRMISHER_PRODUCTION_RULES = (
