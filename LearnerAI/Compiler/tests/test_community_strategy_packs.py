@@ -40,6 +40,13 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertIn("(can-train-with-escrow transport-ship)", demand.execution.requirements)
         self.assertIn("(building-type-count-total dock >= 1)", demand.execution.requirements)
 
+    def test_pacific_transport_recovery_is_pressure_suspended_but_escrow_gated(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-recovery")
+        joined = " ".join(demand.execution.requirements)
+        self.assertIn("(not (players-unit-type-count any-enemy galley-line >= 2))", joined)
+        self.assertIn("(can-train-with-escrow transport-ship)", joined)
+
     def test_pacific_harbor_defense_gates_naval_demands_on_pacific(self):
         profile = build_byzantine_stock_strategy(self.effective)
         for identity in ("water-naval-defense", "water-naval-control"):

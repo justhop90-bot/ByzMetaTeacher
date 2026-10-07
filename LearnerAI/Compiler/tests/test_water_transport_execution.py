@@ -397,6 +397,25 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(can-train-with-escrow transport-ship)", requirements)
         self.assertIn("(unit-type-count-total transport-ship < 1)", requirements)
 
+    def test_pacific_transport_recovery_rearms_lifecycle_without_replaying_landing(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        rules = {rule.identity: rule for rule in control.rules}
+
+        rebuild_text = " ".join(
+            action.source
+            for action in rules["pacific-transport-lifecycle-recover-after-rebuild"].actions
+        )
+        self.assertIn("(set-goal pacific-transport-lifecycle 0)", rebuild_text)
+
+        landed_text = " ".join(
+            action.source
+            for action in rules["pacific-transport-lifecycle-landed"].actions
+        )
+        self.assertIn("(set-goal pacific-transport-recovery 1)", landed_text)
+
     def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)

@@ -2115,6 +2115,62 @@ def community_strategy_demands(
         )
     )
     demands.append(
+        _StrategicDemandSpec(
+            identity="water-pacific-transport-recovery",
+            owner="water-transport",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason=(
+                _persistent(
+                    "Completed Pacific landing creates a standing transport replacement entitlement",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Pacific transport recovery remains admissible only after a completed landing",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Pacific transport recovery closes outside Pacific water",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "transport-ship-line",
+                _provider_for_line(effective, "transport-ship-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "transport-ship-line",
+                minimum=1,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    pacific_islands,
+                    "(goal pacific-transport-recovery 1)",
+                    "(building-type-count-total dock >= 1)",
+                    f"(not {enemy_naval_pressure})",
+                    "(can-train-with-escrow transport-ship)",
+                    "(unit-type-count-total transport-ship < 1)",
+                ),
+                action="(train transport-ship)",
+                witness="(unit-type-count transport-ship >= 1)",
+                release="(unit-type-count transport-ship >= 1)",
+            ),
+            recovery=_CapabilityRecoveryContract(),
+        ),
+    )
+
+    demands.append(
         _training_demand(
             effective=effective,
             identity="water-pacific-fire-galley-deterrent",
@@ -2449,6 +2505,7 @@ def community_water_execution_plan():
         pacific_transport_lifecycle_state="pacific-transport-lifecycle",
         pacific_fishing_controller_state="pacific-fishing-controller",
         pacific_harbor_defense_state="pacific-harbor-defense",
+        pacific_transport_recovery_state="pacific-transport-recovery",
         feudal_resource_island_transport_state="feudal-resource-island-transport-objective",
         water_map_observation="strategy-water-map",
         transport_required_observation="strategy-transport-required",
