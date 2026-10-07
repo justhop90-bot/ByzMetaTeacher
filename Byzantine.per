@@ -27983,16 +27983,7 @@
     (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
     (can-train fishing-ship)
-    (or
-        (and
-            (unit-type-count-total fishing-ship < 1)
-            (wood-amount >= 75)
-        )
-        (and
-            (unit-type-count-total fishing-ship >= 1)
-            (can-train-with-escrow fishing-ship)
-        )
-    )
+    (or (and (unit-type-count-total fishing-ship < 1) (wood-amount >= 75)) (and (unit-type-count-total fishing-ship >= 1) (can-train-with-escrow fishing-ship)))
     (or (not (map-type pacific-islands)) (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))))
 =>
     (train fishing-ship)
