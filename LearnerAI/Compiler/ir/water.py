@@ -409,6 +409,8 @@ def lower_water_execution_plan(
             ),
             actions=(set_goal(posture_state, int(WaterPosture.NONE)),),
         ),
+        # SN 61 is the native fishing-boat exploration-group control. Enable it
+        # only after a live fishing ship exists so the one-shot write has a boat to task.
         NativeControlRule(
             "water-boat-exploration-enable",
             facts=(
