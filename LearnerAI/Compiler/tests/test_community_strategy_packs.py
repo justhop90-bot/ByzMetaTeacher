@@ -22,8 +22,8 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         requirements = tuple(demand.execution.requirements)
         self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
         self.assertIn(
-            "(or (not (map-type pacific-islands)) "
-            "(not (players-unit-type-count any-enemy galley-line >= 2)))",
+            f"(or (not (map-type pacific-islands)) "
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression}))",
             requirements,
         )
         refs = {
