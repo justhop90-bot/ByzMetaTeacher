@@ -693,5 +693,6 @@ __all__ = [
     "WaterPosture",
     "derive_water_posture",
     "lower_water_execution_plan",
+    "lower_water_strategy_arbitration_control_plan",
     "transition_transport_execution",
 ]
