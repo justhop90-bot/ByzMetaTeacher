@@ -112,6 +112,10 @@ class ByzantineWaterMapV1Tests(unittest.TestCase):
         self.assertIn("(or (map-type islands) (map-type pacific-islands))", fishing)
         self.assertIn("(unit-type-count-total fishing-ship < 2)", fishing)
         self.assertIn("(unit-type-count-total fishing-ship < 4)", fishing)
+        self.assertIn(
+            "; Native control rule: water-fishing-continuity-expand-after-baseline",
+            synchronized,
+        )
 
         self.assertIn("(current-age >= feudal-age)", transport)
         self.assertIn("(or (map-type islands) (map-type pacific-islands))", transport)
