@@ -1992,10 +1992,7 @@ def community_strategy_demands(
                     "(can-train-with-escrow fishing-ship)",
                 ),
                 action="(train fishing-ship)",
-                witness=(
-                    f"(or (and {pacific_islands} (unit-type-count fishing-ship >= 2)) "
-                    f"(and (not {pacific_islands}) (unit-type-count fishing-ship >= 4)))"
-                ),
+                witness="(unit-type-count fishing-ship >= 2)",
                 release=(
                     f"(or (and {pacific_islands} (unit-type-count fishing-ship >= 2)) "
                     f"(and (not {pacific_islands}) (unit-type-count fishing-ship >= 4)))"
