@@ -95,6 +95,48 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
         self.assertEqual(sync_runtime._choose_goal_slots(runtime, 0), [])
     
+    def test_synchronization_deduplicates_preexisting_reserved_water_goals(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+            generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
+
+            insertion = (
+                "(defconst water-dock-capability 15977)\n"
+                "(defconst water-transport-rebuild 15969)\n"
+            )
+            marker = "(defconst water-dock-capability "
+            position = runtime.find(marker)
+            self.assertGreaterEqual(position, 0)
+            line_end = runtime.find("\n", position)
+            duplicated = (
+                runtime[: position]
+                + insertion
+                + runtime[position:line_end + 1]
+                + runtime[line_end + 1 :]
+            )
+            runtime_path.write_text(duplicated, encoding="utf-8")
+            generated_path.write_text(generated, encoding="utf-8")
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        for name in sync_runtime.WATER_RUNTIME_RESERVED_GOALS:
+            self.assertEqual(
+                len(re.findall(rf"^\(defconst {re.escape(name)} \d+\)$", synchronized, re.MULTILINE)),
+                1,
+            )
+
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
