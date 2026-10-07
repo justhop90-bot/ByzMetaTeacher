@@ -170,13 +170,24 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(compilation.duc_plan)
         plan = compilation.duc_plan
         assert plan is not None
+        rule_ids = tuple(rule.identity for rule in plan.rules)
         self.assertEqual(
-            tuple(rule.identity for rule in plan.rules),
+            rule_ids[:2],
             (
                 "byzantine-castle-target-knight",
                 "byzantine-castle-target-infantry",
             ),
         )
+        for expected in (
+            "byzantine-pacific-transport-target",
+            "byzantine-pacific-transport-select",
+            "byzantine-pacific-transport-garrison",
+            "byzantine-pacific-transport-load-witness",
+            "byzantine-pacific-transport-transit-probe",
+            "byzantine-pacific-transport-move",
+            "byzantine-pacific-transport-unload",
+        ):
+            self.assertIn(expected, rule_ids)
         self.assertEqual(
             tuple(item.source for item in plan.rules[0].facts),
             (

@@ -5663,6 +5663,7 @@ def _default_byzantine_duc_plan(
     return NativeDucPlan(
         rules=tuple((*rules, *lifecycle_rules)),
         output_requests=tuple(outputs),
+        input_requests=tuple(inputs),
     )
 
 

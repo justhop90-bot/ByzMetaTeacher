@@ -765,6 +765,18 @@ PACIFIC_TRANSPORT_DUC_RULES = (
     "byzantine-pacific-transport-unload",
 )
 
+PACIFIC_RUNTIME_GOAL_NAMES = (
+    "pacific-fishing-controller",
+    "pacific-harbor-defense",
+    "pacific-transport-escort",
+    "pacific-convoy-route",
+    "pacific-transport-recovery",
+)
+
+PACIFIC_RUNTIME_STRATEGIC_NUMBERS = {
+    "sn-maximum-fish-boat-drop-distance": 236,
+    "sn-fishing-boat-whaling-percentage": 316,
+}
 PACIFIC_TRANSPORT_RUNTIME_GOALS = (
     "pacific-transport-lifecycle",
     "pacific-transport-transit-witness",
@@ -899,10 +911,34 @@ def _ensure_water_fishing_expansion_goal_defconsts(runtime: str) -> str:
     return runtime
 
 
+def _ensure_pacific_runtime_strategic_numbers(runtime: str) -> str:
+    for name, value in PACIFIC_RUNTIME_STRATEGIC_NUMBERS.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        runtime, _ = pattern.subn("", runtime)
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        if line_end < 0:
+            line_end = len(runtime)
+        runtime = (
+            runtime[: line_end + 1]
+            + f"(defconst {name} {value})\n"
+            + runtime[line_end + 1 :]
+        )
+    return runtime
+
 def _ensure_pacific_transport_goal_defconsts(runtime: str, generated: str) -> str:
     scalar_names = tuple(
         name
-        for name in PACIFIC_TRANSPORT_RUNTIME_GOALS
+        for name in dict.fromkeys((
+            *PACIFIC_TRANSPORT_RUNTIME_GOALS,
+            *PACIFIC_RUNTIME_GOAL_NAMES,
+        ))
         if name != "pacific-opening-transport-point"
     )
     runtime = _ensure_named_defconsts(runtime, generated, scalar_names)
@@ -1355,8 +1391,9 @@ def synchronize() -> bool:
     runtime = _sync_pacific_transport_duc(runtime, generated)
     runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
-    runtime = _ensure_reserved_water_goal_defconsts(runtime)
     runtime = _ensure_pacific_transport_goal_defconsts(runtime, generated)
+    runtime = _ensure_reserved_water_goal_defconsts(runtime)
+    runtime = _ensure_pacific_runtime_strategic_numbers(runtime)
     runtime = _ensure_water_fishing_expansion_goal_defconsts(runtime)
     runtime = _sync_water_demand_lifecycles(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
