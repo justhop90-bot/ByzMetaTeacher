@@ -17835,7 +17835,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-1 0)
-    (resource-found gold)
+    (or (resource-found gold) (and (unit-type-count-total villager >= 8) (building-type-count-total mining-camp < 1)))
     (not (building-type-count mining-camp >= 1))
 =>
     (set-goal demand-economy-gold-camp-floor-1 1)
@@ -17894,7 +17894,6 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
 =>
@@ -17913,7 +17912,6 @@
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-1 > 0)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 1)
