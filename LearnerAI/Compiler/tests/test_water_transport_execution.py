@@ -268,6 +268,34 @@ class WaterTransportExecutionTests(unittest.TestCase):
             item.identity for item in profile.observations
         })
 
+    def test_water_fishing_continuity_starts_in_dark_age_after_dock(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        requirements = tuple(demand.execution.requirements)
+
+        self.assertIn("(current-age >= dark-age)", requirements)
+        self.assertNotIn("(current-age >= feudal-age)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+
+    def test_water_plan_enables_native_boat_exploration_after_first_fishing_ship(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item for item in control.rules
+            if item.identity == "water-boat-exploration-enable"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        actions = tuple(action.source for action in rule.actions)
+
+        self.assertIn(profile.observation("strategy-water-map").expression, facts)
+        self.assertIn(profile.observation("strategy-dock-exists").expression, facts)
+        self.assertIn("(unit-type-count fishing-ship >= 1)", facts)
+        self.assertIn("(set-strategic-number 61 1)", actions)
+        self.assertIn("(disable-self)", actions)
+
     def test_water_plan_lowers_into_persistent_posture_and_transport_state(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
