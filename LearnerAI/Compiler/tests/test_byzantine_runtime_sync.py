@@ -43,7 +43,7 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             self.assertIn("; Native DUC rule: byzantine-pacific-transport-target", runtime)
             self.assertIn("(up-target-objects 1 7 -1 -1)", runtime)
             self.assertIn("(up-target-point 0 action-move -1 -1)", runtime)
-            self.assertIn("(up-target-point 0 action-unload -1 -1)", runtime)
+            self.assertIn("(up-target-point 0 9 -1 -1)", runtime)
             self.assertIn("(defconst pacific-opening-transport-point ", runtime)
 
     def test_synchronization_installs_canonical_water_execution_control(self) -> None:
