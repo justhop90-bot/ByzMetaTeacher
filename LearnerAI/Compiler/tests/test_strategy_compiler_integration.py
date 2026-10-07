@@ -562,7 +562,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             self.assertEqual(remote, native_ids)
             self.assertEqual(actions[-2:], (
                 "(up-set-target-object search-remote c: 0)",
-                "(up-get-object-data id 0)",
+                "(up-get-object-data object-data-id 0)",
             ))
             matching_outputs = tuple(
                 request
@@ -763,7 +763,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertEqual(
             consumer_actions,
             (
-                "(up-get-object-data id 0)",
+                "(up-get-object-data object-data-id 0)",
                 "(up-get-search-state byzantine-offensive-objective-release-search)",
                 "(up-reset-search 0 0 1 1)",
             ),
