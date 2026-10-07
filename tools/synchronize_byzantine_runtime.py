@@ -771,38 +771,31 @@ WATER_RUNTIME_RESERVED_GOALS = {
 
 
 def _ensure_reserved_water_goal_defconsts(runtime: str) -> str:
-    definitions = _defconst_values(runtime)
-    occupants = _goal_slot_occupants(runtime)
+    """Canonicalize the reserved water Goal defconst block to exactly one copy."""
 
-    for name, value in WATER_RUNTIME_RESERVED_GOALS.items():
-        users = occupants.get(value, set()) - {name}
-        if users:
-            raise RuntimeError(
-                f"reserved water Goal slot {value} for '{name}' is occupied by "
-                f"{sorted(users)}"
-            )
-
-    missing_lines: list[str] = []
-    for name, value in WATER_RUNTIME_RESERVED_GOALS.items():
-        old_pattern = re.compile(
-            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+    lines_to_remove = {
+        re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)\n?",
             flags=re.MULTILINE,
         )
-        new_line = f"(defconst {name} {value})"
-        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
-        if replaced == 0:
-            missing_lines.append(new_line)
+        for name in WATER_RUNTIME_RESERVED_GOALS
+    }
+    for pattern in lines_to_remove:
+        runtime = pattern.sub("", runtime)
 
-    if missing_lines:
-        marker = "(defconst opening-plan "
-        position = runtime.find(marker)
-        if position < 0:
-            raise RuntimeError("runtime artifact is missing opening-plan defconst")
-        line_end = runtime.find("\n", position)
-        insertion = "\n" + "\n".join(missing_lines)
-        runtime = runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
+    marker = "(defconst opening-plan "
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing opening-plan defconst")
+    line_end = runtime.find("\n", position)
+    if line_end < 0:
+        line_end = len(runtime)
 
-    return runtime
+    insertion = "\n" + "\n".join(
+        f"(defconst {name} {value})"
+        for name, value in WATER_RUNTIME_RESERVED_GOALS.items()
+    )
+    return runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
 
 
 def _ensure_water_execution_state_defconsts(
