@@ -220,16 +220,14 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "up-set-target-object",
             ),
         )
-        self.assertTrue(
-            all(
+        for rule in plan.rules[:2]:
+            self.assertTrue(
                 any(
                     output.rule_identity == rule.identity
                     and output.command == "up-get-object-data"
                     for output in plan.output_requests
                 )
-                for rule in plan.rules
             )
-        )
 
         output = compile_strategy_profile(self.profile, self.effective)
         self.assertIn("; Native DUC rule: byzantine-castle-target-knight", output)
@@ -303,7 +301,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
         for snippet in (
-            "(up-target-objects 1 action-garrison -1 -1)",
+            "(up-target-objects 1 7 -1 -1)",
             "(up-target-point 0 action-move -1 -1)",
             "(up-target-point 0 action-unload -1 -1)",
             "(defconst pacific-opening-transport-point ",

@@ -917,7 +917,10 @@ def _ensure_pacific_runtime_strategic_numbers(runtime: str) -> str:
             rf"^\(defconst {re.escape(name)} -?\d+\)$",
             flags=re.MULTILINE,
         )
-        runtime, _ = pattern.subn("", runtime)
+        replacement = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(replacement, runtime, count=1)
+        if replaced:
+            continue
         marker = "(defconst opening-plan "
         position = runtime.find(marker)
         if position < 0:
@@ -925,11 +928,7 @@ def _ensure_pacific_runtime_strategic_numbers(runtime: str) -> str:
         line_end = runtime.find("\n", position)
         if line_end < 0:
             line_end = len(runtime)
-        runtime = (
-            runtime[: line_end + 1]
-            + f"(defconst {name} {value})\n"
-            + runtime[line_end + 1 :]
-        )
+        runtime = runtime[: line_end + 1] + replacement + "\n" + runtime[line_end + 1 :]
     return runtime
 
 def _ensure_pacific_transport_goal_defconsts(runtime: str, generated: str) -> str:
@@ -1388,7 +1387,6 @@ def synchronize() -> bool:
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _sync_strategic_arbitration_control(runtime, generated)
     runtime = _sync_water_execution_control(runtime, generated)
-    runtime = _sync_pacific_transport_duc(runtime, generated)
     runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _ensure_pacific_transport_goal_defconsts(runtime, generated)
@@ -1397,6 +1395,7 @@ def synchronize() -> bool:
     runtime = _ensure_water_fishing_expansion_goal_defconsts(runtime)
     runtime = _sync_water_demand_lifecycles(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
+    runtime = _sync_pacific_transport_duc(runtime, generated)
 
     defense_block = _block(
         generated,
