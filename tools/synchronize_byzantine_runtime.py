@@ -759,14 +759,14 @@ WATER_EXECUTION_NEW_STATE_NAMES = (
 )
 
 WATER_RUNTIME_RESERVED_GOALS = {
-    "water-dock-capability": 15994,
-    "construction-retry-barrier-water-dock-capability": 15993,
-    "demand-water-dock-capability": 15992,
-    "issued-water-dock-capability": 15991,
-    "pending-water-dock-capability": 15990,
-    "complete-water-dock-capability": 15989,
-    "water-transport-objective": 15988,
-    "water-transport-rebuild": 15987,
+    "water-dock-capability": 15977,
+    "construction-retry-barrier-water-dock-capability": 15976,
+    "demand-water-dock-capability": 15975,
+    "issued-water-dock-capability": 15973,
+    "pending-water-dock-capability": 15972,
+    "complete-water-dock-capability": 15971,
+    "water-transport-objective": 15970,
+    "water-transport-rebuild": 15969,
 }
 
 
