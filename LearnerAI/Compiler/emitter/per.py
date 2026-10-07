@@ -41,6 +41,13 @@ MAX_RULE_ELEMENTS = 32
 MAX_LINE_LENGTH = 255
 INITIALIZATION_CHUNK = 30
 
+_NATIVE_RUNTIME_OBJECT_DATA_CONSTANTS = {
+    "object-data-id": 0,
+    "object-data-action": 5,
+    "object-data-garrison-count": 18,
+    "object-data-distance": 44,
+}
+
 # Semantic unit-line names are compiler-owned identities. These aliases are
 # lowered only when an expression is rendered into runtime .per syntax.
 _NATIVE_RUNTIME_UNIT_LINE_ALIASES = {
@@ -644,18 +651,20 @@ def emit(
 
     if duc_plan is not None and not duc_plan.empty:
         object_data_tokens = {
-            str(argument)
+            str(expression.args[0])
             for rule in duc_plan.rules
             for expression in (*rule.facts, *rule.actions)
             if expression.head in {"up-get-object-data", "up-get-object-target-data"}
             and expression.args
-            for argument in expression.args[:1]
-            if str(argument) == "object-data-id"
+            and str(expression.args[0]) in _NATIVE_RUNTIME_OBJECT_DATA_CONSTANTS
         }
         if object_data_tokens:
             emitted_defconsts = _defconst_bindings(out)
-            if "object-data-id" not in emitted_defconsts:
-                out.append("(defconst object-data-id 0)")
+            for name in sorted(object_data_tokens):
+                if name not in emitted_defconsts:
+                    out.append(
+                        f"(defconst {name} {_NATIVE_RUNTIME_OBJECT_DATA_CONSTANTS[name]})"
+                    )
 
         used_duc_action_values = {
             expression.head
