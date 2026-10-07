@@ -697,6 +697,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
                 "feudal-resource-island-transport-close-before-feudal",
                 "feudal-resource-island-transport-close-on-loss",
                 "feudal-resource-island-transport-close-on-naval-pressure",
+                "feudal-resource-island-transport-close-on-escort-loss",
             },
         )
         close_text = {
@@ -708,6 +709,26 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn(
             profile.observation("strategy-enemy-naval-pressure").expression,
             close_text["feudal-resource-island-transport-close-on-naval-pressure"],
+        )
+
+    def test_pacific_transport_escort_controller_closes_feudal_transport_when_escort_is_lost(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        rules = {rule.identity: rule for rule in control.rules}
+
+        close_text = " ".join(
+            fact.source
+            for fact in rules["feudal-resource-island-transport-close-on-escort-loss"].facts
+        )
+        self.assertIn("(map-type pacific-islands)", close_text)
+        self.assertIn("(goal pacific-transport-escort 2)", close_text)
+
+        escort_demand = profile.demand("water-pacific-transport-escort")
+        self.assertIn(
+            "(can-train-with-escrow fire-galley)",
+            escort_demand.execution.requirements,
         )
 
     def test_stock_strategy_has_transport_and_naval_execution_demands(self):
