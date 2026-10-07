@@ -325,6 +325,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             for item in profile.economy_controller.policies
             if item.mode is EconomyMode.PACIFIC_LAND
         )
+        self.assertEqual(int(policy.mode), 9)
         self.assertEqual(
             (policy.allocation.food, policy.allocation.wood, policy.allocation.gold),
             (45, 40, 15),

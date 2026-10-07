@@ -26,6 +26,10 @@ RECOVERY_NAMES = (
     "opening-recovery-water-proven",
 )
 
+ECONOMY_INSTALLABLE_RULES = (
+    "economy-controller-select-pacific-land-first",
+)
+
 ELITE_SKIRMISHER_PRODUCTION_RULES = (
     "imperial-elite-skirmisher-floor",
     "imperial-open-elite-skirmisher-standard",
@@ -758,6 +762,23 @@ WATER_EXECUTION_NEW_STATE_NAMES = (
     "water-transport-rebuild",
 )
 
+WATER_LIFECYCLE_DEMANDS = (
+    "water-fishing-continuity",
+    "water-fishing-expansion",
+    "water-transport-capability",
+    "water-naval-defense",
+    "water-naval-control",
+)
+
+WATER_FISHING_EXPANSION_GOAL_NAMES = (
+    "demand-water-fishing-expansion",
+    "issued-water-fishing-expansion",
+    "pending-water-fishing-expansion",
+    "complete-water-fishing-expansion",
+    "production-retry-barrier-water-fishing-expansion",
+)
+
+
 WATER_RUNTIME_RESERVED_GOALS = {
     "water-dock-capability": 15977,
     "construction-retry-barrier-water-dock-capability": 15976,
@@ -796,6 +817,88 @@ def _ensure_reserved_water_goal_defconsts(runtime: str) -> str:
         for name, value in WATER_RUNTIME_RESERVED_GOALS.items()
     )
     return runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
+
+
+def _ensure_water_fishing_expansion_goal_defconsts(runtime: str) -> str:
+    """Bind the compiler's four-boat fishing lifecycle to free runtime Goal slots."""
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in WATER_FISHING_EXPANSION_GOAL_NAMES}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if len(resolved) != len(WATER_FISHING_EXPANSION_GOAL_NAMES):
+            return False
+        if len(set(resolved.values())) != len(resolved):
+            return False
+        return all(
+            not (occupants.get(value, set()) - {name})
+            for name, value in resolved.items()
+        )
+
+    if valid_current():
+        return runtime
+
+    chosen = _choose_goal_slots(
+        runtime,
+        len(WATER_FISHING_EXPANSION_GOAL_NAMES),
+        relocatable_names=WATER_FISHING_EXPANSION_GOAL_NAMES,
+    )
+    replacements = dict(zip(WATER_FISHING_EXPANSION_GOAL_NAMES, chosen))
+    anchor = "(defconst water-transport-rebuild "
+    position = runtime.find(anchor)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing water-transport-rebuild defconst")
+    line_end = runtime.find("\n", position)
+    if line_end < 0:
+        line_end = len(runtime)
+    for name, value in replacements.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            runtime = runtime[:line_end + 1] + new_line + "\n" + runtime[line_end + 1:]
+            line_end += len(new_line) + 1
+    return runtime
+
+
+def _sync_water_demand_lifecycles(runtime: str, generated: str) -> str:
+    """Replace/insert compiler-owned water demand lifecycle blocks."""
+    for identity in WATER_LIFECYCLE_DEMANDS:
+        start_marker = f"; Pending diagnostics: {identity}"
+        generated_start = generated.find(start_marker)
+        if generated_start < 0:
+            raise RuntimeError(f"generated artifact is missing water demand lifecycle: {identity}")
+
+        next_generated = generated.find("; Pending diagnostics:", generated_start + len(start_marker))
+        if next_generated < 0:
+            next_generated = generated.find("; Native Strategos voice plan", generated_start)
+        if next_generated < 0:
+            raise RuntimeError(f"generated artifact is missing lifecycle end boundary: {identity}")
+        generated_block = generated[generated_start:next_generated].rstrip() + "\n"
+
+        runtime_start = runtime.find(start_marker)
+        if runtime_start >= 0:
+            next_runtime = runtime.find("; Pending diagnostics:", runtime_start + len(start_marker))
+            if next_runtime < 0:
+                next_runtime = runtime.find("; Native Strategos voice plan", runtime_start)
+            if next_runtime < 0:
+                raise RuntimeError(f"runtime artifact is missing lifecycle end boundary: {identity}")
+            runtime = runtime[:runtime_start] + generated_block + runtime[next_runtime:]
+            continue
+
+        insertion_marker = "; Pending diagnostics: water-trade-cog-floor"
+        insertion = runtime.find(insertion_marker)
+        if insertion < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing insertion boundary for water demand: {identity}"
+            )
+        runtime = runtime[:insertion] + generated_block + runtime[insertion:]
+
+    return runtime
 
 
 def _ensure_water_execution_state_defconsts(
@@ -1085,6 +1188,8 @@ def synchronize() -> bool:
     runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _ensure_reserved_water_goal_defconsts(runtime)
+    runtime = _ensure_water_fishing_expansion_goal_defconsts(runtime)
+    runtime = _sync_water_demand_lifecycles(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
 
     defense_block = _block(
@@ -1128,6 +1233,14 @@ def synchronize() -> bool:
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
+
+    for identity in ECONOMY_INSTALLABLE_RULES:
+        runtime = _replace_or_install_native_control_rule(
+            runtime,
+            generated,
+            identity,
+            insert_before="economy-controller-select-water-economy",
+        )
 
     voice_marker = "; Native Strategos voice plan"
     voice_start = generated.find(voice_marker)

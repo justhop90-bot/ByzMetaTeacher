@@ -62,6 +62,76 @@ class ByzantineWaterMapV1Tests(unittest.TestCase):
         self.assertIn("(goal arb-c02 1)", castle_guard)
         self.assertIn("(not (goal arb-c01 1))", castle_guard)
 
+    def test_runtime_sync_synchronizes_water_demand_lifecycles(self):
+        from pathlib import Path
+        import re
+        import tempfile
+        import tools.synchronize_byzantine_runtime as sync_runtime
+
+        generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
+        runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(runtime, encoding="utf-8")
+            generated_path.write_text(generated, encoding="utf-8")
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertIn("; Pending diagnostics: water-fishing-expansion", synchronized)
+        self.assertIn("(unit-type-count-total fishing-ship < 4)", synchronized)
+
+        transport_start = synchronized.index(
+            "; Pending diagnostics: water-transport-capability"
+        )
+        transport_end = synchronized.index(
+            "; Pending diagnostics: water-naval-defense",
+            transport_start,
+        )
+        transport = synchronized[transport_start:transport_end]
+        self.assertIn("(current-age >= feudal-age)", transport)
+        self.assertIn(
+            "(or (map-type islands) (map-type pacific-islands))",
+            transport,
+        )
+        self.assertNotIn("(current-age >= dark-age)", transport)
+        self.assertNotIn("(map-type islands)\n", transport)
+
+        naval_start = synchronized.index(
+            "; Pending diagnostics: water-naval-defense"
+        )
+        naval_end = synchronized.index(
+            "; Pending diagnostics: water-naval-control",
+            naval_start,
+        )
+        naval = synchronized[naval_start:naval_end]
+        self.assertIn(
+            "(or (map-type islands) (map-type pacific-islands))",
+            naval,
+        )
+
+        for name in sync_runtime.WATER_FISHING_EXPANSION_GOAL_NAMES:
+            self.assertEqual(
+                len(
+                    re.findall(
+                        rf"^\(defconst {re.escape(name)} \d+\)$",
+                        synchronized,
+                        re.MULTILINE,
+                    )
+                ),
+                1,
+            )
+
     def test_runtime_sync_replaces_stale_water_opening_selector_from_generated_artifact(self):
         from pathlib import Path
         import tools.synchronize_byzantine_runtime as sync_runtime
