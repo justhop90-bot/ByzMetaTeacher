@@ -388,7 +388,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(map-type pacific-islands)", requirements)
         self.assertIn("(building-type-count-total dock >= 1)", requirements)
         self.assertIn(
-            profile.observation("strategy-enemy-naval-pressure").expression,
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
             requirements,
         )
         self.assertIn("(can-train-with-escrow transport-ship)", requirements)
