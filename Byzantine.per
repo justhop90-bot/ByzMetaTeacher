@@ -4476,11 +4476,31 @@
 (defconst complete-water-dock-capability 15971)
 (defconst water-transport-objective 15970)
 (defconst water-transport-rebuild 15969)
+(defconst pacific-opening-transport-objective 15968)
+(defconst feudal-resource-island-transport-objective 15967)(defconst sn-fishing-boat-whaling-percentage 316)
+(defconst sn-maximum-fish-boat-drop-distance 236)
+
+(defconst pacific-opening-transport-point 15957)
+(defconst pacific-transport-recovery 15959)
+(defconst pacific-convoy-route 15960)
+(defconst pacific-transport-escort 15961)
+(defconst pacific-harbor-defense 15962)
+(defconst pacific-fishing-controller 15963)
+(defconst pacific-opening-transport-unload-count 15964)
+(defconst pacific-opening-transport-unload-action 15965)
+(defconst pacific-opening-transport-distance 15966)
+(defconst pacific-opening-transport-transit-action 15967)
+(defconst pacific-opening-transport-load-count 15968)
+(defconst pacific-opening-transport-id 15971)
+(defconst pacific-transport-unload-witness 15973)
+(defconst pacific-transport-transit-witness 15974)
+(defconst pacific-transport-lifecycle 15977)
+
 (defconst demand-water-fishing-expansion 15978)
-(defconst issued-water-fishing-expansion 15977)
-(defconst pending-water-fishing-expansion 15974)
-(defconst complete-water-fishing-expansion 15973)
-(defconst production-retry-barrier-water-fishing-expansion 15972)
+(defconst issued-water-fishing-expansion 15972)
+(defconst pending-water-fishing-expansion 15971)
+(defconst complete-water-fishing-expansion 15958)
+(defconst production-retry-barrier-water-fishing-expansion 15957)
 (defconst opening-recovery 16000)
 (defconst opening-recovery-cause 15999)
 (defconst opening-recovery-defense-clear 15998)
@@ -5874,26 +5894,509 @@
     (goal water-posture 0)
     (goal water-transport-objective 0)
     (goal water-transport-rebuild 0)
+    (goal pacific-opening-transport-objective 0)
+    (goal pacific-transport-lifecycle 0)
+    (goal pacific-fishing-controller 0)
+    (goal pacific-harbor-defense 0)
+    (goal pacific-transport-escort 0)
+    (goal pacific-convoy-route 0)
+    (goal pacific-transport-recovery 0)
+    (goal pacific-transport-transit-witness 0)
+    (goal pacific-transport-unload-witness 0)
+    (goal feudal-resource-island-transport-objective 0)
 =>
     (set-goal transport-phase 0)
     (set-goal water-posture 0)
     (set-goal water-transport-objective 0)
     (set-goal water-transport-rebuild 0)
+    (set-goal pacific-opening-transport-objective 0)
+    (set-goal feudal-resource-island-transport-objective 0)
     (disable-self)
+)
+
+; Native control rule: pacific-opening-transport-open
+(defrule
+    (map-type pacific-islands)
+    (current-age == dark-age)
+    (unit-type-count-total transport-ship >= 1)
+    (goal pacific-opening-transport-objective 0)
+=>
+    (set-goal pacific-opening-transport-objective 1)
+)
+
+; Native control rule: pacific-opening-transport-close-at-feudal
+(defrule
+    (goal pacific-opening-transport-objective 1)
+    (current-age >= feudal-age)
+=>
+    (set-goal pacific-opening-transport-objective 0)
+)
+
+; Native control rule: pacific-opening-transport-close-on-loss
+(defrule
+    (goal pacific-opening-transport-objective 1)
+    (unit-type-count-total transport-ship < 1)
+=>
+    (set-goal pacific-opening-transport-objective 0)
+)
+
+; Native control rule: pacific-fishing-controller-open
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (building-type-count-total dock >= 1)
+    (goal pacific-fishing-controller 0)
+=>
+    (set-goal pacific-fishing-controller 1)
+)
+
+; Native control rule: pacific-fishing-controller-enter-naval-defense
+(defrule
+    (map-type pacific-islands)
+    (goal pacific-fishing-controller 1)
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+=>
+    (set-goal pacific-fishing-controller 2)
+    (set-strategic-number sn-maximum-fish-boat-drop-distance -2)
+    (set-strategic-number sn-fishing-boat-whaling-percentage 0)
+    (set-strategic-number sn-number-boat-explore-groups 0)
+)
+
+; Native control rule: pacific-fishing-controller-recover-from-naval-defense
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (goal pacific-fishing-controller 2)
+=>
+    (set-goal pacific-fishing-controller 1)
+)
+
+; Native control rule: pacific-fishing-controller-close-nonwater
+(defrule
+    (goal pacific-fishing-controller 1)
+    (not (map-type pacific-islands))
+=>
+    (set-goal pacific-fishing-controller 0)
+    (set-strategic-number sn-maximum-fish-boat-drop-distance -2)
+    (set-strategic-number sn-fishing-boat-whaling-percentage 0)
+)
+
+; Native control rule: pacific-fishing-controller-close-no-dock
+(defrule
+    (not (goal pacific-fishing-controller 0))
+    (not (building-type-count-total 45 >= 1))
+=>
+    (set-goal pacific-fishing-controller 0)
+    (set-strategic-number sn-maximum-fish-boat-drop-distance -2)
+    (set-strategic-number sn-fishing-boat-whaling-percentage 0)
+)
+
+; Native control rule: pacific-fishing-controller-dark
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (goal pacific-fishing-controller 1)
+    (current-age == dark-age)
+=>
+    (set-strategic-number sn-maximum-fish-boat-drop-distance 30)
+    (set-strategic-number sn-fishing-boat-whaling-percentage 0)
+    (set-strategic-number sn-number-boat-explore-groups 1)
+)
+
+; Native control rule: pacific-fishing-controller-feudal
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (goal pacific-fishing-controller 1)
+    (current-age >= feudal-age)
+=>
+    (set-strategic-number sn-maximum-fish-boat-drop-distance 48)
+    (set-strategic-number sn-fishing-boat-whaling-percentage 0)
+    (set-strategic-number sn-number-boat-explore-groups 1)
+)
+
+; Native control rule: pacific-transport-escort-open
+(defrule
+    (map-type pacific-islands)
+    (current-age >= feudal-age)
+    (building-type-count-total 45 >= 1)
+    (or (unit-type-count-total transport-ship >= 1) (goal pacific-transport-recovery 1))
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (goal pacific-transport-escort 0)
+=>
+    (set-goal pacific-transport-escort 1)
+)
+
+; Native control rule: pacific-transport-escort-ready
+(defrule
+    (goal pacific-transport-escort 1)
+    (unit-type-count-total fire-galley >= 1)
+=>
+    (set-goal pacific-transport-escort 2)
+)
+
+; Native control rule: pacific-transport-escort-rearm-on-loss
+(defrule
+    (goal pacific-transport-escort 2)
+    (unit-type-count-total fire-galley < 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+=>
+    (set-goal pacific-transport-escort 1)
+)
+
+; Native control rule: pacific-transport-escort-close-on-pressure
+(defrule
+    (or (goal pacific-transport-escort 1) (goal pacific-transport-escort 2))
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+=>
+    (set-goal pacific-transport-escort 0)
+)
+
+; Native control rule: pacific-transport-escort-close-nonwater
+(defrule
+    (or (goal pacific-transport-escort 1) (goal pacific-transport-escort 2))
+    (not (map-type pacific-islands))
+=>
+    (set-goal pacific-transport-escort 0)
+)
+
+; Native control rule: pacific-convoy-route-open
+(defrule
+    (map-type pacific-islands)
+    (current-age >= feudal-age)
+    (building-type-count-total 45 >= 1)
+    (unit-type-count-total transport-ship >= 1)
+    (goal pacific-transport-escort 2)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (goal pacific-convoy-route 0)
+=>
+    (set-goal pacific-convoy-route 1)
+)
+
+; Native control rule: pacific-convoy-route-activate
+(defrule
+    (goal pacific-convoy-route 1)
+    (goal feudal-resource-island-transport-objective 1)
+    (goal pacific-transport-escort 2)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+=>
+    (set-goal pacific-convoy-route 2)
+)
+
+; Native control rule: pacific-convoy-route-recover-on-transport-loss
+(defrule
+    (or (goal pacific-convoy-route 2) (goal pacific-convoy-route 4))
+    (unit-type-count-total transport-ship < 1)
+=>
+    (set-goal pacific-convoy-route 3)
+)
+
+; Native control rule: pacific-convoy-route-rearm
+(defrule
+    (goal pacific-convoy-route 3)
+    (unit-type-count-total transport-ship >= 1)
+    (goal pacific-transport-escort 2)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+=>
+    (set-goal pacific-convoy-route 1)
+)
+
+; Native control rule: pacific-convoy-route-rearm-from-fallback
+(defrule
+    (goal pacific-convoy-route 4)
+    (unit-type-count-total transport-ship >= 1)
+    (goal pacific-transport-escort 2)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+=>
+    (set-goal pacific-convoy-route 1)
+)
+
+; Native control rule: pacific-convoy-route-close-on-pressure
+(defrule
+    (or (goal pacific-convoy-route 1) (or (goal pacific-convoy-route 2) (or (goal pacific-convoy-route 3) (goal pacific-convoy-route 4))))
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+=>
+    (set-goal pacific-convoy-route 0)
+)
+
+; Native control rule: pacific-convoy-route-close-on-dock-loss
+(defrule
+    (or (goal pacific-convoy-route 1) (or (goal pacific-convoy-route 2) (or (goal pacific-convoy-route 3) (goal pacific-convoy-route 4))))
+    (not (building-type-count-total 45 >= 1))
+=>
+    (set-goal pacific-convoy-route 4)
+)
+
+; Native control rule: pacific-convoy-route-close-on-escort-loss
+(defrule
+    (or (goal pacific-convoy-route 1) (or (goal pacific-convoy-route 2) (or (goal pacific-convoy-route 3) (goal pacific-convoy-route 4))))
+    (not (goal pacific-transport-escort 2))
+=>
+    (set-goal pacific-convoy-route 4)
+)
+
+; Native control rule: pacific-convoy-route-close-nonwater
+(defrule
+    (or (goal pacific-convoy-route 1) (or (goal pacific-convoy-route 2) (or (goal pacific-convoy-route 3) (goal pacific-convoy-route 4))))
+    (not (map-type pacific-islands))
+=>
+    (set-goal pacific-convoy-route 0)
+)
+
+; Native control rule: pacific-harbor-defense-open
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+    (goal pacific-harbor-defense 0)
+=>
+    (set-goal pacific-harbor-defense 1)
+)
+
+; Native control rule: pacific-harbor-defense-close
+(defrule
+    (goal pacific-harbor-defense 1)
+    (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2))
+=>
+    (set-goal pacific-harbor-defense 0)
+)
+
+; Native control rule: pacific-harbor-defense-close-no-dock
+(defrule
+    (goal pacific-harbor-defense 1)
+    (not (building-type-count-total 45 >= 1))
+=>
+    (set-goal pacific-harbor-defense 0)
+)
+
+; Native control rule: pacific-transport-recovery-close-nonwater
+(defrule
+    (goal pacific-transport-recovery 1)
+    (not (map-type pacific-islands))
+=>
+    (set-goal pacific-transport-recovery 0)
+)
+
+; Native control rule: pacific-harbor-defense-close-nonwater
+(defrule
+    (goal pacific-harbor-defense 1)
+    (not (map-type pacific-islands))
+=>
+    (set-goal pacific-harbor-defense 0)
+)
+
+; Native control rule: pacific-fishing-controller-castle
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total 45 >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (goal pacific-fishing-controller 1)
+    (current-age >= castle-age)
+=>
+    (set-strategic-number sn-maximum-fish-boat-drop-distance 96)
+    (set-strategic-number sn-fishing-boat-whaling-percentage 0)
+    (set-strategic-number sn-number-boat-explore-groups 1)
+)
+
+; Native control rule: pacific-transport-lifecycle-open
+(defrule
+    (map-type pacific-islands)
+    (current-age == dark-age)
+    (unit-type-count-total transport-ship >= 1)
+    (goal pacific-opening-transport-objective 1)
+    (goal pacific-transport-lifecycle 0)
+=>
+    (set-goal pacific-transport-lifecycle 1)
+    (set-goal pacific-transport-transit-witness 0)
+    (set-goal pacific-transport-unload-witness 0)
+)
+
+; Native control rule: pacific-transport-lifecycle-load-witness
+(defrule
+    (goal pacific-transport-lifecycle 1)
+    (up-compare-goal pacific-opening-transport-load-count >= 4)
+=>
+    (set-goal pacific-transport-lifecycle 2)
+)
+
+; Native control rule: pacific-transport-lifecycle-transit-witness
+(defrule
+    (goal pacific-transport-lifecycle 2)
+    (up-compare-goal pacific-opening-transport-transit-action == 614)
+    (goal pacific-transport-transit-witness 0)
+=>
+    (set-goal pacific-transport-transit-witness 1)
+)
+
+; Native control rule: pacific-transport-lifecycle-enter-unload
+(defrule
+    (goal pacific-transport-lifecycle 2)
+    (goal pacific-transport-transit-witness 1)
+    (up-compare-goal pacific-opening-transport-distance <= 64)
+=>
+    (set-goal pacific-transport-lifecycle 3)
+)
+
+; Native control rule: pacific-transport-lifecycle-unload-witness
+(defrule
+    (goal pacific-transport-lifecycle 3)
+    (up-compare-goal pacific-opening-transport-unload-action == 621)
+    (goal pacific-transport-unload-witness 0)
+=>
+    (set-goal pacific-transport-unload-witness 1)
+)
+
+; Native control rule: pacific-transport-lifecycle-landed
+(defrule
+    (goal pacific-transport-lifecycle 3)
+    (goal pacific-transport-unload-witness 1)
+    (up-compare-goal pacific-opening-transport-unload-count <= 0)
+    (up-compare-goal pacific-opening-transport-unload-action != 621)
+=>
+    (set-goal pacific-transport-lifecycle 4)
+)
+
+; Native control rule: pacific-transport-recovery-open-on-landed
+(defrule
+    (goal pacific-transport-lifecycle 4)
+    (goal pacific-transport-recovery 0)
+=>
+    (set-goal pacific-transport-recovery 1)
+)
+
+; Native control rule: pacific-transport-lifecycle-recover-after-landing-loss
+(defrule
+    (goal pacific-transport-lifecycle 0)
+    (goal pacific-transport-recovery 1)
+    (unit-type-count-total transport-ship < 1)
+=>
+    (set-goal pacific-transport-lifecycle 5)
+)
+
+; Native control rule: pacific-transport-lifecycle-recover-on-loss
+(defrule
+    (or (goal pacific-transport-lifecycle 1) (or (goal pacific-transport-lifecycle 2) (goal pacific-transport-lifecycle 3)))
+    (unit-type-count-total transport-ship < 1)
+=>
+    (set-goal pacific-transport-lifecycle 5)
+    (set-goal pacific-transport-transit-witness 0)
+    (set-goal pacific-transport-unload-witness 0)
+)
+
+; Native control rule: pacific-transport-lifecycle-recover-after-rebuild
+(defrule
+    (goal pacific-transport-lifecycle 5)
+    (goal pacific-transport-recovery 1)
+    (unit-type-count-total transport-ship >= 1)
+=>
+    (set-goal pacific-transport-lifecycle 0)
+    (set-goal pacific-transport-transit-witness 0)
+    (set-goal pacific-transport-unload-witness 0)
+)
+
+; Native control rule: pacific-transport-lifecycle-rearm-after-loss
+(defrule
+    (goal pacific-transport-lifecycle 5)
+    (goal pacific-opening-transport-objective 1)
+    (unit-type-count-total transport-ship >= 1)
+=>
+    (set-goal pacific-transport-lifecycle 1)
+    (set-goal pacific-transport-transit-witness 0)
+    (set-goal pacific-transport-unload-witness 0)
+)
+
+; Native control rule: pacific-transport-lifecycle-close-at-feudal
+(defrule
+    (goal pacific-transport-lifecycle 4)
+    (current-age >= feudal-age)
+=>
+    (set-goal pacific-transport-lifecycle 0)
+    (set-goal pacific-transport-transit-witness 0)
+    (set-goal pacific-transport-unload-witness 0)
+)
+
+; Native control rule: feudal-resource-island-transport-open
+(defrule
+    (or (map-type islands) (map-type pacific-islands))
+    (current-age >= feudal-age)
+    (unit-type-count-total transport-ship >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (or (not (map-type pacific-islands)) (goal pacific-transport-escort 2))
+    (goal feudal-resource-island-transport-objective 0)
+=>
+    (set-goal feudal-resource-island-transport-objective 1)
+)
+
+; Native control rule: feudal-resource-island-transport-close-nonwater
+(defrule
+    (goal feudal-resource-island-transport-objective 1)
+    (not (or (map-type islands) (map-type pacific-islands)))
+=>
+    (set-goal feudal-resource-island-transport-objective 0)
+)
+
+; Native control rule: feudal-resource-island-transport-close-before-feudal
+(defrule
+    (goal feudal-resource-island-transport-objective 1)
+    (not (current-age >= feudal-age))
+=>
+    (set-goal feudal-resource-island-transport-objective 0)
+)
+
+; Native control rule: feudal-resource-island-transport-close-on-loss
+(defrule
+    (goal feudal-resource-island-transport-objective 1)
+    (not (unit-type-count-total transport-ship >= 1))
+=>
+    (set-goal feudal-resource-island-transport-objective 0)
+)
+
+; Native control rule: feudal-resource-island-transport-close-on-escort-loss
+(defrule
+    (goal feudal-resource-island-transport-objective 1)
+    (map-type pacific-islands)
+    (not (goal pacific-transport-escort 2))
+=>
+    (set-goal feudal-resource-island-transport-objective 0)
+)
+
+; Native control rule: feudal-resource-island-transport-close-on-naval-pressure
+(defrule
+    (goal feudal-resource-island-transport-objective 1)
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+=>
+    (set-goal feudal-resource-island-transport-objective 0)
 )
 
 ; Native control rule: transport-objective-open
 (defrule
     (or (map-type islands) (map-type pacific-islands))
     (goal byzantine-army-attack-ready 1)
+    (not (goal pacific-harbor-defense 1))
+    (or (not (map-type pacific-islands)) (goal pacific-transport-escort 2))
     (goal water-transport-objective 0)
 =>
     (set-goal water-transport-objective 1)
 )
 
+; Native control rule: transport-objective-close-on-escort-loss
+(defrule
+    (goal water-transport-objective 1)
+    (map-type pacific-islands)
+    (not (goal pacific-transport-escort 2))
+=>
+    (set-goal water-transport-objective 0)
+)
+
 ; Native control rule: transport-objective-close
 (defrule
-    (or (not (or (map-type islands) (map-type pacific-islands))) (not (goal byzantine-army-attack-ready 1)))
+    (or (not (or (map-type islands) (map-type pacific-islands))) (or (not (goal byzantine-army-attack-ready 1)) (goal pacific-harbor-defense 1)))
     (goal water-transport-objective 1)
 =>
     (set-goal water-transport-objective 0)
@@ -5905,6 +6408,7 @@
     (goal water-transport-objective 1)
     (goal transport-phase 3)
     (not (unit-type-count transport-ship >= 1))
+    (not (goal pacific-harbor-defense 1))
     (goal water-transport-rebuild 0)
 =>
     (set-goal water-transport-rebuild 1)
@@ -5912,7 +6416,7 @@
 
 ; Native control rule: transport-phase-no-longer-required
 (defrule
-    (or (not (or (map-type islands) (map-type pacific-islands))) (not (goal water-transport-objective 1)))
+    (or (not (or (map-type islands) (map-type pacific-islands))) (or (not (goal water-transport-objective 1)) (goal pacific-harbor-defense 1)))
     (or (goal transport-phase 1) (or (goal transport-phase 2) (goal transport-phase 3)))
 =>
     (set-goal transport-phase 0)
@@ -5934,6 +6438,8 @@
     (goal water-transport-objective 1)
     (goal transport-phase 3)
     (not (unit-type-count transport-ship >= 1))
+    (not (goal pacific-harbor-defense 1))
+    (or (not (map-type pacific-islands)) (goal pacific-transport-escort 2))
     (goal water-transport-rebuild 1)
 =>
     (set-goal transport-phase 1)
@@ -6074,6 +6580,34 @@
     (players-building-type-count any-enemy 82 >= 1)
 =>
     (set-goal opening-recovery-defense-clear 0)
+)
+
+; Native control rule: opening-selector-pacific-land-first
+(defrule
+    (goal opening-plan -1)
+    (map-type pacific-islands)
+=>
+    (set-goal opening-plan 7)
+)
+
+; Native control rule: opening-selector-water-control
+(defrule
+    (goal opening-plan -1)
+    (not (map-type pacific-islands))
+    (or (map-type islands) (map-type pacific-islands))
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+=>
+    (set-goal opening-plan 5)
+)
+
+; Native control rule: opening-selector-water-economy
+(defrule
+    (goal opening-plan -1)
+    (not (map-type pacific-islands))
+    (or (map-type islands) (map-type pacific-islands))
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+=>
+    (set-goal opening-plan 4)
 )
 
 ; Native control rule: opening-selector-water-control
@@ -7044,6 +7578,355 @@
     (set-goal opening-recovery-cause -1)
 )
 
+; Native control rule: opening-recovery-prove-gold
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 7))
+    (current-age >= feudal-age)
+    (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)))
+    (goal opening-recovery-gold-proven -1)
+=>
+    (set-goal opening-recovery-gold-proven 1)
+)
+
+; Native control rule: opening-recovery-prove-water
+(defrule
+    (or (goal opening-plan 4) (goal opening-plan 5))
+    (or (map-type islands) (map-type pacific-islands))
+    (building-type-count-total 45 >= 1)
+    (unit-type-count transport-ship >= 1)
+    (goal opening-recovery-water-proven -1)
+=>
+    (set-goal opening-recovery-water-proven 1)
+)
+
+; Native control rule: opening-recovery-cause-defense
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 7))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (and (current-age < castle-age) (and (town-under-attack) (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))))
+=>
+    (set-goal opening-recovery-cause 3)
+)
+
+; Native control rule: opening-recovery-cause-defense-siege
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 7))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (and (current-age < castle-age) (and (town-under-attack) (players-unit-type-count any-enemy mangonel-line >= 2)))
+=>
+    (set-goal opening-recovery-cause 3)
+)
+
+; Native control rule: opening-recovery-cause-defense-castle
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 7))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (and (current-age < castle-age) (and (town-under-attack) (players-building-type-count any-enemy 82 >= 1)))
+=>
+    (set-goal opening-recovery-cause 3)
+)
+
+; Native control rule: opening-recovery-cause-gold
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 7))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (goal opening-recovery-defense-clear 1)
+    (and (goal opening-recovery-gold-proven 1) (and (current-age < castle-age) (and (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)) (gold-amount <= 800))))
+=>
+    (set-goal opening-recovery-cause 2)
+)
+
+; Native control rule: opening-recovery-cause-water
+(defrule
+    (and (up-compare-goal opening-plan >= 1) (up-compare-goal opening-plan <= 7))
+    (goal opening-recovery-cause -1)
+    (goal opening-recovery-origin -1)
+    (current-age < castle-age)
+    (goal opening-recovery-defense-clear 1)
+    (not (and (goal opening-recovery-gold-proven 1) (and (current-age < castle-age) (and (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance)) (gold-amount <= 800)))))
+    (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3)))
+=>
+    (set-goal opening-recovery-cause 1)
+)
+
+; Native control rule: opening-recovery-enter-defensive-standard
+(defrule
+    (goal opening-plan 1)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 1)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-defensive-standard
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 1)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 1)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-defensive-standard-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 1)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 1)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-counter-feudal
+(defrule
+    (goal opening-plan 2)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 2)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-counter-feudal
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 2)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 2)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-counter-feudal-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 2)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 2)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-fast-castle
+(defrule
+    (goal opening-plan 3)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 3)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-fast-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 3)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 3)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-fast-castle-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 3)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 3)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-water-economy
+(defrule
+    (goal opening-plan 4)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 4)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-water-economy
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 4)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 4)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-water-economy-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 4)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 4)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-water-control
+(defrule
+    (goal opening-plan 5)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 5)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-water-control
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 5)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 5)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-water-control-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 5)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 5)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-enter-pacific-land-first
+(defrule
+    (goal opening-plan 7)
+    (goal opening-recovery -1)
+    (goal opening-recovery-origin -1)
+    (up-compare-goal opening-recovery-cause != -1)
+=>
+    (set-goal opening-recovery-origin 7)
+    (set-goal opening-plan 6)
+    (set-goal opening-recovery 1)
+)
+
+; Native control rule: opening-recovery-exit-pacific-land-first
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 7)
+    (goal opening-recovery-cause -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-plan 7)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-exit-pacific-land-first-castle
+(defrule
+    (goal opening-plan 6)
+    (goal opening-recovery 1)
+    (goal opening-recovery-origin 7)
+    (goal opening-recovery-cause -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-plan 7)
+    (set-goal opening-recovery-origin -1)
+    (set-goal opening-recovery -1)
+)
+
+; Native control rule: opening-recovery-clear-cause
+(defrule
+    (goal opening-recovery 1)
+    (up-compare-goal opening-recovery-cause != -1)
+    (current-age < castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+    (not (and (goal opening-recovery-water-proven 1) (and (or (map-type islands) (map-type pacific-islands)) (goal transport-phase 3))))
+    (goal opening-recovery-defense-clear 1)
+=>
+    (set-goal opening-recovery-cause -1)
+)
+
+; Native control rule: opening-recovery-clear-cause-castle
+(defrule
+    (goal opening-recovery 1)
+    (up-compare-goal opening-recovery-cause != -1)
+    (current-age >= castle-age)
+    (and (not (or (dropsite-min-distance gold <= -1) (dropsite-min-distance gold s:>= sn-mining-camp-max-distance))) (gold-amount >= 1000))
+=>
+    (set-goal opening-recovery-cause -1)
+)
+
 ; Native economy rule: byzantine-community-economy-initialize
 (defrule
     (true)
@@ -7604,7 +8487,7 @@
 
 ; Native control rule: economy-controller-select-pacific-land-first
 (defrule
-    (and (current-age >= feudal-age) (current-age < castle-age))
+    (and (current-age >= dark-age) (current-age < castle-age))
     (not (players-unit-type-count any-enemy knight >= 3))
     (not (players-unit-type-count any-enemy archer-line >= 4))
     (not (players-unit-type-count any-enemy militia-line >= 5))
@@ -27062,22 +27945,23 @@
     (building-type-count-total dock >= 1)
     (can-train-with-escrow fishing-ship)
     (unit-type-count-total fishing-ship < 2)
+    (or (not (map-type pacific-islands)) (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))))
 =>
     (train fishing-ship)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-water-fishing-continuity 162)
 )
 ; Pending diagnostics: water-transport-capability
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 163 and cannot reissue from pending goal 164
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 164 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 165 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 166 and cannot reissue from pending goal 167
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 167 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 168 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
 ; Issuance failure: water-transport-capability | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-water-transport-capability in ACTIVE; it is not PENDING.
 ; Release: water-transport-capability | COMPLETE -> RELEASED
 (defrule
-    (goal demand-water-transport-capability 165)
+    (goal demand-water-transport-capability 168)
     (unit-type-count transport-ship >= 1)
 =>
     (set-goal demand-water-transport-capability 0)
@@ -27086,31 +27970,31 @@
 ; Completion witness: water-transport-capability | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
-        (goal demand-water-transport-capability 166)
-        (goal demand-water-transport-capability 164)
+        (goal demand-water-transport-capability 169)
+        (goal demand-water-transport-capability 167)
     )
     (unit-type-count transport-ship >= 1)
 =>
-    (set-goal demand-water-transport-capability 165)
+    (set-goal demand-water-transport-capability 168)
 )
 
 ; Pending admission: water-transport-capability | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-water-transport-capability 166)
-        (goal demand-water-transport-capability 164)
+        (goal demand-water-transport-capability 169)
+        (goal demand-water-transport-capability 167)
     )
     (not (unit-type-count transport-ship >= 1))
     (up-pending-objects c: 545 >= 1)
 =>
-    (set-goal demand-water-transport-capability 164)
+    (set-goal demand-water-transport-capability 167)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-water-transport-capability 166)
-        (goal demand-water-transport-capability 164)
+        (goal demand-water-transport-capability 169)
+        (goal demand-water-transport-capability 167)
     )
     (not (unit-type-count transport-ship >= 1))
     (not (up-pending-objects c: 545 >= 1))
@@ -27132,11 +28016,12 @@
     (goal water-transport-objective 1)
     (building-type-count-total dock >= 1)
     (can-train-with-escrow transport-ship)
+    (not (goal pacific-harbor-defense 1))
     (unit-type-count-total transport-ship < 1)
 =>
     (train transport-ship)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-water-transport-capability 166)
+    (set-goal demand-water-transport-capability 169)
 )
 ; Pending diagnostics: water-naval-defense
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 162 and cannot reissue from pending goal 163
@@ -27202,6 +28087,7 @@
     (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
     (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+    (or (not (map-type pacific-islands)) (goal pacific-harbor-defense 1))
     (can-train-with-escrow fire-galley)
     (unit-type-count-total fire-galley < 2)
 =>
@@ -27273,6 +28159,7 @@
     (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
     (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
+    (or (not (map-type pacific-islands)) (goal pacific-harbor-defense 1))
     (can-train-with-escrow galley)
     (unit-type-count-total galley < 3)
 =>
@@ -27975,9 +28862,9 @@
     (not (up-pending-objects c: 13 >= 1))
     (not (unit-type-count fishing-ship >= 4))
     (goal action-claim-train-arbitration 0)
-    (current-age >= dark-age)
+    (current-age >= feudal-age)
     (or (map-type islands) (map-type pacific-islands))
-    (not (map-type pacific-islands))
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
     (building-type-count-total dock >= 1)
     (can-train-with-escrow fishing-ship)
     (unit-type-count-total fishing-ship < 4)
@@ -30467,6 +31354,92 @@
     (build dock)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-water-dock-capability 161)
+)
+
+; Native DUC rule: byzantine-pacific-transport-target
+(defrule
+    (current-age == dark-age)
+    (goal pacific-opening-transport-objective 1)
+    (goal pacific-transport-lifecycle 1)
+    (unit-type-count-total transport-ship >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-resource c: gold c: 40)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 289)
+)
+
+; Native DUC rule: byzantine-pacific-transport-select
+(defrule
+    (current-age == dark-age)
+    (goal pacific-opening-transport-objective 1)
+    (goal pacific-transport-lifecycle 1)
+    (unit-type-count-total transport-ship >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: 545 c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-object-data id 287)
+)
+
+; Native DUC rule: byzantine-pacific-transport-garrison
+(defrule
+    (current-age == dark-age)
+    (goal pacific-opening-transport-objective 1)
+    (goal pacific-transport-lifecycle 1)
+    (unit-type-count-total transport-ship >= 1)
+    (up-compare-goal pacific-opening-transport-id >= 1)
+=>
+    (up-full-reset-search)
+    (up-find-local c: 904 c: 4)
+    (up-set-target-by-id g: 287)
+    (up-target-objects 1 7 -1 -1)
+)
+
+; Native DUC rule: byzantine-pacific-transport-load-witness
+(defrule
+    (current-age == dark-age)
+    (goal pacific-opening-transport-objective 1)
+    (goal pacific-transport-lifecycle 1)
+    (unit-type-count-total transport-ship >= 1)
+    (up-compare-goal pacific-opening-transport-id >= 1)
+=>
+    (up-set-target-by-id g: 287)
+    (up-get-object-data garrison-count 288)
+)
+
+; Native DUC rule: byzantine-pacific-transport-transit-probe
+(defrule
+    (goal pacific-transport-lifecycle 2)
+    (up-compare-goal pacific-opening-transport-id >= 1)
+=>
+    (up-set-target-by-id g: 287)
+    (up-set-target-point pacific-opening-transport-point)
+    (up-get-object-data action 290)
+    (up-get-object-data distance 286)
+)
+
+; Native DUC rule: byzantine-pacific-transport-move
+(defrule
+    (goal pacific-transport-lifecycle 2)
+    (up-compare-goal pacific-opening-transport-distance > 64)
+=>
+    (up-set-target-by-id g: 287)
+    (up-set-target-point pacific-opening-transport-point)
+    (up-target-point 0 action-move -1 -1)
+)
+
+; Native DUC rule: byzantine-pacific-transport-unload
+(defrule
+    (goal pacific-transport-lifecycle 3)
+    (up-compare-goal pacific-opening-transport-id >= 1)
+    (up-compare-goal pacific-opening-transport-distance <= 64)
+=>
+    (up-set-target-by-id g: 287)
+    (up-set-target-point pacific-opening-transport-point)
+    (up-target-point 0 9 -1 -1)
+    (up-get-object-data action 291)
+    (up-get-object-data garrison-count 292)
 )
 
 ; Native Strategos voice plan
