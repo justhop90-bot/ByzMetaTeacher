@@ -452,23 +452,38 @@ def lower_water_execution_plan(
 def lower_water_strategy_arbitration_control_plan(profile):
     """Lower Byzantine water/land strategic arbitration into native Goals."""
     from ..ast import SourceLocation
+    from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
-    from .native_control import NativeControlPlan, NativeControlRule
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .model import GoalRole, SemanticId, StorageRequestId
 
-    constants = (
-        ("arb-c01", 148),
-        ("arb-c02", 149),
-        ("arb-c03", 150),
-        ("arb-o01", 151),
-        ("arb-o02", 152),
-        ("arb-o03", 153),
-        ("arb-o04", 154),
-        ("arb-o05", 155),
-        ("arb-o06", 156),
-        ("arb-o07", 157),
-        ("arb-o08", 158),
-        ("arb-o09", 159),
-        ("strategic-primary-intent", 161),
+    state_names = (
+        "arb-c01",
+        "arb-c02",
+        "arb-c03",
+        "arb-o01",
+        "arb-o02",
+        "arb-o03",
+        "arb-o04",
+        "arb-o05",
+        "arb-o06",
+        "arb-o07",
+        "arb-o08",
+        "arb-o09",
+        "strategic-primary-intent",
+    )
+    states = tuple(
+        NativeControlState(
+            name,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId("byzantine-water-arbitration", name),
+                    name,
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        )
+        for name in state_names
     )
 
     water = profile.observation("strategy-water-map").expression
@@ -489,7 +504,7 @@ def lower_water_strategy_arbitration_control_plan(profile):
         )
 
     return NativeControlPlan(
-        constants=constants,
+        states=states,
         rules=(
             rule(
                 "strategic-arbitration-state-initialize",
