@@ -283,7 +283,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
             facts,
         )
         self.assertIn("(unit-type-count-total transport-ship >= 1)", facts)
-        self.assertIn("(up-pending-objects c: 904 == 0)", facts)
+        self.assertIn("(up-pending-objects c: 545 == 0)", facts)
         actions = tuple(action.source for action in failure.actions)
         self.assertIn("(set-goal pacific-transport-lifecycle 5)", actions)
         self.assertIn("(set-goal pacific-opening-transport-id 0)", actions)
@@ -297,6 +297,17 @@ class WaterTransportExecutionTests(unittest.TestCase):
             witness_facts,
         )
         self.assertNotIn("(timer-triggered pacific-transport-load-retry)", witness_facts)
+
+    def test_pacific_fishing_continuity_bootstraps_first_boat_without_feudal_escrow(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        requirements = " ".join(demand.execution.requirements)
+        self.assertIn("(current-age >= dark-age)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        self.assertIn("(wood-amount >= 75)", requirements)
+        self.assertIn("(can-train fishing-ship)", requirements)
+        self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
+        self.assertIn("(unit-type-count-total fishing-ship < 2)", requirements)
 
     def test_pacific_fishing_controller_is_typed_and_arbitrates_pressure(self):
         profile = build_byzantine_strategy(self.effective)
