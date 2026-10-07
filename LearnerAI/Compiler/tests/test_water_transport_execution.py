@@ -250,7 +250,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         bootstrap = rules["pacific-fishing-continuity-bootstrap"]
         facts = tuple(fact.source for fact in bootstrap.facts)
         self.assertIn("(map-type pacific-islands)", facts)
-        self.assertIn("(building-type-count-total dock >= 1)", facts)
+        self.assertIn(profile.observation("strategy-dock-exists").expression, facts)
         self.assertIn("(current-age >= dark-age)", facts)
         self.assertIn("(unit-type-count-total fishing-ship < 2)", facts)
         self.assertIn("(goal demand-water-fishing-continuity 0)", facts)
