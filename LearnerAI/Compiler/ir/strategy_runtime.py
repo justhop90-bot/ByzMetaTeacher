@@ -553,6 +553,7 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
+    "goal": StrategicObservationType.PERSISTENT_CONTROL_STATE,
     "up-compare-sn": StrategicObservationType.PERSISTENT_CONTROL_STATE,
     "up-train-site-ready": StrategicObservationType.TRAIN_PROVIDER_READINESS,
     "building-available": StrategicObservationType.CAPABILITY_STATE,
@@ -717,6 +718,24 @@ def _validate_expression(
             _validate_expression(
                 child, effective, registry, evidence, observations, timing_primitives, ordinal
             )
+        return
+
+    if expression.head == "goal":
+        if len(expression.args) != 2:
+            raise ValueError("goal observation requires exactly GoalId and value operands")
+        ordinal[0] += 1
+        observations.append(
+            StrategicObservation(
+                identity=f"{evidence.label}:observation:{ordinal[0]}",
+                semantic_type=StrategicObservationType.PERSISTENT_CONTROL_STATE,
+                primitive=expression.head,
+                native_parameter_contracts=(),
+                expression=expression,
+                evidence_class=evidence.kind,
+                evidence_source=evidence.source,
+                provenance=evidence.provenance,
+            )
+        )
         return
 
     primitive = registry.get(expression.head)

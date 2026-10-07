@@ -11,6 +11,10 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 )
 
 
+RUNTIME = sync_runtime.RUNTIME
+GENERATED = sync_runtime.GENERATED
+
+
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
 
     def test_synchronization_installs_pacific_transport_duc_and_storage(self) -> None:

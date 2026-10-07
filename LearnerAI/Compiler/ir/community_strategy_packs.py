@@ -2772,6 +2772,16 @@ def build_byzantine_stock_strategy(
             base_demand = replace(
                 base_demand,
                 execution=execution,
+                opportunity_cost=_OpportunityCostPolicy(
+                    owner="age-transition",
+                    protected_floors=(
+                        _ProtectedResourceFloor(Resource.FOOD, 500),
+                    ),
+                    emergency_override_postures=(
+                        _StrategyPosture.FLUSH,
+                        _StrategyPosture.RUSH,
+                    ),
+                ),
             )
         if (
             base_demand.execution is not None

@@ -497,7 +497,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
         requirements = tuple(demand.execution.requirements)
         self.assertIn("(unit-type-count-total fishing-ship < 4)", requirements)
         self.assertIn("(current-age >= feudal-age)", requirements)
-        self.assertIn(profile.observation("strategy-enemy-naval-pressure").expression, requirements)
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            requirements,
+        )
         self.assertIn("(building-type-count-total dock >= 1)", requirements)
 
     def test_pacific_opening_transport_objective_is_dark_age_starting_ship_gated(self):

@@ -62,7 +62,10 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         profile = build_byzantine_stock_strategy(self.effective)
         demand = profile.demand("water-pacific-transport-recovery")
         joined = " ".join(demand.execution.requirements)
-        self.assertIn("(not (players-unit-type-count any-enemy galley-line >= 2))", joined)
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            joined,
+        )
         self.assertIn("(can-train-with-escrow transport-ship)", joined)
 
     def test_pacific_harbor_defense_gates_naval_demands_on_pacific(self):

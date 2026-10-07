@@ -5129,13 +5129,6 @@ def _default_byzantine_duc_plan(
             lifecycle=(NativeDucLifecycleStage.DISPATCH,),
         )
     )
-
-    return NativeDucPlan(
-        rules=tuple(rules),
-        output_requests=tuple(outputs),
-        input_requests=tuple(inputs),
-    )
-
     if target_control is not None:
         from .endgame import EndgameFrontierState, EndgameTargetQueryKind
         from .model import GoalRole
@@ -5670,6 +5663,12 @@ def _default_byzantine_duc_plan(
     return NativeDucPlan(
         rules=tuple((*rules, *lifecycle_rules)),
         output_requests=tuple(outputs),
+    )
+
+    return NativeDucPlan(
+        rules=tuple((*rules, *lifecycle_rules)),
+        output_requests=tuple(outputs),
+        input_requests=tuple(inputs),
     )
 
 
