@@ -27982,13 +27982,11 @@
     (current-age >= dark-age)
     (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
+    (can-train fishing-ship)
     (or
         (and
             (unit-type-count-total fishing-ship < 1)
-            (and
-                (wood-amount >= 75)
-                (can-train fishing-ship)
-            )
+            (wood-amount >= 75)
         )
         (and
             (unit-type-count-total fishing-ship >= 1)
