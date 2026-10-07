@@ -204,7 +204,10 @@ def _demand_lifecycle_block(source: str, identity: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
-def _ensure_water_dock_defconsts(runtime: str, generated: str) -> tuple[str, dict[str, int]]:
+def _ensure_water_dock_defconsts(
+    runtime: str,
+    generated: str,
+) -> tuple[str, dict[str, int]]:
     names = (
         WATER_DOCK_DEMAND,
         f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
@@ -212,27 +215,51 @@ def _ensure_water_dock_defconsts(runtime: str, generated: str) -> tuple[str, dic
     definitions = _defconst_values(runtime)
     values = {name: definitions.get(name) for name in names}
     occupants = _goal_slot_occupants(runtime)
-    if all(value is not None and 1 <= value <= 16_000 for value in values.values()):
-        resolved = {name: int(value) for name, value in values.items() if value is not None}
-        if (
-            len(set(resolved.values())) == len(resolved)
-            and all(not (occupants.get(value, set()) - {name}) for name, value in resolved.items())
-        ):
-            return runtime, resolved
-    missing = [name for name in names if values[name] is None]
-    chosen = _choose_goal_slots(runtime, len(missing), reserved_source=generated)
-    resolved = {name: int(value) for name, value in values.items() if value is not None}
-    additions = []
-    for name, value in zip(missing, chosen):
-        resolved[name] = value
-        additions.append(f"(defconst {name} {value})")
-    marker = "(defconst opening-plan "
-    position = runtime.find(marker)
-    if position < 0:
-        raise RuntimeError("runtime artifact is missing opening-plan defconst")
-    line_end = runtime.find("\n", position)
-    runtime = runtime[: line_end + 1] + "\n".join(additions) + "\n" + runtime[line_end + 1:]
-    return runtime, resolved
+
+    resolved = {
+        name: int(value)
+        for name, value in values.items()
+        if value is not None
+    }
+    if (
+        len(resolved) == len(names)
+        and len(set(resolved.values())) == len(resolved)
+        and all(
+            not (occupants.get(value, set()) - {name})
+            for name, value in resolved.items()
+        )
+    ):
+        return runtime, resolved
+
+    chosen = _choose_goal_slots(
+        runtime,
+        len(names),
+        relocatable_names=names,
+        reserved_source=generated,
+    )
+    replacements = dict(zip(names, chosen))
+    missing_lines: list[str] = []
+
+    for name, value in replacements.items():
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            missing_lines.append(new_line)
+
+    if missing_lines:
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        insertion = "\n" + "\n".join(missing_lines)
+        runtime = runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
+
+    return runtime, replacements
 
 def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     identity = WATER_DOCK_DEMAND
