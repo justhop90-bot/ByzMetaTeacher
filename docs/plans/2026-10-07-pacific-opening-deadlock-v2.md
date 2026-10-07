@@ -53,37 +53,35 @@
 - [ ] **Step 6: Commit the passing deliverable**
   Commit message: `fix: decouple villager continuity from Feudal queue readiness`.
 
-### Task 2: Harden Feudal execution against provider/issuance failure
+### Task 2: Prove Feudal issuance stays separate from villager continuity
 
 **Files:**
-- Modify: `LearnerAI/Compiler/ir/strategy.py` Feudal execution demand and its native control lowering.
-- Modify: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py`
-- Modify: `LearnerAI/Compiler/tests/test_strategy_compiler_integration.py`
-- Runtime: synchronized Feudal transition block in `Byzantine.per`
+- Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py`
+- Test: `LearnerAI/Compiler/tests/test_strategy_compiler_integration.py`
+- Runtime: synchronized `Byzantine.per` Feudal transition and persistent civilian production
 
 **Interfaces:**
-- Consumes: `feudal-transition`, existing escrow release, `can-research-with-escrow feudal-age`.
-- Produces: a Feudal action path that selects a valid research provider before issuing `research feudal-age`, with the existing `current-age >= feudal-age` witness and retry path retained.
+- Consumes: `feudal-transition` and `civilian-villager-continuity`.
+- Produces: a verified separation between affordability-based civilian arbitration and native Feudal execution feasibility.
 
-- [ ] **Step 1: Add/extend focused regression**
-  Prove the Feudal demand keeps `can-research-with-escrow feudal-age` as execution capability, and that the lowered native control contains an explicit research-provider selection before the research action rather than relying on an unqualified `research` command.
+- [ ] **Step 1: Add the focused regression**
+  Assert that the civilian Dark-Age stop uses `can-afford-research feudal-age`, while the Feudal transition itself retains `can-research-with-escrow feudal-age`, `research feudal-age`, and `current-age >= feudal-age` as its action/witness contract.
 
 - [ ] **Step 2: Verify the relevant failure**
-  Run the focused strategy/control tests.
-  Expected failure: no explicit provider-selection rule is currently present for Feudal research.
+  Run the focused opening-economy and strategy compiler tests.
+  Expected failure before this repair: the civilian demand couples its stop condition to `can-research-with-escrow feudal-age`.
 
 - [ ] **Step 3: Implement the minimum behavior**
-  Add a native Feudal provider-selection rule modeled on Naga's validated TC selection, using existing target/search facilities already accepted by the compiler. The rule must ignore under-attack or already-progressing providers, select one deterministic nearest valid TC, and issue the research action only from that selected provider. Keep the native capability predicate as the final feasibility gate.
+  Keep the existing Feudal action/retry lifecycle unchanged. Do not introduce a second research-provider controller unless a focused regression proves the native Feudal action itself can fail after the affordability split.
 
 - [ ] **Step 4: Verify the focused pass**
-  Run the Feudal control and compiler integration tests.
-  Expected: provider-selection rule exists, Feudal action remains guarded by `can-research-with-escrow`, and current-age remains the completion witness.
+  Expected: villager continuity contains no Dark-Age Feudal queue-readiness predicate; Feudal transition still contains native escrow feasibility and current-age completion.
 
 - [ ] **Step 5: Synchronize and verify runtime**
-  Regenerate `Byzantine.per`; verify Feudal transition contains provider selection plus research and does not add time-based completion truth.
+  Verify `Byzantine.per` contains the same split in the persistent civilian-production and Feudal-transition sections.
 
 - [ ] **Step 6: Commit the passing deliverable**
-  Commit message: `fix: harden Feudal research provider issuance`.
+  Commit message: `test: prove Feudal issuance and villager arbitration stay separate`.
 
 ### Task 3: Add explicit Pacific transport LOAD failure recovery
 
