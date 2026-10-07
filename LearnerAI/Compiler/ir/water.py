@@ -357,21 +357,45 @@ def lower_water_execution_plan(
             actions=(set_goal(plan.feudal_resource_island_transport_state, 1),),
         ),
         NativeControlRule(
-            "feudal-resource-island-transport-close",
+            "feudal-resource-island-transport-close-nonwater",
             facts=(
                 goal(plan.feudal_resource_island_transport_state, 1),
                 parse_expression(
-                    f"(or "
-                    f"(or (not {water_map.source}) "
-                    f"(not (current-age >= feudal-age))) "
-                    f"(or (not (unit-type-count-total transport-ship >= 1)) "
-                    f"{naval.source}))",
+                    f"(not {water_map.source})",
                     SourceLocation(1),
                 ),
             ),
-            actions=(
-                set_goal(plan.feudal_resource_island_transport_state, 0),
+            actions=(set_goal(plan.feudal_resource_island_transport_state, 0),),
+        ),
+        NativeControlRule(
+            "feudal-resource-island-transport-close-before-feudal",
+            facts=(
+                goal(plan.feudal_resource_island_transport_state, 1),
+                parse_expression(
+                    "(not (current-age >= feudal-age)",
+                    SourceLocation(1),
+                ),
             ),
+            actions=(set_goal(plan.feudal_resource_island_transport_state, 0),),
+        ),
+        NativeControlRule(
+            "feudal-resource-island-transport-close-on-loss",
+            facts=(
+                goal(plan.feudal_resource_island_transport_state, 1),
+                parse_expression(
+                    "(not (unit-type-count-total transport-ship >= 1))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(set_goal(plan.feudal_resource_island_transport_state, 0),),
+        ),
+        NativeControlRule(
+            "feudal-resource-island-transport-close-on-naval-pressure",
+            facts=(
+                goal(plan.feudal_resource_island_transport_state, 1),
+                naval,
+            ),
+            actions=(set_goal(plan.feudal_resource_island_transport_state, 0),),
         ),
         NativeControlRule(
             "transport-objective-open",
