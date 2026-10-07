@@ -165,9 +165,19 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             requirements,
             (
                 "(current-age == dark-age)",
-                "(unit-type-count-total villager >= 21)",
+                "(unit-type-count-total villager >= 20)",
                 "(can-research-with-escrow feudal-age)",
             ),
+        )
+
+    def test_dark_age_villager_continuity_waits_for_feudal_issuability(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        self.assertIn(
+            "(not (and (current-age == dark-age) "
+            "(and (unit-type-count-total villager >= 20) "
+            "(can-research-with-escrow feudal-age))))",
+            demand.execution.requirements,
         )
 
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
