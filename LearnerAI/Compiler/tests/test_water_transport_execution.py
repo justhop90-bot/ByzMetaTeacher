@@ -249,7 +249,6 @@ class WaterTransportExecutionTests(unittest.TestCase):
         state_ids = {state.identifier for state in control.states}
         for expected in (
             "pacific-fishing-controller",
-            "sn-desired-number-fishing-boats",
             "sn-maximum-fish-boat-drop-distance",
             "sn-fishing-boat-whaling-percentage",
             "sn-number-boat-explore-groups",
@@ -271,10 +270,6 @@ class WaterTransportExecutionTests(unittest.TestCase):
             "pacific-fishing-controller-enter-naval-defense"
         ].actions)
         self.assertIn(
-            "(set-strategic-number sn-desired-number-fishing-boats 0)",
-            defense_text,
-        )
-        self.assertIn(
             "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
             defense_text,
         )
@@ -286,10 +281,6 @@ class WaterTransportExecutionTests(unittest.TestCase):
         dark_text = " ".join(action.source for action in rules[
             "pacific-fishing-controller-dark"
         ].actions)
-        self.assertIn(
-            "(set-strategic-number sn-desired-number-fishing-boats 2)",
-            dark_text,
-        )
         self.assertIn(
             "(set-strategic-number sn-maximum-fish-boat-drop-distance 30)",
             dark_text,

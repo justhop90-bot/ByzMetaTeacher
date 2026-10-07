@@ -322,22 +322,6 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlState(
-            "sn-desired-number-fishing-boats",
-            StrategicNumberRequest(
-                StorageRequestId(
-                    SemanticId(plan.plan_id, "sn-desired-number-fishing-boats"),
-                    "water-strategic-number",
-                ),
-                why_not_goal=(
-                    "This state directly controls the DE Strategic Number for the "
-                    "desired Pacific fishing-boat floor."
-                ),
-                stability_key=f"{plan.plan_id}:strategic-number:213",
-                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-                native_strategic_number_id=213,
-            ),
-        ),
-        NativeControlState(
             "sn-maximum-fish-boat-drop-distance",
             StrategicNumberRequest(
                 StorageRequestId(
@@ -514,10 +498,6 @@ def lower_water_execution_plan(
                     int(PacificFishingControllerPhase.NAVAL_DEFENSE),
                 ),
                 parse_expression(
-                    "(set-strategic-number sn-desired-number-fishing-boats 0)",
-                    SourceLocation(1),
-                ),
-                parse_expression(
                     "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
                     SourceLocation(1),
                 ),
@@ -564,10 +544,6 @@ def lower_water_execution_plan(
                     int(PacificFishingControllerPhase.IDLE),
                 ),
                 parse_expression(
-                    "(set-strategic-number sn-desired-number-fishing-boats 0)",
-                    SourceLocation(1),
-                ),
-                parse_expression(
                     "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
                     SourceLocation(1),
                 ),
@@ -592,10 +568,6 @@ def lower_water_execution_plan(
                     int(PacificFishingControllerPhase.IDLE),
                 ),
                 parse_expression(
-                    "(set-strategic-number sn-desired-number-fishing-boats 0)",
-                    SourceLocation(1),
-                ),
-                parse_expression(
                     "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
                     SourceLocation(1),
                 ),
@@ -618,10 +590,6 @@ def lower_water_execution_plan(
                 parse_expression("(current-age == dark-age)", SourceLocation(1)),
             ),
             actions=(
-                parse_expression(
-                    "(set-strategic-number sn-desired-number-fishing-boats 2)",
-                    SourceLocation(1),
-                ),
                 parse_expression(
                     "(set-strategic-number sn-maximum-fish-boat-drop-distance 30)",
                     SourceLocation(1),
@@ -650,10 +618,6 @@ def lower_water_execution_plan(
             ),
             actions=(
                 parse_expression(
-                    "(set-strategic-number sn-desired-number-fishing-boats 2)",
-                    SourceLocation(1),
-                ),
-                parse_expression(
                     "(set-strategic-number sn-maximum-fish-boat-drop-distance 48)",
                     SourceLocation(1),
                 ),
@@ -680,10 +644,6 @@ def lower_water_execution_plan(
                 parse_expression("(current-age >= castle-age)", SourceLocation(1)),
             ),
             actions=(
-                parse_expression(
-                    "(set-strategic-number sn-desired-number-fishing-boats 2)",
-                    SourceLocation(1),
-                ),
                 parse_expression(
                     "(set-strategic-number sn-maximum-fish-boat-drop-distance 96)",
                     SourceLocation(1),
