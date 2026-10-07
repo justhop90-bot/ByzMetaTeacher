@@ -1,5 +1,8 @@
 import unittest
 from pathlib import Path
+
+from Compiler.ast import SourceLocation
+from Compiler.semantic.analyzer import parse_expression
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
@@ -165,9 +168,46 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             requirements,
             (
                 "(current-age == dark-age)",
-                "(unit-type-count-total villager >= 21)",
+                "(unit-type-count-total villager >= 20)",
                 "(can-research-with-escrow feudal-age)",
             ),
+        )
+
+    def test_dark_age_villager_continuity_waits_for_feudal_issuability(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        self.assertIn(
+            "(not (and (current-age == dark-age) "
+            "(and (unit-type-count-total villager >= 20) "
+            "(can-research-with-escrow feudal-age))))",
+            demand.execution.requirements,
+        )
+
+    def test_dark_age_villager_pause_guard_has_feudal_issuability_as_inner_witness(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        guard = next(
+            requirement
+            for requirement in demand.execution.requirements
+            if requirement.startswith("(not (and (current-age == dark-age)")
+        )
+
+        guard_expression = parse_expression(
+            guard,
+            SourceLocation(1, 1, "<test>"),
+        )
+        self.assertEqual("not", guard_expression.head)
+        outer_and = guard_expression.args[0]
+        self.assertEqual("and", outer_and.head)
+        bank_and = outer_and.args[1]
+        self.assertEqual("and", bank_and.head)
+        self.assertEqual(
+            "unit-type-count-total",
+            bank_and.args[0].head,
+        )
+        self.assertEqual(
+            "can-research-with-escrow",
+            bank_and.args[1].head,
         )
 
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
@@ -181,7 +221,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(can-train villager)", demand.execution.requirements)
         self.assertIn(
             "(not (and (current-age == dark-age) "
-            "(unit-type-count-total villager >= 21)))",
+            "(and (unit-type-count-total villager >= 20) "
+            "(can-research-with-escrow feudal-age))))",
             demand.execution.requirements,
         )
         self.assertIn(
@@ -211,7 +252,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         block = runtime[start:end]
         self.assertIn("(can-train villager)", block)
         self.assertIn("(unit-type-count-total villager < 110)", block)
-        self.assertIn("(unit-type-count-total villager >= 21)", block)
+        self.assertIn("(unit-type-count-total villager >= 20)", block)
         self.assertIn(
             "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
             block,
@@ -398,7 +439,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_start,
         )
         villager_rule = runtime[villager_start:villager_end]
-        self.assertIn("(unit-type-count-total villager >= 21)", villager_rule)
+        self.assertIn("(unit-type-count-total villager >= 20)", villager_rule)
         self.assertIn(
             "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
             villager_rule,

@@ -171,8 +171,9 @@ def lower_water_execution_plan(
     profile,
 ) -> NativeControlPlan:
     """Lower water posture and transport recovery into the shared control plane."""
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
+    from .strategic_number import StrategicNumberOrigin
 
     water_map = parse_expression(
         profile.observation(plan.water_map_observation).expression,
@@ -205,8 +206,10 @@ def lower_water_execution_plan(
 
     posture_state = plan.water_posture_state
     phase_state = plan.transport_phase_state
+    boat_exploration_state = "sn-number-boat-explore-groups"
     posture_owner = SemanticId(plan.plan_id, posture_state)
     phase_owner = SemanticId(plan.plan_id, phase_state)
+    boat_exploration_owner = SemanticId(plan.plan_id, boat_exploration_state)
 
     states = (
         NativeControlState(
@@ -221,6 +224,22 @@ def lower_water_execution_plan(
             GoalSlotRequest(
                 StorageRequestId(phase_owner, "transport-phase"),
                 role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            boat_exploration_state,
+            StrategicNumberRequest(
+                StorageRequestId(
+                    boat_exploration_owner,
+                    "water-strategic-number",
+                ),
+                why_not_goal=(
+                    "This state directly controls the DE-documented boat exploration "
+                    "Strategic Number for the Byzantine water policy."
+                ),
+                stability_key=f"{plan.plan_id}:strategic-number:61",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=61,
             ),
         ),
         NativeControlState(
@@ -408,6 +427,20 @@ def lower_water_execution_plan(
                 parse_expression(f"(not {dock.source})", SourceLocation(1)),
             ),
             actions=(set_goal(posture_state, int(WaterPosture.NONE)),),
+        ),
+        # SN 61 is the native fishing-boat exploration-group control. Enable it
+        # only after a live fishing ship exists so the one-shot write has a boat to task.
+        NativeControlRule(
+            "water-boat-exploration-enable",
+            facts=(
+                water_map,
+                dock,
+                parse_expression("(unit-type-count fishing-ship >= 1)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(f"(set-strategic-number {boat_exploration_state} 1)", SourceLocation(1)),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
         ),
 
     ]

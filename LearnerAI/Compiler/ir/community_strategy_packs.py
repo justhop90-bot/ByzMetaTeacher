@@ -991,7 +991,8 @@ def community_strategy_demands(
                 "(current-age >= dark-age)",
                 "(can-train villager)",
                 "(not (and (current-age == dark-age) "
-                "(unit-type-count-total villager >= 21)))",
+                "(and (unit-type-count-total villager >= 20) "
+                "(can-research-with-escrow feudal-age))))",
                 "(not (and (current-age == feudal-age) "
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
@@ -1972,7 +1973,7 @@ def community_strategy_demands(
             opportunity_cost=None,
             execution=_ExecutionDemandTemplate(
                 requirements=(
-                    "(current-age >= feudal-age)",
+                    "(current-age >= dark-age)",
                     "(or (map-type islands) (map-type pacific-islands))",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
@@ -2536,7 +2537,7 @@ def build_byzantine_stock_strategy(
                 base_demand.execution,
                 requirements=(
                     "(current-age == dark-age)",
-                    "(unit-type-count-total villager >= 21)",
+                    "(unit-type-count-total villager >= 20)",
                     "(can-research-with-escrow feudal-age)",
                 ),
             )
