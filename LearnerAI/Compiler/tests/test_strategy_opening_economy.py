@@ -260,17 +260,17 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
         )
 
-    def test_dark_age_villager_continuity_waits_for_feudal_issuability(self):
+    def test_dark_age_villager_continuity_yields_only_when_feudal_is_affordable(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("civilian-villager-continuity")
         self.assertIn(
             "(not (and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 20) "
-            "(can-research-with-escrow feudal-age))))",
+            "(can-afford-research feudal-age))))",
             demand.execution.requirements,
         )
 
-    def test_dark_age_villager_pause_guard_has_feudal_issuability_as_inner_witness(self):
+    def test_dark_age_villager_pause_guard_uses_affordability_not_queue_readiness(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("civilian-villager-continuity")
         guard = next(
@@ -293,7 +293,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             bank_and.args[0].head,
         )
         self.assertEqual(
-            "can-research-with-escrow",
+            "can-afford-research",
             bank_and.args[1].head,
         )
 
@@ -309,7 +309,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(
             "(not (and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 20) "
-            "(can-research-with-escrow feudal-age))))",
+            "(can-afford-research feudal-age))))",
             demand.execution.requirements,
         )
         self.assertIn(
