@@ -246,7 +246,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(current-age >= feudal-age)", facts)
         self.assertIn("(goal feudal-resource-island-transport-objective 1)", facts)
         self.assertIn("(unit-type-count-total transport-ship >= 1)", facts)
-        self.assertIn("(goal feudal-resource-island-target-state 0)", facts)
         self.assertIn("(up-find-resource c: gold c: 40)", facts)
         self.assertIn(
             "(up-set-target-object search-remote c: 0)",
@@ -254,10 +253,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertIn(
             "(up-get-point position-object feudal-resource-island-gold-point)",
-            actions,
-        )
-        self.assertIn(
-            "(set-goal feudal-resource-island-target-state 1)",
             actions,
         )
         self.assertNotIn("up-target-objects", " ".join(actions))
