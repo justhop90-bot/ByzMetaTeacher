@@ -339,7 +339,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
         ):
             demand = profile.demand(identity)
             requirements = " ".join(demand.execution.requirements)
-            self.assertIn("(goal pacific-harbor-defense 1)", requirements)
+            self.assertIn(
+                "(or (not (map-type pacific-islands)) (goal pacific-harbor-defense 1))",
+                requirements,
+            )
             self.assertIn(f"(can-train-with-escrow {unit})", requirements)
 
     def test_pacific_harbor_defense_closes_transport_execution_while_pressure_is_active(self):

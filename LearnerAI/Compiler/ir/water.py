@@ -67,6 +67,12 @@ class PacificFishingControllerPhase(IntEnum):
     NAVAL_DEFENSE = 2
 
 
+class PacificHarborDefensePhase(IntEnum):
+    UNKNOWN = -1
+    IDLE = 0
+    ACTIVE = 1
+
+
 @dataclass(frozen=True)
 class WaterExecutionPlan:
     """Typed strategy references for water/naval/transport execution."""
@@ -79,6 +85,7 @@ class WaterExecutionPlan:
     pacific_opening_transport_state: str
     pacific_transport_lifecycle_state: str
     pacific_fishing_controller_state: str
+    pacific_harbor_defense_state: str
     feudal_resource_island_transport_state: str
     water_map_observation: str
     transport_required_observation: str
@@ -99,6 +106,7 @@ class WaterExecutionPlan:
             ("pacific_opening_transport_state", self.pacific_opening_transport_state),
             ("pacific_transport_lifecycle_state", self.pacific_transport_lifecycle_state),
             ("pacific_fishing_controller_state", self.pacific_fishing_controller_state),
+            ("pacific_harbor_defense_state", self.pacific_harbor_defense_state),
             ("feudal_resource_island_transport_state", self.feudal_resource_island_transport_state),
             ("water_map_observation", self.water_map_observation),
             ("transport_required_observation", self.transport_required_observation),
@@ -228,6 +236,10 @@ def lower_water_execution_plan(
         profile.observation(plan.naval_pressure_observation).expression,
         SourceLocation(1),
     )
+    naval_cleared = parse_expression(
+        profile.observation(plan.naval_pressure_cleared_observation).expression,
+        SourceLocation(1),
+    )
     warboats = parse_expression(
         profile.observation(plan.warboat_floor_observation).expression,
         SourceLocation(1),
@@ -317,6 +329,16 @@ def lower_water_execution_plan(
                 StorageRequestId(
                     SemanticId(plan.plan_id, plan.pacific_fishing_controller_state),
                     "pacific-fishing-controller",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            plan.pacific_harbor_defense_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.pacific_harbor_defense_state),
+                    "pacific-harbor-defense",
                 ),
                 role=GoalRole.PERSISTENT_STATE,
             ),
@@ -423,6 +445,7 @@ def lower_water_execution_plan(
                 goal(plan.pacific_opening_transport_state, 0),
                 goal(plan.pacific_transport_lifecycle_state, int(PacificTransportLifecyclePhase.IDLE)),
                 goal(plan.pacific_fishing_controller_state, int(PacificFishingControllerPhase.IDLE)),
+                goal(plan.pacific_harbor_defense_state, int(PacificHarborDefensePhase.IDLE)),
                 goal("pacific-transport-transit-witness", 0),
                 goal("pacific-transport-unload-witness", 0),
                 goal(plan.feudal_resource_island_transport_state, 0),
@@ -628,6 +651,72 @@ def lower_water_execution_plan(
                 parse_expression(
                     f"(set-strategic-number {boat_exploration_state} 1)",
                     SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-harbor-defense-open",
+            facts=(
+                pacific,
+                dock,
+                naval,
+                goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.IDLE),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.ACTIVE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-harbor-defense-close",
+            facts=(
+                goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.ACTIVE),
+                ),
+                naval_cleared,
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-harbor-defense-close-no-dock",
+            facts=(
+                goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.ACTIVE),
+                ),
+                parse_expression(f"(not {dock.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-harbor-defense-close-nonwater",
+            facts=(
+                goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.ACTIVE),
+                ),
+                parse_expression(f"(not {pacific.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_harbor_defense_state,
+                    int(PacificHarborDefensePhase.IDLE),
                 ),
             ),
         ),
@@ -894,6 +983,10 @@ def lower_water_execution_plan(
             facts=(
                 water_map,
                 parse_expression("(goal byzantine-army-attack-ready 1)", SourceLocation(1)),
+                parse_expression(
+                    f"(not (goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    SourceLocation(1),
+                ),
                 goal(plan.transport_objective_state, 0),
             ),
             actions=(set_goal(plan.transport_objective_state, 1),),
@@ -903,7 +996,8 @@ def lower_water_execution_plan(
             facts=(
                 parse_expression(
                     f"(or (not {water_map.source}) "
-                    f"(not (goal byzantine-army-attack-ready 1)))",
+                    f"(not (goal byzantine-army-attack-ready 1)) "
+                    f"(goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
                     SourceLocation(1),
                 ),
                 goal(plan.transport_objective_state, 1),
@@ -917,6 +1011,10 @@ def lower_water_execution_plan(
                 required,
                 goal(phase_state, int(TransportExecutionPhase.RECOVER)),
                 parse_expression(f"(not {capable.source})", SourceLocation(1)),
+                parse_expression(
+                    f"(not (goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    SourceLocation(1),
+                ),
                 goal(plan.transport_rebuild_state, 0),
             ),
             actions=(set_goal(plan.transport_rebuild_state, 1),),
@@ -924,7 +1022,12 @@ def lower_water_execution_plan(
         NativeControlRule(
             "transport-phase-no-longer-required",
             facts=(
-                parse_expression(f"(or (not {water_map.source}) (not {required.source}))", SourceLocation(1)),
+                parse_expression(
+                    f"(or (not {water_map.source}) "
+                    f"(not {required.source}) "
+                    f"(goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    SourceLocation(1),
+                ),
                 parse_expression(
                     f"(or {goal(phase_state, 1).source} "
                     f"(or {goal(phase_state, 2).source} {goal(phase_state, 3).source}))",
@@ -950,6 +1053,10 @@ def lower_water_execution_plan(
                 required,
                 goal(phase_state, int(TransportExecutionPhase.RECOVER)),
                 parse_expression(f"(not {capable.source})", SourceLocation(1)),
+                parse_expression(
+                    f"(not (goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    SourceLocation(1),
+                ),
                 rebuild_open,
             ),
             actions=(
