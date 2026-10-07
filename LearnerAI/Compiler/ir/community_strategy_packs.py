@@ -1008,7 +1008,7 @@ def community_strategy_demands(
                 "(can-train villager)",
                 "(not (and (current-age == dark-age) "
                 "(and (unit-type-count-total villager >= 20) "
-                "(can-research-with-escrow feudal-age))))",
+                "(can-afford-research feudal-age))))",
                 "(not (and (current-age == feudal-age) "
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
@@ -2766,7 +2766,7 @@ def build_byzantine_stock_strategy(
                 requirements=(
                     "(current-age == dark-age)",
                     "(unit-type-count-total villager >= 20)",
-                    "(can-research-with-escrow feudal-age)",
+                    "(can-afford-research feudal-age)",
                 ),
             )
             base_demand = replace(
