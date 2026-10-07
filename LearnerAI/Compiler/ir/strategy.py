@@ -4779,7 +4779,7 @@ def _default_byzantine_duc_plan(
             actions=(
                 parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
                 parse_expression(
-                    "(up-get-object-data garrison-count 0)",
+                    "(up-get-object-data object-data-garrison-count 0)",
                     SourceLocation(1),
                 ),
             ),
@@ -4828,11 +4828,11 @@ def _default_byzantine_duc_plan(
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    "(up-get-object-data action 0)",
+                    "(up-get-object-data object-data-action 0)",
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    "(up-get-object-data distance 0)",
+                    "(up-get-object-data object-data-distance 0)",
                     SourceLocation(1),
                 ),
             ),
@@ -4938,11 +4938,11 @@ def _default_byzantine_duc_plan(
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    "(up-get-object-data action 0)",
+                    "(up-get-object-data object-data-action 0)",
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    "(up-get-object-data garrison-count 0)",
+                    "(up-get-object-data object-data-garrison-count 0)",
                     SourceLocation(1),
                 ),
             ),
