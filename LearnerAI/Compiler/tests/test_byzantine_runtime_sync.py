@@ -50,6 +50,19 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "(defconst water-transport-rebuild ",
             synchronized,
         )
+        reserved = {
+            "water-dock-capability": 15994,
+            "construction-retry-barrier-water-dock-capability": 15993,
+            "demand-water-dock-capability": 15992,
+            "issued-water-dock-capability": 15991,
+            "pending-water-dock-capability": 15990,
+            "complete-water-dock-capability": 15989,
+            "water-transport-objective": 15988,
+            "water-transport-rebuild": 15987,
+        }
+        for name, value in reserved.items():
+            self.assertIn(f"(defconst {name} {value})", synchronized)
+        self.assertEqual(len(set(reserved.values())), len(reserved))
         self.assertIn(
             "(or (map-type islands) (map-type pacific-islands))",
             synchronized,
