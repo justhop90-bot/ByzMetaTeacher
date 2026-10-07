@@ -293,7 +293,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn(profile.observation("strategy-water-map").expression, facts)
         self.assertIn(profile.observation("strategy-dock-exists").expression, facts)
         self.assertIn("(unit-type-count fishing-ship >= 1)", facts)
-        self.assertIn("(set-strategic-number 61 1)", actions)
+        self.assertIn("(set-strategic-number sn-number-boat-explore-groups 1)", actions)
         self.assertIn("(disable-self)", actions)
 
     def test_checked_in_runtime_contains_dark_age_water_continuity(self):
@@ -313,7 +313,8 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(current-age >= dark-age)", fishing_rule)
         self.assertNotIn("(current-age >= feudal-age)", fishing_rule)
         self.assertIn("(can-train-with-escrow fishing-ship)", fishing_rule)
-        self.assertIn("(set-strategic-number 61 1)", runtime)
+        self.assertIn("(defconst sn-number-boat-explore-groups 61)", runtime)
+        self.assertIn("(set-strategic-number sn-number-boat-explore-groups 1)", runtime)
 
     def test_water_plan_lowers_into_persistent_posture_and_transport_state(self):
         profile = build_byzantine_strategy(self.effective)
