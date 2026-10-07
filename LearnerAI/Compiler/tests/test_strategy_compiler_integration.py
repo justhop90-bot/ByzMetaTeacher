@@ -265,6 +265,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-set-target-by-id g: 0)", garrison_actions)
         self.assertIn("(up-find-local c: 904 c: 4)", garrison_actions)
         self.assertIn("(up-target-objects 1 7 -1 -1)", garrison_actions)
+        self.assertIn("(up-get-object-data object-data-garrison-count 288)", garrison_actions)
+        self.assertNotIn("(up-get-object-data garrison-count 288)", garrison_actions)
         self.assertLess(
             garrison_actions.index("(up-full-reset-search)"),
             garrison_actions.index("(up-set-target-by-id g: 0)"),
