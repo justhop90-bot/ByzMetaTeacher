@@ -227,6 +227,67 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_stock_strategy_lowers_pacific_transport_execution_lifecycle(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        plan = compilation.duc_plan
+        assert plan is not None
+
+        rule_ids = tuple(rule.identity for rule in plan.rules)
+        for expected in (
+            "byzantine-pacific-transport-target",
+            "byzantine-pacific-transport-select",
+            "byzantine-pacific-transport-garrison",
+            "byzantine-pacific-transport-load-witness",
+            "byzantine-pacific-transport-transit-probe",
+            "byzantine-pacific-transport-move",
+            "byzantine-pacific-transport-unload",
+        ):
+            self.assertIn(expected, rule_ids)
+
+        target = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-target")
+        self.assertIn("(goal pacific-transport-lifecycle 1)", tuple(f.source for f in target.facts))
+        self.assertIn(
+            "(up-get-point position-object pacific-opening-transport-point)",
+            tuple(a.source for a in target.actions),
+        )
+
+        garrison = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-garrison")
+        garrison_actions = tuple(a.source for a in garrison.actions)
+        self.assertIn("(up-set-target-by-id g: 0)", garrison_actions)
+        self.assertIn("(up-find-local c: villager-class c: 4)", garrison_actions)
+        self.assertIn("(up-target-objects 1 action-garrison -1 -1)", garrison_actions)
+
+        move = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-move")
+        self.assertIn(
+            "(up-compare-goal pacific-opening-transport-distance > 64)",
+            tuple(f.source for f in move.facts),
+        )
+        self.assertIn(
+            "(up-target-point 0 action-move -1 -1)",
+            tuple(a.source for a in move.actions),
+        )
+
+        unload = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-unload")
+        self.assertIn(
+            "(up-target-point 0 action-unload -1 -1)",
+            tuple(a.source for a in unload.actions),
+        )
+        self.assertEqual(
+            sum(1 for request in plan.input_requests if request.source.purpose == "up-get-object-data"),
+            5,
+        )
+
+        output = compile_strategy_profile(self.stock_profile, self.effective)
+        for snippet in (
+            "(up-target-objects 1 action-garrison -1 -1)",
+            "(up-target-point 0 action-move -1 -1)",
+            "(up-target-point 0 action-unload -1 -1)",
+            "(defconst pacific-opening-transport-point ",
+            "(defconst pacific-opening-transport-id ",
+        ):
+            self.assertIn(snippet, output)
+        self.assertEqual(output, compile_strategy_profile(self.stock_profile, self.effective))
+
     def test_stock_strategy_lowers_feudal_resource_island_duc_target_handoff(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
         plan = compilation.duc_plan

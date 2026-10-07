@@ -50,6 +50,16 @@ class WaterExecutionState:
     warboat_floor_met: bool | None = False
 
 
+class PacificTransportLifecyclePhase(IntEnum):
+    UNKNOWN = -1
+    IDLE = 0
+    LOAD = 1
+    TRANSIT = 2
+    UNLOAD = 3
+    LANDED = 4
+    RECOVERY = 5
+
+
 @dataclass(frozen=True)
 class WaterExecutionPlan:
     """Typed strategy references for water/naval/transport execution."""
@@ -60,6 +70,7 @@ class WaterExecutionPlan:
     transport_objective_state: str
     transport_rebuild_state: str
     pacific_opening_transport_state: str
+    pacific_transport_lifecycle_state: str
     feudal_resource_island_transport_state: str
     water_map_observation: str
     transport_required_observation: str
@@ -78,6 +89,7 @@ class WaterExecutionPlan:
             ("transport_objective_state", self.transport_objective_state),
             ("transport_rebuild_state", self.transport_rebuild_state),
             ("pacific_opening_transport_state", self.pacific_opening_transport_state),
+            ("pacific_transport_lifecycle_state", self.pacific_transport_lifecycle_state),
             ("feudal_resource_island_transport_state", self.feudal_resource_island_transport_state),
             ("water_map_observation", self.water_map_observation),
             ("transport_required_observation", self.transport_required_observation),
@@ -281,6 +293,57 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlState(
+            plan.pacific_transport_lifecycle_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.pacific_transport_lifecycle_state),
+                    "pacific-transport-lifecycle",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            "pacific-transport-transit-witness",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "pacific-transport-transit-witness"),
+                    "pacific-transport-transit-witness",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            "pacific-transport-unload-witness",
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "pacific-transport-unload-witness"),
+                    "pacific-transport-unload-witness",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        *tuple(
+            NativeControlState(
+                name,
+                GoalSlotRequest(
+                    StorageRequestId(
+                        SemanticId(profile.profile_id, name),
+                        command,
+                    ),
+                    role=GoalRole.NATIVE_OUTPUT,
+                ),
+            )
+            for name, command in (
+                ("pacific-opening-transport-point", "up-get-point"),
+                ("pacific-opening-transport-id", "up-get-object-data"),
+                ("pacific-opening-transport-load-count", "up-get-object-data"),
+                ("pacific-opening-transport-transit-action", "up-get-object-data"),
+                ("pacific-opening-transport-distance", "up-get-object-data"),
+                ("pacific-opening-transport-unload-action", "up-get-object-data"),
+                ("pacific-opening-transport-unload-count", "up-get-object-data"),
+            )
+        ),
+        NativeControlState(
             plan.feudal_resource_island_transport_state,
             GoalSlotRequest(
                 StorageRequestId(
@@ -307,6 +370,9 @@ def lower_water_execution_plan(
                 goal(plan.transport_objective_state, 0),
                 goal(plan.transport_rebuild_state, 0),
                 goal(plan.pacific_opening_transport_state, 0),
+                goal(plan.pacific_transport_lifecycle_state, int(PacificTransportLifecyclePhase.IDLE)),
+                goal("pacific-transport-transit-witness", 0),
+                goal("pacific-transport-unload-witness", 0),
                 goal(plan.feudal_resource_island_transport_state, 0),
             ),
             actions=(
@@ -344,6 +410,185 @@ def lower_water_execution_plan(
                 parse_expression("(unit-type-count-total transport-ship < 1)", SourceLocation(1)),
             ),
             actions=(set_goal(plan.pacific_opening_transport_state, 0),),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-open",
+            facts=(
+                pacific,
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total transport-ship >= 1)", SourceLocation(1)),
+                goal(plan.pacific_opening_transport_state, 1),
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.IDLE),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LOAD),
+                ),
+                set_goal("pacific-transport-transit-witness", 0),
+                set_goal("pacific-transport-unload-witness", 0),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-load-witness",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LOAD),
+                ),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-load-count >= 4)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.TRANSIT),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-transit-witness",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.TRANSIT),
+                ),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-transit-action == 614)",
+                    SourceLocation(1),
+                ),
+                goal("pacific-transport-transit-witness", 0),
+            ),
+            actions=(set_goal("pacific-transport-transit-witness", 1),),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-enter-unload",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.TRANSIT),
+                ),
+                goal("pacific-transport-transit-witness", 1),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-distance <= 64)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.UNLOAD),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-unload-witness",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.UNLOAD),
+                ),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-unload-action == 621)",
+                    SourceLocation(1),
+                ),
+                goal("pacific-transport-unload-witness", 0),
+            ),
+            actions=(set_goal("pacific-transport-unload-witness", 1),),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-landed",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.UNLOAD),
+                ),
+                goal("pacific-transport-unload-witness", 1),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-unload-count <= 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-unload-action != 621)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LANDED),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-recover-on-loss",
+            facts=(
+                parse_expression(
+                    f"(or "
+                    f"{goal(plan.pacific_transport_lifecycle_state, int(PacificTransportLifecyclePhase.LOAD)).source} "
+                    f"(or "
+                    f"{goal(plan.pacific_transport_lifecycle_state, int(PacificTransportLifecyclePhase.TRANSIT)).source} "
+                    f"(goal {plan.pacific_transport_lifecycle_state} {int(PacificTransportLifecyclePhase.UNLOAD)})))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(unit-type-count-total transport-ship < 1)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.RECOVERY),
+                ),
+                set_goal("pacific-transport-transit-witness", 0),
+                set_goal("pacific-transport-unload-witness", 0),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-rearm-after-loss",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.RECOVERY),
+                ),
+                goal(plan.pacific_opening_transport_state, 1),
+                parse_expression(
+                    "(unit-type-count-total transport-ship >= 1)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LOAD),
+                ),
+                set_goal("pacific-transport-transit-witness", 0),
+                set_goal("pacific-transport-unload-witness", 0),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-close-at-feudal",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LANDED),
+                ),
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.IDLE),
+                ),
+                set_goal("pacific-transport-transit-witness", 0),
+                set_goal("pacific-transport-unload-witness", 0),
+            ),
         ),
         NativeControlRule(
             "feudal-resource-island-transport-open",

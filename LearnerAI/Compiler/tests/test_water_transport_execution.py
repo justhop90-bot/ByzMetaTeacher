@@ -368,6 +368,49 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(defconst sn-number-boat-explore-groups 61)", runtime)
         self.assertIn("(set-strategic-number sn-number-boat-explore-groups 1)", runtime)
 
+    def test_pacific_starting_transport_has_typed_execution_lifecycle(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        for expected in (
+            "pacific-transport-lifecycle",
+            "pacific-transport-transit-witness",
+            "pacific-transport-unload-witness",
+            "pacific-opening-transport-point",
+            "pacific-opening-transport-id",
+            "pacific-opening-transport-load-count",
+            "pacific-opening-transport-transit-action",
+            "pacific-opening-transport-distance",
+            "pacific-opening-transport-unload-action",
+            "pacific-opening-transport-unload-count",
+        ):
+            self.assertIn(expected, state_ids)
+
+        rule_ids = {rule.identity for rule in control.rules}
+        for expected in (
+            "pacific-transport-lifecycle-open",
+            "pacific-transport-lifecycle-load-witness",
+            "pacific-transport-lifecycle-transit-witness",
+            "pacific-transport-lifecycle-enter-unload",
+            "pacific-transport-lifecycle-unload-witness",
+            "pacific-transport-lifecycle-landed",
+            "pacific-transport-lifecycle-recover-on-loss",
+            "pacific-transport-lifecycle-rearm-after-loss",
+        ):
+            self.assertIn(expected, rule_ids)
+        self.assertIn(
+            "(up-compare-goal pacific-opening-transport-distance <= 64)",
+            " ".join(
+                fact.source
+                for rule in control.rules
+                if rule.identity == "pacific-transport-lifecycle-enter-unload"
+                for fact in rule.facts
+            ),
+        )
+
     def test_water_plan_lowers_into_persistent_posture_and_transport_state(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)

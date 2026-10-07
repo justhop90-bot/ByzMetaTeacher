@@ -4524,6 +4524,7 @@ def _default_byzantine_duc_plan(
     from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
     from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
     from .native_duc import (
+        NativeDucGoalInputRequest,
         NativeDucLifecycleStage,
         NativeDucOutputRequest,
         NativeDucPlan,
@@ -4547,6 +4548,7 @@ def _default_byzantine_duc_plan(
 
     rules = []
     outputs = []
+    inputs = []
     for order, (identity, pressure_fact, search_unit, purpose) in enumerate(
         target_specs
     ):
@@ -4591,6 +4593,389 @@ def _default_byzantine_duc_plan(
                 request=output,
                 command="up-get-object-data",
                 argument_index=1,
+            )
+        )
+
+
+        pacific_transport_point = GoalSpanRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-point"),
+                "up-get-point",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=2,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.Point",
+            start_min=41,
+            start_max=15998,
+        )
+        pacific_transport_id = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-id"),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        pacific_load_count = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-load-count"),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        pacific_transit_action = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-transit-action"),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        pacific_transport_distance = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-distance"),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        pacific_unload_action = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-unload-action"),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        pacific_unload_count = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "pacific-opening-transport-unload-count"),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        pacific_guard = (
+            "(current-age == dark-age)",
+            "(goal pacific-opening-transport-objective 1)",
+            "(goal pacific-transport-lifecycle 1)",
+            "(unit-type-count-total transport-ship >= 1)",
+        )
+
+        point_identity = "byzantine-pacific-transport-target"
+        rules.append(
+            NativeDucRule(
+                identity=point_identity,
+                order=len(rules),
+                facts=tuple(
+                    parse_expression(item, SourceLocation(1))
+                    for item in pacific_guard
+                ),
+                actions=(
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                    parse_expression("(up-find-resource c: gold c: 40)", SourceLocation(1)),
+                    parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-get-point position-object pacific-opening-transport-point)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(
+                    NativeDucLifecycleStage.ADMISSIBILITY,
+                    NativeDucLifecycleStage.TARGET,
+                ),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=point_identity,
+                section="ACTION",
+                expression_index=3,
+                request=pacific_transport_point,
+                command="up-get-point",
+                argument_index=1,
+            )
+        )
+
+        select_identity = "byzantine-pacific-transport-select"
+        rules.append(
+            NativeDucRule(
+                identity=select_identity,
+                order=len(rules),
+                facts=tuple(
+                    parse_expression(item, SourceLocation(1))
+                    for item in pacific_guard
+                ),
+                actions=(
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                    parse_expression("(up-find-local c: 545 c: 1)", SourceLocation(1)),
+                    parse_expression("(up-set-target-object search-local c: 0)", SourceLocation(1)),
+                    parse_expression("(up-get-object-data id 0)", SourceLocation(1)),
+                ),
+                lifecycle=(NativeDucLifecycleStage.TARGET,),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=select_identity,
+                section="ACTION",
+                expression_index=3,
+                request=pacific_transport_id,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+
+        garrison_identity = "byzantine-pacific-transport-garrison"
+        garrison_facts = tuple(
+            parse_expression(item, SourceLocation(1))
+            for item in pacific_guard
+        ) + (
+            parse_expression(
+                "(up-compare-goal pacific-opening-transport-id >= 1)",
+                SourceLocation(1),
+            ),
+        )
+        rules.append(
+            NativeDucRule(
+                identity=garrison_identity,
+                order=len(rules),
+                facts=garrison_facts,
+                actions=(
+                    parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                    parse_expression("(up-find-local c: villager-class c: 4)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-target-objects 1 action-garrison -1 -1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(
+                    NativeDucLifecycleStage.PICKUP_WITNESS,
+                    NativeDucLifecycleStage.DISPATCH,
+                ),
+            )
+        )
+        inputs.append(
+            NativeDucGoalInputRequest(
+                rule_identity=garrison_identity,
+                section="ACTION",
+                expression_index=0,
+                argument_index=1,
+                source=pacific_transport_id.request_id,
+            )
+        )
+
+        load_witness_identity = "byzantine-pacific-transport-load-witness"
+        rules.append(
+            NativeDucRule(
+                identity=load_witness_identity,
+                order=len(rules),
+                facts=tuple(
+                    parse_expression(item, SourceLocation(1))
+                    for item in pacific_guard
+                ) + (
+                    parse_expression(
+                        "(up-compare-goal pacific-opening-transport-id >= 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-get-object-data garrison-count 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(NativeDucLifecycleStage.PICKUP_WITNESS,),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=load_witness_identity,
+                section="ACTION",
+                expression_index=1,
+                request=pacific_load_count,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+        inputs.append(
+            NativeDucGoalInputRequest(
+                rule_identity=load_witness_identity,
+                section="ACTION",
+                expression_index=0,
+                argument_index=1,
+                source=pacific_transport_id.request_id,
+            )
+        )
+
+        probe_identity = "byzantine-pacific-transport-transit-probe"
+        rules.append(
+            NativeDucRule(
+                identity=probe_identity,
+                order=len(rules),
+                facts=(
+                    parse_expression(
+                        "(goal pacific-transport-lifecycle 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-compare-goal pacific-opening-transport-id >= 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-set-target-point pacific-opening-transport-point)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data action 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data distance 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(NativeDucLifecycleStage.DISPATCH,),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=probe_identity,
+                section="ACTION",
+                expression_index=2,
+                request=pacific_transit_action,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=probe_identity,
+                section="ACTION",
+                expression_index=3,
+                request=pacific_transport_distance,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+        inputs.append(
+            NativeDucGoalInputRequest(
+                rule_identity=probe_identity,
+                section="ACTION",
+                expression_index=0,
+                argument_index=1,
+                source=pacific_transport_id.request_id,
+            )
+        )
+
+        move_identity = "byzantine-pacific-transport-move"
+        rules.append(
+            NativeDucRule(
+                identity=move_identity,
+                order=len(rules),
+                facts=(
+                    parse_expression(
+                        "(goal pacific-transport-lifecycle 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-compare-goal pacific-opening-transport-distance > 64)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-set-target-point pacific-opening-transport-point)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-target-point 0 action-move -1 -1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(NativeDucLifecycleStage.DISPATCH,),
+            )
+        )
+        inputs.append(
+            NativeDucGoalInputRequest(
+                rule_identity=move_identity,
+                section="ACTION",
+                expression_index=0,
+                argument_index=1,
+                source=pacific_transport_id.request_id,
+            )
+        )
+
+        unload_identity = "byzantine-pacific-transport-unload"
+        rules.append(
+            NativeDucRule(
+                identity=unload_identity,
+                order=len(rules),
+                facts=(
+                    parse_expression(
+                        "(goal pacific-transport-lifecycle 3)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-compare-goal pacific-opening-transport-id >= 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-compare-goal pacific-opening-transport-distance <= 64)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-set-target-point pacific-opening-transport-point)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-target-point 0 action-unload -1 -1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data action 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data garrison-count 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(NativeDucLifecycleStage.RELEASE_WITNESS,),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=unload_identity,
+                section="ACTION",
+                expression_index=3,
+                request=pacific_unload_action,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=unload_identity,
+                section="ACTION",
+                expression_index=4,
+                request=pacific_unload_count,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+        inputs.append(
+            NativeDucGoalInputRequest(
+                rule_identity=unload_identity,
+                section="ACTION",
+                expression_index=0,
+                argument_index=1,
+                source=pacific_transport_id.request_id,
             )
         )
 
@@ -4677,6 +5062,7 @@ def _default_byzantine_duc_plan(
     return NativeDucPlan(
         rules=tuple(rules),
         output_requests=tuple(outputs),
+        input_requests=tuple(inputs),
     )
 
     if target_control is not None:
