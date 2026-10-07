@@ -830,30 +830,39 @@ def emit(
             out += [")", ""]
 
     if escrow_plan is not None and not escrow_plan.empty:
-        if isinstance(escrow_plan, NativeEscrowPolicyPlan):
+        policy_plan = (
+            escrow_plan
+            if isinstance(escrow_plan, NativeEscrowPolicyPlan)
+            else escrow_plan.policy_plan
+        )
+        if policy_plan is not None and not policy_plan.empty:
             out.append("; Native escrow policy plan")
-            current_rule_order = None
+            current_rule_key = None
             for operation in (
                 operation
-                for operation in escrow_plan.operations
+                for operation in policy_plan.operations
                 if operation.target_demand is None
             ):
-                if operation.rule_order != current_rule_order:
-                    if current_rule_order is not None:
+                rule_key = (operation.rule_order, operation.guard or "(true)")
+                if rule_key != current_rule_key:
+                    if current_rule_key is not None:
                         out += [")", ""]
-                    current_rule_order = operation.rule_order
+                    current_rule_key = rule_key
                     out.append(
-                        f"; Native escrow policy rule: {current_rule_order}"
+                        f"; Native escrow policy rule: {operation.rule_order}"
                     )
-                    out += ["(defrule", "    (true)", "=>"]
+                    out.append("(defrule")
+                    out.append(f"    {operation.guard or '(true)'}")
+                    out.append("=>")
                 assert operation.percentage is not None
                 out.append(
                     f"    (set-escrow-percentage {operation.resource} "
                     f"{operation.percentage})"
                 )
-            if current_rule_order is not None:
+            if current_rule_key is not None:
                 out += [")", ""]
-        else:
+
+        if isinstance(escrow_plan, NativeEscrowReleasePlan):
             out.append("; Native escrow release plan")
             current_rule_order = None
             for operation in escrow_plan.operations:

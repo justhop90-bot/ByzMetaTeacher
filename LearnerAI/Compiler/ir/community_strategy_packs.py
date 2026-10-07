@@ -10,7 +10,12 @@ from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, Resource, UnitLineId
-from .model import LifecycleState
+from .model import LifecycleState, SemanticId
+from .resource_control import (
+    EscrowOperation as _EscrowOperation,
+    EscrowOperationKind as _EscrowOperationKind,
+    NativeEscrowPolicyPlan as _NativeEscrowPolicyPlan,
+)
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -2590,6 +2595,47 @@ def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _Nat
     )
 
 
+def _default_byzantine_feudal_bank_plan(
+    profile_id: str,
+) -> _NativeEscrowPolicyPlan:
+    """Reserve half of food for Feudal admission, then stop reserving it."""
+    owner = SemanticId(profile_id, "feudal-bank")
+    return _NativeEscrowPolicyPlan(
+        (
+            _EscrowOperation(
+                contract_identity="feudal-bank-open-food",
+                owner=owner,
+                kind=_EscrowOperationKind.POLICY_RESET,
+                resource="food",
+                command="set-escrow-percentage",
+                percentage=50,
+                rule_order=0,
+                guard="(and (current-age == dark-age) (not (goal opening-plan 6)))",
+            ),
+            _EscrowOperation(
+                contract_identity="feudal-bank-emergency-release-food",
+                owner=owner,
+                kind=_EscrowOperationKind.POLICY_RESET,
+                resource="food",
+                command="set-escrow-percentage",
+                percentage=0,
+                rule_order=1,
+                guard="(goal opening-plan 6)",
+            ),
+            _EscrowOperation(
+                contract_identity="feudal-bank-close-food",
+                owner=owner,
+                kind=_EscrowOperationKind.POLICY_RESET,
+                resource="food",
+                command="set-escrow-percentage",
+                percentage=0,
+                rule_order=2,
+                guard="(current-age >= feudal-age)",
+            ),
+        )
+    )
+
+
 def build_byzantine_stock_strategy(
     effective: EffectiveCivData,
     *,
@@ -2683,6 +2729,7 @@ def build_byzantine_stock_strategy(
         demands=tuple(demands),
         observations=tuple(observations),
         military_compositions=tuple(compositions),
+        escrow_policy_plan=_default_byzantine_feudal_bank_plan(stock_profile_id),
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),

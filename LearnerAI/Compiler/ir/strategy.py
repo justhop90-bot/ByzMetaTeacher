@@ -393,6 +393,7 @@ class StrategyProfile:
     strategic_number_modes: tuple[StrategicNumberMode, ...] = ()
     policy_recipes: tuple["PolicyRecipe", ...] = ()
     counter_packages: tuple["CounterPackage", ...] = ()
+    escrow_policy_plan: "NativeEscrowPolicyPlan | None" = None
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
     water_execution_plan: "WaterExecutionPlan | None" = None
@@ -888,6 +889,7 @@ def lower_strategy_profile(
         EscrowOperationKind,
         NATIVE_ESCROW_RELEASE_COMMAND,
         NATIVE_ESCROW_RELEASE_RESOURCES,
+        NativeEscrowPolicyPlan,
         NativeEscrowReleasePlan,
     )
     from ..ir.model import SemanticId
@@ -1030,8 +1032,11 @@ def lower_strategy_profile(
             )
 
     escrow_plan = (
-        NativeEscrowReleasePlan(tuple(escrow_operations))
-        if escrow_operations
+        NativeEscrowReleasePlan(
+            tuple(escrow_operations),
+            policy_plan=profile.escrow_policy_plan,
+        )
+        if escrow_operations or profile.escrow_policy_plan is not None
         else None
     )
 
