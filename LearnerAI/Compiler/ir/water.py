@@ -73,6 +73,13 @@ class PacificHarborDefensePhase(IntEnum):
     ACTIVE = 1
 
 
+class PacificTransportEscortPhase(IntEnum):
+    UNKNOWN = -1
+    IDLE = 0
+    REQUIRED = 1
+    READY = 2
+
+
 @dataclass(frozen=True)
 class WaterExecutionPlan:
     """Typed strategy references for water/naval/transport execution."""
@@ -86,6 +93,7 @@ class WaterExecutionPlan:
     pacific_transport_lifecycle_state: str
     pacific_fishing_controller_state: str
     pacific_harbor_defense_state: str
+    pacific_transport_escort_state: str
     pacific_transport_recovery_state: str
     feudal_resource_island_transport_state: str
     water_map_observation: str
@@ -108,6 +116,7 @@ class WaterExecutionPlan:
             ("pacific_transport_lifecycle_state", self.pacific_transport_lifecycle_state),
             ("pacific_fishing_controller_state", self.pacific_fishing_controller_state),
             ("pacific_harbor_defense_state", self.pacific_harbor_defense_state),
+            ("pacific_transport_escort_state", self.pacific_transport_escort_state),
             ("pacific_transport_recovery_state", self.pacific_transport_recovery_state),
             ("feudal_resource_island_transport_state", self.feudal_resource_island_transport_state),
             ("water_map_observation", self.water_map_observation),
@@ -341,6 +350,16 @@ def lower_water_execution_plan(
                 StorageRequestId(
                     SemanticId(plan.plan_id, plan.pacific_harbor_defense_state),
                     "pacific-harbor-defense",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            plan.pacific_transport_escort_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.pacific_transport_escort_state),
+                    "pacific-transport-escort",
                 ),
                 role=GoalRole.PERSISTENT_STATE,
             ),
