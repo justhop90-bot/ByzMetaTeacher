@@ -303,7 +303,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         for snippet in (
             "(up-target-objects 1 7 -1 -1)",
             "(up-target-point 0 action-move -1 -1)",
-            "(up-target-point 0 action-unload -1 -1)",
+            "(up-target-point 0 9 -1 -1)",
             "(defconst pacific-opening-transport-point ",
             "(defconst pacific-opening-transport-id ",
         ):

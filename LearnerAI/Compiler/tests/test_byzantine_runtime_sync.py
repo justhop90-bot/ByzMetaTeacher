@@ -41,7 +41,7 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             runtime = RUNTIME.read_text(encoding="utf-8")
             self.assertTrue(synchronized or "byzantine-pacific-transport-target" in runtime)
             self.assertIn("; Native DUC rule: byzantine-pacific-transport-target", runtime)
-            self.assertIn("(up-target-objects 1 action-garrison -1 -1)", runtime)
+            self.assertIn("(up-target-objects 1 7 -1 -1)", runtime)
             self.assertIn("(up-target-point 0 action-move -1 -1)", runtime)
             self.assertIn("(up-target-point 0 action-unload -1 -1)", runtime)
             self.assertIn("(defconst pacific-opening-transport-point ", runtime)
