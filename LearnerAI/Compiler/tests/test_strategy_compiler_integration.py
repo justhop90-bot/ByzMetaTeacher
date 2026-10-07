@@ -373,6 +373,56 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertNotIn("(goal voice-match-count < 48)", voice)
 
+    def test_byzantine_stock_emits_pacific_convoy_route_against_shared_gold_point(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        plan = compilation.duc_plan
+        self.assertIsNotNone(plan)
+        assert plan is not None
+
+        route_ids = {
+            rule.identity
+            for rule in plan.rules
+            if "pacific-convoy-route" in rule.identity
+        }
+        self.assertEqual(
+            route_ids,
+            {
+                "byzantine-pacific-convoy-route-transport",
+                "byzantine-pacific-convoy-route-escort",
+            },
+        )
+
+        transport_rule = next(
+            rule for rule in plan.rules
+            if rule.identity == "byzantine-pacific-convoy-route-transport"
+        )
+        escort_rule = next(
+            rule for rule in plan.rules
+            if rule.identity == "byzantine-pacific-convoy-route-escort"
+        )
+        transport_facts = tuple(fact.source for fact in transport_rule.facts)
+        escort_facts = tuple(fact.source for fact in escort_rule.facts)
+
+        for facts in (transport_facts, escort_facts):
+            self.assertIn("(current-age >= feudal-age)", facts)
+            self.assertIn("(goal pacific-convoy-route 2)", facts)
+            self.assertIn("(goal feudal-resource-island-transport-objective 1)", facts)
+            self.assertIn("(goal pacific-transport-escort 2)", facts)
+            self.assertIn("(building-type-count-total dock >= 1)", facts)
+            self.assertIn(
+                f"(not {self.stock_profile.observation('strategy-enemy-naval-pressure').expression})",
+                facts,
+            )
+
+        transport_actions = tuple(action.source for action in transport_rule.actions)
+        escort_actions = tuple(action.source for action in escort_rule.actions)
+        self.assertIn("(up-set-target-point feudal-resource-island-gold-point)", transport_actions)
+        self.assertIn("(up-target-point 0 action-move -1 -1)", transport_actions)
+        self.assertIn("(up-set-target-point feudal-resource-island-gold-point)", escort_actions)
+        self.assertIn("(up-target-point 0 action-move -1 -1)", escort_actions)
+        self.assertIn("(up-find-local c: transport-ship-class c: 1)", transport_actions)
+        self.assertIn("(up-find-local c: fire-galley-class c: 1)", escort_actions)
+
     def test_byzantine_stock_lowers_objective_control_state_and_ownership(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
         control = compilation.control_plan

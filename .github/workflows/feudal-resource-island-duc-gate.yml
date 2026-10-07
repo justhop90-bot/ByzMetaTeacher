@@ -81,5 +81,9 @@ jobs:
         run: |
           python -m unittest             LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_transport_escort_is_typed_and_blocks_unescorted_feudal_transport             LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_transport_escort_uses_existing_fire_galley_escrow_channel             LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_transport_escort_controller_closes_feudal_transport_when_escort_is_lost             LearnerAI.Compiler.tests.test_community_strategy_packs.ByzantineCommunityStrategyPackTests.test_pacific_transport_escort_is_a_standing_feudal_support_capability             -v
 
+      - name: Focused Pacific Convoy Routing regression
+        run: |
+          python -m unittest             LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_convoy_route_owns_transport_and_escort_dispatch             LearnerAI.Compiler.tests.test_strategy_compiler_integration.StrategyCompilerIntegrationTests.test_byzantine_stock_emits_pacific_convoy_route_against_shared_gold_point             -v
+
       - name: Native zero-findings acceptance - canonical Byzantine artifact
         run: python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/native-byzantine.json

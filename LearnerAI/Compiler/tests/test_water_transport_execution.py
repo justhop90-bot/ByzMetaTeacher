@@ -731,6 +731,38 @@ class WaterTransportExecutionTests(unittest.TestCase):
             escort_demand.execution.requirements,
         )
 
+    def test_pacific_convoy_route_owns_transport_and_escort_dispatch(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("pacific-convoy-route", state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for expected in (
+            "pacific-convoy-route-open",
+            "pacific-convoy-route-activate",
+            "pacific-convoy-route-recover-on-transport-loss",
+            "pacific-convoy-route-rearm",
+            "pacific-convoy-route-close-on-pressure",
+            "pacific-convoy-route-close-on-dock-loss",
+            "pacific-convoy-route-close-on-escort-loss",
+            "pacific-convoy-route-close-nonwater",
+        ):
+            self.assertIn(expected, rules)
+
+        open_text = " ".join(fact.source for fact in rules["pacific-convoy-route-open"].facts)
+        self.assertIn("(current-age >= feudal-age)", open_text)
+        self.assertIn("(building-type-count-total dock >= 1)", open_text)
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", open_text)
+        self.assertIn("(goal pacific-transport-escort 2)", open_text)
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            open_text,
+        )
+
     def test_stock_strategy_has_transport_and_naval_execution_demands(self):
         profile = build_byzantine_strategy(self.effective)
         demand_ids = {item.identity for item in profile.demands}
