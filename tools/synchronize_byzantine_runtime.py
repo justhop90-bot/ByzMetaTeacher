@@ -1036,7 +1036,7 @@ def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
             runtime,
             generated,
             identity,
-            insert_before="counter-package-selection-reset-000",
+            insert_before="water-execution-initialize",
         )
     return runtime
 
