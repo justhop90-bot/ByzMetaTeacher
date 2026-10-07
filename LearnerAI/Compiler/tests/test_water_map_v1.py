@@ -132,6 +132,33 @@ class ByzantineWaterMapV1Tests(unittest.TestCase):
                 1,
             )
 
+        for identity in sync_runtime.ECONOMY_INSTALLABLE_RULES:
+            self.assertIn(
+                f"; Native control rule: {identity}",
+                synchronized,
+            )
+
+        self.assertIn(
+            "(goal economy-posture 9)",
+            synchronized,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-food-gatherer-percentage 45)",
+            synchronized,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-wood-gatherer-percentage 40)",
+            synchronized,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-gold-gatherer-percentage 15)",
+            synchronized,
+        )
+        self.assertIn(
+            "(set-strategic-number sn-percent-civilian-builders 6)",
+            synchronized,
+        )
+
     def test_runtime_sync_replaces_stale_water_opening_selector_from_generated_artifact(self):
         from pathlib import Path
         import tools.synchronize_byzantine_runtime as sync_runtime
