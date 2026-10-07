@@ -504,6 +504,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             4,
         )
         self.assertEqual(output.count("(defconst action-attack-move 19)"), 1)
+        self.assertEqual(output.count("(defconst object-data-id 0)"), 1)
 
     def test_byzantine_endgame_objective_target_control_is_class_priority_and_fail_closed(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)
