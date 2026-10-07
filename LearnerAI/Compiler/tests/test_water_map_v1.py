@@ -62,6 +62,71 @@ class ByzantineWaterMapV1Tests(unittest.TestCase):
         self.assertIn("(goal arb-c02 1)", castle_guard)
         self.assertIn("(not (goal arb-c01 1))", castle_guard)
 
+    def test_runtime_sync_aligns_pacific_economy_and_complete_water_demand_lifecycles(self):
+        from pathlib import Path
+        import tempfile
+        import tools.synchronize_byzantine_runtime as sync_runtime
+
+        generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
+        runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(runtime, encoding="utf-8")
+            generated_path.write_text(generated, encoding="utf-8")
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                first = synchronized
+                sync_runtime.synchronize()
+                second = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(first, second)
+
+        self.assertIn(
+            "; Native control rule: economy-controller-select-pacific-land-first",
+            synchronized,
+        )
+
+        def rule(identity: str) -> str:
+            marker = f"; Action issuance: {identity} | ACTIVE -> ISSUED"
+            start = synchronized.index(marker)
+            end = synchronized.index("\n; ", start + len(marker))
+            return synchronized[start:end]
+
+        fishing = rule("water-fishing-continuity")
+        transport = rule("water-transport-capability")
+        naval_defense = rule("water-naval-defense")
+        naval_control = rule("water-naval-control")
+
+        self.assertIn("(or (map-type islands) (map-type pacific-islands))", fishing)
+        self.assertIn("(unit-type-count-total fishing-ship < 2)", fishing)
+        self.assertIn("(unit-type-count-total fishing-ship < 4)", fishing)
+
+        self.assertIn("(current-age >= feudal-age)", transport)
+        self.assertIn("(or (map-type islands) (map-type pacific-islands))", transport)
+        self.assertNotIn("(current-age >= dark-age)", transport)
+
+        for water_rule in (naval_defense, naval_control):
+            self.assertIn(
+                "(or (map-type islands) (map-type pacific-islands))",
+                water_rule,
+            )
+            self.assertIn(
+                "(players-unit-type-count any-enemy galley-line >= 2)",
+                water_rule,
+            )
+
     def test_runtime_sync_replaces_stale_water_opening_selector_from_generated_artifact(self):
         from pathlib import Path
         import tools.synchronize_byzantine_runtime as sync_runtime
