@@ -268,13 +268,19 @@ class WaterTransportExecutionTests(unittest.TestCase):
             item.identity for item in profile.observations
         })
 
-    def test_water_fishing_expansion_is_bounded_and_excludes_pacific(self):
+    def test_water_fishing_continuity_is_one_bounded_lifecycle_for_pacific_and_islands(self):
         profile = build_byzantine_strategy(self.effective)
-        demand = profile.demand("water-fishing-expansion")
-        requirements = tuple(demand.execution.requirements)
-        self.assertIn("(unit-type-count-total fishing-ship < 4)", requirements)
-        self.assertIn("(not (map-type pacific-islands))", requirements)
-        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        demand = profile.demand("water-fishing-continuity")
+        req_text = " ".join(demand.execution.requirements)
+        self.assertIn("(map-type pacific-islands)", req_text)
+        self.assertIn("(not (map-type pacific-islands))", req_text)
+        self.assertIn("(unit-type-count-total fishing-ship < 2)", req_text)
+        self.assertIn("(unit-type-count-total fishing-ship < 4)", req_text)
+        self.assertNotIn(
+            "water-fishing-expansion",
+            {item.identity for item in profile.demands},
+        )
+        self.assertIn("(building-type-count-total dock >= 1)", req_text)
 
     def test_transport_capability_is_a_feudal_execution_capability(self):
         profile = build_byzantine_strategy(self.effective)
