@@ -18,7 +18,7 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
-    PACIFIC_LAND = 8
+    PACIFIC_LAND = 9
 
 
 @dataclass(frozen=True)
