@@ -152,7 +152,19 @@ def lower_economy_controller(
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
-    pacific = profile.observation("strategy-pacific-islands").expression
+    pacific_observation = next(
+        (
+            item
+            for item in profile.observations
+            if item.identity == "strategy-pacific-islands"
+        ),
+        None,
+    )
+    pacific = (
+        pacific_observation.expression
+        if pacific_observation is not None
+        else "(map-type pacific-islands)"
+    )
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
     no_knight_pressure = "(not (players-unit-type-count any-enemy knight >= 3))"
     no_ranged_pressure = "(not (players-unit-type-count any-enemy archer-line >= 4))"
