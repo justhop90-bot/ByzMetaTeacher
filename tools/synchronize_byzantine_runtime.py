@@ -49,6 +49,7 @@ WATER_DOCK_GOAL_NAMES = (
 
 
 ECONOMY_RULES = (
+    "economy-controller-select-pacific-land-first",
     "economy-controller-select-counter-pressure",
     "economy-controller-select-fast-castle",
     "economy-controller-select-counter-feudal",
@@ -989,6 +990,145 @@ def _replace_or_install_native_control_rule(
     )
 
 
+def _replace_or_install_marked_rule(
+    runtime: str,
+    generated: str,
+    marker: str,
+    *,
+    insert_before: str,
+) -> str:
+    """Replace one comment-marked rule, or install it before a stable marker."""
+    generated_start = generated.find(marker)
+    if generated_start < 0:
+        raise RuntimeError(f"generated artifact is missing rule marker: {marker}")
+    generated_rule_start = generated.find("(defrule", generated_start)
+    if generated_rule_start < 0:
+        raise RuntimeError(f"generated artifact is missing defrule after marker: {marker}")
+
+    depth = 0
+    in_string = False
+    escape = False
+    generated_end = None
+    for index in range(generated_rule_start, len(generated)):
+        char = generated[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == chr(92):
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                generated_end = index + 1
+                break
+    if generated_end is None:
+        raise RuntimeError(f"generated artifact has unterminated rule: {marker}")
+
+    generated_block = generated[generated_start:generated_end].rstrip()
+
+    runtime_start = runtime.find(marker)
+    if runtime_start >= 0:
+        runtime_rule_start = runtime.find("(defrule", runtime_start)
+        if runtime_rule_start < 0:
+            raise RuntimeError(f"runtime artifact is missing defrule after marker: {marker}")
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(runtime_rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return (
+                        runtime[:runtime_start]
+                        + generated_block
+                        + runtime[index + 1:]
+                    )
+        raise RuntimeError(f"runtime artifact has unterminated rule: {marker}")
+
+    insertion_marker = f"; {insert_before}" if not insert_before.startswith("; ") else insert_before
+    insertion = runtime.find(insertion_marker)
+    if insertion < 0:
+        raise RuntimeError(f"runtime artifact is missing insertion boundary: {insert_before}")
+    return runtime[:insertion] + generated_block + "\n\n" + runtime[insertion:]
+
+
+def _replace_or_install_retry_rule(
+    runtime: str,
+    generated: str,
+    demand_identity: str,
+    *,
+    insert_before: str,
+) -> str:
+    """Replace the RETRY rule immediately following the demand's pending rule."""
+    anchor = f"; Pending admission: {demand_identity}"
+    retry_marker = "; RETRY | ISSUED/PENDING -> ACTIVE"
+
+    def locate(source: str) -> tuple[int, int, str]:
+        anchor_start = source.find(anchor)
+        if anchor_start < 0:
+            raise RuntimeError(f"source is missing pending marker: {anchor}")
+        retry_start = source.find(retry_marker, anchor_start)
+        if retry_start < 0:
+            raise RuntimeError(f"source is missing retry marker after: {anchor}")
+        rule_start = source.find("(defrule", retry_start)
+        if rule_start < 0:
+            raise RuntimeError(f"source is missing retry defrule after: {anchor}")
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(rule_start, len(source)):
+            char = source[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return retry_start, index + 1, source[retry_start:index + 1].rstrip()
+        raise RuntimeError(f"source has unterminated retry rule after: {anchor}")
+
+    generated_start, generated_end, generated_block = locate(generated)
+    runtime_anchor = runtime.find(anchor)
+    if runtime_anchor >= 0:
+        runtime_retry_start, runtime_end, _ = locate(runtime)
+        return runtime[:runtime_retry_start] + generated[generated_start:generated_end].rstrip() + runtime[runtime_end:]
+
+    insertion_marker = f"; {insert_before}" if not insert_before.startswith("; ") else insert_before
+    insertion = runtime.find(insertion_marker)
+    if insertion < 0:
+        raise RuntimeError(f"runtime artifact is missing insertion boundary: {insert_before}")
+    return runtime[:insertion] + generated[generated_start:generated_end].rstrip() + "\n\n" + runtime[insertion:]
+
+
 def _replace_between_markers(
     runtime: str,
     generated: str,
@@ -1051,6 +1191,47 @@ def _sync_opening_water_selector(runtime: str, generated: str) -> str:
     )
 
 
+def _sync_water_demand_rules(runtime: str, generated: str) -> str:
+    """Synchronize compiler-owned water demand lifecycles into the hybrid runtime."""
+    identities = (
+        "water-dock-capability",
+        "water-fishing-continuity",
+        "water-transport-capability",
+        "water-naval-defense",
+        "water-naval-control",
+    )
+    marker_templates = (
+        "; Release: {identity}",
+        "; Recovery: {identity}",
+        "; Completion witness: {identity}",
+        "; Pending admission: {identity}",
+        "; Action issuance: {identity}",
+        "; Invalidation: {identity}",
+    )
+
+    for identity in identities:
+        for template in marker_templates:
+            marker = template.format(identity=identity)
+            # Some demands have no invalidation rule. Missing optional rules are ignored.
+            if generated.find(marker) < 0:
+                continue
+            runtime = _replace_or_install_marked_rule(
+                runtime,
+                generated,
+                marker,
+                insert_before="counter-package-selection-reset-000",
+            )
+        if generated.find(f"; Pending admission: {identity}") >= 0:
+            runtime = _replace_or_install_retry_rule(
+                runtime,
+                generated,
+                identity,
+                insert_before="counter-package-selection-reset-000",
+            )
+
+    return runtime
+
+
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
     """Synchronize the canonical water state machine into the checked-in runtime."""
 
@@ -1081,6 +1262,7 @@ def synchronize() -> bool:
 
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _sync_strategic_arbitration_control(runtime, generated)
+    runtime = _sync_water_demand_rules(runtime, generated)
     runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
