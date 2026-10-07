@@ -59,7 +59,7 @@ class WaterExecutionPlan:
     transport_phase_state: str
     transport_objective_state: str
     transport_rebuild_state: str
-    pacific_opening_transport_state: str = "pacific-opening-transport-objective"
+    pacific_opening_transport_state: str
     water_map_observation: str
     transport_required_observation: str
     transport_capable_observation: str
