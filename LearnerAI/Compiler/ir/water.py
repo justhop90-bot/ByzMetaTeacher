@@ -880,7 +880,39 @@ def lower_water_execution_plan(
                     plan.pacific_transport_lifecycle_state,
                     int(PacificTransportLifecyclePhase.LANDED),
                 ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-recovery-open-on-landed",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LANDED),
+                ),
+                goal(plan.pacific_transport_recovery_state, 0),
+            ),
+            actions=(
                 set_goal(plan.pacific_transport_recovery_state, 1),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-transport-lifecycle-recover-after-landing-loss",
+            facts=(
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.IDLE),
+                ),
+                goal(plan.pacific_transport_recovery_state, 1),
+                parse_expression(
+                    "(unit-type-count-total transport-ship < 1)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.RECOVERY),
+                ),
             ),
         ),
         NativeControlRule(

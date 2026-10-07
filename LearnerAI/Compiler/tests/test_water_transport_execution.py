@@ -393,7 +393,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(current-age >= feudal-age)", requirements)
         self.assertIn("(map-type pacific-islands)", requirements)
         self.assertIn("(building-type-count-total dock >= 1)", requirements)
-        self.assertIn("(not (players-unit-type-count any-enemy galley-line >= 2))", requirements)
+        self.assertIn(
+            profile.observation("strategy-enemy-naval-pressure").expression,
+            requirements,
+        )
         self.assertIn("(can-train-with-escrow transport-ship)", requirements)
         self.assertIn("(unit-type-count-total transport-ship < 1)", requirements)
 
@@ -410,11 +413,18 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         self.assertIn("(set-goal pacific-transport-lifecycle 0)", rebuild_text)
 
-        landed_text = " ".join(
+        recovery_open_text = " ".join(
             action.source
-            for action in rules["pacific-transport-lifecycle-landed"].actions
+            for action in rules["pacific-transport-recovery-open-on-landed"].actions
         )
-        self.assertIn("(set-goal pacific-transport-recovery 1)", landed_text)
+        self.assertIn("(set-goal pacific-transport-recovery 1)", recovery_open_text)
+
+        recovery_loss_facts = " ".join(
+            fact.source
+            for fact in rules["pacific-transport-lifecycle-recover-after-landing-loss"].facts
+        )
+        self.assertIn("(goal pacific-transport-recovery 1)", recovery_loss_facts)
+        self.assertIn("(unit-type-count-total transport-ship < 1)", recovery_loss_facts)
 
     def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
         profile = build_byzantine_strategy(self.effective)
