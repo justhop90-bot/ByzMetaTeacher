@@ -256,6 +256,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-set-target-by-id g: 0)", garrison_actions)
         self.assertIn("(up-find-local c: 904 c: 4)", garrison_actions)
         self.assertIn("(up-target-objects 1 7 -1 -1)", garrison_actions)
+        self.assertLess(
+            garrison_actions.index("(up-full-reset-search)"),
+            garrison_actions.index("(up-set-target-by-id g: 0)"),
+        )
 
         move = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-move")
         self.assertIn(
@@ -276,6 +280,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             sum(1 for request in plan.input_requests if request.source.purpose == "up-get-object-data"),
             5,
         )
+        garrison_input = next(
+            request for request in plan.input_requests if request.rule_identity == "byzantine-pacific-transport-garrison"
+        )
+        self.assertEqual(garrison_input.expression_index, 2)
 
         output = compile_strategy_profile(self.stock_profile, self.effective)
         for snippet in (

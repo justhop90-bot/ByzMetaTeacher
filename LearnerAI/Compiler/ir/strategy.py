@@ -4738,9 +4738,9 @@ def _default_byzantine_duc_plan(
             order=len(rules),
             facts=garrison_facts,
             actions=(
-                parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression("(up-find-local c: 904 c: 4)", SourceLocation(1)),
+                parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
                 parse_expression(
                     "(up-target-objects 1 7 -1 -1)",
                     SourceLocation(1),
