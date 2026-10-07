@@ -296,6 +296,25 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(set-strategic-number 61 1)", actions)
         self.assertIn("(disable-self)", actions)
 
+    def test_checked_in_runtime_contains_dark_age_water_continuity(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[3]
+        runtime = (root / "Byzantine.per").read_text(encoding="utf-8")
+
+        fishing_start = runtime.index(
+            "; Action issuance: water-fishing-continuity | ACTIVE -> ISSUED"
+        )
+        fishing_end = runtime.index(
+            "; Pending diagnostics: water-transport-capability",
+            fishing_start,
+        )
+        fishing_rule = runtime[fishing_start:fishing_end]
+        self.assertIn("(current-age >= dark-age)", fishing_rule)
+        self.assertNotIn("(current-age >= feudal-age)", fishing_rule)
+        self.assertIn("(can-train-with-escrow fishing-ship)", fishing_rule)
+        self.assertIn("(set-strategic-number 61 1)", runtime)
+
     def test_water_plan_lowers_into_persistent_posture_and_transport_state(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
