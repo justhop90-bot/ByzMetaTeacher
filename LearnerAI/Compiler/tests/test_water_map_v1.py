@@ -62,6 +62,38 @@ class ByzantineWaterMapV1Tests(unittest.TestCase):
         self.assertIn("(goal arb-c02 1)", castle_guard)
         self.assertIn("(not (goal arb-c01 1))", castle_guard)
 
+    def test_runtime_sync_exposes_pacific_fishing_controller(self):
+        from pathlib import Path
+        import tempfile
+        import tools.synchronize_byzantine_runtime as sync_runtime
+
+        generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
+        runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(runtime, encoding="utf-8")
+            generated_path.write_text(generated, encoding="utf-8")
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertIn("; Native control rule: pacific-fishing-controller-open", synchronized)
+        self.assertIn("; Native control rule: pacific-harbor-defense-open", synchronized)
+        self.assertIn(
+            "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
+            synchronized,
+        )
+
     def test_runtime_sync_synchronizes_water_demand_lifecycles(self):
         from pathlib import Path
         import re

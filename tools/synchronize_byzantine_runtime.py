@@ -755,15 +755,55 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
+PACIFIC_TRANSPORT_DUC_RULES = (
+    "byzantine-pacific-transport-target",
+    "byzantine-pacific-transport-select",
+    "byzantine-pacific-transport-garrison",
+    "byzantine-pacific-transport-load-witness",
+    "byzantine-pacific-transport-transit-probe",
+    "byzantine-pacific-transport-move",
+    "byzantine-pacific-transport-unload",
+)
+
+PACIFIC_RUNTIME_GOAL_NAMES = (
+    "pacific-fishing-controller",
+    "pacific-harbor-defense",
+    "pacific-transport-escort",
+    "pacific-convoy-route",
+    "pacific-transport-recovery",
+)
+
+PACIFIC_RUNTIME_STRATEGIC_NUMBERS = {
+    "sn-maximum-fish-boat-drop-distance": 236,
+    "sn-fishing-boat-whaling-percentage": 316,
+}
+PACIFIC_TRANSPORT_RUNTIME_GOALS = (
+    "pacific-transport-lifecycle",
+    "pacific-transport-transit-witness",
+    "pacific-transport-unload-witness",
+    "pacific-opening-transport-point",
+    "pacific-opening-transport-id",
+    "pacific-opening-transport-load-count",
+    "pacific-opening-transport-transit-action",
+    "pacific-opening-transport-distance",
+    "pacific-opening-transport-unload-action",
+    "pacific-opening-transport-unload-count",
+)
+
 WATER_EXECUTION_STATE_NAMES = (
     "transport-phase",
     "water-posture",
     "water-transport-objective",
     "water-transport-rebuild",
+    "pacific-opening-transport-objective",
+    "feudal-resource-island-transport-objective",
 )
 WATER_EXECUTION_NEW_STATE_NAMES = (
     "water-transport-objective",
     "water-transport-rebuild",
+    "pacific-opening-transport-objective",
+    "feudal-resource-island-transport-objective",
+    "feudal-resource-island-target-state",
 )
 
 WATER_LIFECYCLE_DEMANDS = (
@@ -792,6 +832,8 @@ WATER_RUNTIME_RESERVED_GOALS = {
     "complete-water-dock-capability": 15971,
     "water-transport-objective": 15970,
     "water-transport-rebuild": 15969,
+    "pacific-opening-transport-objective": 15968,
+    "feudal-resource-island-transport-objective": 15967,
 }
 
 
@@ -866,6 +908,145 @@ def _ensure_water_fishing_expansion_goal_defconsts(runtime: str) -> str:
         if replaced == 0:
             runtime = runtime[:line_end + 1] + new_line + "\n" + runtime[line_end + 1:]
             line_end += len(new_line) + 1
+    return runtime
+
+
+def _ensure_pacific_runtime_strategic_numbers(runtime: str) -> str:
+    for name, value in PACIFIC_RUNTIME_STRATEGIC_NUMBERS.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        replacement = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(replacement, runtime, count=1)
+        if replaced:
+            continue
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        if line_end < 0:
+            line_end = len(runtime)
+        runtime = runtime[: line_end + 1] + replacement + "\n" + runtime[line_end + 1 :]
+    return runtime
+
+def _ensure_pacific_transport_goal_defconsts(runtime: str, generated: str) -> str:
+    scalar_names = tuple(
+        name
+        for name in dict.fromkeys((
+            *PACIFIC_TRANSPORT_RUNTIME_GOALS,
+            *PACIFIC_RUNTIME_GOAL_NAMES,
+        ))
+        if name != "pacific-opening-transport-point"
+    )
+    runtime = _ensure_named_defconsts(runtime, generated, scalar_names)
+
+    point_name = "pacific-opening-transport-point"
+    match = re.search(
+        rf"^\(defconst {re.escape(point_name)} (-?\d+)\)$",
+        generated,
+        flags=re.MULTILINE,
+    )
+    if not match:
+        raise RuntimeError(
+            "generated artifact is missing pacific-opening-transport-point defconst"
+        )
+    current_def = _defconst_values(runtime).get(point_name)
+    intervals = _storage_intervals(runtime)
+    if current_def is not None and all(
+        not (start <= current_def <= end or start <= current_def + 1 <= end)
+        for start, end, _kind in intervals
+    ):
+        return runtime
+
+    occupied = set()
+    for start, end, _kind in intervals:
+        occupied.update(range(max(1, start), min(16_000, end) + 1))
+    occupied.update(
+        value
+        for value in _defconst_values(runtime).values()
+        if 1 <= value <= 16_000
+    )
+    chosen = None
+    for candidate in range(15_999, 40, -1):
+        if candidate in occupied or candidate + 1 in occupied:
+            continue
+        chosen = candidate
+        break
+    if chosen is None:
+        raise RuntimeError("no free GoalSpan pair remains for pacific transport point")
+    pattern = re.compile(
+        rf"^\(defconst {re.escape(point_name)} -?\d+\)$",
+        flags=re.MULTILINE,
+    )
+    replacement = f"(defconst {point_name} {chosen})"
+    runtime, replaced = pattern.subn(replacement, runtime, count=1)
+    if replaced == 0:
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        runtime = runtime[: line_end + 1] + replacement + "\n" + runtime[line_end + 1 :]
+    return runtime
+
+
+def _replace_or_install_native_duc_rule(
+    runtime: str,
+    generated: str,
+    identity: str,
+    *,
+    insert_before: str = "Native Strategos voice plan",
+) -> str:
+    generated_block = _rule_block(
+        generated,
+        identity,
+        marker_prefix="; Native DUC rule:",
+    )
+    marker = f"; Native DUC rule: {identity}"
+    start = runtime.find(marker)
+    if start >= 0:
+        rule_start = runtime.find("(defrule", start)
+        if rule_start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing defrule for native DUC rule: {identity}"
+            )
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return runtime[:start] + generated_block.rstrip() + runtime[index + 1:]
+        raise RuntimeError(f"runtime artifact has unterminated DUC rule: {identity}")
+
+    marker = f"; {insert_before}"
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing DUC insertion boundary: {insert_before}"
+        )
+    return runtime[:position] + generated_block.rstrip() + "\n\n" + runtime[position:]
+
+
+def _sync_pacific_transport_duc(runtime: str, generated: str) -> str:
+    for identity in PACIFIC_TRANSPORT_DUC_RULES:
+        runtime = _replace_or_install_native_duc_rule(runtime, generated, identity)
     return runtime
 
 
@@ -1149,13 +1330,30 @@ def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
 
 
 def _sync_opening_water_selector(runtime: str, generated: str) -> str:
-    """Synchronize authoritative water classification into the opening selector."""
-    return _replace_between_markers(
-        runtime,
-        generated,
-        "; Native control rule: opening-selector-water-control",
-        "; Native control rule: opening-selector-fast-castle",
-    )
+    """Synchronize Pacific-first plus generic-water opening arbitration."""
+    pacific_marker = "; Native control rule: opening-selector-pacific-land-first"
+    water_marker = "; Native control rule: opening-selector-water-control"
+    end_marker = "; Native control rule: opening-selector-fast-castle"
+
+    generated_start = generated.find(pacific_marker)
+    generated_end = generated.find(end_marker, generated_start)
+    if generated_start < 0:
+        return _replace_between_markers(runtime, generated, water_marker, end_marker)
+    if generated_end < 0:
+        raise RuntimeError("generated artifact is missing Pacific opening selector boundary")
+
+    generated_block = generated[generated_start:generated_end].rstrip() + "\n\n"
+    runtime_start = runtime.find(pacific_marker)
+    runtime_end = runtime.find(end_marker, runtime_start if runtime_start >= 0 else 0)
+    if runtime_start >= 0:
+        if runtime_end < 0:
+            raise RuntimeError("runtime artifact is missing Pacific opening selector end boundary")
+        return runtime[:runtime_start] + generated_block + runtime[runtime_end:]
+
+    insertion = runtime.find(water_marker)
+    if insertion < 0:
+        raise RuntimeError("runtime artifact is missing opening water selector insertion boundary")
+    return runtime[:insertion] + generated_block + runtime[insertion:]
 
 
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
@@ -1191,10 +1389,13 @@ def synchronize() -> bool:
     runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
+    runtime = _ensure_pacific_transport_goal_defconsts(runtime, generated)
     runtime = _ensure_reserved_water_goal_defconsts(runtime)
+    runtime = _ensure_pacific_runtime_strategic_numbers(runtime)
     runtime = _ensure_water_fishing_expansion_goal_defconsts(runtime)
     runtime = _sync_water_demand_lifecycles(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
+    runtime = _sync_pacific_transport_duc(runtime, generated)
 
     defense_block = _block(
         generated,

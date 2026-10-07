@@ -11,7 +11,40 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 )
 
 
+RUNTIME = sync_runtime.RUNTIME
+GENERATED = sync_runtime.GENERATED
+
+
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
+
+    def test_synchronization_installs_pacific_transport_duc_and_storage(self) -> None:
+        from pathlib import Path
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "Byzantine.generated.per"
+            runtime_path.write_text(RUNTIME.read_text(encoding="utf-8"), encoding="utf-8")
+            generated = GENERATED.read_text(encoding="utf-8")
+            for name in (
+                "byzantine-pacific-transport-target",
+                "byzantine-pacific-transport-select",
+                "byzantine-pacific-transport-garrison",
+                "byzantine-pacific-transport-load-witness",
+                "byzantine-pacific-transport-transit-probe",
+                "byzantine-pacific-transport-move",
+                "byzantine-pacific-transport-unload",
+            ):
+                self.assertIn(f"; Native DUC rule: {name}", generated)
+            synchronized = sync_runtime.synchronize()
+            runtime = RUNTIME.read_text(encoding="utf-8")
+            self.assertTrue(synchronized or "byzantine-pacific-transport-target" in runtime)
+            self.assertIn("; Native DUC rule: byzantine-pacific-transport-target", runtime)
+            self.assertIn("(up-target-objects 1 7 -1 -1)", runtime)
+            self.assertIn("(up-target-point 0 action-move -1 -1)", runtime)
+            self.assertIn("(up-target-point 0 9 -1 -1)", runtime)
+            self.assertIn("(defconst pacific-opening-transport-point ", runtime)
 
     def test_synchronization_installs_canonical_water_execution_control(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

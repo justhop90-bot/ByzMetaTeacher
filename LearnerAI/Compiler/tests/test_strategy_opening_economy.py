@@ -61,6 +61,86 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertEqual(profile.opening_selector.plan_id, "byzantine-opening-v1")
 
+    def test_pacific_is_a_first_class_land_first_opening(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        ids = tuple(
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("opening-selector-")
+        )
+        self.assertEqual(ids[0], "opening-selector-pacific-land-first")
+        pacific = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-pacific-land-first"
+        )
+        self.assertEqual(
+            tuple(fact.source for fact in pacific.facts),
+            ("(goal opening-plan -1)", "(map-type pacific-islands)"),
+        )
+        water = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-water-control"
+        )
+        self.assertIn("(not (map-type pacific-islands))", tuple(fact.source for fact in water.facts))
+
+    def test_feudal_transition_carries_the_500_food_protection_policy(self):
+        profile = build_byzantine_strategy(self.effective)
+        transition = profile.demand("feudal-transition")
+        self.assertEqual(
+            tuple((floor.resource, floor.minimum) for floor in transition.opportunity_cost.protected_floors),
+            ((Resource.FOOD, 500),),
+        )
+
+    def test_feudal_bank_uses_guarded_native_escrow_policy_lifecycle(self):
+        from LearnerAI.Compiler.ir.resource_control import NativeEscrowReleasePlan
+
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        escrow_plan = compilation.escrow_plan
+        self.assertIsInstance(escrow_plan, NativeEscrowReleasePlan)
+        assert escrow_plan is not None
+        policy_plan = escrow_plan.policy_plan
+        self.assertIsNotNone(policy_plan)
+        assert policy_plan is not None
+
+        self.assertEqual(
+            tuple(
+                (op.contract_identity, op.resource, op.percentage, op.guard)
+                for op in policy_plan.operations
+            ),
+            (
+                (
+                    "feudal-bank-open-food",
+                    "food",
+                    50,
+                    "(and (current-age == dark-age) "
+                    "(not (goal opening-plan 6)))",
+                ),
+                ("feudal-bank-emergency-release-food", "food", 0, "(goal opening-plan 6)"),
+                ("feudal-bank-close-food", "food", 0, "(current-age >= feudal-age)"),
+            ),
+        )
+
+    def test_feudal_bank_does_not_replace_existing_age_release_escrow(self):
+        from LearnerAI.Compiler.ir.resource_control import NativeEscrowReleasePlan
+
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        escrow_plan = compilation.escrow_plan
+        self.assertIsInstance(escrow_plan, NativeEscrowReleasePlan)
+        assert escrow_plan is not None
+
+        releases = tuple(
+            (op.contract_identity, op.resource)
+            for op in escrow_plan.operations
+        )
+        self.assertIn(("feudal-transition:escrow:food", "food"), releases)
+        self.assertIn(("feudal-transition:escrow:gold", "gold"), releases)
+
     def test_opening_selection_is_durable_and_precedence_ordered(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
@@ -75,6 +155,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertEqual(
             rule_ids,
             (
+                "opening-selector-pacific-land-first",
                 "opening-selector-water-control",
                 "opening-selector-water-economy",
                 "opening-selector-fast-castle",
@@ -92,14 +173,20 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity == "opening-selector-counter-feudal"
         )
         expected_opening_facts = {
+            "opening-selector-pacific-land-first": (
+                "(goal opening-plan -1)",
+                "(map-type pacific-islands)",
+            ),
             "opening-selector-water-control": (
                 "(goal opening-plan -1)",
+                "(not (map-type pacific-islands))",
                 "(or (map-type islands) (map-type pacific-islands))",
                 "(or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2))",
             ),
             "opening-selector-water-economy": (
                 "(goal opening-plan -1)",
+                "(not (map-type pacific-islands))",
                 "(or (map-type islands) (map-type pacific-islands))",
                 "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
