@@ -354,7 +354,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(wood-amount >= 75)", requirements)
         self.assertIn("(can-train fishing-ship)", requirements)
         self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
-        self.assertIn("(unit-type-count-total fishing-ship < 2)", requirements)
+        self.assertEqual(demand.target.minimum, 2)
 
     def test_checked_in_runtime_preserves_maturity_aware_villager_production(self):
         repo_root = Path(__file__).resolve().parents[3]
