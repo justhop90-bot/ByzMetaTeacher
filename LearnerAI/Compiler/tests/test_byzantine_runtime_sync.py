@@ -310,6 +310,8 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         start = synchronized.index("; Persistent civilian production")
         end = synchronized.index("; Pending diagnostics: early-defensive-spears", start)
         section = synchronized[start:end]
+        self.assertIn("(can-afford-research feudal-age)", section)
+        self.assertNotIn("(can-research-with-escrow feudal-age)", section)
         self.assertIn("(can-afford-research castle-age)", section)
         self.assertNotIn("(can-research-with-escrow castle-age)", section)
 
