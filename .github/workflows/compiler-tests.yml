@@ -113,6 +113,12 @@ jobs:
             LearnerAI.Compiler.tests.test_strategy_opening_economy.ByzantineStrategyControlSliceTests.test_feudal_bank_uses_guarded_native_escrow_policy_lifecycle \
             LearnerAI.Compiler.tests.test_strategy_opening_economy.ByzantineStrategyControlSliceTests.test_feudal_bank_does_not_replace_existing_age_release_escrow \
             -v
+      - name: Focused Feudal resource-island DUC regression
+        run: |
+          PYTHONPATH=LearnerAI python -m unittest \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_feudal_resource_island_transport_state_is_feudal_and_fail_closed \
+            LearnerAI.Compiler.tests.test_strategy_compiler_integration.StrategyCompilerIntegrationTests.test_stock_strategy_lowers_feudal_resource_island_duc_target_handoff \
+            -v
       - name: Native zero-findings acceptance - canonical Byzantine Core v1 artifact
         run: python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/native-reports/byzantine-core-v1.json
       - name: Focused Byzantine camp controller regression

@@ -393,6 +393,42 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("water-posture-naval-defense", rule_ids)
         self.assertIn("water-posture-naval-control", rule_ids)
 
+    def test_feudal_resource_island_transport_state_is_feudal_and_fail_closed(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("feudal-resource-island-transport-objective", state_ids)
+        self.assertIn("feudal-resource-island-target-state", state_ids)
+
+        open_rule = next(
+            rule for rule in control.rules
+            if rule.identity == "feudal-resource-island-transport-open"
+        )
+        open_facts = tuple(fact.source for fact in open_rule.facts)
+        self.assertIn("(current-age >= feudal-age)", open_facts)
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", open_facts)
+        self.assertIn(
+            profile.observation("strategy-water-map").expression,
+            open_facts,
+        )
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            open_facts,
+        )
+        self.assertNotIn("byzantine-army-attack-ready", " ".join(open_facts))
+
+        close = next(
+            rule for rule in control.rules
+            if rule.identity == "feudal-resource-island-transport-close"
+        )
+        self.assertIn(
+            "strategy-enemy-naval-pressure",
+            " ".join(fact.source for fact in close.facts),
+        )
+
     def test_stock_strategy_has_transport_and_naval_execution_demands(self):
         profile = build_byzantine_strategy(self.effective)
         demand_ids = {item.identity for item in profile.demands}

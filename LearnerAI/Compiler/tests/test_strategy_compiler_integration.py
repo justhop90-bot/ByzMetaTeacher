@@ -227,6 +227,59 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_stock_strategy_lowers_feudal_resource_island_duc_target_handoff(self):
+        compilation = lower_strategy_profile(self.stock_profile, self.effective)
+        plan = compilation.duc_plan
+        self.assertIsNotNone(plan)
+        assert plan is not None
+
+        rule_ids = tuple(rule.identity for rule in plan.rules)
+        self.assertIn("byzantine-feudal-resource-island-search-reset", rule_ids)
+        self.assertIn("byzantine-feudal-resource-island-gold", rule_ids)
+
+        discover = next(
+            rule for rule in plan.rules
+            if rule.identity == "byzantine-feudal-resource-island-gold"
+        )
+        facts = tuple(fact.source for fact in discover.facts)
+        actions = tuple(action.source for action in discover.actions)
+        self.assertIn("(current-age >= feudal-age)", facts)
+        self.assertIn("(goal feudal-resource-island-transport-objective 1)", facts)
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", facts)
+        self.assertIn("(goal feudal-resource-island-target-state 0)", facts)
+        self.assertIn("(up-find-resource c: gold c: 40)", facts)
+        self.assertIn(
+            "(up-set-target-object search-remote c: 0)",
+            actions,
+        )
+        self.assertIn(
+            "(up-get-point position-object feudal-resource-island-gold-point)",
+            actions,
+        )
+        self.assertIn(
+            "(set-goal feudal-resource-island-target-state 1)",
+            actions,
+        )
+        self.assertNotIn("up-target-objects", " ".join(actions))
+
+        point_outputs = tuple(
+            request for request in plan.output_requests
+            if request.rule_identity == discover.identity
+            and request.command == "up-get-point"
+        )
+        self.assertEqual(len(point_outputs), 1)
+        self.assertEqual(point_outputs[0].expression_index, 1)
+        self.assertEqual(point_outputs[0].argument_index, 1)
+        self.assertEqual(point_outputs[0].request.width, 2)
+        self.assertEqual(point_outputs[0].request.shape, GoalSpanKind.POINT_PAIR)
+        self.assertEqual(point_outputs[0].request.contract_id, "up-get-point.Point")
+
+        transport = self.stock_profile.demand("water-transport-capability")
+        self.assertIn("(can-train-with-escrow transport-ship)", transport.execution.requirements)
+
+        first = compile_strategy_profile(self.stock_profile, self.effective)
+        second = compile_strategy_profile(self.stock_profile, self.effective)
+        self.assertEqual(first, second)
     def test_strategy_compiler_emits_native_strategos_voice_plan(self):
         first = compile_strategy_profile(self.stock_profile, self.effective)
         second = compile_strategy_profile(self.stock_profile, self.effective)

@@ -4594,11 +4594,96 @@ def _default_byzantine_duc_plan(
             )
         )
 
-    if profile_id != "byzantine-stock-v1":
-        return NativeDucPlan(
-            rules=tuple(rules),
-            output_requests=tuple(outputs),
+    if profile_id == "byzantine-stock-v1":
+        resource_island_point = GoalSpanRequest(
+            StorageRequestId(
+                SemanticId(profile_id, "feudal-resource-island-gold-point"),
+                "up-get-point",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=2,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.Point",
+            start_min=41,
+            start_max=15998,
         )
+        resource_transport_guard = (
+            "(current-age >= feudal-age)",
+            "(goal feudal-resource-island-transport-objective 1)",
+            "(unit-type-count-total transport-ship >= 1)",
+        )
+        reset_identity = "byzantine-feudal-resource-island-search-reset"
+        rules.append(
+            NativeDucRule(
+                identity=reset_identity,
+                order=len(rules),
+                facts=tuple(
+                    parse_expression(item, SourceLocation(1))
+                    for item in resource_transport_guard
+                ) + (
+                    parse_expression(
+                        "(goal feudal-resource-island-target-state 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                ),
+                lifecycle=(NativeDucLifecycleStage.ADMISSIBILITY,),
+            )
+        )
+        discover_identity = "byzantine-feudal-resource-island-gold"
+        rules.append(
+            NativeDucRule(
+                identity=discover_identity,
+                order=len(rules),
+                facts=tuple(
+                    parse_expression(item, SourceLocation(1))
+                    for item in resource_transport_guard
+                ) + (
+                    parse_expression(
+                        "(goal feudal-resource-island-target-state 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-find-resource c: gold c: 40)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-point position-object feudal-resource-island-gold-point)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal feudal-resource-island-target-state 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                lifecycle=(
+                    NativeDucLifecycleStage.TARGET,
+                    NativeDucLifecycleStage.RELEASE_WITNESS,
+                ),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=discover_identity,
+                section="ACTION",
+                expression_index=1,
+                request=resource_island_point,
+                command="up-get-point",
+                argument_index=1,
+            )
+        )
+    return NativeDucPlan(
+        rules=tuple(rules),
+        output_requests=tuple(outputs),
+    )
 
     if target_control is not None:
         from .endgame import EndgameFrontierState, EndgameTargetQueryKind
