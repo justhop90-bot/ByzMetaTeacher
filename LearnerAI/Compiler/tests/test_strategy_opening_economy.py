@@ -61,6 +61,58 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
         self.assertEqual(profile.opening_selector.plan_id, "byzantine-opening-v1")
 
+    def test_pacific_is_a_first_class_land_first_opening(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        ids = tuple(
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("opening-selector-")
+        )
+        self.assertEqual(ids[0], "opening-selector-pacific-land-first")
+        pacific = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-pacific-land-first"
+        )
+        self.assertEqual(
+            tuple(fact.source for fact in pacific.facts),
+            ("(goal opening-plan -1)", "(map-type pacific-islands)"),
+        )
+        water = next(
+            rule for rule in control.rules
+            if rule.identity == "opening-selector-water-control"
+        )
+        self.assertIn("(not (map-type pacific-islands))", tuple(fact.source for fact in water.facts))
+
+    def test_feudal_transition_carries_the_500_food_protection_policy(self):
+        profile = build_byzantine_strategy(self.effective)
+        transition = profile.demand("feudal-transition")
+        self.assertEqual(
+            tuple((floor.resource, floor.minimum) for floor in transition.opportunity_cost.protected_floors),
+            ((Resource.FOOD, 500),),
+        )
+
+    def test_feudal_bank_control_arms_at_twenty_and_releases_on_feudal(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        arm = next(rule for rule in control.rules if rule.identity == "feudal-bank-arm")
+        release = next(rule for rule in control.rules if rule.identity == "feudal-bank-release-on-feudal-witness")
+        self.assertIn("(unit-type-count-total villager >= 20)", tuple(f.source for f in arm.facts))
+        self.assertIn("(set-escrow-percentage food 100)", tuple(a.source for a in arm.actions))
+        self.assertIn("(current-age >= feudal-age)", tuple(f.source for f in release.facts))
+        self.assertIn("(set-escrow-percentage food 0)", tuple(a.source for a in release.actions))
+
+    def test_dark_age_villager_continuity_yields_to_active_feudal_bank(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        self.assertIn("(goal feudal-bank-active 1)", " ".join(demand.execution.requirements))
+
     def test_opening_selection_is_durable_and_precedence_ordered(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
@@ -75,6 +127,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertEqual(
             rule_ids,
             (
+                "opening-selector-pacific-land-first",
                 "opening-selector-water-control",
                 "opening-selector-water-economy",
                 "opening-selector-fast-castle",
@@ -92,6 +145,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if rule.identity == "opening-selector-counter-feudal"
         )
         expected_opening_facts = {
+            "opening-selector-pacific-land-first": (
+                "(goal opening-plan -1)",
+                "(map-type pacific-islands)",
+            ),
             "opening-selector-water-control": (
                 "(goal opening-plan -1)",
                 "(or (map-type islands) (map-type pacific-islands))",
