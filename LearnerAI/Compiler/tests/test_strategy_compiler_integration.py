@@ -409,10 +409,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             self.assertIn("(goal feudal-resource-island-transport-objective 1)", facts)
             self.assertIn("(goal pacific-transport-escort 2)", facts)
             self.assertIn("(building-type-count-total dock >= 1)", facts)
-            self.assertIn(
-                f"(not {self.stock_profile.observation('strategy-enemy-naval-pressure').expression})",
-                facts,
-            )
+            self.assertIn("(players-unit-type-count any-enemy galley-line < 2)", facts)
+            self.assertIn("(players-unit-type-count any-enemy fire-galley-line < 2)", facts)
 
         transport_actions = tuple(action.source for action in transport_rule.actions)
         escort_actions = tuple(action.source for action in escort_rule.actions)

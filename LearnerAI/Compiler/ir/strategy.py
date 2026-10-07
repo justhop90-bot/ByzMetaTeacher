@@ -5066,7 +5066,8 @@ def _default_byzantine_duc_plan(
         "(goal pacific-transport-escort 2)",
         "(building-type-count-total dock >= 1)",
         "(unit-type-count-total transport-ship >= 1)",
-        "(not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))",
+        "(players-unit-type-count any-enemy galley-line < 2)",
+        "(players-unit-type-count any-enemy fire-galley-line < 2)",
     )
     transport_route_identity = "byzantine-pacific-convoy-route-transport"
     rules.append(
