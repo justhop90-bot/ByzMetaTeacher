@@ -927,6 +927,54 @@ def _ensure_pacific_islands_water_arbitration(runtime: str) -> str:
     return runtime
 
 
+def _replace_between_markers(
+    runtime: str,
+    generated: str,
+    start_marker: str,
+    end_marker: str,
+) -> str:
+    generated_start = generated.find(start_marker)
+    generated_end = generated.find(end_marker, generated_start)
+    runtime_start = runtime.find(start_marker)
+    runtime_end = runtime.find(end_marker, runtime_start)
+
+    if generated_start < 0 or generated_end < 0:
+        raise RuntimeError(
+            f"generated artifact is missing control block: {start_marker}"
+        )
+    if runtime_start < 0 or runtime_end < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing control block: {start_marker}"
+        )
+
+    return (
+        runtime[:runtime_start]
+        + generated[generated_start:generated_end].rstrip()
+        + "\n\n"
+        + runtime[runtime_end:]
+    )
+
+
+def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
+    """Synchronize compiler-owned strategic water/land arbitration into runtime."""
+    return _replace_between_markers(
+        runtime,
+        generated,
+        "; Native persistent control plane",
+        "; Native control rule: counter-package-selection-reset-000",
+    )
+
+
+def _sync_opening_water_selector(runtime: str, generated: str) -> str:
+    """Synchronize authoritative water classification into the opening selector."""
+    return _replace_between_markers(
+        runtime,
+        generated,
+        "; Native control rule: opening-selector-water-control",
+        "; Native control rule: opening-selector-fast-castle",
+    )
+
+
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
     """Synchronize the canonical water state machine into the checked-in runtime."""
 
@@ -956,8 +1004,9 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _sync_strategic_arbitration_control(runtime, generated)
     runtime = _sync_water_execution_control(runtime, generated)
-    runtime = _ensure_pacific_islands_water_arbitration(runtime)
+    runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _ensure_reserved_water_goal_defconsts(runtime)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
