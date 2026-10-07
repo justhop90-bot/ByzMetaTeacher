@@ -1986,15 +1986,14 @@ def community_strategy_demands(
                 requirements=(
                     "(current-age >= dark-age)",
                     water_map,
-                    f"(or (and {pacific_islands} (unit-type-count-total fishing-ship < 2)) "
-                    f"(and (not {pacific_islands}) (unit-type-count-total fishing-ship < 4)))",
                     "(building-type-count-total dock >= 1)",
                     "(can-train-with-escrow fishing-ship)",
+                    "(unit-type-count-total fishing-ship < 2)",
                 ),
                 action="(train fishing-ship)",
                 witness="(unit-type-count fishing-ship >= 2)",
                 release=(
-                    f"(or (and {pacific_islands} (unit-type-count fishing-ship >= 2)) "
+                    f"(or (unit-type-count fishing-ship >= 2) "
                     f"(and (not {pacific_islands}) (unit-type-count fishing-ship >= 4)))"
                 ),
             ),
