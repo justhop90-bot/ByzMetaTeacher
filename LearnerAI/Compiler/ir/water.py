@@ -86,6 +86,7 @@ class PacificConvoyRoutePhase(IntEnum):
     STAGING = 1
     ACTIVE = 2
     RECOVERY = 3
+    FALLBACK = 4
 
 
 @dataclass(frozen=True)
@@ -859,9 +860,10 @@ def lower_water_execution_plan(
         NativeControlRule(
             "pacific-convoy-route-recover-on-transport-loss",
             facts=(
-                goal(
-                    plan.pacific_convoy_route_state,
-                    int(PacificConvoyRoutePhase.ACTIVE),
+                parse_expression(
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)}))",
+                    SourceLocation(1),
                 ),
                 parse_expression(
                     "(unit-type-count-total transport-ship < 1)",
@@ -904,12 +906,41 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlRule(
+            "pacific-convoy-route-rearm-from-fallback",
+            facts=(
+                goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.FALLBACK),
+                ),
+                parse_expression(
+                    "(unit-type-count-total transport-ship >= 1)",
+                    SourceLocation(1),
+                ),
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.READY),
+                ),
+                dock,
+                parse_expression(
+                    f"(not {naval.source})",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.STAGING),
+                ),
+            ),
+        ),
+        NativeControlRule(
             "pacific-convoy-route-close-on-pressure",
             facts=(
                 parse_expression(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
                     SourceLocation(1),
                 ),
                 naval,
@@ -927,7 +958,8 @@ def lower_water_execution_plan(
                 parse_expression(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
                     SourceLocation(1),
                 ),
                 parse_expression(f"(not {dock.source})", SourceLocation(1)),
@@ -945,7 +977,8 @@ def lower_water_execution_plan(
                 parse_expression(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
                     SourceLocation(1),
                 ),
                 parse_expression(
@@ -956,7 +989,7 @@ def lower_water_execution_plan(
             actions=(
                 set_goal(
                     plan.pacific_convoy_route_state,
-                    int(PacificConvoyRoutePhase.IDLE),
+                    int(PacificConvoyRoutePhase.FALLBACK),
                 ),
             ),
         ),
