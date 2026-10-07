@@ -275,6 +275,22 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(garrison_input.expression_index, 2)
 
+        load_witness = next(
+            r for r in plan.rules if r.identity == "byzantine-pacific-transport-load-witness"
+        )
+        load_actions = tuple(a.source for a in load_witness.actions)
+        self.assertIn("(up-get-object-data object-data-garrison-count 0)", load_actions)
+        self.assertNotIn("(up-get-object-data garrison-count 0)", load_actions)
+
+        probe = next(
+            r for r in plan.rules if r.identity == "byzantine-pacific-transport-transit-probe"
+        )
+        probe_actions = tuple(a.source for a in probe.actions)
+        self.assertIn("(up-get-object-data object-data-action 0)", probe_actions)
+        self.assertIn("(up-get-object-data object-data-distance 0)", probe_actions)
+        self.assertNotIn("(up-get-object-data action 0)", probe_actions)
+        self.assertNotIn("(up-get-object-data distance 0)", probe_actions)
+
         move = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-move")
         self.assertIn(
             "(up-compare-goal pacific-opening-transport-distance > 64)",
@@ -286,10 +302,13 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
 
         unload = next(r for r in plan.rules if r.identity == "byzantine-pacific-transport-unload")
+        unload_actions = tuple(a.source for a in unload.actions)
         self.assertIn(
             "(up-target-point 0 9 -1 -1)",
-            tuple(a.source for a in unload.actions),
+            unload_actions,
         )
+        self.assertIn("(up-get-object-data object-data-action 0)", unload_actions)
+        self.assertIn("(up-get-object-data object-data-garrison-count 0)", unload_actions)
         self.assertEqual(
             sum(1 for request in plan.input_requests if request.source.purpose == "up-get-object-data"),
             5,
@@ -304,10 +323,26 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "(up-target-objects 1 7 -1 -1)",
             "(up-target-point 0 action-move -1 -1)",
             "(up-target-point 0 9 -1 -1)",
+            "(up-get-object-data object-data-garrison-count 288)",
+            "(up-get-object-data object-data-action 290)",
+            "(up-get-object-data object-data-distance 286)",
+            "(up-get-object-data object-data-action 291)",
+            "(up-get-object-data object-data-garrison-count 292)",
+            "(defconst object-data-action 5)",
+            "(defconst object-data-distance 44)",
+            "(defconst object-data-garrison-count 18)",
             "(defconst pacific-opening-transport-point ",
             "(defconst pacific-opening-transport-id ",
         ):
             self.assertIn(snippet, output)
+        for shorthand in (
+            "(up-get-object-data garrison-count 288)",
+            "(up-get-object-data action 290)",
+            "(up-get-object-data distance 286)",
+            "(up-get-object-data action 291)",
+            "(up-get-object-data garrison-count 292)",
+        ):
+            self.assertNotIn(shorthand, output)
         self.assertEqual(output, compile_strategy_profile(self.stock_profile, self.effective))
 
     def test_stock_strategy_lowers_feudal_resource_island_duc_target_handoff(self):
@@ -505,6 +540,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(output.count("(defconst action-attack-move 19)"), 1)
         self.assertEqual(output.count("(defconst object-data-id 0)"), 1)
+        self.assertEqual(output.count("(defconst object-data-action 5)"), 1)
+        self.assertEqual(output.count("(defconst object-data-distance 44)"), 1)
+        self.assertEqual(output.count("(defconst object-data-garrison-count 18)"), 1)
 
     def test_byzantine_endgame_objective_target_control_is_class_priority_and_fail_closed(self):
         compilation = lower_strategy_profile(self.stock_profile, self.effective)

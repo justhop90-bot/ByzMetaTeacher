@@ -86,6 +86,9 @@
 (defconst monastery 104)
 (defconst villager-class 904)
 (defconst object-data-id 0)
+(defconst object-data-action 5)
+(defconst object-data-garrison-count 18)
+(defconst object-data-distance 44)
 (defconst object-data-dropsite 14)
 (defconst ri-man-at-arms 222)
 (defconst sn-intelligent-gathering 142)
@@ -31388,7 +31391,7 @@
     (up-compare-goal pacific-opening-transport-id >= 1)
 =>
     (up-set-target-by-id g: 287)
-    (up-get-object-data garrison-count 288)
+    (up-get-object-data object-data-garrison-count 288)
 )
 
 ; Native DUC rule: byzantine-pacific-transport-transit-probe
@@ -31398,8 +31401,8 @@
 =>
     (up-set-target-by-id g: 287)
     (up-set-target-point pacific-opening-transport-point)
-    (up-get-object-data action 290)
-    (up-get-object-data distance 286)
+    (up-get-object-data object-data-action 290)
+    (up-get-object-data object-data-distance 286)
 )
 
 ; Native DUC rule: byzantine-pacific-transport-move
@@ -31421,8 +31424,8 @@
     (up-set-target-by-id g: 287)
     (up-set-target-point pacific-opening-transport-point)
     (up-target-point 0 9 -1 -1)
-    (up-get-object-data action 291)
-    (up-get-object-data garrison-count 292)
+    (up-get-object-data object-data-action 291)
+    (up-get-object-data object-data-garrison-count 292)
 )
 
 ; Native Strategos voice plan
