@@ -839,15 +839,12 @@ def _ensure_water_fishing_expansion_goal_defconsts(runtime: str) -> str:
     if valid_current():
         return runtime
 
-    missing = [name for name in WATER_FISHING_EXPANSION_GOAL_NAMES if values[name] is None]
     chosen = _choose_goal_slots(
         runtime,
-        len(missing),
-        relocatable_names=tuple(
-            name for name in WATER_FISHING_EXPANSION_GOAL_NAMES if values[name] is not None
-        ),
+        len(WATER_FISHING_EXPANSION_GOAL_NAMES),
+        relocatable_names=WATER_FISHING_EXPANSION_GOAL_NAMES,
     )
-    replacements = dict(zip(missing, chosen))
+    replacements = dict(zip(WATER_FISHING_EXPANSION_GOAL_NAMES, chosen))
     anchor = "(defconst water-transport-rebuild "
     position = runtime.find(anchor)
     if position < 0:
@@ -855,8 +852,17 @@ def _ensure_water_fishing_expansion_goal_defconsts(runtime: str) -> str:
     line_end = runtime.find("\n", position)
     if line_end < 0:
         line_end = len(runtime)
-    insertion = "".join(f"\n(defconst {name} {value})" for name, value in replacements.items())
-    return runtime[:line_end + 1] + insertion + runtime[line_end + 1:]
+    for name, value in replacements.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            runtime = runtime[:line_end + 1] + new_line + "\n" + runtime[line_end + 1:]
+            line_end += len(new_line) + 1
+    return runtime
 
 
 def _sync_water_demand_lifecycles(runtime: str, generated: str) -> str:
@@ -890,7 +896,7 @@ def _sync_water_demand_lifecycles(runtime: str, generated: str) -> str:
             raise RuntimeError(
                 f"runtime artifact is missing insertion boundary for water demand: {identity}"
             )
-        runtime = runtime[:insertion] + generated_block + "\n" + runtime[insertion:]
+        runtime = runtime[:insertion] + generated_block + runtime[insertion:]
 
     return runtime
 
