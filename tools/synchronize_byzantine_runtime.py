@@ -762,7 +762,6 @@ WATER_EXECUTION_STATE_NAMES = (
     "water-transport-rebuild",
     "pacific-opening-transport-objective",
     "feudal-resource-island-transport-objective",
-    "feudal-resource-island-target-state",
 )
 WATER_EXECUTION_NEW_STATE_NAMES = (
     "water-transport-objective",
@@ -800,7 +799,6 @@ WATER_RUNTIME_RESERVED_GOALS = {
     "water-transport-rebuild": 15969,
     "pacific-opening-transport-objective": 15968,
     "feudal-resource-island-transport-objective": 15967,
-    "feudal-resource-island-target-state": 15966,
 }
 
 
