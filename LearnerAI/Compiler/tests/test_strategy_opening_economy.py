@@ -96,7 +96,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
 
     def test_feudal_bank_uses_guarded_native_escrow_policy_lifecycle(self):
-        from Compiler.ir import NativeEscrowReleasePlan
+        from LearnerAI.Compiler.ir.resource_control import NativeEscrowReleasePlan
 
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
@@ -126,7 +126,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         )
 
     def test_feudal_bank_does_not_replace_existing_age_release_escrow(self):
-        from Compiler.ir import NativeEscrowReleasePlan
+        from LearnerAI.Compiler.ir.resource_control import NativeEscrowReleasePlan
 
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
