@@ -225,6 +225,7 @@ _DUC_COMMAND_SPECS = (
     ("up-set-target-object", "duc.target.object"),
     ("up-set-target-point", "duc.target.point"),
     ("up-target-objects", "duc.target.consume-objects"),
+    ("up-target-point", "duc.target.point-consume"),
 )
 
 
