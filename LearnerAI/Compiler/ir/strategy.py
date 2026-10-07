@@ -4740,9 +4740,9 @@ def _default_byzantine_duc_plan(
             actions=(
                 parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
-                parse_expression("(up-find-local c: villager-class c: 4)", SourceLocation(1)),
+                parse_expression("(up-find-local c: 904 c: 4)", SourceLocation(1)),
                 parse_expression(
-                    "(up-target-objects 1 action-garrison -1 -1)",
+                    "(up-target-objects 1 c: 7 -1 -1)",
                     SourceLocation(1),
                 ),
             ),
@@ -4934,7 +4934,7 @@ def _default_byzantine_duc_plan(
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    "(up-target-point 0 action-unload -1 -1)",
+                    "(up-target-point 0 c: 9 -1 -1)",
                     SourceLocation(1),
                 ),
                 parse_expression(
