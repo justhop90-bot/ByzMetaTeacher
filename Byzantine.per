@@ -5277,7 +5277,7 @@
 ; Native control rule: strategic-arbitration-observation-enable-strategy-water-islands
 (defrule
     (goal arb-o01 0)
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
 =>
     (set-goal arb-o01 1)
 )
@@ -5285,7 +5285,7 @@
 ; Native control rule: strategic-arbitration-observation-disable-strategy-water-islands
 (defrule
     (goal arb-o01 1)
-    (not (map-type islands))
+    (not (or (map-type islands) (map-type pacific-islands)))
 =>
     (set-goal arb-o01 0)
 )

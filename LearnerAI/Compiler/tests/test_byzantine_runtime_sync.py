@@ -71,6 +71,21 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "(or (map-type islands) (map-type pacific-islands))",
             synchronized,
         )
+        for identity in (
+            "strategic-arbitration-observation-enable-strategy-water-islands",
+            "strategic-arbitration-observation-disable-strategy-water-islands",
+        ):
+            marker = f"; Native control rule: {identity}"
+            start = synchronized.index(marker)
+            end = synchronized.index("\n; ", start + len(marker))
+            block = synchronized[start:end]
+            self.assertIn(
+                "(or (map-type islands) (map-type pacific-islands))",
+                block,
+            )
+            self.assertNotIn("(map-type islands)", block.replace(
+                "(or (map-type islands) (map-type pacific-islands))", ""
+            ))
         self.assertIn(
             "; Native control rule: transport-objective-open",
             synchronized,
