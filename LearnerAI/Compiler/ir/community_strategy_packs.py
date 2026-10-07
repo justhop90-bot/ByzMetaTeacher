@@ -2766,7 +2766,7 @@ def build_byzantine_stock_strategy(
                 requirements=(
                     "(current-age == dark-age)",
                     "(unit-type-count-total villager >= 20)",
-                    "(can-afford-research feudal-age)",
+                    "(can-research-with-escrow feudal-age)",
                 ),
             )
             base_demand = replace(
