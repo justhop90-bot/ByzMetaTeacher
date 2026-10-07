@@ -1997,8 +1997,9 @@ def community_strategy_demands(
                     "(current-age >= dark-age)",
                     water_map,
                     "(building-type-count-total dock >= 1)",
+                    "(can-train fishing-ship)",
                     "(or (and (unit-type-count-total fishing-ship < 1) "
-                    "(and (wood-amount >= 75) (can-train fishing-ship))) "
+                    "(wood-amount >= 75)) "
                     "(and (unit-type-count-total fishing-ship >= 1) "
                     "(can-train-with-escrow fishing-ship)))",
                     "(unit-type-count-total fishing-ship < 2)",
