@@ -419,13 +419,29 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         self.assertNotIn("byzantine-army-attack-ready", " ".join(open_facts))
 
-        close = next(
-            rule for rule in control.rules
-            if rule.identity == "feudal-resource-island-transport-close"
+        close_rules = {
+            rule.identity: rule
+            for rule in control.rules
+            if rule.identity.startswith("feudal-resource-island-transport-close-")
+        }
+        self.assertEqual(
+            set(close_rules),
+            {
+                "feudal-resource-island-transport-close-nonwater",
+                "feudal-resource-island-transport-close-before-feudal",
+                "feudal-resource-island-transport-close-on-loss",
+                "feudal-resource-island-transport-close-on-naval-pressure",
+            },
         )
+        close_text = {
+            identity: " ".join(fact.source for fact in rule.facts)
+            for identity, rule in close_rules.items()
+        }
+        self.assertIn("(not (current-age >= feudal-age))", close_text["feudal-resource-island-transport-close-before-feudal"])
+        self.assertIn("(not (unit-type-count-total transport-ship >= 1))", close_text["feudal-resource-island-transport-close-on-loss"])
         self.assertIn(
-            "strategy-enemy-naval-pressure",
-            " ".join(fact.source for fact in close.facts),
+            profile.observation("strategy-enemy-naval-pressure").expression,
+            close_text["feudal-resource-island-transport-close-on-naval-pressure"],
         )
 
     def test_stock_strategy_has_transport_and_naval_execution_demands(self):
