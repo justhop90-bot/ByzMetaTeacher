@@ -61,7 +61,7 @@ _ENDGAME_CATAPHRACT_TARGET = 18
 _ENDGAME_VARANGIAN_TARGET = 14
 _ENDGAME_RAM_TARGET = 8
 _ENDGAME_TREBUCHET_TARGET = 8
-WATER_MAP_EXPRESSION = water_map
+WATER_MAP_EXPRESSION = "(or (map-type islands) (map-type pacific-islands))"
 PACIFIC_ISLANDS_EXPRESSION = "(map-type pacific-islands)"
 
 
