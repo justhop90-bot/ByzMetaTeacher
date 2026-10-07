@@ -4713,6 +4713,7 @@
 (defconst byzantine-remote-resource-productivity-point 376)
 (defconst byzantine-remote-resource-productivity-worker-search 15344)
 (defconst byzantine-remote-resource-productivity-timer 22)
+(defconst pacific-transport-load-retry 23)
 (defconst bt-resource-productivity-seconds 30)
 (defconst bt-resource-productivity-local-radius 8)
 (defconst bt-resource-productive-gatherers 2)
@@ -5892,6 +5893,14 @@
     (set-strategic-number sn-native-227 50)
 )
 
+; Native timer initialization: Pacific transport load retry cadence
+(defrule
+    (true)
+=>
+    (disable-timer pacific-transport-load-retry)
+    (disable-self)
+)
+
 ; Native control rule: water-execution-initialize
 (defrule
     (goal transport-phase 0)
@@ -5934,6 +5943,7 @@
     (current-age >= feudal-age)
 =>
     (set-goal pacific-opening-transport-objective 0)
+    (disable-timer pacific-transport-load-retry)
 )
 
 ; Native control rule: pacific-opening-transport-close-on-loss
@@ -5942,6 +5952,19 @@
     (unit-type-count-total transport-ship < 1)
 =>
     (set-goal pacific-opening-transport-objective 0)
+    (disable-timer pacific-transport-load-retry)
+)
+
+; Native control rule: pacific-fishing-continuity-bootstrap
+(defrule
+    (map-type pacific-islands)
+    (building-type-count-total dock >= 1)
+    (not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))
+    (current-age >= dark-age)
+    (unit-type-count-total fishing-ship < 2)
+    (goal demand-water-fishing-continuity 0)
+=>
+    (set-goal demand-water-fishing-continuity 1)
 )
 
 ; Native control rule: pacific-fishing-controller-open
@@ -6219,6 +6242,7 @@
     (set-goal pacific-transport-lifecycle 1)
     (set-goal pacific-transport-transit-witness 0)
     (set-goal pacific-transport-unload-witness 0)
+    (enable-timer pacific-transport-load-retry 20)
 )
 
 ; Native control rule: pacific-transport-lifecycle-load-witness
@@ -6227,6 +6251,23 @@
     (up-compare-goal pacific-opening-transport-load-count >= 4)
 =>
     (set-goal pacific-transport-lifecycle 2)
+    (disable-timer pacific-transport-load-retry)
+)
+
+; Native control rule: pacific-transport-lifecycle-load-failure-recover
+(defrule
+    (goal pacific-transport-lifecycle 1)
+    (timer-triggered pacific-transport-load-retry)
+    (up-compare-goal pacific-opening-transport-load-count < 4)
+    (unit-type-count-total transport-ship >= 1)
+    (up-pending-objects c: 904 == 0)
+=>
+    (set-goal pacific-transport-lifecycle 5)
+    (set-goal pacific-opening-transport-id 0)
+    (set-goal pacific-opening-transport-load-count 0)
+    (set-goal pacific-transport-transit-witness 0)
+    (set-goal pacific-transport-unload-witness 0)
+    (disable-timer pacific-transport-load-retry)
 )
 
 ; Native control rule: pacific-transport-lifecycle-transit-witness
@@ -6323,6 +6364,7 @@
     (set-goal pacific-transport-lifecycle 0)
     (set-goal pacific-transport-transit-witness 0)
     (set-goal pacific-transport-unload-witness 0)
+    (disable-timer pacific-transport-load-retry)
 )
 
 ; Native control rule: feudal-resource-island-transport-open
