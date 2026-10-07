@@ -69,5 +69,13 @@ jobs:
             LearnerAI.Compiler.tests.test_community_strategy_packs.ByzantineCommunityStrategyPackTests.test_pacific_harbor_defense_gates_naval_demands_on_pacific \
             -v
 
+      - name: Focused Pacific Transport Recovery regression
+        run: |
+          python -m unittest \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_transport_recovery_retains_a_post_landing_rebuild_entitlement \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_transport_recovery_demand_uses_dock_pressure_and_escrow \
+            LearnerAI.Compiler.tests.test_community_strategy_packs.ByzantineCommunityStrategyPackTests.test_pacific_transport_recovery_is_a_standing_feudal_capability_after_landing \
+            -v
+
       - name: Native zero-findings acceptance - canonical Byzantine artifact
         run: python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/native-byzantine.json
