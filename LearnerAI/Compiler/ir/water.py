@@ -967,7 +967,7 @@ def lower_water_execution_plan(
             actions=(
                 set_goal(
                     plan.pacific_convoy_route_state,
-                    int(PacificConvoyRoutePhase.IDLE),
+                    int(PacificConvoyRoutePhase.FALLBACK),
                 ),
             ),
         ),
@@ -999,7 +999,8 @@ def lower_water_execution_plan(
                 parse_expression(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
                     SourceLocation(1),
                 ),
                 parse_expression(f"(not {pacific.source})", SourceLocation(1)),
