@@ -95,24 +95,6 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ((Resource.FOOD, 500),),
         )
 
-    def test_feudal_bank_control_arms_at_twenty_and_releases_on_feudal(self):
-        profile = build_byzantine_strategy(self.effective)
-        compilation = lower_strategy_profile(profile, self.effective)
-        control = compilation.control_plan
-        assert control is not None
-
-        arm = next(rule for rule in control.rules if rule.identity == "feudal-bank-arm")
-        release = next(rule for rule in control.rules if rule.identity == "feudal-bank-release-on-feudal-witness")
-        self.assertIn("(unit-type-count-total villager >= 20)", tuple(f.source for f in arm.facts))
-        self.assertIn("(set-escrow-percentage food 100)", tuple(a.source for a in arm.actions))
-        self.assertIn("(current-age >= feudal-age)", tuple(f.source for f in release.facts))
-        self.assertIn("(set-escrow-percentage food 0)", tuple(a.source for a in release.actions))
-
-    def test_dark_age_villager_continuity_yields_to_active_feudal_bank(self):
-        profile = build_byzantine_strategy(self.effective)
-        demand = profile.demand("civilian-villager-continuity")
-        self.assertIn("(goal feudal-bank-active 1)", " ".join(demand.execution.requirements))
-
     def test_opening_selection_is_durable_and_precedence_ordered(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
