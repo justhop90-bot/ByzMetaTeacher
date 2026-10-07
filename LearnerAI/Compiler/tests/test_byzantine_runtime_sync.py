@@ -13,6 +13,61 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
 
+    def test_checked_in_water_artifact_is_canonical_and_goal_disjoint(self) -> None:
+        source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        self.assertIn(
+            "(or (map-type islands) (map-type pacific-islands))",
+            source,
+        )
+        self.assertIn(
+            "; Native control rule: transport-objective-open",
+            source,
+        )
+        self.assertIn(
+            "; Native control rule: transport-phase-reopen",
+            source,
+        )
+        self.assertIn(
+            "; Native control rule: water-posture-naval-defense",
+            source,
+        )
+        self.assertIn(
+            "; Native control rule: water-posture-fishing",
+            source,
+        )
+
+        definitions = {
+            match.group(1): int(match.group(2))
+            for match in re.finditer(
+                r"^\(defconst\s+([^\s()]+)\s+(-?\d+)\)$",
+                source,
+                flags=re.MULTILINE,
+            )
+        }
+        reserved = {
+            "water-dock-capability": 15977,
+            "construction-retry-barrier-water-dock-capability": 15976,
+            "demand-water-dock-capability": 15975,
+            "issued-water-dock-capability": 15973,
+            "pending-water-dock-capability": 15972,
+            "complete-water-dock-capability": 15971,
+            "water-transport-objective": 15970,
+            "water-transport-rebuild": 15969,
+        }
+        self.assertTrue(
+            all(definitions.get(name) == value for name, value in reserved.items())
+        )
+
+        names = list(definitions)
+        duplicates = sorted(
+            {
+                name
+                for name in names
+                if names.count(name) > 1
+            }
+        )
+        self.assertEqual(duplicates, [])
+
     def test_synchronization_installs_canonical_water_execution_control(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
