@@ -613,7 +613,10 @@ def lower_water_strategy_arbitration_control_plan(profile):
             ),
             rule(
                 "strategic-arbitration-candidate-disable-water-investment",
-                ("(goal arb-c01 1)", "(not (goal arb-o01 1))"),
+                (
+                    "(goal arb-c01 1)",
+                    "(or (not (goal arb-o01 1)) " + pacific + ")",
+                ),
                 ("(set-goal arb-c01 0)",),
             ),
             rule(
