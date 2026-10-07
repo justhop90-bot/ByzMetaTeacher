@@ -956,11 +956,16 @@ def _replace_between_markers(
 
 
 def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
-    """Synchronize compiler-owned strategic water/land arbitration into runtime."""
+    """Synchronize compiler-owned water/land arbitration rules into runtime.
+
+    Runtime storage IDs remain hybrid-runtime-owned. The compiler contract is the
+    rule semantics and stable symbolic names, while the existing runtime artifact
+    retains its collision-free Goal bindings.
+    """
     return _replace_between_markers(
         runtime,
         generated,
-        "; Native persistent control plane",
+        "; Native control rule: strategic-arbitration-state-initialize",
         "; Native control rule: counter-package-selection-reset-000",
     )
 
