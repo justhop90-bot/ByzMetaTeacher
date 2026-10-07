@@ -4476,6 +4476,11 @@
 (defconst complete-water-dock-capability 15971)
 (defconst water-transport-objective 15970)
 (defconst water-transport-rebuild 15969)
+(defconst demand-water-fishing-expansion 15978)
+(defconst issued-water-fishing-expansion 15977)
+(defconst pending-water-fishing-expansion 15974)
+(defconst complete-water-fishing-expansion 15973)
+(defconst production-retry-barrier-water-fishing-expansion 15972)
 (defconst opening-recovery 16000)
 (defconst opening-recovery-cause 15999)
 (defconst opening-recovery-defense-clear 15998)
@@ -7595,6 +7600,18 @@
     (not (goal opening-plan 6))
 =>
     (set-goal economy-posture 2)
+)
+
+; Native control rule: economy-controller-select-pacific-land-first
+(defrule
+    (and (current-age >= feudal-age) (current-age < castle-age))
+    (not (players-unit-type-count any-enemy knight >= 3))
+    (not (players-unit-type-count any-enemy archer-line >= 4))
+    (not (players-unit-type-count any-enemy militia-line >= 5))
+    (map-type pacific-islands)
+    (not (goal opening-plan 6))
+=>
+    (set-goal economy-posture 9)
 )
 
 ; Native control rule: economy-controller-select-water-economy
@@ -26951,66 +26968,49 @@
 )
 
 ; Pending diagnostics: water-fishing-continuity
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 127 and cannot reissue from pending goal 128
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 128 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 129 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 159 and cannot reissue from pending goal 160
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 160 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 161 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
 ; Issuance failure: water-fishing-continuity | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-water-fishing-continuity in ACTIVE; it is not PENDING.
 ; Release: water-fishing-continuity | COMPLETE -> RELEASED
 (defrule
-    (goal demand-water-fishing-continuity 129)
+    (goal demand-water-fishing-continuity 161)
     (unit-type-count fishing-ship >= 2)
 =>
     (set-goal demand-water-fishing-continuity 0)
 )
 
-; Recovery: water-fishing-continuity | RELEASED -> ACTIVE on world-state loss
-(defrule
-    (goal demand-water-fishing-continuity 0)
-    (not (unit-type-count fishing-ship >= 2))
-    (goal strategic-primary-intent 1)
-    (or
-        (map-type islands)
-        (or
-            (goal opening-plan 4)
-            (goal opening-plan 5)
-        )
-    )
-    (building-type-count-total 45 >= 1)
-=>
-    (set-goal demand-water-fishing-continuity 1)
-)
-
 ; Completion witness: water-fishing-continuity | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
-        (goal demand-water-fishing-continuity 130)
-        (goal demand-water-fishing-continuity 128)
+        (goal demand-water-fishing-continuity 162)
+        (goal demand-water-fishing-continuity 160)
     )
     (unit-type-count fishing-ship >= 2)
 =>
-    (set-goal demand-water-fishing-continuity 129)
+    (set-goal demand-water-fishing-continuity 161)
 )
 
 ; Pending admission: water-fishing-continuity | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-water-fishing-continuity 130)
-        (goal demand-water-fishing-continuity 128)
+        (goal demand-water-fishing-continuity 162)
+        (goal demand-water-fishing-continuity 160)
     )
     (not (unit-type-count fishing-ship >= 2))
     (up-pending-objects c: 13 >= 1)
 =>
-    (set-goal demand-water-fishing-continuity 128)
+    (set-goal demand-water-fishing-continuity 160)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-water-fishing-continuity 130)
-        (goal demand-water-fishing-continuity 128)
+        (goal demand-water-fishing-continuity 162)
+        (goal demand-water-fishing-continuity 160)
     )
     (not (unit-type-count fishing-ship >= 2))
     (not (up-pending-objects c: 13 >= 1))
@@ -27028,76 +27028,59 @@
     (not (unit-type-count fishing-ship >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= dark-age)
-    (or
-        (map-type islands)
-        (or
-            (goal opening-plan 4)
-            (goal opening-plan 5)
-        )
-    )
+    (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
     (can-train-with-escrow fishing-ship)
     (unit-type-count-total fishing-ship < 2)
 =>
     (train fishing-ship)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-water-fishing-continuity 130)
+    (set-goal demand-water-fishing-continuity 162)
 )
-
 ; Pending diagnostics: water-transport-capability
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 138 and cannot reissue from pending goal 139
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 139 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 140 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 163 and cannot reissue from pending goal 164
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 164 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 165 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
 ; Issuance failure: water-transport-capability | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-water-transport-capability in ACTIVE; it is not PENDING.
 ; Release: water-transport-capability | COMPLETE -> RELEASED
 (defrule
-    (goal demand-water-transport-capability 140)
+    (goal demand-water-transport-capability 165)
     (unit-type-count transport-ship >= 1)
 =>
     (set-goal demand-water-transport-capability 0)
 )
 
-; Recovery: water-transport-capability | RELEASED -> ACTIVE on world-state loss
-(defrule
-    (goal demand-water-transport-capability 0)
-    (not (unit-type-count transport-ship >= 1))
-    (goal strategic-primary-intent 1)
-    (map-type islands)
-=>
-    (set-goal demand-water-transport-capability 1)
-)
-
 ; Completion witness: water-transport-capability | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
-        (goal demand-water-transport-capability 141)
-        (goal demand-water-transport-capability 139)
+        (goal demand-water-transport-capability 166)
+        (goal demand-water-transport-capability 164)
     )
     (unit-type-count transport-ship >= 1)
 =>
-    (set-goal demand-water-transport-capability 140)
+    (set-goal demand-water-transport-capability 165)
 )
 
 ; Pending admission: water-transport-capability | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-water-transport-capability 141)
-        (goal demand-water-transport-capability 139)
+        (goal demand-water-transport-capability 166)
+        (goal demand-water-transport-capability 164)
     )
     (not (unit-type-count transport-ship >= 1))
     (up-pending-objects c: 545 >= 1)
 =>
-    (set-goal demand-water-transport-capability 139)
+    (set-goal demand-water-transport-capability 164)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-water-transport-capability 141)
-        (goal demand-water-transport-capability 139)
+        (goal demand-water-transport-capability 166)
+        (goal demand-water-transport-capability 164)
     )
     (not (unit-type-count transport-ship >= 1))
     (not (up-pending-objects c: 545 >= 1))
@@ -27114,74 +27097,61 @@
     (not (up-pending-objects c: 545 >= 1))
     (not (unit-type-count transport-ship >= 1))
     (goal action-claim-train-arbitration 0)
-    (current-age >= dark-age)
-    (map-type islands)
+    (current-age >= feudal-age)
+    (or (map-type islands) (map-type pacific-islands))
+    (goal water-transport-objective 1)
     (building-type-count-total dock >= 1)
     (can-train-with-escrow transport-ship)
     (unit-type-count-total transport-ship < 1)
 =>
     (train transport-ship)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-water-transport-capability 141)
+    (set-goal demand-water-transport-capability 166)
 )
-
 ; Pending diagnostics: water-naval-defense
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 136 and cannot reissue from pending goal 137
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 137 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 138 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 162 and cannot reissue from pending goal 163
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 163 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 164 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
 ; Issuance failure: water-naval-defense | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-water-naval-defense in ACTIVE; it is not PENDING.
 ; Release: water-naval-defense | COMPLETE -> RELEASED
 (defrule
-    (goal demand-water-naval-defense 138)
+    (goal demand-water-naval-defense 164)
     (or (unit-type-count fire-galley >= 2) (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2)))
 =>
     (set-goal demand-water-naval-defense 0)
 )
 
-; Recovery: water-naval-defense | RELEASED -> ACTIVE on world-state loss
-(defrule
-    (goal demand-water-naval-defense 0)
-    (not (unit-type-count fire-galley >= 2))
-    (goal strategic-primary-intent 1)
-    (map-type islands)
-    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
-    (not (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2)))
-    (not (current-age >= castle-age))
-=>
-    (set-goal demand-water-naval-defense 1)
-)
-
 ; Completion witness: water-naval-defense | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
-        (goal demand-water-naval-defense 139)
-        (goal demand-water-naval-defense 137)
+        (goal demand-water-naval-defense 165)
+        (goal demand-water-naval-defense 163)
     )
     (unit-type-count fire-galley >= 2)
 =>
-    (set-goal demand-water-naval-defense 138)
+    (set-goal demand-water-naval-defense 164)
 )
 
 ; Pending admission: water-naval-defense | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-water-naval-defense 139)
-        (goal demand-water-naval-defense 137)
+        (goal demand-water-naval-defense 165)
+        (goal demand-water-naval-defense 163)
     )
     (not (unit-type-count fire-galley >= 2))
     (up-pending-objects c: 1103 >= 1)
 =>
-    (set-goal demand-water-naval-defense 137)
+    (set-goal demand-water-naval-defense 163)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-water-naval-defense 139)
-        (goal demand-water-naval-defense 137)
+        (goal demand-water-naval-defense 165)
+        (goal demand-water-naval-defense 163)
     )
     (not (unit-type-count fire-galley >= 2))
     (not (up-pending-objects c: 1103 >= 1))
@@ -27199,74 +27169,60 @@
     (not (or (unit-type-count fire-galley >= 2) (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2))))
     (goal action-claim-train-arbitration 0)
     (current-age >= feudal-age)
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
-    (players-unit-type-count any-enemy galley-line >= 2)
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
     (can-train-with-escrow fire-galley)
     (unit-type-count-total fire-galley < 2)
 =>
     (train fire-galley)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-water-naval-defense 139)
+    (set-goal demand-water-naval-defense 165)
 )
-
 ; Pending diagnostics: water-naval-control
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 135 and cannot reissue from pending goal 136
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 136 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 137 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 161 and cannot reissue from pending goal 162
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 162 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 163 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
 ; Issuance failure: water-naval-control | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-water-naval-control in ACTIVE; it is not PENDING.
 ; Release: water-naval-control | COMPLETE -> RELEASED
 (defrule
-    (goal demand-water-naval-control 137)
+    (goal demand-water-naval-control 163)
     (or (unit-type-count galley >= 3) (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2)))
 =>
     (set-goal demand-water-naval-control 0)
 )
 
-; Recovery: water-naval-control | RELEASED -> ACTIVE on world-state loss
-(defrule
-    (goal demand-water-naval-control 0)
-    (not (unit-type-count galley >= 3))
-    (goal strategic-primary-intent 1)
-    (map-type islands)
-    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
-    (not (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2)))
-    (not (current-age >= imperial-age))
-=>
-    (set-goal demand-water-naval-control 1)
-)
-
 ; Completion witness: water-naval-control | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
-        (goal demand-water-naval-control 138)
-        (goal demand-water-naval-control 136)
+        (goal demand-water-naval-control 164)
+        (goal demand-water-naval-control 162)
     )
     (unit-type-count galley >= 3)
 =>
-    (set-goal demand-water-naval-control 137)
+    (set-goal demand-water-naval-control 163)
 )
 
 ; Pending admission: water-naval-control | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-water-naval-control 138)
-        (goal demand-water-naval-control 136)
+        (goal demand-water-naval-control 164)
+        (goal demand-water-naval-control 162)
     )
     (not (unit-type-count galley >= 3))
     (up-pending-objects c: 539 >= 1)
 =>
-    (set-goal demand-water-naval-control 136)
+    (set-goal demand-water-naval-control 162)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-water-naval-control 138)
-        (goal demand-water-naval-control 136)
+        (goal demand-water-naval-control 164)
+        (goal demand-water-naval-control 162)
     )
     (not (unit-type-count galley >= 3))
     (not (up-pending-objects c: 539 >= 1))
@@ -27284,17 +27240,16 @@
     (not (or (unit-type-count galley >= 3) (and (players-unit-type-count any-enemy galley-line < 2) (players-unit-type-count any-enemy fire-galley-line < 2))))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
-    (map-type islands)
+    (or (map-type islands) (map-type pacific-islands))
     (building-type-count-total dock >= 1)
-    (players-unit-type-count any-enemy galley-line >= 2)
+    (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2))
     (can-train-with-escrow galley)
     (unit-type-count-total galley < 3)
 =>
     (train galley)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-water-naval-control 138)
+    (set-goal demand-water-naval-control 164)
 )
-
 ; Pending diagnostics: water-fire-ship-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 126 and cannot reissue from pending goal 127
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 127 is active
@@ -27930,6 +27885,77 @@
     (set-goal demand-water-heavy-demolition-ship-floor 135)
 )
 
+; Pending diagnostics: water-fishing-expansion
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 160 and cannot reissue from pending goal 161
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 161 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 162 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: water-fishing-expansion | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-water-fishing-expansion in ACTIVE; it is not PENDING.
+; Release: water-fishing-expansion | COMPLETE -> RELEASED
+(defrule
+    (goal demand-water-fishing-expansion 162)
+    (unit-type-count fishing-ship >= 4)
+=>
+    (set-goal demand-water-fishing-expansion 0)
+)
+
+; Completion witness: water-fishing-expansion | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-water-fishing-expansion 163)
+        (goal demand-water-fishing-expansion 161)
+    )
+    (unit-type-count fishing-ship >= 4)
+=>
+    (set-goal demand-water-fishing-expansion 162)
+)
+
+; Pending admission: water-fishing-expansion | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-water-fishing-expansion 163)
+        (goal demand-water-fishing-expansion 161)
+    )
+    (not (unit-type-count fishing-ship >= 4))
+    (up-pending-objects c: 13 >= 1)
+=>
+    (set-goal demand-water-fishing-expansion 161)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-water-fishing-expansion 163)
+        (goal demand-water-fishing-expansion 161)
+    )
+    (not (unit-type-count fishing-ship >= 4))
+    (not (up-pending-objects c: 13 >= 1))
+=>
+    (set-goal demand-water-fishing-expansion 1)
+    (set-goal production-retry-barrier-water-fishing-expansion 1)
+)
+
+; Action issuance: water-fishing-expansion | ACTIVE -> ISSUED
+(defrule
+    (goal demand-water-fishing-expansion 1)
+    (not (unit-type-count fishing-ship >= 4))
+    (goal production-retry-barrier-water-fishing-expansion 0)
+    (not (up-pending-objects c: 13 >= 1))
+    (not (unit-type-count fishing-ship >= 4))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= dark-age)
+    (or (map-type islands) (map-type pacific-islands))
+    (not (map-type pacific-islands))
+    (building-type-count-total dock >= 1)
+    (can-train-with-escrow fishing-ship)
+    (unit-type-count-total fishing-ship < 4)
+=>
+    (train fishing-ship)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-water-fishing-expansion 163)
+)
 ; Pending diagnostics: water-trade-cog-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 137 and cannot reissue from pending goal 138
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 138 is active
