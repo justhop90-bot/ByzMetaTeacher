@@ -869,12 +869,16 @@ def _sync_water_demand_lifecycles(runtime: str, generated: str) -> str:
 
         next_generated = generated.find("; Pending diagnostics:", generated_start + len(start_marker))
         if next_generated < 0:
+            next_generated = generated.find("; Native Strategos voice plan", generated_start)
+        if next_generated < 0:
             raise RuntimeError(f"generated artifact is missing lifecycle end boundary: {identity}")
         generated_block = generated[generated_start:next_generated].rstrip() + "\n"
 
         runtime_start = runtime.find(start_marker)
         if runtime_start >= 0:
             next_runtime = runtime.find("; Pending diagnostics:", runtime_start + len(start_marker))
+            if next_runtime < 0:
+                next_runtime = runtime.find("; Native Strategos voice plan", runtime_start)
             if next_runtime < 0:
                 raise RuntimeError(f"runtime artifact is missing lifecycle end boundary: {identity}")
             runtime = runtime[:runtime_start] + generated_block + runtime[next_runtime:]
