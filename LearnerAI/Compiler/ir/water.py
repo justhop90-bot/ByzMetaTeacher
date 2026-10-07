@@ -552,7 +552,16 @@ def lower_water_execution_plan(
                 goal(plan.pacific_opening_transport_state, 1),
                 parse_expression("(unit-type-count-total transport-ship < 1)", SourceLocation(1)),
             ),
-            actions=(set_goal(plan.pacific_opening_transport_state, 0),),
+            actions=(
+                set_goal(plan.pacific_opening_transport_state, 0),
+                set_goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.IDLE),
+                ),
+                set_goal("pacific-transport-transit-witness", 0),
+                set_goal("pacific-transport-unload-witness", 0),
+                parse_expression("(disable-timer pacific-transport-load-retry)", SourceLocation(1)),
+            ),
         ),
         NativeControlRule(
             "pacific-fishing-controller-open",
@@ -1397,6 +1406,7 @@ def lower_water_execution_plan(
                 ),
                 set_goal("pacific-transport-transit-witness", 0),
                 set_goal("pacific-transport-unload-witness", 0),
+                parse_expression("(disable-timer pacific-transport-load-retry)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
