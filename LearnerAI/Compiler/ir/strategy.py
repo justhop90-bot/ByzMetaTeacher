@@ -3617,6 +3617,13 @@ def _strategy_control_plan(profile: StrategyProfile):
     endgame_objective_plan = _byzantine_endgame_objective_control_plan(profile)
     imperial_band_plan = _byzantine_imperial_band_control_plan(profile)
     endgame_push_plan = _byzantine_endgame_push_control_plan(profile)
+    water_strategy_arbitration_plan = None
+    if profile.water_execution_plan is not None:
+        from .water import lower_water_strategy_arbitration_control_plan
+        water_strategy_arbitration_plan = lower_water_strategy_arbitration_control_plan(
+            profile,
+        )
+
     water_plan = None
     if profile.water_execution_plan is not None:
         from .water import lower_water_execution_plan
@@ -3668,6 +3675,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         endgame_objective_plan,
         endgame_push_plan,
         imperial_band_plan,
+        water_strategy_arbitration_plan,
         water_plan,
         opening_plan,
         economy_plan,

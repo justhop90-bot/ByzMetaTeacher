@@ -268,6 +268,31 @@ class WaterTransportExecutionTests(unittest.TestCase):
             item.identity for item in profile.observations
         })
 
+    def test_water_fishing_expansion_is_bounded_and_excludes_pacific(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-fishing-expansion")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(unit-type-count-total fishing-ship < 4)", requirements)
+        self.assertIn("(not (map-type pacific-islands))", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+
+    def test_transport_capability_is_a_feudal_execution_capability(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-transport-capability")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertNotIn("(current-age >= dark-age)", requirements)
+
+    def test_naval_escalation_consumes_consolidated_enemy_naval_pressure_observation(self):
+        profile = build_byzantine_strategy(self.effective)
+        for identity in ("water-naval-defense", "water-naval-control"):
+            demand = profile.demand(identity)
+            requirements = " ".join(demand.execution.requirements)
+            self.assertIn(
+                profile.observation("strategy-enemy-naval-pressure").expression,
+                requirements,
+            )
+
     def test_water_fishing_continuity_starts_in_dark_age_after_dock(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("water-fishing-continuity")

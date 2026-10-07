@@ -448,6 +448,262 @@ def lower_water_execution_plan(
     return NativeControlPlan(states=states, rules=tuple(rules))
 
 
+
+def lower_water_strategy_arbitration_control_plan(profile):
+    """Lower Byzantine water/land strategic arbitration into native Goals."""
+    from ..ast import SourceLocation
+    from ..runtime_binding import GoalSlotRequest
+    from ..semantic.analyzer import parse_expression
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+    from .model import GoalRole, SemanticId, StorageRequestId
+
+    state_names = (
+        "arb-c01",
+        "arb-c02",
+        "arb-c03",
+        "arb-o01",
+        "arb-o02",
+        "arb-o03",
+        "arb-o04",
+        "arb-o05",
+        "arb-o06",
+        "arb-o07",
+        "arb-o08",
+        "arb-o09",
+        "strategic-primary-intent",
+    )
+    states = tuple(
+        NativeControlState(
+            name,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId("byzantine-water-arbitration", name),
+                    name,
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        )
+        for name in state_names
+    )
+
+    water = profile.observation("strategy-water-map").expression
+    pacific = profile.observation("strategy-pacific-islands").expression
+    enemy_pressure = profile.observation("strategy-enemy-pressure").expression
+    arena = profile.observation("strategy-arena-map").expression
+    tc_capability = profile.observation("strategy-town-center-capability").expression
+    tc_complete = profile.observation("strategy-town-center-complete").expression
+
+    def expr(source: str):
+        return parse_expression(source, SourceLocation(1))
+
+    def rule(identity: str, facts: tuple[str, ...], actions: tuple[str, ...]):
+        return NativeControlRule(
+            identity,
+            facts=tuple(expr(item) for item in facts),
+            actions=tuple(expr(item) for item in actions),
+        )
+
+    return NativeControlPlan(
+        states=states,
+        rules=(
+            rule(
+                "strategic-arbitration-state-initialize",
+                ("(goal strategic-primary-intent 0)",),
+                (
+                    "(set-goal arb-o01 0)",
+                    "(set-goal arb-o02 0)",
+                    "(set-goal arb-o03 0)",
+                    "(set-goal arb-o04 0)",
+                    "(set-goal arb-o05 0)",
+                    "(set-goal arb-o06 0)",
+                    "(set-goal arb-o07 0)",
+                    "(set-goal arb-o08 0)",
+                    "(set-goal arb-o09 0)",
+                    "(set-goal arb-c01 0)",
+                    "(set-goal arb-c02 0)",
+                    "(set-goal arb-c03 0)",
+                    "(disable-self)",
+                ),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-strategy-water-islands",
+                ("(goal arb-o01 0)", water),
+                ("(set-goal arb-o01 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-strategy-water-islands",
+                ("(goal arb-o01 1)", f"(not {water})"),
+                ("(set-goal arb-o01 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-current-feudal-age",
+                ("(goal arb-o02 0)", "(current-age >= feudal-age)"),
+                ("(set-goal arb-o02 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-current-feudal-age",
+                ("(goal arb-o02 1)", "(not (current-age >= feudal-age))"),
+                ("(set-goal arb-o02 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-castle-complete",
+                (
+                    "(goal arb-o03 0)",
+                    "(and (current-age >= castle-age) (building-type-count-total castle >= 1))",
+                ),
+                ("(set-goal arb-o03 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-castle-complete",
+                (
+                    "(goal arb-o03 1)",
+                    "(not (and (current-age >= castle-age) (building-type-count-total castle >= 1)))",
+                ),
+                ("(set-goal arb-o03 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-current-imperial-age",
+                ("(goal arb-o04 0)", "(current-age >= imperial-age)"),
+                ("(set-goal arb-o04 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-current-imperial-age",
+                ("(goal arb-o04 1)", "(not (current-age >= imperial-age))"),
+                ("(set-goal arb-o04 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-strategy-enemy-pressure",
+                ("(goal arb-o05 0)", enemy_pressure),
+                ("(set-goal arb-o05 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-strategy-enemy-pressure",
+                ("(goal arb-o05 1)", f"(not {enemy_pressure})"),
+                ("(set-goal arb-o05 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-strategy-castle-age",
+                ("(goal arb-o06 0)", "(current-age >= castle-age)"),
+                ("(set-goal arb-o06 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-strategy-castle-age",
+                ("(goal arb-o06 1)", "(not (current-age >= castle-age))"),
+                ("(set-goal arb-o06 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-strategy-arena-map",
+                ("(goal arb-o07 0)", arena),
+                ("(set-goal arb-o07 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-strategy-arena-map",
+                ("(goal arb-o07 1)", f"(not {arena})"),
+                ("(set-goal arb-o07 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-strategy-town-center-capability",
+                ("(goal arb-o08 0)", tc_capability),
+                ("(set-goal arb-o08 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-strategy-town-center-capability",
+                ("(goal arb-o08 1)", f"(not {tc_capability})"),
+                ("(set-goal arb-o08 0)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-enable-strategy-town-center-complete",
+                ("(goal arb-o09 0)", tc_complete),
+                ("(set-goal arb-o09 1)",),
+            ),
+            rule(
+                "strategic-arbitration-observation-disable-strategy-town-center-complete",
+                ("(goal arb-o09 1)", f"(not {tc_complete})"),
+                ("(set-goal arb-o09 0)",),
+            ),
+            rule(
+                "strategic-arbitration-candidate-enable-water-investment",
+                ("(goal arb-c01 0)", "(goal arb-o01 1)", f"(not {pacific})"),
+                ("(set-goal arb-c01 1)",),
+            ),
+            rule(
+                "strategic-arbitration-candidate-disable-water-investment",
+                (
+                    "(goal arb-c01 1)",
+                    "(or (not (goal arb-o01 1)) " + pacific + ")",
+                ),
+                ("(set-goal arb-c01 0)",),
+            ),
+            rule(
+                "strategic-arbitration-candidate-enable-castle-trajectory",
+                (
+                    "(goal arb-c02 0)",
+                    "(and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) "
+                    f"(or (not (goal arb-o01 1)) {pacific}))",
+                ),
+                ("(set-goal arb-c02 1)",),
+            ),
+            rule(
+                "strategic-arbitration-candidate-disable-castle-trajectory",
+                (
+                    "(goal arb-c02 1)",
+                    "(not (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) "
+                    f"(or (not (goal arb-o01 1)) {pacific})))",
+                ),
+                ("(set-goal arb-c02 0)",),
+            ),
+            rule(
+                "strategic-arbitration-candidate-enable-two-tc-expansion",
+                (
+                    "(goal arb-c03 0)",
+                    "(and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) "
+                    f"(or (not (goal arb-o01 1)) {pacific}))",
+                ),
+                ("(set-goal arb-c03 1)",),
+            ),
+            rule(
+                "strategic-arbitration-candidate-disable-two-tc-expansion",
+                (
+                    "(goal arb-c03 1)",
+                    "(not (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) "
+                    f"(or (not (goal arb-o01 1)) {pacific})))",
+                ),
+                ("(set-goal arb-c03 0)",),
+            ),
+            rule(
+                "strategic-primary-intent-select-water-investment-from-0",
+                ("(goal strategic-primary-intent 0)", "(goal arb-c01 1)"),
+                ("(set-goal strategic-primary-intent 1)",),
+            ),
+            rule(
+                "strategic-primary-intent-select-castle-trajectory-from-0",
+                ("(goal strategic-primary-intent 0)", "(goal arb-c02 1)", "(not (goal arb-c01 1))"),
+                ("(set-goal strategic-primary-intent 2)",),
+            ),
+            rule(
+                "strategic-primary-intent-select-two-tc-expansion-from-0",
+                ("(goal strategic-primary-intent 0)", "(goal arb-c03 1)", "(not (goal arb-c01 1))", "(not (goal arb-c02 1))"),
+                ("(set-goal strategic-primary-intent 3)",),
+            ),
+            rule(
+                "strategic-primary-intent-select-two-tc-expansion-from-2",
+                ("(goal strategic-primary-intent 2)", "(goal arb-c03 1)"),
+                ("(set-goal strategic-primary-intent 3)",),
+            ),
+            rule(
+                "strategic-primary-intent-release-castle-trajectory",
+                ("(goal strategic-primary-intent 2)", "(goal arb-o03 1)", "(not (goal arb-c03 1))"),
+                ("(set-goal strategic-primary-intent 0)",),
+            ),
+            rule(
+                "strategic-primary-intent-invalidate-castle-trajectory",
+                ("(goal strategic-primary-intent 2)", "(goal arb-o04 1)"),
+                ("(set-goal strategic-primary-intent 0)",),
+            ),
+        ),
+    )
+
+
 __all__ = [
     "TransportExecutionPhase",
     "WaterExecutionPlan",
@@ -455,5 +711,6 @@ __all__ = [
     "WaterPosture",
     "derive_water_posture",
     "lower_water_execution_plan",
+    "lower_water_strategy_arbitration_control_plan",
     "transition_transport_execution",
 ]

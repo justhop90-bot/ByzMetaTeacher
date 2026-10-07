@@ -927,6 +927,130 @@ def _ensure_pacific_islands_water_arbitration(runtime: str) -> str:
     return runtime
 
 
+def _replace_or_install_native_control_rule(
+    runtime: str,
+    generated: str,
+    identity: str,
+    *,
+    insert_before: str,
+) -> str:
+    """Replace one named native control rule, or install it at a stable boundary."""
+    generated_block = _rule_block(generated, identity)
+    marker = f"; Native control rule: {identity}"
+
+    runtime_start = runtime.find(marker)
+    if runtime_start >= 0:
+        rule_start = runtime.find("(defrule", runtime_start)
+        if rule_start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing defrule for native control rule: {identity}"
+            )
+
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return (
+                        runtime[:runtime_start]
+                        + generated_block.rstrip()
+                        + runtime[index + 1:]
+                    )
+        raise RuntimeError(
+            f"runtime artifact has unterminated native control rule: {identity}"
+        )
+
+    insertion_marker = f"; Native control rule: {insert_before}"
+    insertion = runtime.find(insertion_marker)
+    if insertion < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing insertion boundary: {insert_before}"
+        )
+    return (
+        runtime[:insertion]
+        + generated_block.rstrip()
+        + "\n\n"
+        + runtime[insertion:]
+    )
+
+
+def _replace_between_markers(
+    runtime: str,
+    generated: str,
+    start_marker: str,
+    end_marker: str,
+) -> str:
+    generated_start = generated.find(start_marker)
+    generated_end = generated.find(end_marker, generated_start)
+    runtime_start = runtime.find(start_marker)
+    runtime_end = runtime.find(end_marker, runtime_start)
+
+    if generated_start < 0 or generated_end < 0:
+        raise RuntimeError(
+            f"generated artifact is missing control block: {start_marker}"
+        )
+    if runtime_start < 0 or runtime_end < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing control block: {start_marker}"
+        )
+
+    return (
+        runtime[:runtime_start]
+        + generated[generated_start:generated_end].rstrip()
+        + "\n\n"
+        + runtime[runtime_end:]
+    )
+
+
+def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
+    """Synchronize compiler-owned water/land arbitration by stable rule identity."""
+    identities = tuple(
+        match.group(1)
+        for match in re.finditer(
+            r"; Native control rule: (strategic-arbitration-[^\n]+)",
+            generated,
+        )
+    )
+    if not identities:
+        raise RuntimeError(
+            "generated artifact contains no strategic-arbitration control rules"
+        )
+
+    for identity in identities:
+        runtime = _replace_or_install_native_control_rule(
+            runtime,
+            generated,
+            identity,
+            insert_before="counter-package-selection-reset-000",
+        )
+    return runtime
+
+
+def _sync_opening_water_selector(runtime: str, generated: str) -> str:
+    """Synchronize authoritative water classification into the opening selector."""
+    return _replace_between_markers(
+        runtime,
+        generated,
+        "; Native control rule: opening-selector-water-control",
+        "; Native control rule: opening-selector-fast-castle",
+    )
+
+
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
     """Synchronize the canonical water state machine into the checked-in runtime."""
 
@@ -956,8 +1080,9 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _sync_strategic_arbitration_control(runtime, generated)
     runtime = _sync_water_execution_control(runtime, generated)
-    runtime = _ensure_pacific_islands_water_arbitration(runtime)
+    runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _ensure_reserved_water_goal_defconsts(runtime)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
