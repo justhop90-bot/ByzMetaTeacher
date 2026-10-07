@@ -643,6 +643,20 @@ def emit(
             out += [")", ""]
 
     if duc_plan is not None and not duc_plan.empty:
+        object_data_tokens = {
+            str(argument)
+            for rule in duc_plan.rules
+            for expression in (*rule.facts, *rule.actions)
+            if expression.head in {"up-get-object-data", "up-get-object-target-data"}
+            and expression.args
+            for argument in expression.args[:1]
+            if str(argument) == "object-data-id"
+        }
+        if object_data_tokens:
+            emitted_defconsts = _defconst_bindings(out)
+            if "object-data-id" not in emitted_defconsts:
+                out.append("(defconst object-data-id 0)")
+
         used_duc_action_values = {
             expression.head
             for rule in duc_plan.rules
