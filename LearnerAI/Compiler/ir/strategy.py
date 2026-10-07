@@ -4621,10 +4621,7 @@ def _default_byzantine_duc_plan(
                     parse_expression(item, SourceLocation(1))
                     for item in resource_transport_guard
                 ) + (
-                    parse_expression(
-                        "(goal feudal-resource-island-target-state 0)",
-                        SourceLocation(1),
-                    ),
+
                 ),
                 actions=(
                     parse_expression("(up-full-reset-search)", SourceLocation(1)),
@@ -4659,10 +4656,7 @@ def _default_byzantine_duc_plan(
                         "(up-get-point position-object feudal-resource-island-gold-point)",
                         SourceLocation(1),
                     ),
-                    parse_expression(
-                        "(set-goal feudal-resource-island-target-state 1)",
-                        SourceLocation(1),
-                    ),
+
                 ),
                 lifecycle=(
                     NativeDucLifecycleStage.TARGET,
