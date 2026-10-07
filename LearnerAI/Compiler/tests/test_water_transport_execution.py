@@ -273,8 +273,35 @@ class WaterTransportExecutionTests(unittest.TestCase):
         demand = profile.demand("water-fishing-expansion")
         requirements = tuple(demand.execution.requirements)
         self.assertIn("(unit-type-count-total fishing-ship < 4)", requirements)
-        self.assertIn("(not (map-type pacific-islands))", requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertIn(profile.observation("strategy-enemy-naval-pressure").expression.__str__(), requirements[2:] if False else tuple(requirements))
         self.assertIn("(building-type-count-total dock >= 1)", requirements)
+
+    def test_pacific_opening_transport_objective_is_dark_age_starting_ship_gated(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        rule = next(
+            item for item in control.rules
+            if item.identity == "pacific-opening-transport-open"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        self.assertIn("(map-type pacific-islands)", facts)
+        self.assertIn("(current-age == dark-age)", facts)
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", facts)
+
+    def test_pacific_opening_transport_does_not_depend_on_army_attack_ready(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        rule = next(
+            item for item in control.rules
+            if item.identity == "pacific-opening-transport-open"
+        )
+        text = " ".join(fact.source for fact in rule.facts)
+        self.assertNotIn("byzantine-army-attack-ready", text)
 
     def test_transport_capability_is_a_feudal_execution_capability(self):
         profile = build_byzantine_strategy(self.effective)
@@ -351,11 +378,15 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("transport-phase", state_ids)
         self.assertIn("water-transport-objective", state_ids)
         self.assertIn("water-transport-rebuild", state_ids)
+        self.assertIn("pacific-opening-transport-objective", state_ids)
 
         rule_ids = {rule.identity for rule in compilation.control_plan.rules}
         self.assertIn("transport-phase-recover-on-capability-loss", rule_ids)
         self.assertIn("transport-phase-reopen", rule_ids)
         self.assertIn("transport-rebuild-authorize", rule_ids)
+        self.assertIn("pacific-opening-transport-open", rule_ids)
+        self.assertIn("pacific-opening-transport-close-at-feudal", rule_ids)
+        self.assertIn("pacific-opening-transport-close-on-loss", rule_ids)
         self.assertIn("transport-objective-open", rule_ids)
         self.assertIn("transport-objective-close", rule_ids)
         self.assertIn("transport-phase-ready", rule_ids)
