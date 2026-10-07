@@ -2115,6 +2115,9 @@ def community_strategy_demands(
             line="fire-galley-line",
             minimum=1,
             age_guard="(current-age >= feudal-age)",
+            action_symbol="fire-galley",
+            witness_symbol="fire-galley",
+            release_symbol="fire-galley",
             additional_requirements=(
                 pacific_islands,
                 "(building-type-count-total dock >= 1)",
