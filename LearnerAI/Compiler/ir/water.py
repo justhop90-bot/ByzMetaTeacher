@@ -996,8 +996,8 @@ def lower_water_execution_plan(
             facts=(
                 parse_expression(
                     f"(or (not {water_map.source}) "
-                    f"(not (goal byzantine-army-attack-ready 1)) "
-                    f"(goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    f"(or (not (goal byzantine-army-attack-ready 1)) "
+                    f"(goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)})))",
                     SourceLocation(1),
                 ),
                 goal(plan.transport_objective_state, 1),
@@ -1024,8 +1024,8 @@ def lower_water_execution_plan(
             facts=(
                 parse_expression(
                     f"(or (not {water_map.source}) "
-                    f"(not {required.source}) "
-                    f"(goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)}))",
+                    f"(or (not {required.source}) "
+                    f"(goal {plan.pacific_harbor_defense_state} {int(PacificHarborDefensePhase.ACTIVE)})))",
                     SourceLocation(1),
                 ),
                 parse_expression(
