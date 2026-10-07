@@ -2002,7 +2002,6 @@ def community_strategy_demands(
                     "(wood-amount >= 75)) "
                     "(and (unit-type-count-total fishing-ship >= 1) "
                     "(can-train-with-escrow fishing-ship)))",
-                    "(unit-type-count-total fishing-ship < 2)",
                     f"(or (not {pacific_islands}) (not {enemy_naval_pressure}))",
                 ),
                 action="(train fishing-ship)",
