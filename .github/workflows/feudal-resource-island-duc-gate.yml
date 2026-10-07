@@ -9,6 +9,8 @@ on:
       - "LearnerAI/Compiler/ir/strategy.py"
       - "LearnerAI/Compiler/ir/community_strategy_packs.py"
       - "LearnerAI/Compiler/tests/test_water_transport_execution.py"
+      - "LearnerAI/Compiler/tests/test_water_map_v1.py"
+      - "LearnerAI/Compiler/tests/test_community_strategy_packs.py"
       - "LearnerAI/Compiler/tests/test_strategy_compiler_integration.py"
       - "tools/synchronize_byzantine_runtime.py"
       - "tools/build_byzantine_bot.py"
@@ -56,6 +58,15 @@ jobs:
           python -m unittest \
             LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_feudal_resource_island_transport_state_is_feudal_and_fail_closed \
             LearnerAI.Compiler.tests.test_strategy_compiler_integration.StrategyCompilerIntegrationTests.test_stock_strategy_lowers_feudal_resource_island_duc_target_handoff \
+            -v
+
+      - name: Focused Pacific Harbor Defense Controller regression
+        run: |
+          python -m unittest \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_harbor_defense_controller_owns_pressure_and_dock_arbitration \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_harbor_defense_gates_transport_and_preserves_escrow_naval_production \
+            LearnerAI.Compiler.tests.test_water_transport_execution.WaterTransportExecutionTests.test_pacific_harbor_defense_closes_transport_execution_while_pressure_is_active \
+            LearnerAI.Compiler.tests.test_community_strategy_packs.ByzantineCommunityStrategyPackTests.test_pacific_harbor_defense_gates_naval_demands_on_pacific \
             -v
 
       - name: Native zero-findings acceptance - canonical Byzantine artifact
