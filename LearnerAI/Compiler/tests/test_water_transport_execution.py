@@ -367,6 +367,49 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         self.assertIn("(goal pacific-harbor-defense 1)", phase_text)
 
+    def test_pacific_transport_escort_is_typed_and_blocks_unescorted_feudal_transport(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("pacific-transport-escort", state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for expected in (
+            "pacific-transport-escort-open",
+            "pacific-transport-escort-ready",
+            "pacific-transport-escort-rearm-on-loss",
+            "pacific-transport-escort-close-on-pressure",
+            "pacific-transport-escort-close-nonwater",
+        ):
+            self.assertIn(expected, rules)
+
+        objective_open = " ".join(
+            fact.source for fact in rules["transport-objective-open"].facts
+        )
+        self.assertIn("(goal pacific-transport-escort 2)", objective_open)
+
+        pacific_transport_open = " ".join(
+            fact.source for fact in rules["feudal-resource-island-transport-open"].facts
+        )
+        self.assertIn("(or (not (map-type pacific-islands)) (goal pacific-transport-escort 2))", pacific_transport_open)
+
+    def test_pacific_transport_escort_uses_existing_fire_galley_escrow_channel(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-escort")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertIn("(map-type pacific-islands)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        self.assertIn("(can-train-with-escrow fire-galley)", requirements)
+        self.assertIn("(unit-type-count-total fire-galley < 1)", requirements)
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            requirements,
+        )
+
     def test_pacific_transport_recovery_retains_a_post_landing_rebuild_entitlement(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)

@@ -33,6 +33,13 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         }
         self.assertIn("strategy-enemy-naval-pressure", refs)
 
+    def test_pacific_transport_escort_is_a_standing_feudal_support_capability(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-escort")
+        self.assertEqual(demand.capability_intent.entity_type, "unit-line")
+        self.assertEqual(demand.execution.action, "(train fire-galley)")
+        self.assertIn("(can-train-with-escrow fire-galley)", demand.execution.requirements)
+
     def test_pacific_transport_recovery_is_a_standing_feudal_capability_after_landing(self):
         profile = build_byzantine_stock_strategy(self.effective)
         demand = profile.demand("water-pacific-transport-recovery")
