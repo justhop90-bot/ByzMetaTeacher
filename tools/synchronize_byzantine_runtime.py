@@ -760,10 +760,12 @@ WATER_EXECUTION_STATE_NAMES = (
     "water-posture",
     "water-transport-objective",
     "water-transport-rebuild",
+    "pacific-opening-transport-objective",
 )
 WATER_EXECUTION_NEW_STATE_NAMES = (
     "water-transport-objective",
     "water-transport-rebuild",
+    "pacific-opening-transport-objective",
 )
 
 WATER_LIFECYCLE_DEMANDS = (
@@ -792,6 +794,7 @@ WATER_RUNTIME_RESERVED_GOALS = {
     "complete-water-dock-capability": 15971,
     "water-transport-objective": 15970,
     "water-transport-rebuild": 15969,
+    "pacific-opening-transport-objective": 15968,
 }
 
 
@@ -1149,13 +1152,30 @@ def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
 
 
 def _sync_opening_water_selector(runtime: str, generated: str) -> str:
-    """Synchronize authoritative water classification into the opening selector."""
-    return _replace_between_markers(
-        runtime,
-        generated,
-        "; Native control rule: opening-selector-water-control",
-        "; Native control rule: opening-selector-fast-castle",
-    )
+    """Synchronize Pacific-first plus generic-water opening arbitration."""
+    pacific_marker = "; Native control rule: opening-selector-pacific-land-first"
+    water_marker = "; Native control rule: opening-selector-water-control"
+    end_marker = "; Native control rule: opening-selector-fast-castle"
+
+    generated_start = generated.find(pacific_marker)
+    generated_end = generated.find(end_marker, generated_start)
+    if generated_start < 0:
+        return _replace_between_markers(runtime, generated, water_marker, end_marker)
+    if generated_end < 0:
+        raise RuntimeError("generated artifact is missing Pacific opening selector boundary")
+
+    generated_block = generated[generated_start:generated_end].rstrip() + "\n\n"
+    runtime_start = runtime.find(pacific_marker)
+    runtime_end = runtime.find(end_marker, runtime_start if runtime_start >= 0 else 0)
+    if runtime_start >= 0:
+        if runtime_end < 0:
+            raise RuntimeError("runtime artifact is missing Pacific opening selector end boundary")
+        return runtime[:runtime_start] + generated_block + runtime[runtime_end:]
+
+    insertion = runtime.find(water_marker)
+    if insertion < 0:
+        raise RuntimeError("runtime artifact is missing opening water selector insertion boundary")
+    return runtime[:insertion] + generated_block + runtime[insertion:]
 
 
 def _sync_water_execution_control(runtime: str, generated: str) -> str:
