@@ -4579,7 +4579,7 @@ def _default_byzantine_duc_plan(
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(up-get-object-data id 0)",
+                        "(up-get-object-data object-data-id 0)",
                         SourceLocation(1),
                     ),
                 ),
@@ -4706,7 +4706,7 @@ def _default_byzantine_duc_plan(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression("(up-find-local c: 545 c: 1)", SourceLocation(1)),
                 parse_expression("(up-set-target-object search-local c: 0)", SourceLocation(1)),
-                parse_expression("(up-get-object-data id 0)", SourceLocation(1)),
+                parse_expression("(up-get-object-data object-data-id 0)", SourceLocation(1)),
             ),
             lifecycle=(NativeDucLifecycleStage.TARGET,),
         )
@@ -5202,7 +5202,7 @@ def _default_byzantine_duc_plan(
                             SourceLocation(1),
                         ),
                         parse_expression(
-                            "(up-get-object-data id 0)",
+                            "(up-get-object-data object-data-id 0)",
                             SourceLocation(1),
                         ),
                     ),
@@ -5400,7 +5400,7 @@ def _default_byzantine_duc_plan(
                             for native_id in native_ids
                         ),
                         parse_expression("(up-set-target-object search-remote c: 0)", SourceLocation(1)),
-                        parse_expression("(up-get-object-data id 0)", SourceLocation(1)),
+                        parse_expression("(up-get-object-data object-data-id 0)", SourceLocation(1)),
                     ),
                     lifecycle=(
                         NativeDucLifecycleStage.ADMISSIBILITY,
@@ -5528,7 +5528,7 @@ def _default_byzantine_duc_plan(
                 ),
                 actions=(
                     parse_expression(
-                        "(up-get-object-data id 0)",
+                        "(up-get-object-data object-data-id 0)",
                         SourceLocation(1),
                     ),
                     parse_expression(
