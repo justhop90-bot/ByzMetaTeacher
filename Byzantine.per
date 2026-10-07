@@ -7614,6 +7614,38 @@
     (set-goal economy-posture 9)
 )
 
+; Native control rule: economy-controller-write-pacific_land-sn-food-gatherer-percentage
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-food-gatherer-percentage != 45)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 45)
+)
+
+; Native control rule: economy-controller-write-pacific_land-sn-wood-gatherer-percentage
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-wood-gatherer-percentage != 40)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 40)
+)
+
+; Native control rule: economy-controller-write-pacific_land-sn-gold-gatherer-percentage
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-gold-gatherer-percentage != 15)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 15)
+)
+
+; Native control rule: economy-controller-write-pacific_land-sn-percent-civilian-builders
+(defrule
+    (goal economy-posture 9)
+    (up-compare-sn sn-percent-civilian-builders != 6)
+=>
+    (set-strategic-number sn-percent-civilian-builders 6)
+)
+
 ; Native control rule: economy-controller-select-water-economy
 (defrule
     (and (current-age >= feudal-age) (current-age < castle-age))
