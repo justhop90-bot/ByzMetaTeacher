@@ -1997,12 +1997,10 @@ def community_strategy_demands(
                     "(current-age >= dark-age)",
                     water_map,
                     "(building-type-count-total dock >= 1)",
-                    "(or",
-                    "    (and (unit-type-count-total fishing-ship < 1)",
-                    "         (and (wood-amount >= 75) (can-train fishing-ship)))",
-                    "    (and (unit-type-count-total fishing-ship >= 1)",
-                    "         (can-train-with-escrow fishing-ship))",
-                    ")",
+                    "(or (and (unit-type-count-total fishing-ship < 1) "
+                    "(and (wood-amount >= 75) (can-train fishing-ship))) "
+                    "(and (unit-type-count-total fishing-ship >= 1) "
+                    "(can-train-with-escrow fishing-ship)))",
                     "(unit-type-count-total fishing-ship < 2)",
                     f"(or (not {pacific_islands}) (not {enemy_naval_pressure}))",
                 ),
