@@ -940,7 +940,7 @@ def lower_water_execution_plan(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)}))))",
                     SourceLocation(1),
                 ),
                 naval,
@@ -959,7 +959,7 @@ def lower_water_execution_plan(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)}))))",
                     SourceLocation(1),
                 ),
                 parse_expression(f"(not {dock.source})", SourceLocation(1)),
@@ -978,7 +978,7 @@ def lower_water_execution_plan(
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
                     f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)}) "
-                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)})))",
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.FALLBACK)}))))",
                     SourceLocation(1),
                 ),
                 parse_expression(
