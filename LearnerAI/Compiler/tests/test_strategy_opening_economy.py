@@ -1,5 +1,8 @@
 import unittest
 from pathlib import Path
+
+from Compiler.ast import SourceLocation
+from Compiler.semantic.analyzer import parse_expression
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
@@ -189,6 +192,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             if requirement.startswith("(not (and (current-age == dark-age)")
         )
 
+        guard_expression = parse_expression(
+            guard,
+            SourceLocation(1, 1, "<test>"),
+        )
+
         blocked_bank = RuntimeObservationSnapshot(
             fact_results=(
                 ("(current-age == dark-age)", True),
@@ -204,8 +212,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             )
         )
 
-        self.assertIs(EvidenceTruth.TRUE, _evaluate_expression(guard, blocked_bank))
-        self.assertIs(EvidenceTruth.FALSE, _evaluate_expression(guard, ready_bank))
+        self.assertIs(EvidenceTruth.TRUE, _evaluate_expression(guard_expression, blocked_bank))
+        self.assertIs(EvidenceTruth.FALSE, _evaluate_expression(guard_expression, ready_bank))
 
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
         profile = build_byzantine_strategy(self.effective)
