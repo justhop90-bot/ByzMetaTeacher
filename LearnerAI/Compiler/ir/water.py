@@ -409,6 +409,18 @@ def lower_water_execution_plan(
             ),
             actions=(set_goal(posture_state, int(WaterPosture.NONE)),),
         ),
+        NativeControlRule(
+            "water-boat-exploration-enable",
+            facts=(
+                water_map,
+                dock,
+                parse_expression("(unit-type-count fishing-ship >= 1)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-strategic-number 61 1)", SourceLocation(1)),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
+        ),
 
     ]
 
