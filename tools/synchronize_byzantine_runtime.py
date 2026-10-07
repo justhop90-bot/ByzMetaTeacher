@@ -26,6 +26,10 @@ RECOVERY_NAMES = (
     "opening-recovery-water-proven",
 )
 
+ECONOMY_INSTALLABLE_RULES = (
+    "economy-controller-select-pacific-land-first",
+)
+
 ELITE_SKIRMISHER_PRODUCTION_RULES = (
     "imperial-elite-skirmisher-floor",
     "imperial-open-elite-skirmisher-standard",
@@ -49,7 +53,6 @@ WATER_DOCK_GOAL_NAMES = (
 
 
 ECONOMY_RULES = (
-    "economy-controller-select-pacific-land-first",
     "economy-controller-select-counter-pressure",
     "economy-controller-select-fast-castle",
     "economy-controller-select-counter-feudal",
@@ -1220,6 +1223,14 @@ def synchronize() -> bool:
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
+
+    for identity in ECONOMY_INSTALLABLE_RULES:
+        runtime = _replace_or_install_native_control_rule(
+            runtime,
+            generated,
+            identity,
+            insert_before="economy-controller-select-water-economy",
+        )
 
     voice_marker = "; Native Strategos voice plan"
     voice_start = generated.find(voice_marker)
