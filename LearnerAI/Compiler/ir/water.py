@@ -228,6 +228,7 @@ def lower_water_execution_plan(
     """Lower water posture and transport recovery into the shared control plane."""
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
+    from .recurrent import TimerRequest
     from .strategic_number import StrategicNumberOrigin
 
     water_map = parse_expression(
@@ -270,6 +271,7 @@ def lower_water_execution_plan(
     posture_state = plan.water_posture_state
     phase_state = plan.transport_phase_state
     boat_exploration_state = "sn-number-boat-explore-groups"
+    transport_load_retry_timer = "pacific-transport-load-retry"
     posture_owner = SemanticId(plan.plan_id, posture_state)
     phase_owner = SemanticId(plan.plan_id, phase_state)
     boat_exploration_owner = SemanticId(plan.plan_id, boat_exploration_state)
@@ -287,6 +289,17 @@ def lower_water_execution_plan(
             GoalSlotRequest(
                 StorageRequestId(phase_owner, "transport-phase"),
                 role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
+            transport_load_retry_timer,
+            TimerRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, f"timer:{transport_load_retry_timer}"),
+                    f"timer:{transport_load_retry_timer}",
+                ),
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key=f"{plan.plan_id}:{transport_load_retry_timer}",
             ),
         ),
         NativeControlState(
