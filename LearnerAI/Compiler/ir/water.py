@@ -61,7 +61,6 @@ class WaterExecutionPlan:
     transport_rebuild_state: str
     pacific_opening_transport_state: str
     feudal_resource_island_transport_state: str
-    feudal_resource_island_target_state: str
     water_map_observation: str
     transport_required_observation: str
     transport_capable_observation: str
@@ -80,7 +79,6 @@ class WaterExecutionPlan:
             ("transport_rebuild_state", self.transport_rebuild_state),
             ("pacific_opening_transport_state", self.pacific_opening_transport_state),
             ("feudal_resource_island_transport_state", self.feudal_resource_island_transport_state),
-            ("feudal_resource_island_target_state", self.feudal_resource_island_target_state),
             ("water_map_observation", self.water_map_observation),
             ("transport_required_observation", self.transport_required_observation),
             ("transport_capable_observation", self.transport_capable_observation),
@@ -292,16 +290,6 @@ def lower_water_execution_plan(
                 role=GoalRole.PERSISTENT_STATE,
             ),
         ),
-        NativeControlState(
-            plan.feudal_resource_island_target_state,
-            GoalSlotRequest(
-                StorageRequestId(
-                    SemanticId(plan.plan_id, plan.feudal_resource_island_target_state),
-                    "feudal-resource-island-target",
-                ),
-                role=GoalRole.PERSISTENT_STATE,
-            ),
-        ),
     )
 
     def goal(name: str, value: int):
@@ -320,7 +308,6 @@ def lower_water_execution_plan(
                 goal(plan.transport_rebuild_state, 0),
                 goal(plan.pacific_opening_transport_state, 0),
                 goal(plan.feudal_resource_island_transport_state, 0),
-                goal(plan.feudal_resource_island_target_state, 0),
             ),
             actions=(
                 set_goal(phase_state, 0),
@@ -329,7 +316,6 @@ def lower_water_execution_plan(
                 set_goal(plan.transport_rebuild_state, 0),
                 set_goal(plan.pacific_opening_transport_state, 0),
                 set_goal(plan.feudal_resource_island_transport_state, 0),
-                set_goal(plan.feudal_resource_island_target_state, 0),
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
         ),
@@ -385,16 +371,7 @@ def lower_water_execution_plan(
             ),
             actions=(
                 set_goal(plan.feudal_resource_island_transport_state, 0),
-                set_goal(plan.feudal_resource_island_target_state, 0),
             ),
-        ),
-        NativeControlRule(
-            "feudal-resource-island-target-close-on-transport-objective-loss",
-            facts=(
-                goal(plan.feudal_resource_island_target_state, 1),
-                goal(plan.feudal_resource_island_transport_state, 0),
-            ),
-            actions=(set_goal(plan.feudal_resource_island_target_state, 0),),
         ),
         NativeControlRule(
             "transport-objective-open",
