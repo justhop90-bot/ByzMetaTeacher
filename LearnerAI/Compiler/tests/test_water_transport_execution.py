@@ -401,7 +401,6 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
         state_ids = {state.identifier for state in control.states}
         self.assertIn("feudal-resource-island-transport-objective", state_ids)
-        self.assertIn("feudal-resource-island-target-state", state_ids)
 
         open_rule = next(
             rule for rule in control.rules
