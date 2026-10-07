@@ -2132,8 +2132,6 @@ def community_strategy_demands(
             additional_requirements=(
                 pacific_islands,
                 "(building-type-count-total dock >= 1)",
-                "(or (unit-type-count-total transport-ship >= 1) "
-                "(goal pacific-transport-recovery 1))",
                 f"(not {enemy_naval_pressure})",
                 "(not (goal pacific-harbor-defense 1))",
             ),
@@ -2532,6 +2530,7 @@ def community_water_execution_plan():
         pacific_fishing_controller_state="pacific-fishing-controller",
         pacific_harbor_defense_state="pacific-harbor-defense",
         pacific_transport_escort_state="pacific-transport-escort",
+        pacific_convoy_route_state="pacific-convoy-route",
         pacific_transport_recovery_state="pacific-transport-recovery",
         feudal_resource_island_transport_state="feudal-resource-island-transport-objective",
         water_map_observation="strategy-water-map",

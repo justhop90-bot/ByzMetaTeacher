@@ -80,6 +80,14 @@ class PacificTransportEscortPhase(IntEnum):
     READY = 2
 
 
+class PacificConvoyRoutePhase(IntEnum):
+    UNKNOWN = -1
+    IDLE = 0
+    STAGING = 1
+    ACTIVE = 2
+    RECOVERY = 3
+
+
 @dataclass(frozen=True)
 class WaterExecutionPlan:
     """Typed strategy references for water/naval/transport execution."""
@@ -94,6 +102,7 @@ class WaterExecutionPlan:
     pacific_fishing_controller_state: str
     pacific_harbor_defense_state: str
     pacific_transport_escort_state: str
+    pacific_convoy_route_state: str
     pacific_transport_recovery_state: str
     feudal_resource_island_transport_state: str
     water_map_observation: str
@@ -117,6 +126,7 @@ class WaterExecutionPlan:
             ("pacific_fishing_controller_state", self.pacific_fishing_controller_state),
             ("pacific_harbor_defense_state", self.pacific_harbor_defense_state),
             ("pacific_transport_escort_state", self.pacific_transport_escort_state),
+            ("pacific_convoy_route_state", self.pacific_convoy_route_state),
             ("pacific_transport_recovery_state", self.pacific_transport_recovery_state),
             ("feudal_resource_island_transport_state", self.feudal_resource_island_transport_state),
             ("water_map_observation", self.water_map_observation),
@@ -365,6 +375,16 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlState(
+            plan.pacific_convoy_route_state,
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, plan.pacific_convoy_route_state),
+                    "pacific-convoy-route",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        ),
+        NativeControlState(
             plan.pacific_transport_recovery_state,
             GoalSlotRequest(
                 StorageRequestId(
@@ -478,6 +498,7 @@ def lower_water_execution_plan(
                 goal(plan.pacific_fishing_controller_state, int(PacificFishingControllerPhase.IDLE)),
                 goal(plan.pacific_harbor_defense_state, int(PacificHarborDefensePhase.IDLE)),
                 goal(plan.pacific_transport_escort_state, int(PacificTransportEscortPhase.IDLE)),
+                goal(plan.pacific_convoy_route_state, int(PacificConvoyRoutePhase.IDLE)),
                 goal(plan.pacific_transport_recovery_state, 0),
                 goal("pacific-transport-transit-witness", 0),
                 goal("pacific-transport-unload-witness", 0),
@@ -781,6 +802,179 @@ def lower_water_execution_plan(
                 set_goal(
                     plan.pacific_transport_escort_state,
                     int(PacificTransportEscortPhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-open",
+            facts=(
+                pacific,
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+                dock,
+                parse_expression(
+                    "(unit-type-count-total transport-ship >= 1)",
+                    SourceLocation(1),
+                ),
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.READY),
+                ),
+                parse_expression(f"(not {naval.source})", SourceLocation(1)),
+                goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.IDLE),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.STAGING),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-activate",
+            facts=(
+                goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.STAGING),
+                ),
+                goal(plan.feudal_resource_island_transport_state, 1),
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.READY),
+                ),
+                parse_expression(
+                    f"(not {naval.source})",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.ACTIVE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-recover-on-transport-loss",
+            facts=(
+                goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.ACTIVE),
+                ),
+                parse_expression(
+                    "(unit-type-count-total transport-ship < 1)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.RECOVERY),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-rearm",
+            facts=(
+                goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.RECOVERY),
+                ),
+                parse_expression(
+                    "(unit-type-count-total transport-ship >= 1)",
+                    SourceLocation(1),
+                ),
+                goal(
+                    plan.pacific_transport_escort_state,
+                    int(PacificTransportEscortPhase.READY),
+                ),
+                dock,
+                parse_expression(
+                    f"(not {naval.source})",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.STAGING),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-close-on-pressure",
+            facts=(
+                parse_expression(
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    SourceLocation(1),
+                ),
+                naval,
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-close-on-dock-loss",
+            facts=(
+                parse_expression(
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    SourceLocation(1),
+                ),
+                parse_expression(f"(not {dock.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-close-on-escort-loss",
+            facts=(
+                parse_expression(
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(not (goal {plan.pacific_transport_escort_state} {int(PacificTransportEscortPhase.READY)}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.IDLE),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "pacific-convoy-route-close-nonwater",
+            facts=(
+                parse_expression(
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.STAGING)}) "
+                    f"(or (goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.ACTIVE)}) "
+                    f"(goal {plan.pacific_convoy_route_state} {int(PacificConvoyRoutePhase.RECOVERY)})))",
+                    SourceLocation(1),
+                ),
+                parse_expression(f"(not {pacific.source})", SourceLocation(1)),
+            ),
+            actions=(
+                set_goal(
+                    plan.pacific_convoy_route_state,
+                    int(PacificConvoyRoutePhase.IDLE),
                 ),
             ),
         ),

@@ -5059,6 +5059,76 @@ def _default_byzantine_duc_plan(
                 argument_index=1,
             )
         )
+    convoy_guard = (
+        "(current-age >= feudal-age)",
+        "(goal pacific-convoy-route 2)",
+        "(goal feudal-resource-island-transport-objective 1)",
+        "(goal pacific-transport-escort 2)",
+        "(building-type-count-total dock >= 1)",
+        "(unit-type-count-total transport-ship >= 1)",
+        "(not (or (players-unit-type-count any-enemy galley-line >= 2) (players-unit-type-count any-enemy fire-galley-line >= 2)))",
+    )
+    transport_route_identity = "byzantine-pacific-convoy-route-transport"
+    rules.append(
+        NativeDucRule(
+            identity=transport_route_identity,
+            order=len(rules),
+            facts=tuple(
+                parse_expression(item, SourceLocation(1))
+                for item in convoy_guard
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression(
+                    "(up-find-local c: transport-ship-class c: 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-set-target-point feudal-resource-island-gold-point)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-target-point 0 action-move -1 -1)",
+                    SourceLocation(1),
+                ),
+            ),
+            lifecycle=(NativeDucLifecycleStage.DISPATCH,),
+        )
+    )
+
+    escort_route_identity = "byzantine-pacific-convoy-route-escort"
+    rules.append(
+        NativeDucRule(
+            identity=escort_route_identity,
+            order=len(rules),
+            facts=tuple(
+                parse_expression(item, SourceLocation(1))
+                for item in convoy_guard
+            ) + (
+                parse_expression(
+                    "(unit-type-count-total fire-galley >= 1)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression(
+                    "(up-find-local c: fire-galley-class c: 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-set-target-point feudal-resource-island-gold-point)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-target-point 0 action-move -1 -1)",
+                    SourceLocation(1),
+                ),
+            ),
+            lifecycle=(NativeDucLifecycleStage.DISPATCH,),
+        )
+    )
+
     return NativeDucPlan(
         rules=tuple(rules),
         output_requests=tuple(outputs),
