@@ -2006,7 +2006,7 @@ def community_strategy_demands(
             priority=_StrategicPriority.SUPPORT,
             reason=(
                 _persistent(
-                    "Open Islands water supports a bounded four-boat fishing floor",
+                    "Feudal water can support a bounded four-boat fishing floor when naval pressure is absent",
                     "strategy-water-map",
                 ),
             ),
@@ -2100,6 +2100,24 @@ def community_strategy_demands(
                 action="(train transport-ship)",
                 witness="(unit-type-count transport-ship >= 1)",
                 release="(unit-type-count transport-ship >= 1)",
+            ),
+        )
+    )
+    demands.append(
+        _training_demand(
+            effective=effective,
+            identity="water-pacific-fire-galley-deterrent",
+            owner="water-naval",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason_ref="strategy-pacific-islands",
+            reason_label="Pacific land-first still preserves one Feudal fire-galley deterrent",
+            line="fire-galley-line",
+            minimum=1,
+            age_guard="(current-age >= feudal-age)",
+            additional_requirements=(
+                pacific_islands,
+                "(building-type-count-total dock >= 1)",
             ),
         )
     )
@@ -2411,6 +2429,7 @@ def community_water_execution_plan():
         transport_phase_state="transport-phase",
         transport_objective_state="water-transport-objective",
         transport_rebuild_state="water-transport-rebuild",
+        pacific_opening_transport_state="pacific-opening-transport-objective",
         water_map_observation="strategy-water-map",
         transport_required_observation="strategy-transport-required",
         transport_capable_observation="strategy-own-transport-capable",
