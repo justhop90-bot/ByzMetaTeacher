@@ -166,6 +166,7 @@ def lower_economy_controller(
         else "(map-type pacific-islands)"
     )
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
+    pacific_window = "(and (current-age >= dark-age) (current-age < castle-age))"
     no_knight_pressure = "(not (players-unit-type-count any-enemy knight >= 3))"
     no_ranged_pressure = "(not (players-unit-type-count any-enemy archer-line >= 4))"
     no_infantry_pressure = "(not (players-unit-type-count any-enemy militia-line >= 5))"
@@ -256,7 +257,7 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-pacific-land-first",
             EconomyMode.PACIFIC_LAND,
-            (feudal_window, *no_pressure, pacific, not_emergency_recovery),
+            (pacific_window, *no_pressure, pacific, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-economy",
