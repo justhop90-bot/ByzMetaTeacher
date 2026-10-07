@@ -133,12 +133,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             "opening-selector-water-control": (
                 "(goal opening-plan -1)",
+                "(not (map-type pacific-islands))",
                 "(or (map-type islands) (map-type pacific-islands))",
                 "(or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2))",
             ),
             "opening-selector-water-economy": (
                 "(goal opening-plan -1)",
+                "(not (map-type pacific-islands))",
                 "(or (map-type islands) (map-type pacific-islands))",
                 "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
