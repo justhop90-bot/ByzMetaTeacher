@@ -204,35 +204,21 @@ def _demand_lifecycle_block(source: str, identity: str) -> str:
     return source[start:end].rstrip() + "\n"
 
 
-def _ensure_water_dock_defconsts(runtime: str, generated: str) -> tuple[str, dict[str, int]]:
-    names = (
-        WATER_DOCK_DEMAND,
-        f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
+def _ensure_water_dock_defconsts(
+    runtime: str,
+    generated: str,
+) -> tuple[str, dict[str, int]]:
+    runtime = _ensure_reserved_water_goal_defconsts(runtime)
+    return (
+        runtime,
+        {
+            name: WATER_RUNTIME_RESERVED_GOALS[name]
+            for name in (
+                WATER_DOCK_DEMAND,
+                f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
+            )
+        },
     )
-    definitions = _defconst_values(runtime)
-    values = {name: definitions.get(name) for name in names}
-    occupants = _goal_slot_occupants(runtime)
-    if all(value is not None and 1 <= value <= 16_000 for value in values.values()):
-        resolved = {name: int(value) for name, value in values.items() if value is not None}
-        if (
-            len(set(resolved.values())) == len(resolved)
-            and all(not (occupants.get(value, set()) - {name}) for name, value in resolved.items())
-        ):
-            return runtime, resolved
-    missing = [name for name in names if values[name] is None]
-    chosen = _choose_goal_slots(runtime, len(missing), reserved_source=generated)
-    resolved = {name: int(value) for name, value in values.items() if value is not None}
-    additions = []
-    for name, value in zip(missing, chosen):
-        resolved[name] = value
-        additions.append(f"(defconst {name} {value})")
-    marker = "(defconst opening-plan "
-    position = runtime.find(marker)
-    if position < 0:
-        raise RuntimeError("runtime artifact is missing opening-plan defconst")
-    line_end = runtime.find("\n", position)
-    runtime = runtime[: line_end + 1] + "\n".join(additions) + "\n" + runtime[line_end + 1:]
-    return runtime, resolved
 
 def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
     identity = WATER_DOCK_DEMAND
@@ -761,14 +747,148 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
+WATER_EXECUTION_STATE_NAMES = (
+    "transport-phase",
+    "water-posture",
+    "water-transport-objective",
+    "water-transport-rebuild",
+)
+WATER_EXECUTION_NEW_STATE_NAMES = (
+    "water-transport-objective",
+    "water-transport-rebuild",
+)
+
+WATER_RUNTIME_RESERVED_GOALS = {
+    "water-dock-capability": 15977,
+    "construction-retry-barrier-water-dock-capability": 15976,
+    "demand-water-dock-capability": 15975,
+    "issued-water-dock-capability": 15973,
+    "pending-water-dock-capability": 15972,
+    "complete-water-dock-capability": 15971,
+    "water-transport-objective": 15970,
+    "water-transport-rebuild": 15969,
+}
+
+
+def _ensure_reserved_water_goal_defconsts(runtime: str) -> str:
+    definitions = _defconst_values(runtime)
+    occupants = _goal_slot_occupants(runtime)
+
+    for name, value in WATER_RUNTIME_RESERVED_GOALS.items():
+        users = occupants.get(value, set()) - {name}
+        if users:
+            raise RuntimeError(
+                f"reserved water Goal slot {value} for '{name}' is occupied by "
+                f"{sorted(users)}"
+            )
+
+    missing_lines: list[str] = []
+    for name, value in WATER_RUNTIME_RESERVED_GOALS.items():
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            missing_lines.append(new_line)
+
+    if missing_lines:
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        insertion = "\n" + "\n".join(missing_lines)
+        runtime = runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
+
+    return runtime
+
+
+def _ensure_water_execution_state_defconsts(
+    runtime: str,
+) -> str:
+    names = WATER_EXECUTION_NEW_STATE_NAMES
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if len(resolved) != len(names):
+            return False
+        if len(set(resolved.values())) != len(resolved):
+            return False
+        return all(
+            not (occupants.get(value, set()) - {name})
+            for name, value in resolved.items()
+        )
+
+    if valid_current():
+        return runtime
+
+    missing = [name for name in names if values[name] is None]
+    chosen = _choose_goal_slots(
+        runtime,
+        len(missing),
+        relocatable_names=tuple(name for name in names if values[name] is not None),
+    )
+    replacements = dict(zip(missing, chosen))
+    for name, value in replacements.items():
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced:
+            continue
+
+        anchor = re.compile(
+            r"^\(defconst water-posture -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        match = anchor.search(runtime)
+        if match is None:
+            raise RuntimeError("runtime artifact is missing water-posture defconst")
+        insert_at = match.end()
+        runtime = runtime[:insert_at] + "\n" + new_line + runtime[insert_at:]
+
+    return runtime
+
+
+def _sync_water_execution_control(runtime: str, generated: str) -> str:
+    """Synchronize the canonical water state machine into the checked-in runtime."""
+
+    water_start = "; Native control rule: water-execution-initialize"
+    water_end = "; Native control rule: opening-recovery-defense-clear-initialize"
+
+    generated_start = generated.find(water_start)
+    generated_end = generated.find(water_end, generated_start)
+    runtime_start = runtime.find(water_start)
+    runtime_end = runtime.find(water_end, runtime_start)
+
+    if generated_start < 0 or generated_end < 0:
+        raise RuntimeError("generated artifact is missing the canonical water control block")
+    if runtime_start < 0 or runtime_end < 0:
+        raise RuntimeError("runtime artifact is missing the water control insertion boundaries")
+
+    return (
+        runtime[:runtime_start]
+        + generated[generated_start:generated_end].rstrip()
+        + "\n\n"
+        + runtime[runtime_end:]
+    )
+
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
     generated = GENERATED.read_text(encoding="utf-8")
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
-    runtime = _ensure_named_defconsts(runtime, generated, WATER_DOCK_GOAL_NAMES)
+    runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
+    runtime = _ensure_reserved_water_goal_defconsts(runtime)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
 
     defense_block = _block(
