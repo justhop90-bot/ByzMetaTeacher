@@ -33,6 +33,17 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         }
         self.assertIn("strategy-enemy-naval-pressure", refs)
 
+    def test_pacific_transport_escort_can_bootstrap_before_first_transport(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-escort")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertIn("(map-type pacific-islands)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        self.assertNotIn("(unit-type-count-total transport-ship >= 1)", requirements)
+        self.assertNotIn("(goal pacific-transport-recovery 1)", requirements)
+        self.assertIn("(can-train-with-escrow fire-galley)", requirements)
+
     def test_pacific_transport_escort_is_a_standing_feudal_support_capability(self):
         profile = build_byzantine_stock_strategy(self.effective)
         demand = profile.demand("water-pacific-transport-escort")

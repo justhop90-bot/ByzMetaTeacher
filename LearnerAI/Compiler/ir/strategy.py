@@ -5113,7 +5113,7 @@ def _default_byzantine_duc_plan(
             actions=(
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
                 parse_expression(
-                    "(up-find-local c: fire-galley-class c: 1)",
+                    "(up-find-local c: fire-galley c: 1)",
                     SourceLocation(1),
                 ),
                 parse_expression(
