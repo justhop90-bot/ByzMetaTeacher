@@ -442,6 +442,19 @@ def lower_water_execution_plan(
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
         ),
+        # Full Islands keeps the same fishing demand lifecycle open after the
+        # baseline two-boat witness until its four-boat economic floor is met.
+        NativeControlRule(
+            "water-fishing-continuity-expand-after-baseline",
+            facts=(
+                parse_expression("(goal demand-water-fishing-continuity 129)", SourceLocation(1)),
+                parse_expression("(not (map-type pacific-islands))", SourceLocation(1)),
+                parse_expression("(unit-type-count-total fishing-ship < 4)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(set-goal demand-water-fishing-continuity 1)", SourceLocation(1)),
+            ),
+        ),
 
     ]
 
