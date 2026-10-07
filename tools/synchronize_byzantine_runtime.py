@@ -1176,7 +1176,7 @@ def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
             runtime,
             generated,
             identity,
-            insert_before="counter-package-selection-reset-000",
+            insert_before="; Native control rule: counter-package-selection-reset-000",
         )
     return runtime
 
@@ -1219,14 +1219,14 @@ def _sync_water_demand_rules(runtime: str, generated: str) -> str:
                 runtime,
                 generated,
                 marker,
-                insert_before="counter-package-selection-reset-000",
+                insert_before="; Native control rule: counter-package-selection-reset-000",
             )
         if generated.find(f"; Pending admission: {identity}") >= 0:
             runtime = _replace_or_install_retry_rule(
                 runtime,
                 generated,
                 identity,
-                insert_before="counter-package-selection-reset-000",
+                insert_before="; Native control rule: counter-package-selection-reset-000",
             )
 
     return runtime
