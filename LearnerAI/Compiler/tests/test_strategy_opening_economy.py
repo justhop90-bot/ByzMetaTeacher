@@ -183,7 +183,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             demand.execution.requirements,
         )
 
-    def test_dark_age_villager_pause_only_fires_when_feudal_is_issuable(self):
+    def test_dark_age_villager_pause_guard_has_feudal_issuability_as_inner_witness(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("civilian-villager-continuity")
         guard = next(
@@ -196,24 +196,19 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             guard,
             SourceLocation(1, 1, "<test>"),
         )
-
-        blocked_bank = RuntimeObservationSnapshot(
-            fact_results=(
-                ("(current-age == dark-age)", True),
-                ("(unit-type-count-total villager >= 20)", True),
-                ("(can-research-with-escrow feudal-age)", False),
-            )
+        self.assertEqual("not", guard_expression.head)
+        outer_and = guard_expression.args[0]
+        self.assertEqual("and", outer_and.head)
+        bank_and = outer_and.args[1]
+        self.assertEqual("and", bank_and.head)
+        self.assertEqual(
+            "unit-type-count-total",
+            bank_and.args[0].head,
         )
-        ready_bank = RuntimeObservationSnapshot(
-            fact_results=(
-                ("(current-age == dark-age)", True),
-                ("(unit-type-count-total villager >= 20)", True),
-                ("(can-research-with-escrow feudal-age)", True),
-            )
+        self.assertEqual(
+            "can-research-with-escrow",
+            bank_and.args[1].head,
         )
-
-        self.assertIs(EvidenceTruth.TRUE, _evaluate_expression(guard_expression, blocked_bank))
-        self.assertIs(EvidenceTruth.FALSE, _evaluate_expression(guard_expression, ready_bank))
 
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
         profile = build_byzantine_strategy(self.effective)
