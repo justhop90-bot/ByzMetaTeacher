@@ -873,13 +873,12 @@ def _sync_water_execution_control(runtime: str, generated: str) -> str:
     if runtime_start < 0 or runtime_end < 0:
         raise RuntimeError("runtime artifact is missing the water control insertion boundaries")
 
-    runtime = (
+    return (
         runtime[:runtime_start]
         + generated[generated_start:generated_end].rstrip()
         + "\n\n"
         + runtime[runtime_end:]
     )
-    return _ensure_water_execution_state_defconsts(runtime)
 
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
