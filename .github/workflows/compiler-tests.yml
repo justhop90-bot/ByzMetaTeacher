@@ -107,6 +107,12 @@ jobs:
           cmp /tmp/byzantine-semantic-manifest.json /tmp/byzantine-semantic-manifest-repeat.json
       - name: Canonical Byzantine Core v1 build regression
         run: PYTHONPATH=LearnerAI python -m unittest LearnerAI.Compiler.tests.test_byzantine_bot_build -v
+      - name: Focused Feudal Bank v1 regression
+        run: |
+          PYTHONPATH=LearnerAI python -m unittest \
+            LearnerAI.Compiler.tests.test_strategy_opening_economy.ByzantineStrategyControlSliceTests.test_feudal_bank_uses_guarded_native_escrow_policy_lifecycle \
+            LearnerAI.Compiler.tests.test_strategy_opening_economy.ByzantineStrategyControlSliceTests.test_feudal_bank_does_not_replace_existing_age_release_escrow \
+            -v
       - name: Native zero-findings acceptance - canonical Byzantine Core v1 artifact
         run: python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/native-reports/byzantine-core-v1.json
       - name: Focused Byzantine camp controller regression
