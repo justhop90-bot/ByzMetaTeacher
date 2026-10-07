@@ -6011,6 +6011,16 @@
     (set-goal water-posture 0)
 )
 
+; Native control rule: water-boat-exploration-enable
+(defrule
+    (or (map-type islands) (map-type pacific-islands))
+    (building-type-count-total 45 >= 1)
+    (unit-type-count fishing-ship >= 1)
+=>
+    (set-strategic-number 61 1)
+    (disable-self)
+)
+
 ; Native control rule: opening-recovery-defense-clear-initialize
 (defrule
     (goal opening-recovery-defense-clear -1)
@@ -14120,7 +14130,7 @@
     (not (up-research-status c: 101 >= 2))
     (not (current-age >= feudal-age))
     (current-age == dark-age)
-    (unit-type-count-total villager >= 21)
+    (unit-type-count-total villager >= 20)
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow feudal-age)
 =>
@@ -14244,7 +14254,10 @@
     (can-train villager)
     (not (and
         (current-age == dark-age)
-        (unit-type-count-total villager >= 21)
+        (and
+            (unit-type-count-total villager >= 20)
+            (can-research-with-escrow feudal-age)
+        )
     ))
     (not (and
         (current-age == feudal-age)
@@ -27013,7 +27026,7 @@
     (not (up-pending-objects c: 13 >= 1))
     (not (unit-type-count fishing-ship >= 2))
     (goal action-claim-train-arbitration 0)
-    (current-age >= feudal-age)
+    (current-age >= dark-age)
     (or
         (map-type islands)
         (or
