@@ -88,10 +88,7 @@ class ByzantineWaterMapV1Tests(unittest.TestCase):
                 sync_runtime.GENERATED = original_generated
 
         self.assertIn("; Native control rule: pacific-fishing-controller-open", synchronized)
-        self.assertIn(
-            "(set-strategic-number sn-desired-number-fishing-boats 2)",
-            synchronized,
-        )
+        self.assertIn("; Native control rule: pacific-harbor-defense-open", synchronized)
         self.assertIn(
             "(set-strategic-number sn-maximum-fish-boat-drop-distance -2)",
             synchronized,

@@ -33,6 +33,14 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         }
         self.assertIn("strategy-enemy-naval-pressure", refs)
 
+    def test_pacific_harbor_defense_gates_naval_demands_on_pacific(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        for identity in ("water-naval-defense", "water-naval-control"):
+            demand = profile.demand(identity)
+            requirements = " ".join(demand.execution.requirements)
+            self.assertIn("(goal pacific-harbor-defense 1)", requirements)
+            self.assertIn("(can-train-with-escrow", requirements)
+
     def test_stock_profile_resolves_against_current_effective_data(self):
         profile = build_byzantine_stock_strategy(self.effective)
         resolved = resolve_strategy_profile(profile, self.effective)

@@ -302,6 +302,68 @@ class WaterTransportExecutionTests(unittest.TestCase):
             castle_text,
         )
 
+    def test_pacific_harbor_defense_controller_owns_pressure_and_dock_arbitration(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = {state.identifier for state in control.states}
+        self.assertIn("pacific-harbor-defense", state_ids)
+
+        rules = {rule.identity: rule for rule in control.rules}
+        for expected in (
+            "pacific-harbor-defense-open",
+            "pacific-harbor-defense-close",
+            "pacific-harbor-defense-close-no-dock",
+            "pacific-harbor-defense-close-nonwater",
+        ):
+            self.assertIn(expected, rules)
+
+        open_facts = " ".join(fact.source for fact in rules["pacific-harbor-defense-open"].facts)
+        self.assertIn("(map-type pacific-islands)", open_facts)
+        self.assertIn(profile.observation("strategy-enemy-naval-pressure").expression, open_facts)
+        self.assertIn(profile.observation("strategy-dock-exists").expression, open_facts)
+
+    def test_pacific_harbor_defense_gates_transport_and_preserves_escrow_naval_production(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        transport = profile.demand("water-transport-capability")
+        transport_requirements = " ".join(transport.execution.requirements)
+        self.assertIn("(not (goal pacific-harbor-defense 1))", transport_requirements)
+        self.assertIn("(can-train-with-escrow transport-ship)", transport_requirements)
+
+        for identity, unit in (
+            ("water-naval-defense", "fire-galley"),
+            ("water-naval-control", "galley"),
+        ):
+            demand = profile.demand(identity)
+            requirements = " ".join(demand.execution.requirements)
+            self.assertIn("(goal pacific-harbor-defense 1)", requirements)
+            self.assertIn(f"(can-train-with-escrow {unit})", requirements)
+
+    def test_pacific_harbor_defense_closes_transport_execution_while_pressure_is_active(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        open_text = " ".join(
+            fact.source for fact in rules["transport-objective-open"].facts
+        )
+        self.assertIn("(not (goal pacific-harbor-defense 1))", open_text)
+
+        close_text = " ".join(
+            fact.source for fact in rules["transport-objective-close"].facts
+        )
+        self.assertIn("(goal pacific-harbor-defense 1)", close_text)
+
+        phase_text = " ".join(
+            fact.source for fact in rules["transport-phase-no-longer-required"].facts
+        )
+        self.assertIn("(goal pacific-harbor-defense 1)", phase_text)
+
     def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
