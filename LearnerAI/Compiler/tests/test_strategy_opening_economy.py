@@ -95,6 +95,52 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ((Resource.FOOD, 500),),
         )
 
+    def test_feudal_bank_uses_guarded_native_escrow_policy_lifecycle(self):
+        from Compiler.ir import NativeEscrowReleasePlan
+
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        escrow_plan = compilation.escrow_plan
+        self.assertIsInstance(escrow_plan, NativeEscrowReleasePlan)
+        assert escrow_plan is not None
+        policy_plan = escrow_plan.policy_plan
+        self.assertIsNotNone(policy_plan)
+        assert policy_plan is not None
+
+        self.assertEqual(
+            tuple(
+                (op.contract_identity, op.resource, op.percentage, op.guard)
+                for op in policy_plan.operations
+            ),
+            (
+                (
+                    "feudal-bank-open-food",
+                    "food",
+                    50,
+                    "(and (current-age == dark-age) "
+                    "(not (goal opening-plan 6)))",
+                ),
+                ("feudal-bank-emergency-release-food", "food", 0, "(goal opening-plan 6)"),
+                ("feudal-bank-close-food", "food", 0, "(current-age >= feudal-age)"),
+            ),
+        )
+
+    def test_feudal_bank_does_not_replace_existing_age_release_escrow(self):
+        from Compiler.ir import NativeEscrowReleasePlan
+
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        escrow_plan = compilation.escrow_plan
+        self.assertIsInstance(escrow_plan, NativeEscrowReleasePlan)
+        assert escrow_plan is not None
+
+        releases = tuple(
+            (op.contract_identity, op.resource)
+            for op in escrow_plan.operations
+        )
+        self.assertIn(("feudal-transition:escrow:food", "food"), releases)
+        self.assertIn(("feudal-transition:escrow:gold", "gold"), releases)
+
     def test_opening_selection_is_durable_and_precedence_ordered(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
