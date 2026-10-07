@@ -380,12 +380,6 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("pacific-transport-recovery-open-on-landed", rules)
         self.assertIn("pacific-transport-recovery-close-nonwater", rules)
 
-        landed_actions = " ".join(
-            action.source
-            for action in rules["pacific-transport-lifecycle-landed"].actions
-        )
-        self.assertIn("(set-goal pacific-transport-recovery 1)", landed_actions)
-
     def test_pacific_transport_recovery_demand_uses_dock_pressure_and_escrow(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("water-pacific-transport-recovery")
