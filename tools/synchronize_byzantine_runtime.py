@@ -882,10 +882,10 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
-    runtime = _ensure_named_defconsts(runtime, generated, WATER_DOCK_GOAL_NAMES)
     runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _sync_first_dock_lifecycle(runtime, generated)
+    runtime = _ensure_named_defconsts(runtime, generated, WATER_DOCK_GOAL_NAMES)
 
     defense_block = _block(
         generated,
