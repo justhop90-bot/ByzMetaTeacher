@@ -345,6 +345,17 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIsNotNone(lowered.production_lifecycle)
         self.assertEqual(lowered.production_lifecycle.unit, "villager")
 
+    def test_pacific_fishing_continuity_has_a_dark_age_first_boat_fallback(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        requirements = " ".join(demand.execution.requirements)
+        self.assertIn("(current-age >= dark-age)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        self.assertIn("(wood-amount >= 75)", requirements)
+        self.assertIn("(can-train fishing-ship)", requirements)
+        self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
+        self.assertEqual(demand.target.minimum, 2)
+
     def test_checked_in_runtime_preserves_maturity_aware_villager_production(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")

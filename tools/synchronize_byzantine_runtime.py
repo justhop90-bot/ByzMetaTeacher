@@ -163,6 +163,31 @@ def _sync_civilian_villager_castle_admission(
     return runtime[:start] + patched_section + runtime[end:]
 
 
+def _sync_feudal_resource_claim_recovery(runtime: str) -> str:
+    marker = "; Recovery: feudal-resource-claim | FAILED ISSUANCE -> FREE"
+    if marker in runtime:
+        return runtime
+
+    block = """; Recovery: feudal-resource-claim | FAILED ISSUANCE -> FREE
+(defrule
+    (goal byzantine-resource-claim 1)
+    (goal demand-feudal-transition 83)
+    (not (up-research-status c: 101 >= 2))
+    (not (current-age >= feudal-age))
+=>
+    (set-goal byzantine-resource-claim 0)
+)
+"""
+
+    insertion_marker = "; RETRY | ISSUED/PENDING -> ACTIVE"
+    retry_start = runtime.find(insertion_marker)
+    if retry_start < 0:
+        raise RuntimeError(
+            "runtime artifact is missing the Feudal research retry boundary"
+        )
+    return runtime[:retry_start] + block + "\n" + runtime[retry_start:]
+
+
 def _first_rule_block(source: str, marker: str) -> tuple[int, int, str]:
     start = source.find(marker)
     if start < 0:
@@ -1389,6 +1414,7 @@ def synchronize() -> bool:
     runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
+    runtime = _sync_feudal_resource_claim_recovery(runtime)
     runtime = _ensure_pacific_transport_goal_defconsts(runtime, generated)
     runtime = _ensure_reserved_water_goal_defconsts(runtime)
     runtime = _ensure_pacific_runtime_strategic_numbers(runtime)

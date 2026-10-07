@@ -1196,7 +1196,7 @@ def lower_water_execution_plan(
                 parse_expression("(timer-triggered pacific-transport-load-retry)", SourceLocation(1)),
                 parse_expression("(up-compare-goal pacific-opening-transport-load-count < 4)", SourceLocation(1)),
                 parse_expression("(unit-type-count-total transport-ship >= 1)", SourceLocation(1)),
-                parse_expression("(up-pending-objects c: 904 == 0)", SourceLocation(1)),
+                parse_expression("(up-pending-objects c: 545 == 0)", SourceLocation(1)),
             ),
             actions=(
                 set_goal(
