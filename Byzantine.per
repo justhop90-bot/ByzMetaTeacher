@@ -15188,16 +15188,13 @@
 )
 
 ; Action issuance: Castle Age research owns the existing Byzantine resource claim.
-; Market and Blacksmith are completed Feudal prerequisites; the native
-; can-research-with-escrow fact remains the final engine feasibility gate.
+; Strategic maturity targets remain policy evidence; native feasibility owns
+; execution so a missing optional maturity witness cannot deadlock age-up.
 (defrule
     (goal demand-castle-age-transition 1)
     (goal research-retry-barrier-castle-age-transition 0)
     (not (current-age >= castle-age))
     (current-age == feudal-age)
-    (unit-type-count-total villager >= bt-castle-age-villager-maturity)
-    (building-type-count-total blacksmith >= 1)
-    (building-type-count-total market >= 1)
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow castle-age)
 =>
@@ -16595,23 +16592,14 @@
 )
 
 ; Action issuance: imperial-conversion | ACTIVE -> ISSUED
-; Community-native maturity contract translated into the Byzantine lifecycle:
-;   Castle Age
-;   -> 50-villager civilian maturity
-;   -> completed University
-;   -> free Byzantine resource claim
-;   -> native Imperial research feasibility
-; The University prerequisite is witnessed explicitly; resource cost/discount
-; remains owned by can-research-with-escrow and the civ's live game data.
+; Strategic maturity targets remain policy evidence; native feasibility owns
+; execution so the age transition cannot deadlock on optional Castle maturity.
 (defrule
     (goal demand-imperial-conversion 1)
     (not (current-age >= imperial-age))
     (goal research-retry-barrier-imperial-conversion 0)
     (not (up-research-status c: 103 >= 2))
-    (not (current-age >= imperial-age))
     (current-age == castle-age)
-    (unit-type-count-total villager >= bt-imperial-age-villager-maturity)
-    (building-type-count-total university >= 1)
     (goal byzantine-resource-claim 0)
     (can-research-with-escrow imperial-age)
 =>
