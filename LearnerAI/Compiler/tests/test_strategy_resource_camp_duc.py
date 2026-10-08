@@ -104,20 +104,24 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
             ("gold", "mining-camp", 5),
             ("stone", "mining-camp", 5),
         ):
-            demand_name = f"economy-{resource}-camp-floor-1"
-            start = output.index(f"; Construction observation: {demand_name}")
-            end = output.find("\n; ", start + 10)
-            section = output[start:] if end < 0 else output[start:end]
-            self.assertNotIn(
-                f"(build {building})",
-                section,
-                f"{demand_name} must not use the generic demand action issuer",
-            )
-            self.assertIn(
-                f"Native DUC rule: byzantine-camp-placement-{resource}-1",
-                output,
-            )
-        self.assertIn("(build lumber-camp)", output)
+            for floor in range(1, maximum + 1):
+                demand_name = f"economy-{resource}-camp-floor-{floor}"
+                self.assertNotIn(
+                    f"; Action issuance: {demand_name} | ACTIVE -> ISSUED",
+                    output,
+                )
+                self.assertIn(
+                    f"; Native placement owner: {demand_name}",
+                    output,
+                )
+                self.assertIn(
+                    f"Native DUC rule: byzantine-camp-placement-{resource}-{floor}-place",
+                    output,
+                )
+        self.assertIn(
+            "byzantine-camp-placement-wood-1-fallback",
+            output,
+        )
 
 if __name__ == "__main__":
     unittest.main()
