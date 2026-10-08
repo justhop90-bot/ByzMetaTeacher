@@ -461,6 +461,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("(research elite-skirmisher)", elite)
         self.assertIn("(research-completed 98)", elite)
 
+        production_start = runtime.index("; Action issuance: imperial-elite-skirmisher-floor")
+        production_end = runtime.index("; Pending diagnostics: imperial-open-halberdier-standard", production_start)
+        production = runtime[production_start:production_end]
+        self.assertIn("(up-research-status c: 98 >= 3)", production)
+        self.assertIn("(unit-type-count 6 < 18)", production)
+        self.assertIn("(can-train-with-escrow skirmisher-line)", production)
+        self.assertIn("(train skirmisher-line)", production)
+
         ram_start = runtime.index("; Pending diagnostics: research-capped-ram")
         ram_end = runtime.index("; Pending diagnostics: research-double-bit-axe", ram_start)
         ram = runtime[ram_start:ram_end]
