@@ -231,7 +231,7 @@ def _resource_camp_block(generated: str, runtime: str) -> str:
         + ")\n"
         + "\n"
         + "\n"
-        + "    )
+    )
     return _remap_camp_duc_storage(camp_block, runtime)
 
 
