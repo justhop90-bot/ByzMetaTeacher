@@ -4735,10 +4735,6 @@ def _default_byzantine_duc_plan(
                             f"(up-set-target-point {resource}-camp-point-{floor})",
                             SourceLocation(1),
                         ),
-                        parse_expression(
-                            f"(up-build place-point 0 c: {building})",
-                            SourceLocation(1),
-                        ),
                     ),
                     control_actions=(
                         parse_expression(
