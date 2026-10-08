@@ -422,6 +422,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
     def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+        # Bound the terminal stone floor to the next executable section, not EOF.
 
         for resource in ("gold", "stone"):
             for floor in range(2, 6):
