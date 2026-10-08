@@ -441,9 +441,14 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"DUC control action '{expression.head}' is not executable"
                     )
-                if len(expression.args) < 2 or not str(expression.args[0]).startswith("demand-"):
+                target_goal = str(expression.args[0])
+                if len(expression.args) < 2 or not (
+                    target_goal.startswith("demand-")
+                    or target_goal.startswith("action-claim-")
+                ):
                     raise ValueError(
-                        f"DUC control action '{expression.head}' must target a demand goal"
+                        f"DUC control action '{expression.head}' must target a demand "
+                        "goal or compiler-owned action-claim goal"
                     )
                 if not str(expression.args[1]).strip():
                     raise ValueError(
