@@ -1215,7 +1215,7 @@ def lower_water_execution_plan(
                 ),
             ),
             actions=(
-                parse_expression("(up-garrison transport-ship c: villager)", SourceLocation(1)),
+                parse_expression("(up-garrison transport-ship c: 83)", SourceLocation(1)),
             ),
         ),
         NativeControlRule(
