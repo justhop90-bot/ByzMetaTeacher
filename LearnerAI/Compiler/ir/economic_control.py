@@ -149,6 +149,28 @@ def lower_economy_controller(
                 ),
             )
         )
+    for symbol, native_id in (
+        ("sn-enable-training-queue", 264),
+        ("sn-enable-research-queue", 306),
+    ):
+        states.append(
+            NativeControlState(
+                symbol,
+                StrategicNumberRequest(
+                    StorageRequestId(
+                        SemanticId(plan.controller_id, symbol),
+                        "economy-native-queue-control",
+                    ),
+                    why_not_goal=(
+                        "Native Islands queue-control Strategic Number; preserve "
+                        "the engine's TC research-with-villagers contract."
+                    ),
+                    stability_key=f"{plan.controller_id}:{native_id}",
+                    origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                    native_strategic_number_id=native_id,
+                ),
+            )
+        )
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
