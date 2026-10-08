@@ -17741,7 +17741,7 @@
 
 ; economy-stone-camp-floor-2
 (defrule
-    (goal demand-economy-stone-camp-floor-2 653)
+    (goal demand-economy-stone-camp-floor-2 628)
     (building-type-count mining-camp >= 2)
 =>
     (set-goal demand-economy-stone-camp-floor-2 0)
@@ -17757,41 +17757,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 653)
+    (set-goal demand-economy-stone-camp-floor-2 628)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 652)
+    (set-goal demand-economy-stone-camp-floor-2 627)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 652)
+    (set-goal demand-economy-stone-camp-floor-2 627)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
@@ -17838,12 +17838,12 @@
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-2 651)
+    (set-goal demand-economy-stone-camp-floor-2 626)
 )
 
 ; economy-stone-camp-floor-3
 (defrule
-    (goal demand-economy-stone-camp-floor-3 658)
+    (goal demand-economy-stone-camp-floor-3 633)
     (building-type-count mining-camp >= 3)
 =>
     (set-goal demand-economy-stone-camp-floor-3 0)
@@ -17859,41 +17859,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (building-type-count mining-camp >= 3)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 658)
+    (set-goal demand-economy-stone-camp-floor-3 633)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 657)
+    (set-goal demand-economy-stone-camp-floor-3 632)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 657)
+    (set-goal demand-economy-stone-camp-floor-3 632)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
@@ -17940,12 +17940,12 @@
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-3 656)
+    (set-goal demand-economy-stone-camp-floor-3 631)
 )
 
 ; economy-stone-camp-floor-4
 (defrule
-    (goal demand-economy-stone-camp-floor-4 663)
+    (goal demand-economy-stone-camp-floor-4 638)
     (building-type-count mining-camp >= 4)
 =>
     (set-goal demand-economy-stone-camp-floor-4 0)
@@ -17961,41 +17961,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (building-type-count mining-camp >= 4)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 663)
+    (set-goal demand-economy-stone-camp-floor-4 638)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 662)
+    (set-goal demand-economy-stone-camp-floor-4 637)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 662)
+    (set-goal demand-economy-stone-camp-floor-4 637)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
@@ -18042,7 +18042,7 @@
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-4 661)
+    (set-goal demand-economy-stone-camp-floor-4 636)
 )
 
 ; economy-stone-camp-floor-5
