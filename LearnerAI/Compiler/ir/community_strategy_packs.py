@@ -1145,6 +1145,14 @@ def community_strategy_demands(
             ),
             admissibility=(
                 _persistent("Imperial remains admissible in Castle Age", "strategy-castle-age"),
+                _persistent(
+                    "Community Imperial trajectory targets 50 villagers before the age-up bank is committed",
+                    "strategy-castle-age",
+                ),
+                _persistent(
+                    "University is the preferred Imperial maturity building, not an engine execution prerequisite",
+                    "strategy-castle-age",
+                ),
             ),
             invalidation=(
                 _persistent("Imperial conversion complete", "strategy-imperial-age"),
