@@ -264,6 +264,30 @@ class WaterTransportExecutionTests(unittest.TestCase):
             tuple(action.source for action in bootstrap.actions),
         )
 
+    def test_islands_fishing_bootstrap_activates_continuity_in_dark_age(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        bootstrap = rules["islands-fishing-continuity-bootstrap"]
+        facts = tuple(fact.source for fact in bootstrap.facts)
+        self.assertEqual(facts[0], "(map-type islands)")
+        self.assertIn(profile.observation("strategy-dock-exists").expression, facts)
+        self.assertIn("(current-age >= dark-age)", facts)
+        self.assertIn("(unit-type-count-total fishing-ship < 2)", facts)
+        self.assertIn("(goal demand-water-fishing-continuity 0)", facts)
+        self.assertNotIn(
+            "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
+            "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
+            facts,
+        )
+        self.assertIn(
+            "(set-goal demand-water-fishing-continuity 1)",
+            tuple(action.source for action in bootstrap.actions),
+        )
+
     def test_pacific_transport_load_failure_uses_timer_only_for_reconsideration(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
