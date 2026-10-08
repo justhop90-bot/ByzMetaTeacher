@@ -430,6 +430,26 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"DUC rule fact '{expression.head}' is an Action and cannot be emitted as a Fact"
                     )
+            for expression in rule.control_actions:
+                native = self.require_native(expression.head)
+                self.validate_native_signature(expression.head, len(expression.args))
+                if expression.head not in {"set-goal", "up-modify-goal"}:
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' is outside the goal-control bridge"
+                    )
+                if native.command_type not in {"Action", "Fact/Action"}:
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' is not executable"
+                    )
+                if len(expression.args) < 2 or not str(expression.args[0]).startswith("demand-"):
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' must target a demand goal"
+                    )
+                if not str(expression.args[1]).strip():
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' requires a goal value"
+                    )
+
             for expression in rule.actions:
                 if expression.head in native_output_commands:
                     binding = binder.bind_native_output_command(expression.head)
