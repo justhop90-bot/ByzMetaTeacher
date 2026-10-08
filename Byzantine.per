@@ -1137,6 +1137,11 @@
 (defconst pending-research-pikeman 15950)
 (defconst complete-research-pikeman 15951)
 (defconst research-retry-barrier-research-pikeman 15959)
+(defconst demand-research-elite-skirmisher 15961)
+(defconst issued-research-elite-skirmisher 15964)
+(defconst pending-research-elite-skirmisher 15962)
+(defconst complete-research-elite-skirmisher 15963)
+(defconst research-retry-barrier-research-elite-skirmisher 15965)
 (defconst demand-research-capped-ram 15953)
 (defconst issued-research-capped-ram 15956)
 (defconst pending-research-capped-ram 15954)
@@ -13152,6 +13157,7 @@
     (set-goal demand-castle-pikeman-floor 1)
     (set-goal demand-castle-battering-ram-floor 1)
     (set-goal demand-research-pikeman 1)
+    (set-goal demand-research-elite-skirmisher 1)
     (set-goal demand-research-capped-ram 1)
     (disable-self)
 )
@@ -17346,11 +17352,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
-    (up-set-target-object search-remote c: 1)
+    (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17447,11 +17453,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 2)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
-    (up-set-target-object search-remote c: 2)
+    (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17548,11 +17554,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 3)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 2)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
-    (up-set-target-object search-remote c: 3)
+    (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17649,11 +17655,11 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 4)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 3)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
-    (up-set-target-object search-remote c: 4)
+    (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17831,9 +17837,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 1)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 0)
 =>
-    (up-set-target-object search-remote c: 1)
+    (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17933,9 +17939,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 2)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 1)
 =>
-    (up-set-target-object search-remote c: 2)
+    (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -18035,9 +18041,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 3)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 2)
 =>
-    (up-set-target-object search-remote c: 3)
+    (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -18137,9 +18143,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 4)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 3)
 =>
-    (up-set-target-object search-remote c: 4)
+    (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -21967,12 +21973,64 @@
     (not (up-research-status c: 197 >= 2))
     (current-age >= castle-age)
     (unit-type-count 93 >= 6)
-    (can-research-with-escrow pikeman)
+    (can-research-with-escrow ri-pikeman)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research pikeman)
+    (research ri-pikeman)
     (set-goal demand-research-pikeman 15952)
+)
+
+; Pending diagnostics: research-elite-skirmisher
+(defrule
+    (goal demand-research-elite-skirmisher 15963)
+    (research-completed 98)
+=>
+    (set-goal demand-research-elite-skirmisher 0)
+)
+(defrule
+    (or
+        (goal demand-research-elite-skirmisher 15964)
+        (goal demand-research-elite-skirmisher 15962)
+    )
+    (research-completed 98)
+=>
+    (set-goal demand-research-elite-skirmisher 15963)
+)
+(defrule
+    (or
+        (goal demand-research-elite-skirmisher 15964)
+        (goal demand-research-elite-skirmisher 15962)
+    )
+    (not (research-completed 98))
+    (up-research-status c: 98 >= 2)
+=>
+    (set-goal demand-research-elite-skirmisher 15962)
+)
+(defrule
+    (or
+        (goal demand-research-elite-skirmisher 15964)
+        (goal demand-research-elite-skirmisher 15962)
+    )
+    (not (research-completed 98))
+    (not (up-research-status c: 98 >= 2))
+=>
+    (set-goal demand-research-elite-skirmisher 1)
+    (set-goal research-retry-barrier-research-elite-skirmisher 1)
+)
+(defrule
+    (goal demand-research-elite-skirmisher 1)
+    (not (research-completed 98))
+    (goal research-retry-barrier-research-elite-skirmisher 0)
+    (not (up-research-status c: 98 >= 2))
+    (current-age >= castle-age)
+    (unit-type-count 7 >= 6)
+    (can-research-with-escrow ri-elite-skirmisher)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research ri-elite-skirmisher)
+    (set-goal demand-research-elite-skirmisher 15964)
 )
 
 ; Pending diagnostics: research-capped-ram
