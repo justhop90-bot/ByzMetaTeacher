@@ -289,6 +289,7 @@ class StrategicDemandSpec:
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
     native_placement: bool = False
+    native_fallback_requirements: tuple[str, ...] = ()
     initial_state: LifecycleState = LifecycleState.ACTIVE
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
