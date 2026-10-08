@@ -1092,7 +1092,7 @@ def emit(
                 f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                 f"    (not {_render_runtime_expression(construction.pending_placement_fact)})",
                 "    (goal action-claim-build-pass-singleton 1)",
-                f"    {_render_runtime_expression(demand.requirements[-1].expression) if demand.requirements else '(true)'}",
+                f"    (can-build {construction.building})",
                 "=>",
             ]
             for operation in targeted_releases.get(demand.identity, ()):
