@@ -30625,6 +30625,73 @@
     (up-jump-rule 0)
 )
 
+;----------------------------------------------------------------
+; RUNTIME TEST: DIRECT RESOURCE-CAMP PLACEMENT
+; Purpose: isolate camp-placement behavior from compiler demand/DUC state.
+; Wood: first camp always, second camp only when nearest wood camp is >12.
+; Gold: first camp always when gold is seen, second camp only when >12.
+; This block is deliberately artifact-only and bypasses compiler camp lifecycle.
+;----------------------------------------------------------------
+(defrule
+    (current-age == dark-age)
+    (unit-type-count-total villager >= 10)
+    (resource-found wood)
+    (building-type-count-total lumber-camp < 1)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build lumber-camp)
+=>
+    (set-strategic-number sn-camp-max-distance 25)
+    (set-strategic-number sn-lumber-camp-max-distance 25)
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (resource-found wood)
+    (dropsite-min-distance wood > 12)
+    (building-type-count-total lumber-camp < 2)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build lumber-camp)
+=>
+    (set-strategic-number sn-camp-max-distance 25)
+    (set-strategic-number sn-lumber-camp-max-distance 25)
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age == dark-age)
+    (unit-type-count-total villager >= 12)
+    (resource-found gold)
+    (building-type-count-total mining-camp < 1)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build mining-camp)
+=>
+    (set-strategic-number sn-mining-camp-max-distance 25)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (resource-found gold)
+    (dropsite-min-distance gold > 12)
+    (building-type-count-total mining-camp < 2)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build mining-camp)
+=>
+    (set-strategic-number sn-mining-camp-max-distance 25)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
 ; Voice candidate sentinel
 (defrule
     (true)
