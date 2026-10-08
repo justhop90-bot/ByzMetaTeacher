@@ -515,6 +515,8 @@ Do not call the work complete until the main-branch workflow reports success for
 
 ---
 
+> **Implementation status (2026-10-08):** Compiler-side AIRef resource-front placement has been implemented on `main`; the remaining gate is the post-merge canonical build, runtime synchronization, native zero-findings, and runtime witness.
+
 ## Definition of Done
 
 The implementation is complete only when all of the following are true:
