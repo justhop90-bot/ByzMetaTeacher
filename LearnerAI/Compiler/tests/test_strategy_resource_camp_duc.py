@@ -24,52 +24,75 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
             ("gold", "mining-camp", 5),
             ("stone", "mining-camp", 5),
         )
-        camp_rules = [rule for rule in plan.rules if rule.identity.startswith("byzantine-camp-placement-")]
-        self.assertEqual(len(camp_rules), 16)
-
         for resource, building, maximum in expected:
             for floor in range(1, maximum + 1):
-                identity = f"byzantine-camp-placement-{resource}-{floor}"
-                rule = next(rule for rule in camp_rules if rule.identity == identity)
-                sources = {expression.source for expression in rule.facts}
-                actions = {expression.source for expression in rule.actions}
+                search_identity = f"byzantine-camp-placement-{resource}-{floor}-search"
+                place_identity = f"byzantine-camp-placement-{resource}-{floor}-place"
+                search_rule = next(rule for rule in plan.rules if rule.identity == search_identity)
+                place_rule = next(rule for rule in plan.rules if rule.identity == place_identity)
 
+                search_actions = {expression.source for expression in search_rule.actions}
+                place_facts = {expression.source for expression in place_rule.facts}
+                place_actions = {expression.source for expression in place_rule.actions}
+
+                expected_limit = 1 if floor == 1 else 40
                 self.assertIn(
-                    f"(up-find-resource c: {resource} c: {'1' if floor == 1 else '40'})",
-                    actions,
+                    f"(up-find-resource c: {resource} c: {expected_limit})",
+                    search_actions,
+                )
+                self.assertIn(
+                    f"(up-get-search-state {resource}-camp-search-state-{floor})",
+                    search_actions,
+                )
+                self.assertIn(
+                    f"(up-compare-goal {resource}-camp-search-state-{floor} > {floor - 1})",
+                    place_facts,
                 )
                 self.assertIn(
                     f"(up-set-target-object search-remote c: {floor - 1})",
-                    actions,
+                    place_facts,
                 )
                 self.assertIn(
-                    f"(up-get-point position-object byzantine-camp-{resource}-point-{floor})",
-                    actions,
+                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    place_actions,
                 )
                 self.assertIn(
-                    f"(up-set-target-point byzantine-camp-{resource}-point-{floor})",
-                    actions,
+                    f"(up-get-point position-object {resource}-camp-point-{floor})",
+                    place_actions,
+                )
+                self.assertIn(
+                    f"(up-set-target-point {resource}-camp-point-{floor})",
+                    place_actions,
                 )
                 self.assertIn(
                     f"(up-build place-point 0 c: {building})",
-                    actions,
+                    place_actions,
                 )
-                self.assertIn(
-                    f"(goal demand-economy-{resource if resource != 'wood' else 'lumber'}-camp-floor-{floor} 1)",
-                    sources,
+                demand_name = f"economy-{resource}-camp-floor-{floor}"
+                demand = profile.demand(demand_name)
+                self.assertTrue(demand.native_placement)
+                self.assertEqual(
+                    demand.execution_demands[0].witness,
+                    f"(building-type-count {building} >= {floor})",
                 )
-                self.assertIn(f"(can-build {building})", sources)
-                self.assertIn(
-                    f"(building-type-count-total {building} < {floor})",
-                    sources,
-                )
+
                 if resource == "stone":
                     self.assertIn(
                         "(and (current-age >= feudal-age) (resource-found stone))",
-                        sources,
+                        search_rule.facts[6].source,
                     )
                 else:
-                    self.assertIn(f"(resource-found {resource})", sources)
+                    self.assertIn(
+                        f"(resource-found {resource})",
+                        search_rule.facts[6].source,
+                    )
+
+        fallback = next(
+            rule for rule in plan.rules
+            if rule.identity == "byzantine-camp-placement-wood-1-fallback"
+        )
+        self.assertIn("(current-age == dark-age)", {fact.source for fact in fallback.facts})
+        self.assertIn("(build lumber-camp)", {action.source for action in fallback.actions})
 
     def test_native_camp_placement_replaces_generic_action_issuance(self):
         output = compile_strategy_profile(
