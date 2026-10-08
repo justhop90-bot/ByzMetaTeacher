@@ -1199,6 +1199,26 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlRule(
+            "pacific-transport-garrison-fallback",
+            facts=(
+                pacific,
+                parse_expression("(current-age == dark-age)", SourceLocation(1)),
+                goal(plan.pacific_opening_transport_state, 1),
+                goal(
+                    plan.pacific_transport_lifecycle_state,
+                    int(PacificTransportLifecyclePhase.LOAD),
+                ),
+                parse_expression("(unit-type-count-total transport-ship >= 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-compare-goal pacific-opening-transport-load-count < 4)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-garrison transport-ship c: villager)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
             "pacific-transport-lifecycle-load-witness",
             facts=(
                 goal(
