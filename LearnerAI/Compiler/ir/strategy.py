@@ -4080,7 +4080,7 @@ def build_land_castle_strategy(
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age == feudal-age)",
+                    None,
                     "Castle transition remains admissible until Castle Age is witnessed",
                     observation_ref="current-feudal-age",
                 ),
