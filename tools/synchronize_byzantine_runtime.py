@@ -553,9 +553,13 @@ CAPABILITY_EXPANSION_BRIDGE = r"""
         (current-age >= castle-age)
         (and
             (current-age == feudal-age)
-            (unit-type-count-total villager >= 35)
-            (food-amount >= 800)
-            (gold-amount >= 200)
+            (and
+                (unit-type-count-total villager >= 35)
+                (and
+                    (food-amount >= 800)
+                    (gold-amount >= 200)
+                )
+            )
         )
     )
     (unit-type-count-total villager >= 35)
