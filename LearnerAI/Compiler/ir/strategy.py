@@ -4646,7 +4646,7 @@ def _default_byzantine_duc_plan(
             common_facts = (
                 parse_expression(f"(goal demand-{demand_name} 1)", SourceLocation(1)),
                 parse_expression(
-                    f"(not (building-type-count {building} >= {floor}))",
+                    f"(building-type-count {building} == {floor - 1})",
                     SourceLocation(1),
                 ),
                 parse_expression(
@@ -4658,7 +4658,7 @@ def _default_byzantine_duc_plan(
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    f"(not (up-pending-placement c: {building_id}))",
+                    "(goal action-claim-build-pass-singleton 0)",
                     SourceLocation(1),
                 ),
                 parse_expression(active_fact, SourceLocation(1)),
@@ -4749,6 +4749,10 @@ def _default_byzantine_duc_plan(
                         ),
                     ),
                     control_actions=(
+                        parse_expression(
+                            "(set-goal action-claim-build-pass-singleton 1)",
+                            SourceLocation(1),
+                        ),
                         parse_expression(
                             f"(set-goal demand-{demand_name} issued-{demand_name})",
                             SourceLocation(1),
