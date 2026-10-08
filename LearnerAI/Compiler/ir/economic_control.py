@@ -18,7 +18,6 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
-    PACIFIC_LAND = 9
 
 
 @dataclass(frozen=True)
@@ -78,7 +77,6 @@ def default_byzantine_economy_controller() -> EconomyControllerPlan:
             EconomyModePolicy(EconomyMode.WATER_CONTROL, EconomyAllocation(38, 42, 20, 8)),
             EconomyModePolicy(EconomyMode.CASTLE_CONVERSION, EconomyAllocation(45, 25, 30, 7)),
             EconomyModePolicy(EconomyMode.IMPERIAL_CONVERSION, EconomyAllocation(40, 25, 35, 7)),
-            EconomyModePolicy(EconomyMode.PACIFIC_LAND, EconomyAllocation(45, 40, 15, 6)),
         ),
     )
 
@@ -149,47 +147,10 @@ def lower_economy_controller(
                 ),
             )
         )
-    for symbol, native_id in (
-        ("sn-enable-training-queue", 264),
-        ("sn-enable-research-queue", 306),
-    ):
-        states.append(
-            NativeControlState(
-                symbol,
-                StrategicNumberRequest(
-                    StorageRequestId(
-                        SemanticId(plan.controller_id, symbol),
-                        "economy-native-queue-control",
-                    ),
-                    why_not_goal=(
-                        "Native Islands queue-control Strategic Number; preserve "
-                        "the engine's TC research-with-villagers contract."
-                    ),
-                    stability_key=f"{plan.controller_id}:{native_id}",
-                    origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-                    native_strategic_number_id=native_id,
-                ),
-            )
-        )
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
-    pacific_observation = next(
-        (
-            item
-            for item in profile.observations
-            if item.identity == "strategy-pacific-islands"
-        ),
-        None,
-    )
-    pacific = (
-        pacific_observation.expression
-        if pacific_observation is not None
-        else "(map-type pacific-islands)"
-    )
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
-    pre_castle_window = "(and (current-age >= dark-age) (current-age < castle-age))"
-    pacific_window = pre_castle_window
     no_knight_pressure = "(not (players-unit-type-count any-enemy knight >= 3))"
     no_ranged_pressure = "(not (players-unit-type-count any-enemy archer-line >= 4))"
     no_infantry_pressure = "(not (players-unit-type-count any-enemy militia-line >= 5))"
@@ -257,29 +218,6 @@ def lower_economy_controller(
             ),
         )
 
-    islands_research_queue_rule = NativeControlRule(
-        "economy-controller-enable-islands-research-queue",
-        facts=(
-            parse_expression("(map-type islands)", SourceLocation(1)),
-            parse_expression("(current-age == dark-age)", SourceLocation(1)),
-            parse_expression(
-                "(or (up-compare-sn sn-enable-training-queue != 1) "
-                "(up-compare-sn sn-enable-research-queue != 1))",
-                SourceLocation(1),
-            ),
-        ),
-        actions=(
-            parse_expression(
-                "(set-strategic-number sn-enable-training-queue 1)",
-                SourceLocation(1),
-            ),
-            parse_expression(
-                "(set-strategic-number sn-enable-research-queue 1)",
-                SourceLocation(1),
-            ),
-        ),
-    )
-
     selection_rules = (
         select_rule(
             "economy-controller-select-counter-pressure",
@@ -301,19 +239,14 @@ def lower_economy_controller(
             (feudal_window, *no_pressure, opening(2), not_emergency_recovery),
         ),
         select_rule(
-            "economy-controller-select-pacific-land-first",
-            EconomyMode.PACIFIC_LAND,
-            (pacific_window, *no_pressure, pacific, not_emergency_recovery),
-        ),
-        select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            (pre_castle_window, *no_pressure, opening(4), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
+            (feudal_window, *no_pressure, opening(4), water_pre_castle, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            (pre_castle_window, *no_pressure, opening(5), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
+            (feudal_window, *no_pressure, opening(5), water_pre_castle, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-base",
@@ -377,7 +310,7 @@ def lower_economy_controller(
 
     return NativeControlPlan(
         states=tuple(states),
-        rules=(islands_research_queue_rule,) + selection_rules + tuple(writer_rules),
+        rules=selection_rules + tuple(writer_rules),
     )
 
 

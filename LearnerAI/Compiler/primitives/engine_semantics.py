@@ -225,7 +225,6 @@ _DUC_COMMAND_SPECS = (
     ("up-set-target-object", "duc.target.object"),
     ("up-set-target-point", "duc.target.point"),
     ("up-target-objects", "duc.target.consume-objects"),
-    ("up-target-point", "duc.target.point-consume"),
 )
 
 
@@ -767,7 +766,6 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
         "up-set-target-object": "Fact/Action",
         "up-set-target-point": "Action",
         "up-target-objects": "Action",
-        "up-target-point": "Action",
     }[command]
     return EngineSemanticMapping(
         identity=identity,

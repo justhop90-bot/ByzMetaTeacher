@@ -73,11 +73,10 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
-## Strategy SN61 boat exploration-group control
+## Strategy SN61 boat exploration-group observation
 - `ir/strategy_runtime.py` binds exact `up-compare-sn 61 ...` observations to `BOAT_EXPLORATION_GROUP_CONTROL`.
 - The pinned DE Strategic Number catalog identifies SN 61 as `sn-number-boat-explore-groups`, default 0, required range `0..Max`.
-- The Byzantine water controller now conditionally issues `(set-strategic-number 61 1)` after an island/pacific water map has a dock and at least one fishing ship, then disables the one-shot rule.
-- This is explicit compiler policy, not a world-state witness: it requests one boat exploration group but does not claim that a ship moved or successfully covered the water.
+- This remains descriptive strategy evidence only; no water-map detection, boat assignment, controller action, or runtime exploration guarantee is inferred.
 
 ## Strategy SN42 exploration-group observation
 - `ir/strategy_runtime.py` binds exact `up-compare-sn 42 ...` observations to `EXPLORATION_GROUP_CONTROL`.

@@ -531,13 +531,6 @@ class NativeDucBinderTests(unittest.TestCase):
         self.assertEqual(binding.parameter_count, 2)
         self.assertEqual(binding.support_state.value, "executable-safe")
 
-    def test_target_point_consumer_is_executable_safe(self):
-        binding = self.binder.bind_duc_command("up-target-point")
-        self.assertEqual(binding.command, "up-target-point")
-        self.assertEqual(binding.native_kind, "Action")
-        self.assertEqual(binding.parameter_count, 4)
-        self.assertEqual(binding.support_state.value, "executable-safe")
-
     def test_target_data_output_commands_are_executable_safe(self):
         for command in ("up-get-object-data", "up-get-object-target-data"):
             binding = self.binder.bind_duc_command(command)
