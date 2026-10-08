@@ -141,6 +141,31 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(("feudal-transition:escrow:food", "food"), releases)
         self.assertIn(("feudal-transition:escrow:gold", "gold"), releases)
 
+    def test_islands_enable_research_queue_alongside_villager_training(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        queue_rule = rules["economy-controller-enable-islands-research-queue"]
+        self.assertEqual(
+            tuple(fact.source for fact in queue_rule.facts),
+            (
+                "(map-type islands)",
+                "(current-age == dark-age)",
+                "(or (up-compare-sn sn-enable-training-queue != 1) "
+                "(up-compare-sn sn-enable-research-queue != 1))",
+            ),
+        )
+        self.assertEqual(
+            tuple(action.source for action in queue_rule.actions),
+            (
+                "(set-strategic-number sn-enable-training-queue 1)",
+                "(set-strategic-number sn-enable-research-queue 1)",
+            ),
+        )
+
     def test_opening_selection_is_durable_and_precedence_ordered(self):
         profile = build_byzantine_strategy(self.effective)
         compilation = lower_strategy_profile(profile, self.effective)
