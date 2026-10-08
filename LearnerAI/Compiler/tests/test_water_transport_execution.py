@@ -297,7 +297,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         fallback_actions = tuple(action.source for action in fallback.actions)
         self.assertIn("(goal pacific-transport-lifecycle 1)", fallback_facts)
         self.assertIn("(up-compare-goal pacific-opening-transport-load-count < 4)", fallback_facts)
-        self.assertIn("(up-garrison transport-ship c: villager)", fallback_actions)
+        self.assertIn("(up-garrison transport-ship c: 83)", fallback_actions)
 
         load_witness = rules["pacific-transport-lifecycle-load-witness"]
         witness_facts = tuple(fact.source for fact in load_witness.facts)
