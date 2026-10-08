@@ -55,10 +55,11 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             expected_results = 1 if floor == 1 else 40
             self.assertIn(f"(up-find-resource c: gold c: {expected_results})", section)
 
-            witness = f"(up-compare-goal {remote_name} > {floor - 1})"
+            remote_index = max(0, floor - 2)
+            witness = f"(up-compare-goal {remote_name} > {remote_index})"
             self.assertIn(witness, section)
             self.assertIn(
-                f"(up-set-target-object search-remote c: {floor - 1})",
+                f"(up-set-target-object search-remote c: {remote_index})",
                 section,
             )
             self.assertIn(f"(up-get-point position-object {point_name})", section)
