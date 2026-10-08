@@ -373,6 +373,27 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     f"(unit-type-count 6 >= {minimum})",
                 )
 
+    def test_imperial_open_elite_skirmisher_severe_release_matches_completion_witness(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = next(
+            item
+            for item in profile.demands
+            if item.identity == "imperial-open-elite-skirmisher-severe"
+        )
+
+        self.assertEqual(
+            demand.execution.witness,
+            "(unit-type-count skirmisher-line >= 36)",
+        )
+        self.assertEqual(
+            demand.execution.release,
+            demand.execution.witness,
+        )
+        self.assertNotEqual(
+            demand.execution.release,
+            "(unit-type-count 6 >= 36)",
+        )
+
     def test_imperial_elite_skirmisher_production_requires_completed_upgrade(self):
         profile = build_byzantine_stock_strategy(self.effective)
         by_id = {item.identity: item for item in profile.demands}
@@ -424,10 +445,12 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
                     demand.execution.witness,
                     f"(unit-type-count skirmisher-line >= {minimum})",
                 )
-                self.assertEqual(
-                    demand.execution.release,
-                    f"(unit-type-count 6 >= {minimum})",
+                expected_release = (
+                    demand.execution.witness
+                    if identity == "imperial-open-elite-skirmisher-severe"
+                    else f"(unit-type-count 6 >= {minimum})"
                 )
+                self.assertEqual(demand.execution.release, expected_release)
 
     def test_imperial_ranged_pressure_uses_native_archer_line(self):
         profile = build_byzantine_stock_strategy(self.effective)
