@@ -706,14 +706,6 @@ def _sync_age_transition_runtime_trace(runtime: str) -> str:
     (disable-self)
 )
 
-; Native diagnostic control: byzantine-age-transition-trace-rearm
-(defrule
-    (timer-triggered bt-age-transition-trace-timer)
-=>
-    (disable-timer bt-age-transition-trace-timer)
-    (enable-timer bt-age-transition-trace-timer 15)
-)
-
 ; Native diagnostic control: byzantine-age-transition-trace-castle-values
 (defrule
     (timer-triggered bt-age-transition-trace-timer)
@@ -964,6 +956,14 @@ def _sync_age_transition_runtime_trace(runtime: str) -> str:
     (not (can-research-with-escrow imperial-age))
 =>
     (up-chat-data-to-self "BTTRACE IMPERIAL can-research-with-escrow=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-rearm
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+=>
+    (disable-timer bt-age-transition-trace-timer)
+    (enable-timer bt-age-transition-trace-timer 15)
 )
 '''
     marker = trace_marker
