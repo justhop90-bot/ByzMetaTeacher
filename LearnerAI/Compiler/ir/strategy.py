@@ -4500,6 +4500,7 @@ def _default_byzantine_duc_plan(
     *,
     target_control=None,
     objective_control=None,
+    effective: EffectiveCivData | None = None,
 ) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
@@ -4512,6 +4513,7 @@ def _default_byzantine_duc_plan(
     from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
     from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
     from .native_duc import (
+        NativeDucGoalInputRequest,
         NativeDucLifecycleStage,
         NativeDucOutputRequest,
         NativeDucPlan,
@@ -5682,7 +5684,10 @@ def build_byzantine_castle_strategy(
         policy_recipes=default_byzantine_policy_recipes(),
         counter_packages=default_byzantine_counter_packages(effective),
         attack_plan=_default_byzantine_attack_plan(profile.profile_id),
-        duc_plan=_default_byzantine_duc_plan(profile.profile_id),
+        duc_plan=_default_byzantine_duc_plan(
+            profile.profile_id,
+            effective=effective,
+        ),
     )
 
 def _validate_capability_intent(
