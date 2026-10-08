@@ -181,7 +181,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(can-train villager)", demand.execution.requirements)
         self.assertIn(
             "(not (and (current-age == dark-age) "
-            "(unit-type-count-total villager >= 21)))",
+            "(and (unit-type-count-total villager >= 20) "
+            "(can-afford-research feudal-age))))",
             demand.execution.requirements,
         )
         self.assertIn(
@@ -211,7 +212,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         block = runtime[start:end]
         self.assertIn("(can-train villager)", block)
         self.assertIn("(unit-type-count-total villager < 110)", block)
-        self.assertIn("(unit-type-count-total villager >= 21)", block)
+        self.assertIn(
+            "(unit-type-count-total villager >= 20)",
+            block,
+        )
+        self.assertIn("(can-afford-research feudal-age)", block)
+        self.assertNotIn(
+            "(unit-type-count-total villager >= 21)))",
+            block,
+        )
         self.assertIn(
             "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
             block,
