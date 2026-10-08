@@ -287,6 +287,7 @@ _WITNESS_SPECS = (
 )
 
 _ACTION_SPECS = (
+    ("up-garrison", "transport.garrison.issue"),
     ("build", "execution.build.request"),
     ("train", "execution.train.request"),
     ("research", "execution.research.request"),
