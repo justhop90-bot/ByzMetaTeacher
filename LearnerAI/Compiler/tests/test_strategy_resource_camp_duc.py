@@ -56,16 +56,17 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     "(up-modify-sn sn-focus-player-number",
                     search_actions,
                 )
+                expected_index = 0 if floor <= 2 else floor - 2
                 self.assertIn(
-                    f"(up-compare-goal {resource}-camp-search-state-{floor} > {floor - 1})",
+                    f"(up-compare-goal {resource}-camp-search-state-{floor} > {expected_index})",
                     place_facts,
                 )
                 self.assertIn(
-                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    f"(up-set-target-object search-remote c: {expected_index})",
                     place_facts,
                 )
                 self.assertIn(
-                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    f"(up-set-target-object search-remote c: {expected_index})",
                     place_actions,
                 )
                 self.assertIn(
@@ -80,7 +81,13 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     f"(up-build place-point 0 c: {building})",
                     place_actions,
                 )
-                demand_name = f"economy-{resource}-camp-floor-{floor}"
+                demand_name = (
+                    f"economy-lumber-camp-floor-{floor}"
+                    if resource == "wood" and floor <= 2
+                    else f"economy-wood-camp-floor-{floor}"
+                    if resource == "wood"
+                    else f"economy-{resource}-camp-floor-{floor}"
+                )
                 demand = profile.demand(demand_name)
                 self.assertTrue(demand.native_placement)
                 if resource == "wood" and floor == 1:
