@@ -569,7 +569,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         for resource in ("gold", "stone"):
             for floor in range(1, 6):
                 self.assertEqual(
-                    runtime.count(f"; economy-{resource}-camp-floor-{floor}"),
+                    runtime.count(f"; Pending diagnostics: economy-{resource}-camp-floor-{floor}"),
                     1,
                     f"{resource} floor {floor} must have exactly one lifecycle section",
                 )
