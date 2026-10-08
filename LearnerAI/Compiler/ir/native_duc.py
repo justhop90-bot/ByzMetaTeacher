@@ -33,6 +33,7 @@ class NativeDucRule:
     order: int
     facts: tuple[Expression, ...]
     actions: tuple[Expression, ...]
+    control_actions: tuple[Expression, ...] = ()
     location: SourceLocation | None = None
     lifecycle: tuple[NativeDucLifecycleStage, ...] = ()
 
@@ -45,8 +46,12 @@ class NativeDucRule:
             raise ValueError(
                 f"native DUC rule '{self.identity}' requires a fact or action"
             )
-        if not isinstance(self.facts, tuple) or not isinstance(self.actions, tuple):
-            raise TypeError("native DUC rule facts/actions must be tuples")
+        if (
+            not isinstance(self.facts, tuple)
+            or not isinstance(self.actions, tuple)
+            or not isinstance(self.control_actions, tuple)
+        ):
+            raise TypeError("native DUC rule facts/actions/control_actions must be tuples")
         if not isinstance(self.lifecycle, tuple):
             raise TypeError("native DUC rule lifecycle must be a tuple")
         if len(self.lifecycle) != len(set(self.lifecycle)):
