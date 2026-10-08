@@ -280,7 +280,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(
             "(not (and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 20) "
-            "(can-afford-research feudal-age))))",
+            "(or (can-afford-research feudal-age) "
+            "(map-type pacific-islands)))))",
             demand.execution.requirements,
         )
 
@@ -310,6 +311,18 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "can-afford-research",
             bank_and.args[1].head,
         )
+
+    def test_pacific_dark_age_villager_boundary_does_not_wait_for_native_research_feasibility(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        guard = next(
+            requirement
+            for requirement in demand.execution.requirements
+            if requirement.startswith("(not (and (current-age == dark-age)")
+        )
+        self.assertIn("(can-afford-research feudal-age)", guard)
+        self.assertIn("(map-type pacific-islands)", guard)
+        self.assertNotIn("(can-research-with-escrow feudal-age)", guard)
 
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
         profile = build_byzantine_strategy(self.effective)
