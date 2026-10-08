@@ -41,8 +41,8 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 self.assertIn(active.identity, {item.observation_ref for item in demand.reason})
                 self.assertIn(active.expression, requirements)
                 self.assertIn("(building-type-count", demand.execution_demands[0].witness)
-                if floor >= 3:
-                    self.assertIn(remote.expression, requirements)
+                if floor >= 2:
+                    self.assertNotIn(remote.expression, requirements)
 
     def test_camp_builds_use_the_existing_construction_lifecycle(self):
         compilation = lower_strategy_profile(
