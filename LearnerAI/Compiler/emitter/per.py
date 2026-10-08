@@ -705,13 +705,19 @@ def emit(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
                         "argument index is outside the expression"
                     )
-                if expression.head == "up-set-target-point":
+                if expression.head in {"up-set-target-point", "up-compare-goal"}:
                     if not isinstance(writer_binding, GoalSpan):
                         raise CompileError(
-                            f"EMITTER-DUC-GOAL-INPUT: point input '{reader.site_key}' "
+                            f"EMITTER-DUC-GOAL-INPUT: span input '{reader.site_key}' "
                             f"resolved to '{type(writer_binding).__name__}', expected GoalSpan"
                         )
-                    arguments[reader.argument_index] = str(writer_binding.start.value)
+                    target_goal = writer_binding.start.value + reader.span_offset
+                    if target_goal > writer_binding.start.value + writer_binding.width - 1:
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: span input '{reader.site_key}' "
+                            "offset exceeds the writer span"
+                        )
+                    arguments[reader.argument_index] = str(target_goal)
                 else:
                     if not isinstance(writer_binding, GoalSlot):
                         raise CompileError(
