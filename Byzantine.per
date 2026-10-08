@@ -4745,7 +4745,7 @@
 (defconst bt-local-wall-count 4)
 (defconst bt-castle-cataphract-floor 4)
 (defconst bt-castle-varangian-floor 3)
-(defconst bt-castle-skirmisher-floor 4)
+(defconst bt-castle-skirmisher-floor 6)
 (defconst bt-castle-mangonel-floor 2)
 (defconst bt-castle-monk-floor 4)
 (defconst bt-imperial-cavalier-target 2)
@@ -13677,7 +13677,7 @@
 ; Release: early-defensive-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-early-defensive-spears 65)
-    (unit-type-count 93 >= 2)
+    (unit-type-count 93 >= 4)
 =>
     (set-goal demand-early-defensive-spears 0)
 )
@@ -13686,7 +13686,7 @@
 (defrule
     (goal demand-early-defensive-spears 0)
     (current-age == feudal-age)
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
 =>
     (set-goal demand-early-defensive-spears 1)
 )
@@ -13697,7 +13697,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (unit-type-count 93 >= 2)
+    (unit-type-count 93 >= 4)
 =>
     (set-goal demand-early-defensive-spears 65)
 )
@@ -13708,7 +13708,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-early-defensive-spears 64)
@@ -13720,7 +13720,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-early-defensive-spears 1)
@@ -13730,15 +13730,15 @@
 ; Action issuance: early-defensive-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-early-defensive-spears 1)
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (goal production-retry-barrier-early-defensive-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
     (can-train-with-escrow 93)
-    (unit-type-count-total 93 < 2)
+    (unit-type-count-total 93 < 4)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14097,7 +14097,7 @@
 ; Release: counter-mounted-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-mounted-spears 63)
-    (unit-type-count 93 >= 4)
+    (unit-type-count 93 >= 6)
 =>
     (set-goal demand-counter-mounted-spears 0)
 )
@@ -14105,7 +14105,7 @@
 ; Recovery: counter-mounted-spears | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-mounted-spears 0)
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal counter-package-mounted_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -14118,7 +14118,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (unit-type-count 93 >= 4)
+    (unit-type-count 93 >= 6)
 =>
     (set-goal demand-counter-mounted-spears 63)
 )
@@ -14129,7 +14129,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-counter-mounted-spears 62)
@@ -14141,7 +14141,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-counter-mounted-spears 1)
@@ -14151,15 +14151,15 @@
 ; Action issuance: counter-mounted-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-mounted-spears 1)
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal production-retry-barrier-counter-mounted-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
     (can-train-with-escrow 93)
-    (unit-type-count-total 93 < 4)
+    (unit-type-count-total 93 < 6)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14177,7 +14177,7 @@
 ; Release: counter-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-ranged-skirmishers 64)
-    (unit-type-count 358 >= 4)
+    (unit-type-count skirmisher-line >= 6)
 =>
     (set-goal demand-counter-ranged-skirmishers 0)
 )
@@ -14185,7 +14185,7 @@
 ; Recovery: counter-ranged-skirmishers | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-ranged-skirmishers 0)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (goal counter-package-ranged_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -14198,7 +14198,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (unit-type-count 358 >= 4)
+    (unit-type-count skirmisher-line >= 6)
 =>
     (set-goal demand-counter-ranged-skirmishers 64)
 )
@@ -14209,7 +14209,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-counter-ranged-skirmishers 63)
@@ -14221,7 +14221,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
@@ -14231,10 +14231,10 @@
 ; Action issuance: counter-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-ranged-skirmishers 1)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (goal production-retry-barrier-counter-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (or
@@ -14242,10 +14242,10 @@
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     )
     (current-age >= feudal-age)
-    (can-train-with-escrow 358)
-    (unit-type-count-total 358 < bt-castle-skirmisher-floor)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
 =>
-    (train 358)
+    (train skirmisher-line)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-counter-ranged-skirmishers 65)
 )
@@ -21972,7 +21972,6 @@
     (goal research-retry-barrier-research-pikeman 0)
     (not (up-research-status c: 197 >= 2))
     (current-age >= castle-age)
-    (unit-type-count 93 >= 6)
     (can-research-with-escrow ri-pikeman)
 =>
     (release-escrow food)
@@ -22024,7 +22023,6 @@
     (goal research-retry-barrier-research-elite-skirmisher 0)
     (not (up-research-status c: 98 >= 2))
     (current-age >= castle-age)
-    (unit-type-count 7 >= 6)
     (can-research-with-escrow ri-elite-skirmisher)
 =>
     (release-escrow food)
