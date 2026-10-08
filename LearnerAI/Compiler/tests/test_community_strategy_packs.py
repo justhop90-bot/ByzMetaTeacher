@@ -16,6 +16,69 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
+    def test_pacific_fishing_continuity_is_escrow_gated_and_pressure_aware(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        requirements = tuple(demand.execution.requirements)
+        requirement_text = " ".join(requirements)
+        self.assertIn("(can-train fishing-ship)", requirements)
+        self.assertIn(
+            f"(or (not (map-type pacific-islands)) "
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression}))",
+            requirements,
+        )
+        self.assertIn("(can-train-with-escrow fishing-ship)", requirement_text)
+        self.assertIn("(wood-amount >= 75)", requirement_text)
+        refs = {
+            evidence.observation_ref
+            for evidence in demand.invalidation
+            if evidence.observation_ref is not None
+        }
+        self.assertIn("strategy-enemy-naval-pressure", refs)
+
+    def test_pacific_transport_escort_can_bootstrap_before_first_transport(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-escort")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertIn("(map-type pacific-islands)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+        self.assertNotIn("(unit-type-count-total transport-ship >= 1)", requirements)
+        self.assertNotIn("(goal pacific-transport-recovery 1)", requirements)
+        self.assertIn("(can-train-with-escrow fire-galley)", requirements)
+
+    def test_pacific_transport_escort_is_a_standing_feudal_support_capability(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-escort")
+        self.assertEqual(demand.capability_intent.entity_type, "unit-line")
+        self.assertEqual(demand.execution.action, "(train fire-galley)")
+        self.assertIn("(can-train-with-escrow fire-galley)", demand.execution.requirements)
+
+    def test_pacific_transport_recovery_is_a_standing_feudal_capability_after_landing(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-recovery")
+        self.assertIn("(goal pacific-transport-recovery 1)", demand.execution.requirements)
+        self.assertIn("(can-train-with-escrow transport-ship)", demand.execution.requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", demand.execution.requirements)
+
+    def test_pacific_transport_recovery_is_pressure_suspended_but_escrow_gated(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-pacific-transport-recovery")
+        joined = " ".join(demand.execution.requirements)
+        self.assertIn(
+            f"(not {profile.observation('strategy-enemy-naval-pressure').expression})",
+            joined,
+        )
+        self.assertIn("(can-train-with-escrow transport-ship)", joined)
+
+    def test_pacific_harbor_defense_gates_naval_demands_on_pacific(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        for identity in ("water-naval-defense", "water-naval-control"):
+            demand = profile.demand(identity)
+            requirements = " ".join(demand.execution.requirements)
+            self.assertIn("(goal pacific-harbor-defense 1)", requirements)
+            self.assertIn("(can-train-with-escrow", requirements)
+
     def test_stock_profile_resolves_against_current_effective_data(self):
         profile = build_byzantine_stock_strategy(self.effective)
         resolved = resolve_strategy_profile(profile, self.effective)
@@ -38,6 +101,40 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         ):
             self.assertIn(identity, resolved.demand_ids)
         self.assertIn("water-fishing-continuity", resolved.demand_ids)
+
+    def test_islands_opening_has_first_dock_capability_before_fishing(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-dock-capability")
+
+        self.assertEqual(demand.owner, "water-economy")
+        self.assertEqual(demand.priority, StrategicPriority.CORE)
+        self.assertEqual(demand.capability_intent.kind.name, "BUILD")
+        self.assertEqual(demand.capability_intent.entity_type, "building")
+        self.assertEqual(demand.execution.action, "(build dock)")
+        self.assertIn("(or (map-type islands) (map-type pacific-islands))", demand.execution.requirements)
+        self.assertIn("(building-type-count-total dock < 1)", demand.execution.requirements)
+        self.assertIn("(can-build dock)", demand.execution.requirements)
+        self.assertEqual(demand.execution.witness, "(building-type-count dock >= 1)")
+        self.assertEqual(demand.execution.release, "(building-type-count dock >= 1)")
+
+    def test_water_map_observation_includes_pacific_islands(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        observation = profile.observation("strategy-water-map")
+
+        self.assertEqual(
+            observation.expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
+        island_profile = next(item for item in profile.map_profile if item.identity.value == "ISLANDS")
+        self.assertEqual(
+            island_profile.native_map_expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
+
+        self.assertIn("(goal water-transport-objective 1)", {
+            item.expression for item in profile.observations
+            if item.identity == "strategy-transport-required"
+        })
 
     def test_stock_profile_contains_complete_research_witnesses(self):
         profile = build_byzantine_stock_strategy(self.effective)

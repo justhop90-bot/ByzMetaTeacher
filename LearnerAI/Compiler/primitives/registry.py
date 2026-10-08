@@ -111,6 +111,10 @@ class PrimitiveRegistry:
     def validate_primitive_promotion(self, primitive: Primitive, native) -> None:
         if primitive.kind != "ACTION":
             return
+        if primitive.role == "NATIVE_CONTROL":
+            # Native-control Actions own their lifecycle witnesses/storage in the
+            # dedicated control plan; do not fabricate a generic lifecycle witness.
+            return
         if not primitive.native_witness_ids:
             raise ValueError(f"action primitive '{primitive.name}' has no native witness contract")
         if not primitive.native_storage_use_ids:
@@ -267,6 +271,8 @@ class PrimitiveRegistry:
     def validate_escrow_plan(self, plan) -> None:
         if isinstance(plan, NativeEscrowReleasePlan):
             self.validate_escrow_release_plan(plan)
+            if plan.policy_plan is not None:
+                self.validate_escrow_policy_plan(plan.policy_plan)
             return
         if isinstance(plan, NativeEscrowPolicyPlan):
             self.validate_escrow_policy_plan(plan)
@@ -1620,6 +1626,10 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
             completion_witness=False,
             native_witness_ids=("research-completion-witness",),
             native_storage_use_ids=("lifecycle-goal-storage",),
+        ),
+        Primitive(
+            "up-garrison", "ACTION", "NATIVE_CONTROL", 3, 3,
+            completion_witness=False,
         ),
         Primitive(
             "chat-to-player", "ACTION", "VOICE", 2, 2,

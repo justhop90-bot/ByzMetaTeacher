@@ -225,6 +225,7 @@ _DUC_COMMAND_SPECS = (
     ("up-set-target-object", "duc.target.object"),
     ("up-set-target-point", "duc.target.point"),
     ("up-target-objects", "duc.target.consume-objects"),
+    ("up-target-point", "duc.target.point-consume"),
 )
 
 
@@ -286,6 +287,7 @@ _WITNESS_SPECS = (
 )
 
 _ACTION_SPECS = (
+    ("up-garrison", "transport.garrison.issue"),
     ("build", "execution.build.request"),
     ("train", "execution.train.request"),
     ("research", "execution.research.request"),
@@ -380,6 +382,30 @@ def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticM
 
 
 def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    if command == "up-garrison":
+        return EngineSemanticMapping(
+            identity=identity,
+            native_command=command,
+            native_kind="Action",
+            status=EngineSemanticMappingStatus.CONTRACTED,
+            evidence_class="ENGINE FACT",
+            evidence_sources=(
+                "https://airef.github.io/commands/commands-details.html#up-garrison",
+            ),
+            state_effects=(
+                "issues one native garrison operation that asks the engine to place units of "
+                "the specified UnitId into the specified ObjectId target"
+            ),
+            lifetime="one-shot native action request; resulting garrison membership remains engine state",
+            ordering="the garrison request executes at its emitted action position; same-pass membership visibility is not claimed",
+            admission="documented three-argument Action with ObjectId, c: typeOp, and UnitId parameters; Pacific binds Villager as UnitId 83",
+            completion=(
+                "unobserved by the generic Action contract; an owning controller must supply a "
+                "separate world-state witness such as object-data garrison count"
+            ),
+            recovery="reassess the owning lifecycle and reissue while its world-state garrison witness remains under target",
+            practice_references=("actions.request-not-completion",),
+        )
     witness = {
         "build": "building-type-count",
         "train": "unit-type-count",
@@ -766,6 +792,7 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
         "up-set-target-object": "Fact/Action",
         "up-set-target-point": "Action",
         "up-target-objects": "Action",
+        "up-target-point": "Action",
     }[command]
     return EngineSemanticMapping(
         identity=identity,

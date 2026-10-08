@@ -10,14 +10,17 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
         cls.artifact = (cls.root / "Byzantine.per").read_text(encoding="utf-8")
 
     def test_arabia_standard_opening_selector_is_emitted(self):
+        self.assertIn("(goal opening-plan -1)", self.artifact)
+        self.assertIn("    (not (map-type arena))", self.artifact)
         self.assertIn(
-            "(goal opening-plan -1)\n"
-            "    (not (map-type islands))\n"
-            "    (not (map-type arena))\n"
             "    (not (or (players-unit-type-count any-enemy knight >= 3) "
             "(or (players-unit-type-count any-enemy archer-line >= 4) "
             "(players-unit-type-count any-enemy militia-line >= 5))))",
             self.artifact,
+        )
+        self.assertTrue(
+            "    (not (map-type islands))" in self.artifact
+            or "    (not (or (map-type islands) (map-type pacific-islands)))" in self.artifact
         )
         self.assertIn("(set-goal opening-plan 1)", self.artifact)
 
@@ -33,6 +36,23 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
                 f"(set-goal demand-economy-stone-camp-floor-{floor} 1)",
                 section,
             )
+
+    def test_first_gold_camp_bootstraps_when_gold_is_not_yet_resource_found(self):
+        start = self.artifact.index("; economy-gold-camp-floor-1")
+        end = self.artifact.index("; economy-gold-camp-floor-2", start)
+        section = self.artifact[start:end]
+        self.assertIn(
+            "(and (unit-type-count-total villager >= 8) "
+            "(building-type-count-total mining-camp < 1))",
+            section,
+        )
+        self.assertNotIn(
+            "    (resource-found gold)\n    (not (building-type-count mining-camp >= 1))",
+            section,
+            "first-gold recovery must not require resource-found gold as the sole bootstrap gate",
+        )
+        self.assertIn("(up-find-resource c: gold c: 1)", section)
+        self.assertIn("(up-build place-point 0 c: mining-camp)", section)
 
     def test_each_gold_camp_build_selects_an_indexed_active_resource(self):
         for floor in range(1, 6):

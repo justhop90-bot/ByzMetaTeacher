@@ -41,6 +41,13 @@ MAX_RULE_ELEMENTS = 32
 MAX_LINE_LENGTH = 255
 INITIALIZATION_CHUNK = 30
 
+_NATIVE_RUNTIME_OBJECT_DATA_CONSTANTS = {
+    "object-data-id": 0,
+    "object-data-action": 5,
+    "object-data-garrison-count": 18,
+    "object-data-distance": 44,
+}
+
 # Semantic unit-line names are compiler-owned identities. These aliases are
 # lowered only when an expression is rendered into runtime .per syntax.
 _NATIVE_RUNTIME_UNIT_LINE_ALIASES = {
@@ -643,6 +650,22 @@ def emit(
             out += [")", ""]
 
     if duc_plan is not None and not duc_plan.empty:
+        object_data_tokens = {
+            str(expression.args[0])
+            for rule in duc_plan.rules
+            for expression in (*rule.facts, *rule.actions)
+            if expression.head in {"up-get-object-data", "up-get-object-target-data"}
+            and expression.args
+            and str(expression.args[0]) in _NATIVE_RUNTIME_OBJECT_DATA_CONSTANTS
+        }
+        if object_data_tokens:
+            emitted_defconsts = _defconst_bindings(out)
+            for name in sorted(object_data_tokens):
+                if name not in emitted_defconsts:
+                    out.append(
+                        f"(defconst {name} {_NATIVE_RUNTIME_OBJECT_DATA_CONSTANTS[name]})"
+                    )
+
         used_duc_action_values = {
             expression.head
             for rule in duc_plan.rules
@@ -830,30 +853,39 @@ def emit(
             out += [")", ""]
 
     if escrow_plan is not None and not escrow_plan.empty:
-        if isinstance(escrow_plan, NativeEscrowPolicyPlan):
+        policy_plan = (
+            escrow_plan
+            if isinstance(escrow_plan, NativeEscrowPolicyPlan)
+            else escrow_plan.policy_plan
+        )
+        if policy_plan is not None and not policy_plan.empty:
             out.append("; Native escrow policy plan")
-            current_rule_order = None
+            current_rule_key = None
             for operation in (
                 operation
-                for operation in escrow_plan.operations
+                for operation in policy_plan.operations
                 if operation.target_demand is None
             ):
-                if operation.rule_order != current_rule_order:
-                    if current_rule_order is not None:
+                rule_key = (operation.rule_order, operation.guard or "(true)")
+                if rule_key != current_rule_key:
+                    if current_rule_key is not None:
                         out += [")", ""]
-                    current_rule_order = operation.rule_order
+                    current_rule_key = rule_key
                     out.append(
-                        f"; Native escrow policy rule: {current_rule_order}"
+                        f"; Native escrow policy rule: {operation.rule_order}"
                     )
-                    out += ["(defrule", "    (true)", "=>"]
+                    out.append("(defrule")
+                    out.append(f"    {operation.guard or '(true)'}")
+                    out.append("=>")
                 assert operation.percentage is not None
                 out.append(
                     f"    (set-escrow-percentage {operation.resource} "
                     f"{operation.percentage})"
                 )
-            if current_rule_order is not None:
+            if current_rule_key is not None:
                 out += [")", ""]
-        else:
+
+        if isinstance(escrow_plan, NativeEscrowReleasePlan):
             out.append("; Native escrow release plan")
             current_rule_order = None
             for operation in escrow_plan.operations:

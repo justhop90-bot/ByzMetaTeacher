@@ -190,10 +190,10 @@ class NativeSemanticBinder:
     def _validate_native_contracts(self, primitive, native) -> None:
         if primitive.kind != "ACTION":
             return
-        # Voice Actions are presentation outputs, not lifecycle mutations.
-        # They therefore require semantic mapping/engine evidence but do not
-        # require synthetic completion-witness or persistent-storage contracts.
-        if primitive.role == "VOICE" and not (
+        # Voice and native-control Actions own their lifecycle in their
+        # dedicated output/control surfaces. Do not fabricate generic lifecycle
+        # witness or storage requirements for those roles.
+        if primitive.role in {"VOICE", "NATIVE_CONTROL"} and not (
             primitive.native_witness_ids
             or primitive.native_storage_use_ids
             or primitive.native_pass_constraint_ids

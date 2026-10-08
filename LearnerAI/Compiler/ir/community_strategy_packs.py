@@ -10,7 +10,12 @@ from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, Resource, UnitLineId
-from .model import LifecycleState
+from .model import LifecycleState, SemanticId
+from .resource_control import (
+    EscrowOperation as _EscrowOperation,
+    EscrowOperationKind as _EscrowOperationKind,
+    NativeEscrowPolicyPlan as _NativeEscrowPolicyPlan,
+)
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -61,6 +66,9 @@ _ENDGAME_CATAPHRACT_TARGET = 18
 _ENDGAME_VARANGIAN_TARGET = 14
 _ENDGAME_RAM_TARGET = 8
 _ENDGAME_TREBUCHET_TARGET = 8
+WATER_MAP_EXPRESSION = "(or (map-type islands) (map-type pacific-islands))"
+PACIFIC_ISLANDS_EXPRESSION = "(map-type pacific-islands)"
+
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
@@ -731,13 +739,49 @@ def community_strategy_observations(
             dock.provenance,
         ),
         _observation(
-            "strategy-water-islands",
-            "(map-type islands)",
+            "strategy-water-map",
+            WATER_MAP_EXPRESSION,
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-pacific-islands",
+            PACIFIC_ISLANDS_EXPRESSION,
+            _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-transport-required",
+            "(goal water-transport-objective 1)",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/water.py",
+                    revision="main",
+                    locator="transport objective state: water-transport-objective",
+                    patch=effective.patch,
+                ),
+            ),
         ),
         _observation(
             "strategy-own-transport-capable",
             "(unit-type-count transport-ship >= 1)",
+            effective.unit(545).provenance,
+        ),
+        _observation(
+            "strategy-transport-rebuild-open",
+            "(goal water-transport-rebuild 1)",
+            (
+                EvidenceRef(
+                    kind=EvidenceKind.REPOSITORY_CONTROLLER,
+                    source="LearnerAI/Compiler/ir/water.py",
+                    revision="main",
+                    locator="transport rebuild authorization state",
+                    patch=effective.patch,
+                ),
+            ),
+        ),
+        _observation(
+            "strategy-transport-capability-lost",
+            "(unit-type-count transport-ship < 1)",
             effective.unit(545).provenance,
         ),
         _observation(
@@ -911,9 +955,13 @@ def community_strategy_demands(
     stable = _building(effective, "stable")
     archery_range = _building(effective, "archery-range")
     university = _building(effective, "university")
+    dock = _building(effective, "dock")
     lumber_camp = _building(effective, "lumber-camp")
     mining_camp = _building(effective, "mining-camp")
     observations = community_strategy_observations(effective)
+    water_map = next(item.expression for item in observations if item.identity == "strategy-water-map")
+    pacific_islands = next(item.expression for item in observations if item.identity == "strategy-pacific-islands")
+    enemy_naval_pressure = next(item.expression for item in observations if item.identity == "strategy-enemy-naval-pressure")
     opening_pressure = (
         "(or (players-unit-type-count any-enemy knight >= 3) "
         "(or (players-unit-type-count any-enemy archer-line >= 4) "
@@ -959,7 +1007,9 @@ def community_strategy_demands(
                 "(current-age >= dark-age)",
                 "(can-train villager)",
                 "(not (and (current-age == dark-age) "
-                "(unit-type-count-total villager >= 21)))",
+                "(and (unit-type-count-total villager >= 20) "
+                "(or (can-afford-research feudal-age) "
+                "(map-type pacific-islands)))))",
                 "(not (and (current-age == feudal-age) "
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
@@ -1906,6 +1956,29 @@ def community_strategy_demands(
                 )
             )
 
+    # The first dock is the enabling capability for an Islands opening. Keep
+    # this demand separate from fishing continuity so water strategy cannot
+    # deadlock on a provider that its own fishing demand requires first.
+    demands.append(
+        _build_demand(
+            identity="water-dock-capability",
+            owner="water-economy",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.CORE,
+            reason_ref="strategy-water-map",
+            reason_label="Islands opening requires a first dock before water economy can execute",
+            building=dock,
+            requirements=(
+                "(current-age >= dark-age)",
+                water_map,
+                "(building-type-count-total dock < 1)",
+                "(can-build dock)",
+            ),
+            target_witness="(building-type-count dock >= 1)",
+            release="(building-type-count dock >= 1)",
+        )
+    )
+
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
     # requires a proven environmental predicate and remains OPEN.
@@ -1929,7 +2002,12 @@ def community_strategy_demands(
                     "strategy-dock-exists",
                 ),
             ),
-            invalidation=(),
+            invalidation=(
+                _persistent(
+                    "Pacific fishing suspends while enemy naval pressure is active",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
             capability_intent=_CapabilityIntent(
                 _CapabilityIntentKind.TRAIN,
                 "unit-line",
@@ -1945,14 +2023,72 @@ def community_strategy_demands(
             opportunity_cost=None,
             execution=_ExecutionDemandTemplate(
                 requirements=(
-                    "(current-age >= feudal-age)",
+                    "(current-age >= dark-age)",
+                    water_map,
                     "(building-type-count-total dock >= 1)",
-                    "(can-train-with-escrow fishing-ship)",
-                    "(unit-type-count-total fishing-ship < 2)",
+                    "(can-train fishing-ship)",
+                    "(or (and (unit-type-count-total fishing-ship < 1) "
+                    "(wood-amount >= 75)) "
+                    "(and (unit-type-count-total fishing-ship >= 1) "
+                    "(can-train-with-escrow fishing-ship)))",
+                    f"(or (not {pacific_islands}) (not {enemy_naval_pressure}))",
                 ),
                 action="(train fishing-ship)",
                 witness="(unit-type-count fishing-ship >= 2)",
                 release="(unit-type-count fishing-ship >= 2)",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-fishing-expansion",
+            owner="water-economy",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.SUPPORT,
+            reason=(
+                _persistent(
+                    "Feudal water can support a bounded four-boat fishing floor when naval pressure is absent",
+                    "strategy-water-map",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Pacific Islands remains land-first and does not require a full fishing boom",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Pacific classification disables the full fishing expansion",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "fishing-ship-line",
+                fishing_provider,
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "fishing-ship-line",
+                minimum=4,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    water_map,
+                    f"(not {enemy_naval_pressure})",
+                    "(building-type-count-total dock >= 1)",
+                    "(can-train-with-escrow fishing-ship)",
+                    "(unit-type-count-total fishing-ship < 4)",
+                ),
+                action="(train fishing-ship)",
+                witness="(unit-type-count fishing-ship >= 4)",
+                release="(unit-type-count fishing-ship >= 4)",
             ),
         )
     )
@@ -1965,17 +2101,22 @@ def community_strategy_demands(
             priority=_StrategicPriority.DEFENSE,
             reason=(
                 _persistent(
-                    "Islands map requires protected transport capability",
-                    "strategy-water-islands",
+                    "Supported water map establishes the transport policy scope",
+                    "strategy-water-map",
                 ),
             ),
             admissibility=(
                 _persistent(
-                    "Transport is admissible on a disconnected water map",
-                    "strategy-water-islands",
+                    "Transport is admissible only within the supported water-map policy",
+                    "strategy-water-map",
                 ),
             ),
-            invalidation=(),
+            invalidation=(
+                _persistent(
+                    "Transport capability loss invalidates the released transport contract",
+                    "strategy-transport-capability-lost",
+                ),
+            ),
             capability_intent=_CapabilityIntent(
                 _CapabilityIntentKind.TRAIN,
                 "unit-line",
@@ -1991,15 +2132,118 @@ def community_strategy_demands(
             opportunity_cost=None,
             execution=_ExecutionDemandTemplate(
                 requirements=(
-                    "(current-age >= dark-age)",
-                    "(map-type islands)",
+                    "(current-age >= feudal-age)",
+                    water_map,
+                    "(goal water-transport-objective 1)",
                     "(building-type-count-total dock >= 1)",
+                    "(can-train-with-escrow transport-ship)",
+                    "(not (goal pacific-harbor-defense 1))",
+                    "(unit-type-count-total transport-ship < 1)",
+                ),
+                action="(train transport-ship)",
+                witness="(unit-type-count transport-ship >= 1)",
+                release="(unit-type-count transport-ship >= 1)",
+            ),
+        )
+    )
+    demands.append(
+        _training_demand(
+            effective=effective,
+            identity="water-pacific-transport-escort",
+            owner="water-transport",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason_ref="strategy-pacific-islands",
+            reason_label="Feudal Pacific transport execution requires one fire-galley escort",
+            line="fire-galley-line",
+            minimum=1,
+            age_guard="(current-age >= feudal-age)",
+            action_symbol="fire-galley",
+            witness_symbol="fire-galley",
+            release_symbol="fire-galley",
+            additional_requirements=(
+                pacific_islands,
+                "(building-type-count-total dock >= 1)",
+                f"(not {enemy_naval_pressure})",
+                "(not (goal pacific-harbor-defense 1))",
+            ),
+        )
+    )
+
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-pacific-transport-recovery",
+            owner="water-transport",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason=(
+                _persistent(
+                    "Completed Pacific landing creates a standing transport replacement entitlement",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Pacific transport recovery remains admissible only after a completed landing",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Pacific transport recovery closes outside Pacific water",
+                    "strategy-pacific-islands",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "transport-ship-line",
+                _provider_for_line(effective, "transport-ship-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "transport-ship-line",
+                minimum=1,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    pacific_islands,
+                    "(goal pacific-transport-recovery 1)",
+                    "(building-type-count-total dock >= 1)",
+                    f"(not {enemy_naval_pressure})",
                     "(can-train-with-escrow transport-ship)",
                     "(unit-type-count-total transport-ship < 1)",
                 ),
                 action="(train transport-ship)",
                 witness="(unit-type-count transport-ship >= 1)",
                 release="(unit-type-count transport-ship >= 1)",
+            ),
+            recovery=_CapabilityRecoveryContract(),
+        ),
+    )
+
+    demands.append(
+        _training_demand(
+            effective=effective,
+            identity="water-pacific-fire-galley-deterrent",
+            owner="water-naval",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason_ref="strategy-pacific-islands",
+            reason_label="Pacific land-first still preserves one Feudal fire-galley deterrent",
+            line="fire-galley-line",
+            minimum=1,
+            age_guard="(current-age >= feudal-age)",
+            action_symbol="fire-galley",
+            witness_symbol="fire-galley",
+            release_symbol="fire-galley",
+            additional_requirements=(
+                pacific_islands,
+                "(building-type-count-total dock >= 1)",
             ),
         )
     )
@@ -2019,7 +2263,7 @@ def community_strategy_demands(
             admissibility=(
                 _persistent(
                     "Island water makes defensive naval production strategically admissible",
-                    "strategy-water-islands",
+                    "strategy-water-map",
                 ),
                 _persistent(
                     "Enemy naval pressure justifies the defensive floor",
@@ -2048,9 +2292,10 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
-                    "(map-type islands)",
+                    water_map,
                     "(building-type-count-total dock >= 1)",
-                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    enemy_naval_pressure,
+                    "(or (not (map-type pacific-islands)) (goal pacific-harbor-defense 1))",
                     "(can-train-with-escrow fire-galley)",
                     "(unit-type-count-total fire-galley < 2)",
                 ),
@@ -2076,7 +2321,7 @@ def community_strategy_demands(
                 ),
             ),
             admissibility=(
-                _persistent("Water control is admissible on Islands", "strategy-water-islands"),
+                _persistent("Water control is admissible on Islands", "strategy-water-map"),
                 _persistent("Enemy naval pressure is active", "strategy-enemy-naval-pressure"),
             ),
             invalidation=(
@@ -2101,9 +2346,10 @@ def community_strategy_demands(
             execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(map-type islands)",
+                    water_map,
                     "(building-type-count-total dock >= 1)",
-                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    enemy_naval_pressure,
+                    "(or (not (map-type pacific-islands)) (goal pacific-harbor-defense 1))",
                     "(can-train-with-escrow galley)",
                     "(unit-type-count-total galley < 3)",
                 ),
@@ -2309,8 +2555,20 @@ def community_water_execution_plan():
         plan_id="byzantine-water-v1",
         water_posture_state="water-posture",
         transport_phase_state="transport-phase",
-        transport_required_observation="strategy-water-islands",
+        transport_objective_state="water-transport-objective",
+        transport_rebuild_state="water-transport-rebuild",
+        pacific_opening_transport_state="pacific-opening-transport-objective",
+        pacific_transport_lifecycle_state="pacific-transport-lifecycle",
+        pacific_fishing_controller_state="pacific-fishing-controller",
+        pacific_harbor_defense_state="pacific-harbor-defense",
+        pacific_transport_escort_state="pacific-transport-escort",
+        pacific_convoy_route_state="pacific-convoy-route",
+        pacific_transport_recovery_state="pacific-transport-recovery",
+        feudal_resource_island_transport_state="feudal-resource-island-transport-objective",
+        water_map_observation="strategy-water-map",
+        transport_required_observation="strategy-transport-required",
         transport_capable_observation="strategy-own-transport-capable",
+        transport_rebuild_open_observation="strategy-transport-rebuild-open",
         dock_observation="strategy-dock-exists",
         naval_pressure_observation="strategy-enemy-naval-pressure",
         naval_pressure_cleared_observation="strategy-enemy-naval-pressure-cleared",
@@ -2465,6 +2723,47 @@ def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _Nat
     )
 
 
+def _default_byzantine_feudal_bank_plan(
+    profile_id: str,
+) -> _NativeEscrowPolicyPlan:
+    """Reserve half of food for Feudal admission, then stop reserving it."""
+    owner = SemanticId(profile_id, "feudal-bank")
+    return _NativeEscrowPolicyPlan(
+        (
+            _EscrowOperation(
+                contract_identity="feudal-bank-open-food",
+                owner=owner,
+                kind=_EscrowOperationKind.POLICY_RESET,
+                resource="food",
+                command="set-escrow-percentage",
+                percentage=50,
+                rule_order=0,
+                guard="(and (current-age == dark-age) (not (goal opening-plan 6)))",
+            ),
+            _EscrowOperation(
+                contract_identity="feudal-bank-emergency-release-food",
+                owner=owner,
+                kind=_EscrowOperationKind.POLICY_RESET,
+                resource="food",
+                command="set-escrow-percentage",
+                percentage=0,
+                rule_order=1,
+                guard="(goal opening-plan 6)",
+            ),
+            _EscrowOperation(
+                contract_identity="feudal-bank-close-food",
+                owner=owner,
+                kind=_EscrowOperationKind.POLICY_RESET,
+                resource="food",
+                command="set-escrow-percentage",
+                percentage=0,
+                rule_order=2,
+                guard="(current-age >= feudal-age)",
+            ),
+        )
+    )
+
+
 def build_byzantine_stock_strategy(
     effective: EffectiveCivData,
     *,
@@ -2498,13 +2797,23 @@ def build_byzantine_stock_strategy(
                 base_demand.execution,
                 requirements=(
                     "(current-age == dark-age)",
-                    "(unit-type-count-total villager >= 21)",
+                    "(unit-type-count-total villager >= 20)",
                     "(can-research-with-escrow feudal-age)",
                 ),
             )
             base_demand = replace(
                 base_demand,
                 execution=execution,
+                opportunity_cost=_OpportunityCostPolicy(
+                    owner="age-transition",
+                    protected_floors=(
+                        _ProtectedResourceFloor(Resource.FOOD, 500),
+                    ),
+                    emergency_override_postures=(
+                        _StrategyPosture.FLUSH,
+                        _StrategyPosture.RUSH,
+                    ),
+                ),
             )
         if (
             base_demand.execution is not None
@@ -2558,6 +2867,7 @@ def build_byzantine_stock_strategy(
         demands=tuple(demands),
         observations=tuple(observations),
         military_compositions=tuple(compositions),
+        escrow_policy_plan=_default_byzantine_feudal_bank_plan(stock_profile_id),
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),
