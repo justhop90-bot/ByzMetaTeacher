@@ -4080,8 +4080,21 @@ def build_land_castle_strategy(
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    None,
+                    "(current-age == feudal-age)",
                     "Castle transition remains admissible until Castle Age is witnessed",
+                    observation_ref="current-feudal-age",
+                ),
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(unit-type-count-total villager >= 28)",
+                    "Community Castle trajectory targets 28 villagers before the age-up bank is committed",
+                    observation_ref="current-feudal-age",
+                ),
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(and (building-type-count-total blacksmith >= 1) "
+                    "(building-type-count-total market >= 1))",
+                    "Blacksmith + Market is the preferred community Castle maturity package, not an engine execution prerequisite",
                     observation_ref="current-feudal-age",
                 ),
             ),
@@ -4108,9 +4121,6 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == feudal-age)",
-                    "(unit-type-count-total villager >= 28)",
-                    "(building-type-count-total blacksmith >= 1)",
-                    "(building-type-count-total market >= 1)",
                     "(can-research-with-escrow castle-age)",
                 ),
                 action="(research castle-age)",
