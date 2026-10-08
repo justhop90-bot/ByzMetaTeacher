@@ -16577,29 +16577,607 @@
     (set-goal demand-economy-farm-boom-imperial 70)
 )
 
+;----------------------------------------------------------------
+; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES
+;----------------------------------------------------------------
+; Native DUC rule: byzantine-camp-placement-wood-1-search
+(defrule
+    (goal demand-economy-lumber-camp-floor-1 1)
+    (building-type-count lumber-camp == 0)
+    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 1)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: wood c: 1)
+    (up-get-search-state 468)
+)
+; Native DUC rule: byzantine-camp-placement-wood-1-place
+(defrule
+    (goal demand-economy-lumber-camp-floor-1 1)
+    (building-type-count lumber-camp == 0)
+    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 1)
+    (up-compare-goal 470 > 0)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 416)
+    (up-set-target-point 416)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-lumber-camp-floor-1 issued-economy-lumber-camp-floor-1)
+)
+; Native DUC rule: byzantine-camp-placement-wood-2-search
+(defrule
+    (goal demand-economy-lumber-camp-floor-2 1)
+    (building-type-count lumber-camp == 1)
+    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 2)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: wood c: 1)
+    (up-get-search-state 472)
+)
+; Native DUC rule: byzantine-camp-placement-wood-2-place
+(defrule
+    (goal demand-economy-lumber-camp-floor-2 1)
+    (building-type-count lumber-camp == 1)
+    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 2)
+    (up-compare-goal 474 > 0)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 418)
+    (up-set-target-point 418)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-lumber-camp-floor-2 issued-economy-lumber-camp-floor-2)
+)
+; Native DUC rule: byzantine-camp-placement-wood-3-search
+(defrule
+    (goal demand-economy-wood-camp-floor-3 1)
+    (building-type-count lumber-camp == 2)
+    (goal construction-retry-barrier-economy-wood-camp-floor-3 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 3)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: wood c: 40)
+    (up-get-search-state 476)
+)
+; Native DUC rule: byzantine-camp-placement-wood-3-place
+(defrule
+    (goal demand-economy-wood-camp-floor-3 1)
+    (building-type-count lumber-camp == 2)
+    (goal construction-retry-barrier-economy-wood-camp-floor-3 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 3)
+    (up-compare-goal 478 > 1)
+    (up-set-target-object search-remote c: 1)
+=>
+    (up-set-target-object search-remote c: 1)
+    (up-get-point position-object 420)
+    (up-set-target-point 420)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-3 issued-economy-wood-camp-floor-3)
+)
+; Native DUC rule: byzantine-camp-placement-wood-4-search
+(defrule
+    (goal demand-economy-wood-camp-floor-4 1)
+    (building-type-count lumber-camp == 3)
+    (goal construction-retry-barrier-economy-wood-camp-floor-4 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 4)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: wood c: 40)
+    (up-get-search-state 480)
+)
+; Native DUC rule: byzantine-camp-placement-wood-4-place
+(defrule
+    (goal demand-economy-wood-camp-floor-4 1)
+    (building-type-count lumber-camp == 3)
+    (goal construction-retry-barrier-economy-wood-camp-floor-4 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 4)
+    (up-compare-goal 482 > 2)
+    (up-set-target-object search-remote c: 2)
+=>
+    (up-set-target-object search-remote c: 2)
+    (up-get-point position-object 422)
+    (up-set-target-point 422)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-4 issued-economy-wood-camp-floor-4)
+)
+; Native DUC rule: byzantine-camp-placement-wood-5-search
+(defrule
+    (goal demand-economy-wood-camp-floor-5 1)
+    (building-type-count lumber-camp == 4)
+    (goal construction-retry-barrier-economy-wood-camp-floor-5 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 5)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: wood c: 40)
+    (up-get-search-state 484)
+)
+; Native DUC rule: byzantine-camp-placement-wood-5-place
+(defrule
+    (goal demand-economy-wood-camp-floor-5 1)
+    (building-type-count lumber-camp == 4)
+    (goal construction-retry-barrier-economy-wood-camp-floor-5 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 5)
+    (up-compare-goal 486 > 3)
+    (up-set-target-object search-remote c: 3)
+=>
+    (up-set-target-object search-remote c: 3)
+    (up-get-point position-object 424)
+    (up-set-target-point 424)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-5 issued-economy-wood-camp-floor-5)
+)
+; Native DUC rule: byzantine-camp-placement-wood-6-search
+(defrule
+    (goal demand-economy-wood-camp-floor-6 1)
+    (building-type-count lumber-camp == 5)
+    (goal construction-retry-barrier-economy-wood-camp-floor-6 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 6)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: wood c: 40)
+    (up-get-search-state 488)
+)
+; Native DUC rule: byzantine-camp-placement-wood-6-place
+(defrule
+    (goal demand-economy-wood-camp-floor-6 1)
+    (building-type-count lumber-camp == 5)
+    (goal construction-retry-barrier-economy-wood-camp-floor-6 0)
+    (up-pending-objects c: 562 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 6)
+    (up-compare-goal 490 > 4)
+    (up-set-target-object search-remote c: 4)
+=>
+    (up-set-target-object search-remote c: 4)
+    (up-get-point position-object 426)
+    (up-set-target-point 426)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-wood-camp-floor-6 issued-economy-wood-camp-floor-6)
+)
+; Native DUC rule: byzantine-camp-placement-gold-1-search
+(defrule
+    (goal demand-economy-gold-camp-floor-1 1)
+    (building-type-count mining-camp == 0)
+    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 1)
+    (up-get-search-state 428)
+)
+; Native DUC rule: byzantine-camp-placement-gold-1-place
+(defrule
+    (goal demand-economy-gold-camp-floor-1 1)
+    (building-type-count mining-camp == 0)
+    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+    (up-compare-goal 430 > 0)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 396)
+    (up-set-target-point 396)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-1 issued-economy-gold-camp-floor-1)
+)
+; Native DUC rule: byzantine-camp-placement-gold-2-search
+(defrule
+    (goal demand-economy-gold-camp-floor-2 1)
+    (building-type-count mining-camp == 1)
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state 432)
+)
+; Native DUC rule: byzantine-camp-placement-gold-2-place
+(defrule
+    (goal demand-economy-gold-camp-floor-2 1)
+    (building-type-count mining-camp == 1)
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+    (up-compare-goal 434 > 0)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 398)
+    (up-set-target-point 398)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-2 issued-economy-gold-camp-floor-2)
+)
+; Native DUC rule: byzantine-camp-placement-gold-3-search
+(defrule
+    (goal demand-economy-gold-camp-floor-3 1)
+    (building-type-count mining-camp == 2)
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state 436)
+)
+; Native DUC rule: byzantine-camp-placement-gold-3-place
+(defrule
+    (goal demand-economy-gold-camp-floor-3 1)
+    (building-type-count mining-camp == 2)
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+    (up-compare-goal 438 > 1)
+    (up-set-target-object search-remote c: 1)
+=>
+    (up-set-target-object search-remote c: 1)
+    (up-get-point position-object 400)
+    (up-set-target-point 400)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-3 issued-economy-gold-camp-floor-3)
+)
+; Native DUC rule: byzantine-camp-placement-gold-4-search
+(defrule
+    (goal demand-economy-gold-camp-floor-4 1)
+    (building-type-count mining-camp == 3)
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state 440)
+)
+; Native DUC rule: byzantine-camp-placement-gold-4-place
+(defrule
+    (goal demand-economy-gold-camp-floor-4 1)
+    (building-type-count mining-camp == 3)
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+    (up-compare-goal 442 > 2)
+    (up-set-target-object search-remote c: 2)
+=>
+    (up-set-target-object search-remote c: 2)
+    (up-get-point position-object 402)
+    (up-set-target-point 402)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-4 issued-economy-gold-camp-floor-4)
+)
+; Native DUC rule: byzantine-camp-placement-gold-5-search
+(defrule
+    (goal demand-economy-gold-camp-floor-5 1)
+    (building-type-count mining-camp == 4)
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state 444)
+)
+; Native DUC rule: byzantine-camp-placement-gold-5-place
+(defrule
+    (goal demand-economy-gold-camp-floor-5 1)
+    (building-type-count mining-camp == 4)
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+    (up-compare-goal 446 > 3)
+    (up-set-target-object search-remote c: 3)
+=>
+    (up-set-target-object search-remote c: 3)
+    (up-get-point position-object 404)
+    (up-set-target-point 404)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-5 issued-economy-gold-camp-floor-5)
+)
+; Native DUC rule: byzantine-camp-placement-stone-1-search
+(defrule
+    (goal demand-economy-stone-camp-floor-1 1)
+    (building-type-count mining-camp == 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: stone c: 1)
+    (up-get-search-state 448)
+)
+; Native DUC rule: byzantine-camp-placement-stone-1-place
+(defrule
+    (goal demand-economy-stone-camp-floor-1 1)
+    (building-type-count mining-camp == 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+    (up-compare-goal 450 > 0)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 406)
+    (up-set-target-point 406)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-1 issued-economy-stone-camp-floor-1)
+)
+; Native DUC rule: byzantine-camp-placement-stone-2-search
+(defrule
+    (goal demand-economy-stone-camp-floor-2 1)
+    (building-type-count mining-camp == 1)
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state 452)
+)
+; Native DUC rule: byzantine-camp-placement-stone-2-place
+(defrule
+    (goal demand-economy-stone-camp-floor-2 1)
+    (building-type-count mining-camp == 1)
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+    (up-compare-goal 454 > 0)
+    (up-set-target-object search-remote c: 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object 408)
+    (up-set-target-point 408)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-2 issued-economy-stone-camp-floor-2)
+)
+; Native DUC rule: byzantine-camp-placement-stone-3-search
+(defrule
+    (goal demand-economy-stone-camp-floor-3 1)
+    (building-type-count mining-camp == 2)
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state 456)
+)
+; Native DUC rule: byzantine-camp-placement-stone-3-place
+(defrule
+    (goal demand-economy-stone-camp-floor-3 1)
+    (building-type-count mining-camp == 2)
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+    (up-compare-goal 458 > 1)
+    (up-set-target-object search-remote c: 1)
+=>
+    (up-set-target-object search-remote c: 1)
+    (up-get-point position-object 410)
+    (up-set-target-point 410)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-3 issued-economy-stone-camp-floor-3)
+)
+; Native DUC rule: byzantine-camp-placement-stone-4-search
+(defrule
+    (goal demand-economy-stone-camp-floor-4 1)
+    (building-type-count mining-camp == 3)
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state 460)
+)
+; Native DUC rule: byzantine-camp-placement-stone-4-place
+(defrule
+    (goal demand-economy-stone-camp-floor-4 1)
+    (building-type-count mining-camp == 3)
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+    (up-compare-goal 462 > 2)
+    (up-set-target-object search-remote c: 2)
+=>
+    (up-set-target-object search-remote c: 2)
+    (up-get-point position-object 412)
+    (up-set-target-point 412)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-4 issued-economy-stone-camp-floor-4)
+)
+; Native DUC rule: byzantine-camp-placement-stone-5-search
+(defrule
+    (goal demand-economy-stone-camp-floor-5 1)
+    (building-type-count mining-camp == 4)
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state 464)
+)
+; Native DUC rule: byzantine-camp-placement-stone-5-place
+(defrule
+    (goal demand-economy-stone-camp-floor-5 1)
+    (building-type-count mining-camp == 4)
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (resource-found stone)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+    (up-compare-goal 466 > 3)
+    (up-set-target-object search-remote c: 3)
+=>
+    (up-set-target-object search-remote c: 3)
+    (up-get-point position-object 414)
+    (up-set-target-point 414)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-5 issued-economy-stone-camp-floor-5)
+)
+
 ; Pending diagnostics: economy-lumber-camp-floor-1
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 74 and cannot reissue from pending goal 75
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 75 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 76 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 76 and cannot reissue from pending goal 77
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 77 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 78 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
 ; Issuance failure: economy-lumber-camp-floor-1 | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-economy-lumber-camp-floor-1 in ACTIVE; it is not PENDING.
 ; Release: economy-lumber-camp-floor-1 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-lumber-camp-floor-1 76)
+    (goal demand-economy-lumber-camp-floor-1 78)
     (building-type-count lumber-camp >= 1)
 =>
     (set-goal demand-economy-lumber-camp-floor-1 0)
 )
 
-; Recovery: economy-lumber-camp-floor-1 | RELEASED -> ACTIVE on world-state loss
+; Native placement execution: economy-lumber-camp-floor-1 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-lumber-camp-floor-1 0)
+    (goal demand-economy-lumber-camp-floor-1 79)
     (not (building-type-count lumber-camp >= 1))
-    (resource-found wood)
+    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build lumber-camp)
 =>
-    (set-goal demand-economy-lumber-camp-floor-1 1)
+    (up-build place-point 0 c: 562)
 )
 
 ; Construction observation: economy-lumber-camp-floor-1
@@ -16608,44 +17186,44 @@
 ; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-1 79)
         (goal demand-economy-lumber-camp-floor-1 77)
-        (goal demand-economy-lumber-camp-floor-1 75)
     )
     (building-type-count lumber-camp >= 1)
 =>
-    (set-goal demand-economy-lumber-camp-floor-1 76)
+    (set-goal demand-economy-lumber-camp-floor-1 78)
 )
 
 ; Pending admission: economy-lumber-camp-floor-1 | ISSUED/PENDING -> PENDING
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-1 79)
         (goal demand-economy-lumber-camp-floor-1 77)
-        (goal demand-economy-lumber-camp-floor-1 75)
     )
     (not (building-type-count lumber-camp >= 1))
     (up-pending-objects c: 562 >= 1)
 =>
-    (set-goal demand-economy-lumber-camp-floor-1 75)
+    (set-goal demand-economy-lumber-camp-floor-1 77)
 )
 
 ; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-1 79)
         (goal demand-economy-lumber-camp-floor-1 77)
-        (goal demand-economy-lumber-camp-floor-1 75)
     )
     (not (building-type-count lumber-camp >= 1))
     (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
-    (set-goal demand-economy-lumber-camp-floor-1 75)
+    (set-goal demand-economy-lumber-camp-floor-1 77)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-1 79)
         (goal demand-economy-lumber-camp-floor-1 77)
-        (goal demand-economy-lumber-camp-floor-1 75)
     )
     (not (building-type-count lumber-camp >= 1))
     (up-pending-objects c: 562 == 0)
@@ -16655,51 +17233,9 @@
     (set-goal construction-retry-barrier-economy-lumber-camp-floor-1 1)
 )
 
-; Action issuance: economy-lumber-camp-floor-1 | ACTIVE -> ISSUED
-(defrule
-    (goal demand-economy-lumber-camp-floor-1 1)
-    (not (building-type-count lumber-camp >= 1))
-    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (not (building-type-count lumber-camp >= 1))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
-    (unit-type-count-total villager >= 7)
-    (resource-found wood)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 1)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: wood c: 1)
-    (up-get-search-state byzantine-dark-wood-camp-search-state-1)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-(defrule
-    (goal demand-economy-lumber-camp-floor-1 1)
-    (not (building-type-count lumber-camp >= 1))
-    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (not (building-type-count lumber-camp >= 1))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (up-compare-goal byzantine-dark-wood-camp-search-remote-count-1 > 0)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 1)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object byzantine-dark-wood-camp-point-1)
-    (up-set-target-point byzantine-dark-wood-camp-point-1)
-    (up-build place-point 0 c: lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-lumber-camp-floor-1 77)
-)
+; Native placement owner: economy-lumber-camp-floor-1 | action issuance is emitted by Native DUC
 
-; Safety fallback: retain the community-standard direct build path if
-; the DUC resource-point search does not produce a placement witness.
+; Native placement fallback: economy-lumber-camp-floor-1
 (defrule
     (goal demand-economy-lumber-camp-floor-1 1)
     (not (building-type-count lumber-camp >= 1))
@@ -16708,40 +17244,43 @@
     (not (up-pending-placement c: 562))
     (not (building-type-count lumber-camp >= 1))
     (goal action-claim-build-pass-singleton 0)
+    (resource-found wood)
+    (building-type-count-total 562 < 1)
+    (can-build lumber-camp)
     (current-age == dark-age)
     (unit-type-count-total villager >= 15)
-    (resource-found wood)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 1)
 =>
     (build lumber-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-lumber-camp-floor-1 77)
+    (set-goal demand-economy-lumber-camp-floor-1 79)
 )
-
 ; Pending diagnostics: economy-lumber-camp-floor-2
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 75 and cannot reissue from pending goal 76
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 76 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 77 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 77 and cannot reissue from pending goal 78
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 78 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 79 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
 ; Issuance failure: economy-lumber-camp-floor-2 | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-economy-lumber-camp-floor-2 in ACTIVE; it is not PENDING.
 ; Release: economy-lumber-camp-floor-2 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-lumber-camp-floor-2 77)
+    (goal demand-economy-lumber-camp-floor-2 79)
     (building-type-count lumber-camp >= 2)
 =>
     (set-goal demand-economy-lumber-camp-floor-2 0)
 )
 
-; Recovery: economy-lumber-camp-floor-2 | RELEASED -> ACTIVE on world-state loss
+; Native placement execution: economy-lumber-camp-floor-2 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-lumber-camp-floor-2 0)
+    (goal demand-economy-lumber-camp-floor-2 80)
     (not (building-type-count lumber-camp >= 2))
-    (dropsite-min-distance wood > 12)
+    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build lumber-camp)
 =>
-    (set-goal demand-economy-lumber-camp-floor-2 1)
+    (up-build place-point 0 c: 562)
 )
 
 ; Construction observation: economy-lumber-camp-floor-2
@@ -16750,44 +17289,44 @@
 ; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-2 80)
         (goal demand-economy-lumber-camp-floor-2 78)
-        (goal demand-economy-lumber-camp-floor-2 76)
     )
     (building-type-count lumber-camp >= 2)
 =>
-    (set-goal demand-economy-lumber-camp-floor-2 77)
+    (set-goal demand-economy-lumber-camp-floor-2 79)
 )
 
 ; Pending admission: economy-lumber-camp-floor-2 | ISSUED/PENDING -> PENDING
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-2 80)
         (goal demand-economy-lumber-camp-floor-2 78)
-        (goal demand-economy-lumber-camp-floor-2 76)
     )
     (not (building-type-count lumber-camp >= 2))
     (up-pending-objects c: 562 >= 1)
 =>
-    (set-goal demand-economy-lumber-camp-floor-2 76)
+    (set-goal demand-economy-lumber-camp-floor-2 78)
 )
 
 ; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-2 80)
         (goal demand-economy-lumber-camp-floor-2 78)
-        (goal demand-economy-lumber-camp-floor-2 76)
     )
     (not (building-type-count lumber-camp >= 2))
     (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
-    (set-goal demand-economy-lumber-camp-floor-2 76)
+    (set-goal demand-economy-lumber-camp-floor-2 78)
 )
 
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
+        (goal demand-economy-lumber-camp-floor-2 80)
         (goal demand-economy-lumber-camp-floor-2 78)
-        (goal demand-economy-lumber-camp-floor-2 76)
     )
     (not (building-type-count lumber-camp >= 2))
     (up-pending-objects c: 562 == 0)
@@ -16797,105 +17336,80 @@
     (set-goal construction-retry-barrier-economy-lumber-camp-floor-2 1)
 )
 
-; Action issuance: economy-lumber-camp-floor-2 | ACTIVE -> ISSUED
+; Native placement owner: economy-lumber-camp-floor-2 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-wood-camp-floor-3
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 83 and cannot reissue from pending goal 84
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 84 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 85 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-wood-camp-floor-3 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-wood-camp-floor-3 in ACTIVE; it is not PENDING.
+; Release: economy-wood-camp-floor-3 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-lumber-camp-floor-2 1)
-    (not (building-type-count lumber-camp >= 2))
-    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (not (building-type-count lumber-camp >= 2))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
-    (resource-found wood)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 2)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: wood c: 1)
-    (up-get-search-state byzantine-dark-wood-camp-search-state-2)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-(defrule
-    (goal demand-economy-lumber-camp-floor-2 1)
-    (not (building-type-count lumber-camp >= 2))
-    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (not (building-type-count lumber-camp >= 2))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (up-compare-goal byzantine-dark-wood-camp-search-remote-count-2 > 0)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 2)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object byzantine-dark-wood-camp-point-2)
-    (up-set-target-point byzantine-dark-wood-camp-point-2)
-    (up-build place-point 0 c: lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-lumber-camp-floor-2 78)
-)
-
-;----------------------------------------------------------------
-; RESOURCE-SPECIFIC BYZANTINE CAMP LIFECYCLES
-;----------------------------------------------------------------
-; economy-wood-camp-floor-3
-(defrule
-    (goal demand-economy-wood-camp-floor-3 603)
+    (goal demand-economy-wood-camp-floor-3 85)
     (building-type-count lumber-camp >= 3)
 =>
     (set-goal demand-economy-wood-camp-floor-3 0)
 )
 
+; Native placement execution: economy-wood-camp-floor-3 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-wood-camp-floor-3 0)
-    (resource-found wood)
+    (goal demand-economy-wood-camp-floor-3 86)
     (not (building-type-count lumber-camp >= 3))
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (goal construction-retry-barrier-economy-wood-camp-floor-3 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build lumber-camp)
 =>
-    (set-goal demand-economy-wood-camp-floor-3 1)
+    (up-build place-point 0 c: 562)
 )
 
+; Construction observation: economy-wood-camp-floor-3
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-wood-camp-floor-3 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-3 601)
-        (goal demand-economy-wood-camp-floor-3 602)
+        (goal demand-economy-wood-camp-floor-3 86)
+        (goal demand-economy-wood-camp-floor-3 84)
     )
     (building-type-count lumber-camp >= 3)
 =>
-    (set-goal demand-economy-wood-camp-floor-3 603)
+    (set-goal demand-economy-wood-camp-floor-3 85)
 )
 
+; Pending admission: economy-wood-camp-floor-3 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-3 601)
-        (goal demand-economy-wood-camp-floor-3 602)
+        (goal demand-economy-wood-camp-floor-3 86)
+        (goal demand-economy-wood-camp-floor-3 84)
     )
     (not (building-type-count lumber-camp >= 3))
     (up-pending-objects c: 562 >= 1)
 =>
-    (set-goal demand-economy-wood-camp-floor-3 602)
+    (set-goal demand-economy-wood-camp-floor-3 84)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-3 601)
-        (goal demand-economy-wood-camp-floor-3 602)
+        (goal demand-economy-wood-camp-floor-3 86)
+        (goal demand-economy-wood-camp-floor-3 84)
     )
     (not (building-type-count lumber-camp >= 3))
     (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
-    (set-goal demand-economy-wood-camp-floor-3 602)
+    (set-goal demand-economy-wood-camp-floor-3 84)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-3 601)
-        (goal demand-economy-wood-camp-floor-3 602)
+        (goal demand-economy-wood-camp-floor-3 86)
+        (goal demand-economy-wood-camp-floor-3 84)
     )
     (not (building-type-count lumber-camp >= 3))
     (up-pending-objects c: 562 == 0)
@@ -16905,77 +17419,80 @@
     (set-goal construction-retry-barrier-economy-wood-camp-floor-3 1)
 )
 
+; Native placement owner: economy-wood-camp-floor-3 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-wood-camp-floor-4
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 84 and cannot reissue from pending goal 85
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 85 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 86 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-wood-camp-floor-4 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-wood-camp-floor-4 in ACTIVE; it is not PENDING.
+; Release: economy-wood-camp-floor-4 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-wood-camp-floor-3 1)
-    (not (building-type-count lumber-camp >= 3))
-    (goal construction-retry-barrier-economy-wood-camp-floor-3 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 3)
-=>
-    (build lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-wood-camp-floor-3 601)
-)
-
-; economy-wood-camp-floor-4
-(defrule
-    (goal demand-economy-wood-camp-floor-4 608)
+    (goal demand-economy-wood-camp-floor-4 86)
     (building-type-count lumber-camp >= 4)
 =>
     (set-goal demand-economy-wood-camp-floor-4 0)
 )
 
+; Native placement execution: economy-wood-camp-floor-4 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-wood-camp-floor-4 0)
-    (resource-found wood)
+    (goal demand-economy-wood-camp-floor-4 87)
     (not (building-type-count lumber-camp >= 4))
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (goal construction-retry-barrier-economy-wood-camp-floor-4 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build lumber-camp)
 =>
-    (set-goal demand-economy-wood-camp-floor-4 1)
+    (up-build place-point 0 c: 562)
 )
 
+; Construction observation: economy-wood-camp-floor-4
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-wood-camp-floor-4 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-4 606)
-        (goal demand-economy-wood-camp-floor-4 607)
+        (goal demand-economy-wood-camp-floor-4 87)
+        (goal demand-economy-wood-camp-floor-4 85)
     )
     (building-type-count lumber-camp >= 4)
 =>
-    (set-goal demand-economy-wood-camp-floor-4 608)
+    (set-goal demand-economy-wood-camp-floor-4 86)
 )
 
+; Pending admission: economy-wood-camp-floor-4 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-4 606)
-        (goal demand-economy-wood-camp-floor-4 607)
+        (goal demand-economy-wood-camp-floor-4 87)
+        (goal demand-economy-wood-camp-floor-4 85)
     )
     (not (building-type-count lumber-camp >= 4))
     (up-pending-objects c: 562 >= 1)
 =>
-    (set-goal demand-economy-wood-camp-floor-4 607)
+    (set-goal demand-economy-wood-camp-floor-4 85)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-4 606)
-        (goal demand-economy-wood-camp-floor-4 607)
+        (goal demand-economy-wood-camp-floor-4 87)
+        (goal demand-economy-wood-camp-floor-4 85)
     )
     (not (building-type-count lumber-camp >= 4))
     (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
-    (set-goal demand-economy-wood-camp-floor-4 607)
+    (set-goal demand-economy-wood-camp-floor-4 85)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-4 606)
-        (goal demand-economy-wood-camp-floor-4 607)
+        (goal demand-economy-wood-camp-floor-4 87)
+        (goal demand-economy-wood-camp-floor-4 85)
     )
     (not (building-type-count lumber-camp >= 4))
     (up-pending-objects c: 562 == 0)
@@ -16985,77 +17502,80 @@
     (set-goal construction-retry-barrier-economy-wood-camp-floor-4 1)
 )
 
+; Native placement owner: economy-wood-camp-floor-4 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-wood-camp-floor-5
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 85 and cannot reissue from pending goal 86
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 86 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 87 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-wood-camp-floor-5 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-wood-camp-floor-5 in ACTIVE; it is not PENDING.
+; Release: economy-wood-camp-floor-5 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-wood-camp-floor-4 1)
-    (not (building-type-count lumber-camp >= 4))
-    (goal construction-retry-barrier-economy-wood-camp-floor-4 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 4)
-=>
-    (build lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-wood-camp-floor-4 606)
-)
-
-; economy-wood-camp-floor-5
-(defrule
-    (goal demand-economy-wood-camp-floor-5 613)
+    (goal demand-economy-wood-camp-floor-5 87)
     (building-type-count lumber-camp >= 5)
 =>
     (set-goal demand-economy-wood-camp-floor-5 0)
 )
 
+; Native placement execution: economy-wood-camp-floor-5 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-wood-camp-floor-5 0)
-    (resource-found wood)
+    (goal demand-economy-wood-camp-floor-5 88)
     (not (building-type-count lumber-camp >= 5))
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (goal construction-retry-barrier-economy-wood-camp-floor-5 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build lumber-camp)
 =>
-    (set-goal demand-economy-wood-camp-floor-5 1)
+    (up-build place-point 0 c: 562)
 )
 
+; Construction observation: economy-wood-camp-floor-5
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-wood-camp-floor-5 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-5 611)
-        (goal demand-economy-wood-camp-floor-5 612)
+        (goal demand-economy-wood-camp-floor-5 88)
+        (goal demand-economy-wood-camp-floor-5 86)
     )
     (building-type-count lumber-camp >= 5)
 =>
-    (set-goal demand-economy-wood-camp-floor-5 613)
+    (set-goal demand-economy-wood-camp-floor-5 87)
 )
 
+; Pending admission: economy-wood-camp-floor-5 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-5 611)
-        (goal demand-economy-wood-camp-floor-5 612)
+        (goal demand-economy-wood-camp-floor-5 88)
+        (goal demand-economy-wood-camp-floor-5 86)
     )
     (not (building-type-count lumber-camp >= 5))
     (up-pending-objects c: 562 >= 1)
 =>
-    (set-goal demand-economy-wood-camp-floor-5 612)
+    (set-goal demand-economy-wood-camp-floor-5 86)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-5 611)
-        (goal demand-economy-wood-camp-floor-5 612)
+        (goal demand-economy-wood-camp-floor-5 88)
+        (goal demand-economy-wood-camp-floor-5 86)
     )
     (not (building-type-count lumber-camp >= 5))
     (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
-    (set-goal demand-economy-wood-camp-floor-5 612)
+    (set-goal demand-economy-wood-camp-floor-5 86)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-5 611)
-        (goal demand-economy-wood-camp-floor-5 612)
+        (goal demand-economy-wood-camp-floor-5 88)
+        (goal demand-economy-wood-camp-floor-5 86)
     )
     (not (building-type-count lumber-camp >= 5))
     (up-pending-objects c: 562 == 0)
@@ -17065,77 +17585,80 @@
     (set-goal construction-retry-barrier-economy-wood-camp-floor-5 1)
 )
 
+; Native placement owner: economy-wood-camp-floor-5 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-wood-camp-floor-6
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 86 and cannot reissue from pending goal 87
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 87 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 88 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-wood-camp-floor-6 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-wood-camp-floor-6 in ACTIVE; it is not PENDING.
+; Release: economy-wood-camp-floor-6 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-wood-camp-floor-5 1)
-    (not (building-type-count lumber-camp >= 5))
-    (goal construction-retry-barrier-economy-wood-camp-floor-5 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 5)
-=>
-    (build lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-wood-camp-floor-5 611)
-)
-
-; economy-wood-camp-floor-6
-(defrule
-    (goal demand-economy-wood-camp-floor-6 618)
+    (goal demand-economy-wood-camp-floor-6 88)
     (building-type-count lumber-camp >= 6)
 =>
     (set-goal demand-economy-wood-camp-floor-6 0)
 )
 
+; Native placement execution: economy-wood-camp-floor-6 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-wood-camp-floor-6 0)
-    (resource-found wood)
+    (goal demand-economy-wood-camp-floor-6 89)
     (not (building-type-count lumber-camp >= 6))
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
+    (goal construction-retry-barrier-economy-wood-camp-floor-6 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build lumber-camp)
 =>
-    (set-goal demand-economy-wood-camp-floor-6 1)
+    (up-build place-point 0 c: 562)
 )
 
+; Construction observation: economy-wood-camp-floor-6
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-wood-camp-floor-6 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-6 616)
-        (goal demand-economy-wood-camp-floor-6 617)
+        (goal demand-economy-wood-camp-floor-6 89)
+        (goal demand-economy-wood-camp-floor-6 87)
     )
     (building-type-count lumber-camp >= 6)
 =>
-    (set-goal demand-economy-wood-camp-floor-6 618)
+    (set-goal demand-economy-wood-camp-floor-6 88)
 )
 
+; Pending admission: economy-wood-camp-floor-6 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-6 616)
-        (goal demand-economy-wood-camp-floor-6 617)
+        (goal demand-economy-wood-camp-floor-6 89)
+        (goal demand-economy-wood-camp-floor-6 87)
     )
     (not (building-type-count lumber-camp >= 6))
     (up-pending-objects c: 562 >= 1)
 =>
-    (set-goal demand-economy-wood-camp-floor-6 617)
+    (set-goal demand-economy-wood-camp-floor-6 87)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-6 616)
-        (goal demand-economy-wood-camp-floor-6 617)
+        (goal demand-economy-wood-camp-floor-6 89)
+        (goal demand-economy-wood-camp-floor-6 87)
     )
     (not (building-type-count lumber-camp >= 6))
     (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
-    (set-goal demand-economy-wood-camp-floor-6 617)
+    (set-goal demand-economy-wood-camp-floor-6 87)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-wood-camp-floor-6 616)
-        (goal demand-economy-wood-camp-floor-6 617)
+        (goal demand-economy-wood-camp-floor-6 89)
+        (goal demand-economy-wood-camp-floor-6 87)
     )
     (not (building-type-count lumber-camp >= 6))
     (up-pending-objects c: 562 == 0)
@@ -17145,76 +17668,80 @@
     (set-goal construction-retry-barrier-economy-wood-camp-floor-6 1)
 )
 
+; Native placement owner: economy-wood-camp-floor-6 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-gold-camp-floor-1
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 71 and cannot reissue from pending goal 72
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 72 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 73 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-gold-camp-floor-1 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-gold-camp-floor-1 in ACTIVE; it is not PENDING.
+; Release: economy-gold-camp-floor-1 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-wood-camp-floor-6 1)
-    (not (building-type-count lumber-camp >= 6))
-    (goal construction-retry-barrier-economy-wood-camp-floor-6 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (or (dropsite-min-distance wood <= -1) (dropsite-min-distance wood s:>= sn-lumber-camp-max-distance))
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 6)
-=>
-    (build lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-wood-camp-floor-6 616)
-)
-
-; economy-gold-camp-floor-1
-(defrule
-    (goal demand-economy-gold-camp-floor-1 623)
+    (goal demand-economy-gold-camp-floor-1 73)
     (building-type-count mining-camp >= 1)
 =>
     (set-goal demand-economy-gold-camp-floor-1 0)
 )
 
+; Native placement execution: economy-gold-camp-floor-1 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-gold-camp-floor-1 0)
-    (resource-found gold)
+    (goal demand-economy-gold-camp-floor-1 74)
     (not (building-type-count mining-camp >= 1))
+    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-gold-camp-floor-1 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-gold-camp-floor-1
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-gold-camp-floor-1 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-1 621)
-        (goal demand-economy-gold-camp-floor-1 622)
+        (goal demand-economy-gold-camp-floor-1 74)
+        (goal demand-economy-gold-camp-floor-1 72)
     )
     (building-type-count mining-camp >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-1 623)
+    (set-goal demand-economy-gold-camp-floor-1 73)
 )
 
+; Pending admission: economy-gold-camp-floor-1 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-1 621)
-        (goal demand-economy-gold-camp-floor-1 622)
+        (goal demand-economy-gold-camp-floor-1 74)
+        (goal demand-economy-gold-camp-floor-1 72)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-1 622)
+    (set-goal demand-economy-gold-camp-floor-1 72)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-1 621)
-        (goal demand-economy-gold-camp-floor-1 622)
+        (goal demand-economy-gold-camp-floor-1 74)
+        (goal demand-economy-gold-camp-floor-1 72)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-1 622)
+    (set-goal demand-economy-gold-camp-floor-1 72)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-1 621)
-        (goal demand-economy-gold-camp-floor-1 622)
+        (goal demand-economy-gold-camp-floor-1 74)
+        (goal demand-economy-gold-camp-floor-1 72)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 == 0)
@@ -17224,98 +17751,80 @@
     (set-goal construction-retry-barrier-economy-gold-camp-floor-1 1)
 )
 
+; Native placement owner: economy-gold-camp-floor-1 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-gold-camp-floor-2
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 72 and cannot reissue from pending goal 73
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 73 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 74 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-gold-camp-floor-2 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-gold-camp-floor-2 in ACTIVE; it is not PENDING.
+; Release: economy-gold-camp-floor-2 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-gold-camp-floor-1 1)
-    (not (building-type-count mining-camp >= 1))
-    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 1)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 1)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-1)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-gold-camp-floor-1 1)
-    (not (building-type-count mining-camp >= 1))
-    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-1 > 0)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 1)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-1 621)
-)
-
-; economy-gold-camp-floor-2
-(defrule
-    (goal demand-economy-gold-camp-floor-2 628)
+    (goal demand-economy-gold-camp-floor-2 74)
     (building-type-count mining-camp >= 2)
 =>
     (set-goal demand-economy-gold-camp-floor-2 0)
 )
 
+; Native placement execution: economy-gold-camp-floor-2 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-gold-camp-floor-2 0)
-    (resource-found gold)
+    (goal demand-economy-gold-camp-floor-2 75)
     (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-gold-camp-floor-2
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-gold-camp-floor-2 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-gold-camp-floor-2 75)
+        (goal demand-economy-gold-camp-floor-2 73)
     )
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 628)
+    (set-goal demand-economy-gold-camp-floor-2 74)
 )
 
+; Pending admission: economy-gold-camp-floor-2 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-gold-camp-floor-2 75)
+        (goal demand-economy-gold-camp-floor-2 73)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 627)
+    (set-goal demand-economy-gold-camp-floor-2 73)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-gold-camp-floor-2 75)
+        (goal demand-economy-gold-camp-floor-2 73)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 627)
+    (set-goal demand-economy-gold-camp-floor-2 73)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-gold-camp-floor-2 75)
+        (goal demand-economy-gold-camp-floor-2 73)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
@@ -17325,98 +17834,80 @@
     (set-goal construction-retry-barrier-economy-gold-camp-floor-2 1)
 )
 
+; Native placement owner: economy-gold-camp-floor-2 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-gold-camp-floor-3
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 73 and cannot reissue from pending goal 74
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 74 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 75 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-gold-camp-floor-3 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-gold-camp-floor-3 in ACTIVE; it is not PENDING.
+; Release: economy-gold-camp-floor-3 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-gold-camp-floor-2 1)
-    (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-2)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-gold-camp-floor-2 1)
-    (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-2 626)
-)
-
-; economy-gold-camp-floor-3
-(defrule
-    (goal demand-economy-gold-camp-floor-3 633)
+    (goal demand-economy-gold-camp-floor-3 75)
     (building-type-count mining-camp >= 3)
 =>
     (set-goal demand-economy-gold-camp-floor-3 0)
 )
 
+; Native placement execution: economy-gold-camp-floor-3 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-gold-camp-floor-3 0)
-    (resource-found gold)
+    (goal demand-economy-gold-camp-floor-3 76)
     (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-gold-camp-floor-3
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-gold-camp-floor-3 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-gold-camp-floor-3 76)
+        (goal demand-economy-gold-camp-floor-3 74)
     )
     (building-type-count mining-camp >= 3)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 633)
+    (set-goal demand-economy-gold-camp-floor-3 75)
 )
 
+; Pending admission: economy-gold-camp-floor-3 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-gold-camp-floor-3 76)
+        (goal demand-economy-gold-camp-floor-3 74)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 632)
+    (set-goal demand-economy-gold-camp-floor-3 74)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-gold-camp-floor-3 76)
+        (goal demand-economy-gold-camp-floor-3 74)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 632)
+    (set-goal demand-economy-gold-camp-floor-3 74)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-gold-camp-floor-3 76)
+        (goal demand-economy-gold-camp-floor-3 74)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
@@ -17426,98 +17917,80 @@
     (set-goal construction-retry-barrier-economy-gold-camp-floor-3 1)
 )
 
+; Native placement owner: economy-gold-camp-floor-3 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-gold-camp-floor-4
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 74 and cannot reissue from pending goal 75
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 75 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 76 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-gold-camp-floor-4 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-gold-camp-floor-4 in ACTIVE; it is not PENDING.
+; Release: economy-gold-camp-floor-4 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-gold-camp-floor-3 1)
-    (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-3)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-gold-camp-floor-3 1)
-    (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 1)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
-=>
-    (up-set-target-object search-remote c: 1)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-3 631)
-)
-
-; economy-gold-camp-floor-4
-(defrule
-    (goal demand-economy-gold-camp-floor-4 638)
+    (goal demand-economy-gold-camp-floor-4 76)
     (building-type-count mining-camp >= 4)
 =>
     (set-goal demand-economy-gold-camp-floor-4 0)
 )
 
+; Native placement execution: economy-gold-camp-floor-4 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-gold-camp-floor-4 0)
-    (resource-found gold)
+    (goal demand-economy-gold-camp-floor-4 77)
     (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-gold-camp-floor-4
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-gold-camp-floor-4 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-gold-camp-floor-4 77)
+        (goal demand-economy-gold-camp-floor-4 75)
     )
     (building-type-count mining-camp >= 4)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 638)
+    (set-goal demand-economy-gold-camp-floor-4 76)
 )
 
+; Pending admission: economy-gold-camp-floor-4 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-gold-camp-floor-4 77)
+        (goal demand-economy-gold-camp-floor-4 75)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 637)
+    (set-goal demand-economy-gold-camp-floor-4 75)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-gold-camp-floor-4 77)
+        (goal demand-economy-gold-camp-floor-4 75)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 637)
+    (set-goal demand-economy-gold-camp-floor-4 75)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-gold-camp-floor-4 77)
+        (goal demand-economy-gold-camp-floor-4 75)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
@@ -17527,98 +18000,80 @@
     (set-goal construction-retry-barrier-economy-gold-camp-floor-4 1)
 )
 
+; Native placement owner: economy-gold-camp-floor-4 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-gold-camp-floor-5
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 75 and cannot reissue from pending goal 76
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 76 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 77 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-gold-camp-floor-5 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-gold-camp-floor-5 in ACTIVE; it is not PENDING.
+; Release: economy-gold-camp-floor-5 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-gold-camp-floor-4 1)
-    (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-4)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-gold-camp-floor-4 1)
-    (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 2)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
-=>
-    (up-set-target-object search-remote c: 2)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-4 636)
-)
-
-; economy-gold-camp-floor-5
-(defrule
-    (goal demand-economy-gold-camp-floor-5 643)
+    (goal demand-economy-gold-camp-floor-5 77)
     (building-type-count mining-camp >= 5)
 =>
     (set-goal demand-economy-gold-camp-floor-5 0)
 )
 
+; Native placement execution: economy-gold-camp-floor-5 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-gold-camp-floor-5 0)
-    (resource-found gold)
+    (goal demand-economy-gold-camp-floor-5 78)
     (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-gold-camp-floor-5
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-gold-camp-floor-5 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-gold-camp-floor-5 78)
+        (goal demand-economy-gold-camp-floor-5 76)
     )
     (building-type-count mining-camp >= 5)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 643)
+    (set-goal demand-economy-gold-camp-floor-5 77)
 )
 
+; Pending admission: economy-gold-camp-floor-5 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-gold-camp-floor-5 78)
+        (goal demand-economy-gold-camp-floor-5 76)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 642)
+    (set-goal demand-economy-gold-camp-floor-5 76)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-gold-camp-floor-5 78)
+        (goal demand-economy-gold-camp-floor-5 76)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 642)
+    (set-goal demand-economy-gold-camp-floor-5 76)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-gold-camp-floor-5 78)
+        (goal demand-economy-gold-camp-floor-5 76)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
@@ -17628,98 +18083,80 @@
     (set-goal construction-retry-barrier-economy-gold-camp-floor-5 1)
 )
 
+; Native placement owner: economy-gold-camp-floor-5 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-stone-camp-floor-1
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 78 and cannot reissue from pending goal 79
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 79 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 80 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-stone-camp-floor-1 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-stone-camp-floor-1 in ACTIVE; it is not PENDING.
+; Release: economy-stone-camp-floor-1 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-gold-camp-floor-5 1)
-    (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-5)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-gold-camp-floor-5 1)
-    (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 3)
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-=>
-    (up-set-target-object search-remote c: 3)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-5 641)
-)
-
-; economy-stone-camp-floor-1
-(defrule
-    (goal demand-economy-stone-camp-floor-1 648)
+    (goal demand-economy-stone-camp-floor-1 80)
     (building-type-count mining-camp >= 1)
 =>
     (set-goal demand-economy-stone-camp-floor-1 0)
 )
 
+; Native placement execution: economy-stone-camp-floor-1 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-stone-camp-floor-1 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (goal demand-economy-stone-camp-floor-1 81)
     (not (building-type-count mining-camp >= 1))
+    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-stone-camp-floor-1 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-stone-camp-floor-1
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-stone-camp-floor-1 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
+        (goal demand-economy-stone-camp-floor-1 81)
+        (goal demand-economy-stone-camp-floor-1 79)
     )
     (building-type-count mining-camp >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-1 648)
+    (set-goal demand-economy-stone-camp-floor-1 80)
 )
 
+; Pending admission: economy-stone-camp-floor-1 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
+        (goal demand-economy-stone-camp-floor-1 81)
+        (goal demand-economy-stone-camp-floor-1 79)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-1 647)
+    (set-goal demand-economy-stone-camp-floor-1 79)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
+        (goal demand-economy-stone-camp-floor-1 81)
+        (goal demand-economy-stone-camp-floor-1 79)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-1 647)
+    (set-goal demand-economy-stone-camp-floor-1 79)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
+        (goal demand-economy-stone-camp-floor-1 81)
+        (goal demand-economy-stone-camp-floor-1 79)
     )
     (not (building-type-count mining-camp >= 1))
     (up-pending-objects c: 584 == 0)
@@ -17729,75 +18166,80 @@
     (set-goal construction-retry-barrier-economy-stone-camp-floor-1 1)
 )
 
+; Native placement owner: economy-stone-camp-floor-1 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-stone-camp-floor-2
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 79 and cannot reissue from pending goal 80
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 80 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 81 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-stone-camp-floor-2 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-stone-camp-floor-2 in ACTIVE; it is not PENDING.
+; Release: economy-stone-camp-floor-2 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-stone-camp-floor-1 1)
-    (not (building-type-count mining-camp >= 1))
-    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 1)
-=>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-1 646)
-)
-
-; economy-stone-camp-floor-2
-(defrule
-    (goal demand-economy-stone-camp-floor-2 628)
+    (goal demand-economy-stone-camp-floor-2 81)
     (building-type-count mining-camp >= 2)
 =>
     (set-goal demand-economy-stone-camp-floor-2 0)
 )
 
+; Native placement execution: economy-stone-camp-floor-2 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-stone-camp-floor-2 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (goal demand-economy-stone-camp-floor-2 82)
     (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-stone-camp-floor-2
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-stone-camp-floor-2 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 82)
+        (goal demand-economy-stone-camp-floor-2 80)
     )
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 628)
+    (set-goal demand-economy-stone-camp-floor-2 81)
 )
 
+; Pending admission: economy-stone-camp-floor-2 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 82)
+        (goal demand-economy-stone-camp-floor-2 80)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 627)
+    (set-goal demand-economy-stone-camp-floor-2 80)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 82)
+        (goal demand-economy-stone-camp-floor-2 80)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 627)
+    (set-goal demand-economy-stone-camp-floor-2 80)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 82)
+        (goal demand-economy-stone-camp-floor-2 80)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
@@ -17807,99 +18249,80 @@
     (set-goal construction-retry-barrier-economy-stone-camp-floor-2 1)
 )
 
+; Native placement owner: economy-stone-camp-floor-2 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-stone-camp-floor-3
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 80 and cannot reissue from pending goal 81
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 81 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 82 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-stone-camp-floor-3 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-stone-camp-floor-3 in ACTIVE; it is not PENDING.
+; Release: economy-stone-camp-floor-3 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-stone-camp-floor-2 1)
-    (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: stone c: 40)
-    (up-get-search-state byzantine-dark-stone-camp-search-state-2)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-2 1)
-    (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
-
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 0)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object byzantine-stone-camp-point)
-    (up-set-target-point byzantine-stone-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-2 626)
-)
-
-; economy-stone-camp-floor-3
-(defrule
-    (goal demand-economy-stone-camp-floor-3 633)
+    (goal demand-economy-stone-camp-floor-3 82)
     (building-type-count mining-camp >= 3)
 =>
     (set-goal demand-economy-stone-camp-floor-3 0)
 )
 
+; Native placement execution: economy-stone-camp-floor-3 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-stone-camp-floor-3 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (goal demand-economy-stone-camp-floor-3 83)
     (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-stone-camp-floor-3
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-stone-camp-floor-3 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 83)
+        (goal demand-economy-stone-camp-floor-3 81)
     )
     (building-type-count mining-camp >= 3)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 633)
+    (set-goal demand-economy-stone-camp-floor-3 82)
 )
 
+; Pending admission: economy-stone-camp-floor-3 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 83)
+        (goal demand-economy-stone-camp-floor-3 81)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 632)
+    (set-goal demand-economy-stone-camp-floor-3 81)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 83)
+        (goal demand-economy-stone-camp-floor-3 81)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 632)
+    (set-goal demand-economy-stone-camp-floor-3 81)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 83)
+        (goal demand-economy-stone-camp-floor-3 81)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
@@ -17909,99 +18332,80 @@
     (set-goal construction-retry-barrier-economy-stone-camp-floor-3 1)
 )
 
+; Native placement owner: economy-stone-camp-floor-3 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-stone-camp-floor-4
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 81 and cannot reissue from pending goal 82
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 82 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 83 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-stone-camp-floor-4 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-stone-camp-floor-4 in ACTIVE; it is not PENDING.
+; Release: economy-stone-camp-floor-4 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-stone-camp-floor-3 1)
-    (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: stone c: 40)
-    (up-get-search-state byzantine-dark-stone-camp-search-state-3)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-3 1)
-    (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
-
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 1)
-=>
-    (up-set-target-object search-remote c: 1)
-    (up-get-point position-object byzantine-stone-camp-point)
-    (up-set-target-point byzantine-stone-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-3 631)
-)
-
-; economy-stone-camp-floor-4
-(defrule
-    (goal demand-economy-stone-camp-floor-4 638)
+    (goal demand-economy-stone-camp-floor-4 83)
     (building-type-count mining-camp >= 4)
 =>
     (set-goal demand-economy-stone-camp-floor-4 0)
 )
 
+; Native placement execution: economy-stone-camp-floor-4 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-stone-camp-floor-4 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (goal demand-economy-stone-camp-floor-4 84)
     (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-stone-camp-floor-4
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-stone-camp-floor-4 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 84)
+        (goal demand-economy-stone-camp-floor-4 82)
     )
     (building-type-count mining-camp >= 4)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 638)
+    (set-goal demand-economy-stone-camp-floor-4 83)
 )
 
+; Pending admission: economy-stone-camp-floor-4 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 84)
+        (goal demand-economy-stone-camp-floor-4 82)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 637)
+    (set-goal demand-economy-stone-camp-floor-4 82)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 84)
+        (goal demand-economy-stone-camp-floor-4 82)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 637)
+    (set-goal demand-economy-stone-camp-floor-4 82)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 84)
+        (goal demand-economy-stone-camp-floor-4 82)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
@@ -18011,99 +18415,80 @@
     (set-goal construction-retry-barrier-economy-stone-camp-floor-4 1)
 )
 
+; Native placement owner: economy-stone-camp-floor-4 | action issuance is emitted by Native DUC
+; Pending diagnostics: economy-stone-camp-floor-5
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 82 and cannot reissue from pending goal 83
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 83 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 84 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-stone-camp-floor-5 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-stone-camp-floor-5 in ACTIVE; it is not PENDING.
+; Release: economy-stone-camp-floor-5 | COMPLETE -> RELEASED
 (defrule
-    (goal demand-economy-stone-camp-floor-4 1)
-    (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: stone c: 40)
-    (up-get-search-state byzantine-dark-stone-camp-search-state-4)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-4 1)
-    (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
-
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 2)
-=>
-    (up-set-target-object search-remote c: 2)
-    (up-get-point position-object byzantine-stone-camp-point)
-    (up-set-target-point byzantine-stone-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-4 636)
-)
-
-; economy-stone-camp-floor-5
-(defrule
-    (goal demand-economy-stone-camp-floor-5 668)
+    (goal demand-economy-stone-camp-floor-5 84)
     (building-type-count mining-camp >= 5)
 =>
     (set-goal demand-economy-stone-camp-floor-5 0)
 )
 
+; Native placement execution: economy-stone-camp-floor-5 | ISSUED -> up-build
 (defrule
-    (goal demand-economy-stone-camp-floor-5 0)
-    (and (current-age >= feudal-age) (resource-found stone))
+    (goal demand-economy-stone-camp-floor-5 85)
     (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 1)
+    (can-build mining-camp)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 1)
+    (up-build place-point 0 c: 584)
 )
 
+; Construction observation: economy-stone-camp-floor-5
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-stone-camp-floor-5 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
+        (goal demand-economy-stone-camp-floor-5 85)
+        (goal demand-economy-stone-camp-floor-5 83)
     )
     (building-type-count mining-camp >= 5)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 668)
+    (set-goal demand-economy-stone-camp-floor-5 84)
 )
 
+; Pending admission: economy-stone-camp-floor-5 | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
+        (goal demand-economy-stone-camp-floor-5 85)
+        (goal demand-economy-stone-camp-floor-5 83)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 667)
+    (set-goal demand-economy-stone-camp-floor-5 83)
 )
 
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
+        (goal demand-economy-stone-camp-floor-5 85)
+        (goal demand-economy-stone-camp-floor-5 83)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 667)
+    (set-goal demand-economy-stone-camp-floor-5 83)
 )
 
+; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
+        (goal demand-economy-stone-camp-floor-5 85)
+        (goal demand-economy-stone-camp-floor-5 83)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
@@ -18113,46 +18498,7 @@
     (set-goal construction-retry-barrier-economy-stone-camp-floor-5 1)
 )
 
-(defrule
-    (goal demand-economy-stone-camp-floor-5 1)
-    (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: stone c: 40)
-    (up-get-search-state byzantine-dark-stone-camp-search-state-5)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-5 1)
-    (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 3)
-=>
-    (up-set-target-object search-remote c: 3)
-    (up-get-point position-object byzantine-stone-camp-point)
-    (up-set-target-point byzantine-stone-camp-point)
-    (up-build place-point 0 c: mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-5 666)
-)
-
+; Native placement owner: economy-stone-camp-floor-5 | action issuance is emitted by Native DUC
 ; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
 ; Search is staged like the repaired gold-camp path: capture DUC search state first,
 ; then let the build rule consume the target only when the remote forage search
