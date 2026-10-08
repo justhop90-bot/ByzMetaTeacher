@@ -44,6 +44,54 @@ def _defrules(source: str) -> list[str]:
     return rules
 
 
+
+
+def _defconsts(source: str) -> dict[str, int]:
+    return {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            source,
+        )
+    }
+
+
+def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
+    definitions = _defconsts(source)
+    intervals: list[tuple[int, int, str]] = []
+
+    def resolve(token: str) -> int | None:
+        if re.fullmatch(r"-?\d+", token):
+            return int(token)
+        return definitions.get(token)
+
+    for match in re.finditer(
+        r"\(up-get-search-state\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 3, "SEARCH_STATE"))
+
+    for match in re.finditer(
+        r"\(up-get-point\s+position-object\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 1, "POINT_PAIR"))
+
+    for match in re.finditer(
+        r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value, "GOAL_SLOT"))
+
+    return list(dict.fromkeys(intervals))
+
+
 class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -53,6 +101,29 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
     def _active_rules(self, floor: int) -> list[str]:
         marker = f"(goal demand-economy-lumber-camp-floor-{floor} 1)"
         return [rule for rule in self.rules if marker in rule]
+
+    def test_compiler_owned_camp_duc_storage_does_not_overlap_hybrid_runtime_state(self):
+        header = "; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES"
+        end_marker = "; Narrow Dark Age second-mill rule:"
+        start = self.source.index(header)
+        end = self.source.index(end_marker, start)
+        camp = self.source[start:end]
+        outside = self.source[:start] + self.source[end:]
+
+        camp_intervals = _storage_intervals(camp)
+        runtime_intervals = _storage_intervals(outside)
+        collisions = [
+            (camp_interval, runtime_interval)
+            for camp_interval in camp_intervals
+            for runtime_interval in runtime_intervals
+            if camp_interval[0] <= runtime_interval[1]
+            and runtime_interval[0] <= camp_interval[1]
+        ]
+        self.assertFalse(
+            collisions,
+            "compiler-owned camp DUC storage overlaps hybrid runtime Goal storage: "
+            f"{collisions[:5]}",
+        )
 
     def test_first_lumber_camp_has_native_direct_build_fallback(self):
         rules = self._active_rules(1)
