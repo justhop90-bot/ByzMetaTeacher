@@ -403,7 +403,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
 
         pike_start = runtime.index("; Pending diagnostics: research-pikeman")
-        pike_end = runtime.index("; Pending diagnostics: research-elite-skirmisher", pike_start)
+        pike_end = runtime.index("; Pending diagnostics: research-double-bit-axe", pike_start)
         pike = runtime[pike_start:pike_end]
         self.assertIn("(current-age >= castle-age)", pike)
         self.assertIn("(can-research-with-escrow pikeman)", pike)
@@ -411,7 +411,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(research-completed 197)", pike)
 
         ram_start = runtime.index("; Pending diagnostics: research-capped-ram")
-        ram_end = runtime.index("; Pending diagnostics: research-siege-ram", ram_start)
+        ram_end = runtime.index("; Pending diagnostics: research-double-bit-axe", ram_start)
         ram = runtime[ram_start:ram_end]
         self.assertIn("(current-age >= imperial-age)", ram)
         self.assertNotIn("(current-age >= castle-age)", ram)
