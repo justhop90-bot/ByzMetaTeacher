@@ -163,7 +163,7 @@ class NativeDucPlan:
         return tuple(
             expression
             for rule in self.rules
-            for expression in (*rule.facts, *rule.actions)
+            for expression in (*rule.facts, *rule.actions, *rule.control_actions)
         )
 
     @property
