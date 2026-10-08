@@ -1007,13 +1007,6 @@ def community_strategy_demands(
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
-            if floor >= 2:
-                requirements = [
-                    active_expression,
-                    remote_expression,
-                    count_guard,
-                    f"(can-build {_slug(building.name)})",
-                ]
             building_token = _slug(building.name)
             action = f"(build {building_token})"
             witness = f"(building-type-count {_slug(building.name)} >= {floor})"
