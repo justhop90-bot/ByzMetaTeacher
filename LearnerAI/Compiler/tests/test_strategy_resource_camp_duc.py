@@ -43,7 +43,7 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                 place_facts = {expression.source for expression in place_rule.facts}
                 place_actions = {expression.source for expression in place_rule.actions}
 
-                expected_limit = 1 if floor == 1 else 40
+                expected_limit = 1 if (floor == 1 or (resource == "wood" and floor == 2)) else 40
                 self.assertIn(
                     f"(up-find-resource c: {resource} c: {expected_limit})",
                     search_actions,
@@ -140,7 +140,13 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
             ("stone", "mining-camp", 5),
         ):
             for floor in range(1, maximum + 1):
-                demand_name = f"economy-{resource}-camp-floor-{floor}"
+                demand_name = (
+                    f"economy-lumber-camp-floor-{floor}"
+                    if resource == "wood" and floor <= 2
+                    else f"economy-wood-camp-floor-{floor}"
+                    if resource == "wood"
+                    else f"economy-{resource}-camp-floor-{floor}"
+                )
                 self.assertNotIn(
                     f"; Action issuance: {demand_name} | ACTIVE -> ISSUED",
                     output,
