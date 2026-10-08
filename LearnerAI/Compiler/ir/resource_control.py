@@ -54,7 +54,6 @@ class EscrowOperation:
     within_rule_order: int = 0
     percentage: int | None = None
     target_demand: SemanticId | None = None
-    guard: str | None = None
     location: SourceLocation | None = None
 
     def __post_init__(self) -> None:
@@ -69,8 +68,6 @@ class EscrowOperation:
         if self.target_demand is not None:
             if not self.target_demand.source_unit.strip() or not self.target_demand.local_name.strip():
                 raise ValueError("targeted escrow release demand identity must be non-empty")
-        if self.guard is not None and not self.guard.strip():
-            raise ValueError("escrow operation guard must not be empty")
 
 
 NATIVE_ESCROW_RELEASE_COMMAND = "release-escrow"
@@ -132,10 +129,9 @@ class NativeEscrowPolicyPlan:
 
 @dataclass(frozen=True)
 class NativeEscrowReleasePlan:
-    """Typed compiler-owned release slice with an optional escrow policy package."""
+    """Typed compiler-owned plan for the promoted release-escrow slice."""
 
     operations: tuple[EscrowOperation, ...] = ()
-    policy_plan: NativeEscrowPolicyPlan | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.operations, tuple):
@@ -173,25 +169,14 @@ class NativeEscrowReleasePlan:
                 raise ValueError(
                     f"unsupported native escrow release resource '{operation.resource}'"
                 )
-        if self.policy_plan is not None and not isinstance(
-            self.policy_plan, NativeEscrowPolicyPlan
-        ):
-            raise TypeError(
-                "native escrow release policy_plan must be a NativeEscrowPolicyPlan"
-            )
 
     @property
     def empty(self) -> bool:
-        return not self.operations and (
-            self.policy_plan is None or self.policy_plan.empty
-        )
+        return not self.operations
 
     @property
     def commands(self) -> tuple[str, ...]:
-        commands = {operation.command for operation in self.operations}
-        if self.policy_plan is not None:
-            commands.update(self.policy_plan.commands)
-        return tuple(sorted(commands))
+        return tuple(sorted({operation.command for operation in self.operations}))
 
 
 class EscrowReserveKind(str, Enum):

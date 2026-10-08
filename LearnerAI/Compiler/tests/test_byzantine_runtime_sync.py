@@ -11,40 +11,7 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 )
 
 
-RUNTIME = sync_runtime.RUNTIME
-GENERATED = sync_runtime.GENERATED
-
-
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
-
-    def test_synchronization_installs_pacific_transport_duc_and_storage(self) -> None:
-        from pathlib import Path
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            runtime_path = root / "Byzantine.per"
-            generated_path = root / "Byzantine.generated.per"
-            runtime_path.write_text(RUNTIME.read_text(encoding="utf-8"), encoding="utf-8")
-            generated = GENERATED.read_text(encoding="utf-8")
-            for name in (
-                "byzantine-pacific-transport-target",
-                "byzantine-pacific-transport-select",
-                "byzantine-pacific-transport-garrison",
-                "byzantine-pacific-transport-load-witness",
-                "byzantine-pacific-transport-transit-probe",
-                "byzantine-pacific-transport-move",
-                "byzantine-pacific-transport-unload",
-            ):
-                self.assertIn(f"; Native DUC rule: {name}", generated)
-            synchronized = sync_runtime.synchronize()
-            runtime = RUNTIME.read_text(encoding="utf-8")
-            self.assertTrue(synchronized or "byzantine-pacific-transport-target" in runtime)
-            self.assertIn("; Native DUC rule: byzantine-pacific-transport-target", runtime)
-            self.assertIn("(up-target-objects 1 7 -1 -1)", runtime)
-            self.assertIn("(up-target-point 0 action-move -1 -1)", runtime)
-            self.assertIn("(up-target-point 0 9 -1 -1)", runtime)
-            self.assertIn("(defconst pacific-opening-transport-point ", runtime)
 
     def test_synchronization_installs_canonical_water_execution_control(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -104,21 +71,6 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "(or (map-type islands) (map-type pacific-islands))",
             synchronized,
         )
-        for identity in (
-            "strategic-arbitration-observation-enable-strategy-water-islands",
-            "strategic-arbitration-observation-disable-strategy-water-islands",
-        ):
-            marker = f"; Native control rule: {identity}"
-            start = synchronized.index(marker)
-            end = synchronized.index("\n; ", start + len(marker))
-            block = synchronized[start:end]
-            self.assertIn(
-                "(or (map-type islands) (map-type pacific-islands))",
-                block,
-            )
-            self.assertNotIn("(map-type islands)", block.replace(
-                "(or (map-type islands) (map-type pacific-islands))", ""
-            ))
         self.assertIn(
             "; Native control rule: transport-objective-open",
             synchronized,
@@ -135,12 +87,6 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "; Native control rule: water-posture-fishing",
             synchronized,
         )
-        self.assertIn(
-            "; Native control rule: water-boat-exploration-enable",
-            synchronized,
-        )
-        self.assertIn("(defconst sn-number-boat-explore-groups 61)", synchronized)
-        self.assertIn("(set-strategic-number sn-number-boat-explore-groups 1)", synchronized)
         self.assertNotIn(
             "(defrule\\n    (map-type islands)\\n=>\\n    (set-goal water-posture 4)",
             synchronized,
@@ -190,20 +136,6 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
                 len(re.findall(rf"^\(defconst {re.escape(name)} \d+\)$", synchronized, re.MULTILINE)),
                 1,
             )
-
-    def test_synchronization_copies_native_islands_queue_strategic_number_defconsts(self) -> None:
-        generated = (
-            "(defconst opening-plan 1)\n"
-            "(defconst sn-enable-training-queue 264)\n"
-            "(defconst sn-enable-research-queue 306)\n"
-        )
-        runtime = "(defconst opening-plan 1)\n"
-        synchronized = sync_runtime._ensure_native_strategic_number_defconsts(
-            runtime,
-            generated,
-        )
-        self.assertIn("(defconst sn-enable-training-queue 264)", synchronized)
-        self.assertIn("(defconst sn-enable-research-queue 306)", synchronized)
 
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -324,54 +256,8 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         start = synchronized.index("; Persistent civilian production")
         end = synchronized.index("; Pending diagnostics: early-defensive-spears", start)
         section = synchronized[start:end]
-        self.assertIn("(can-afford-research feudal-age)", section)
-        self.assertNotIn("(can-research-with-escrow feudal-age)", section)
         self.assertIn("(can-afford-research castle-age)", section)
         self.assertNotIn("(can-research-with-escrow castle-age)", section)
-
-    def test_synchronization_releases_failed_feudal_resource_claim_before_retry(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            runtime_path = root / "Byzantine.per"
-            generated_path = root / "generated.per"
-            runtime_path.write_text(
-                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
-                encoding="utf-8",
-            )
-            generated_path.write_text(
-                sync_runtime.GENERATED.read_text(encoding="utf-8"),
-                encoding="utf-8",
-            )
-
-            original_runtime = sync_runtime.RUNTIME
-            original_generated = sync_runtime.GENERATED
-            sync_runtime.RUNTIME = runtime_path
-            sync_runtime.GENERATED = generated_path
-            try:
-                sync_runtime.synchronize()
-                synchronized = runtime_path.read_text(encoding="utf-8")
-                sync_runtime.synchronize()
-                second = runtime_path.read_text(encoding="utf-8")
-            finally:
-                sync_runtime.RUNTIME = original_runtime
-                sync_runtime.GENERATED = original_generated
-
-        marker = "; Recovery: feudal-resource-claim | FAILED ISSUANCE -> FREE"
-        self.assertIn(marker, synchronized)
-        self.assertEqual(1, synchronized.count(marker))
-        self.assertEqual(synchronized, second)
-        recovery_start = synchronized.index(marker)
-        recovery_end = synchronized.index(
-            "; RETRY | ISSUED/PENDING -> ACTIVE",
-            recovery_start,
-        )
-        recovery = synchronized[recovery_start:recovery_end]
-        self.assertIn("(goal byzantine-resource-claim 1)", recovery)
-        self.assertIn("(goal demand-feudal-transition 83)", recovery)
-        self.assertIn("(not (up-research-status c: 101 >= 2))", recovery)
-        self.assertIn("(not (current-age >= feudal-age))", recovery)
-        self.assertIn("(set-goal byzantine-resource-claim 0)", recovery)
-
 
     def test_synchronization_installs_first_dock_construction_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

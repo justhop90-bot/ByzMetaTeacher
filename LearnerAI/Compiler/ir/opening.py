@@ -16,7 +16,6 @@ class OpeningFamily(str, Enum):
     WATER_ECONOMY = "WATER_ECONOMY"
     WATER_CONTROL = "WATER_CONTROL"
     EMERGENCY_RECOVERY = "EMERGENCY_RECOVERY"
-    PACIFIC_LAND = "PACIFIC_LAND"
 
 
 class OpeningPlanValue(IntEnum):
@@ -27,7 +26,6 @@ class OpeningPlanValue(IntEnum):
     WATER_ECONOMY = 4
     WATER_CONTROL = 5
     EMERGENCY_RECOVERY = 6
-    PACIFIC_LAND = 7
 
 
 @dataclass(frozen=True)
@@ -120,7 +118,7 @@ def lower_opening_selector(
 
     opening_plan_selected = (
         f"(and (up-compare-goal {plan.state_name} >= 1) "
-        f"(up-compare-goal {plan.state_name} <= 7))"
+        f"(up-compare-goal {plan.state_name} <= 5))"
     )
     water_plan_selected = (
         f"(or (goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY}) "
@@ -238,26 +236,8 @@ def lower_opening_selector(
             ),
         ),
         NativeControlRule(
-            "opening-selector-pacific-land-first",
-            facts=native_facts(
-                unselected,
-                profile.observation("strategy-pacific-islands").expression,
-            ),
-            actions=(
-                parse_expression(
-                    f"(set-goal {plan.state_name} {OpeningPlanValue.PACIFIC_LAND})",
-                    SourceLocation(1),
-                ),
-            ),
-        ),
-        NativeControlRule(
             "opening-selector-water-control",
-            facts=native_facts(
-                unselected,
-                f"(not {profile.observation('strategy-pacific-islands').expression})",
-                water,
-                naval,
-            ),
+            facts=native_facts(unselected, water, naval),
             actions=(
                 parse_expression(
                     f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_CONTROL})",
@@ -267,12 +247,7 @@ def lower_opening_selector(
         ),
         NativeControlRule(
             "opening-selector-water-economy",
-            facts=native_facts(
-                unselected,
-                f"(not {profile.observation('strategy-pacific-islands').expression})",
-                water,
-                f"(not {naval})",
-            ),
+            facts=native_facts(unselected, water, f"(not {naval})"),
             actions=(
                 parse_expression(
                     f"(set-goal {plan.state_name} {OpeningPlanValue.WATER_ECONOMY})",
@@ -433,7 +408,6 @@ def lower_opening_selector(
         ("fast-castle", OpeningPlanValue.FAST_CASTLE),
         ("water-economy", OpeningPlanValue.WATER_ECONOMY),
         ("water-control", OpeningPlanValue.WATER_CONTROL),
-        ("pacific-land-first", OpeningPlanValue.PACIFIC_LAND),
     )
     for label, value in recovery_plans:
         rules.append(

@@ -414,11 +414,8 @@ def operational_contracts_for_escrow_plan(
     plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan,
 ) -> tuple[OperationalLoopContract, ...]:
     contracts: list[OperationalLoopContract] = []
-    operations = tuple(plan.operations)
-    if isinstance(plan, NativeEscrowReleasePlan) and plan.policy_plan is not None:
-        operations += plan.policy_plan.operations
 
-    for index, operation in enumerate(operations):
+    for index, operation in enumerate(plan.operations):
         state_id = (
             f"escrow:{operation.contract_identity}:"
             f"{operation.resource}:{index}"
