@@ -75,7 +75,8 @@ CAMP_DUC_IDENTITIES = tuple(
     for phase in ("search", "place")
 )
 
-CAMP_RUNTIME_START = "; Pending diagnostics: economy-lumber-camp-floor-1"
+CAMP_RUNTIME_HEADER = "; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES"
+CAMP_RUNTIME_LEGACY_START = "; Pending diagnostics: economy-lumber-camp-floor-1"
 CAMP_RUNTIME_END = "; Narrow Dark Age second-mill rule:"
 
 
@@ -209,11 +210,17 @@ def _resource_camp_block(generated: str) -> str:
 
 def _replace_resource_camp_section(runtime: str, generated: str) -> str:
     generated_block = _resource_camp_block(generated).rstrip()
-    start = runtime.find(CAMP_RUNTIME_START)
-    if start < 0:
-        raise RuntimeError(
-            f"runtime artifact is missing camp section start: {CAMP_RUNTIME_START}"
-        )
+    header_pos = runtime.find(CAMP_RUNTIME_HEADER)
+    if header_pos >= 0:
+        start = runtime.rfind(";----------------------------------------------------------------", 0, header_pos)
+        if start < 0:
+            start = header_pos
+    else:
+        start = runtime.find(CAMP_RUNTIME_LEGACY_START)
+        if start < 0:
+            raise RuntimeError(
+                "runtime artifact is missing compiler-owned or legacy camp section start"
+            )
     end = runtime.find(CAMP_RUNTIME_END, start)
     if end < 0:
         raise RuntimeError(
