@@ -542,6 +542,10 @@ if __name__ == "__main__":
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-escrow-true", synchronized)
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-true", synchronized)
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-escrow-true", synchronized)
+        self.assertLess(
+            synchronized.index("; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-escrow-false"),
+            synchronized.index("; Native diagnostic control: byzantine-age-transition-trace-rearm"),
+        )
         self.assertIn("(up-chat-data-to-self", synchronized)
         for field in (
             "BTTRACE CASTLE state=%d",
