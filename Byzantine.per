@@ -8561,7 +8561,7 @@
 
 ; Native control rule: economy-controller-select-water-economy
 (defrule
-    (and (current-age >= feudal-age) (current-age < castle-age))
+    (and (current-age >= dark-age) (current-age < castle-age))
     (not (players-unit-type-count any-enemy knight >= 3))
     (not (players-unit-type-count any-enemy archer-line >= 4))
     (not (players-unit-type-count any-enemy militia-line >= 5))
@@ -8575,7 +8575,7 @@
 
 ; Native control rule: economy-controller-select-water-control
 (defrule
-    (and (current-age >= feudal-age) (current-age < castle-age))
+    (and (current-age >= dark-age) (current-age < castle-age))
     (not (players-unit-type-count any-enemy knight >= 3))
     (not (players-unit-type-count any-enemy archer-line >= 4))
     (not (players-unit-type-count any-enemy militia-line >= 5))

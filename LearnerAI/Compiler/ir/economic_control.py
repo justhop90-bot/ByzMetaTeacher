@@ -166,7 +166,8 @@ def lower_economy_controller(
         else "(map-type pacific-islands)"
     )
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
-    pacific_window = "(and (current-age >= dark-age) (current-age < castle-age))"
+    pre_castle_window = "(and (current-age >= dark-age) (current-age < castle-age))"
+    pacific_window = pre_castle_window
     no_knight_pressure = "(not (players-unit-type-count any-enemy knight >= 3))"
     no_ranged_pressure = "(not (players-unit-type-count any-enemy archer-line >= 4))"
     no_infantry_pressure = "(not (players-unit-type-count any-enemy militia-line >= 5))"
@@ -262,12 +263,12 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            (feudal_window, *no_pressure, opening(4), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
+            (pre_castle_window, *no_pressure, opening(4), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            (feudal_window, *no_pressure, opening(5), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
+            (pre_castle_window, *no_pressure, opening(5), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-base",
