@@ -554,6 +554,8 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             "BTTRACE FEUDAL research-status=%d",
             "BTTRACE FEUDAL can-research=%d",
             "BTTRACE FEUDAL can-research-with-escrow=%d",
+            "BTTRACE FEUDAL tc-queue=%d",
+            "BTTRACE FEUDAL tc-action=%d",
             "BTTRACE CASTLE state=%d",
             "BTTRACE CASTLE retry=%d",
             "BTTRACE CASTLE age=%d",
@@ -576,6 +578,11 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         ):
             self.assertIn(field, synchronized)
         self.assertIn("(current-age == dark-age)", synchronized)
+        self.assertIn("(defconst object-data-train-count 31)", synchronized)
+        self.assertIn("(up-get-object-data object-data-train-count bt-age-transition-trace-tc-queue-count)", synchronized)
+        self.assertIn("(up-get-object-data object-data-action bt-age-transition-trace-tc-action)", synchronized)
+        self.assertIn("(up-find-local c: town-center c: 1)", synchronized)
+        self.assertIn("(up-target-objects 1 action-default -1 -1)", synchronized)
         self.assertIn("(up-research-status c: 101 == 4)", synchronized)
         self.assertIn("(up-research-status c: 101 == 3)", synchronized)
         self.assertIn("(up-research-status c: 101 == 2)", synchronized)
