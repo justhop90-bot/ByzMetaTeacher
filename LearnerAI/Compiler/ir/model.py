@@ -257,6 +257,7 @@ class SemanticDemand:
     cancellation: CancellationStateContract | None = None
     action_issuance: ActionIssuance | None = None
     native_placement: bool = False
+    native_fallback_requirements: tuple[str, ...] = ()
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
