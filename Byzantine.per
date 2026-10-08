@@ -1122,6 +1122,36 @@
 (defconst pending-imperial-trash-hussar-high 16187)
 (defconst complete-imperial-trash-hussar-high 16188)
 (defconst production-retry-barrier-imperial-trash-hussar-high 15939)
+(defconst demand-castle-pikeman-floor 16011)
+(defconst issued-castle-pikeman-floor 16014)
+(defconst pending-castle-pikeman-floor 16012)
+(defconst complete-castle-pikeman-floor 16013)
+(defconst production-retry-barrier-castle-pikeman-floor 373)
+(defconst demand-castle-battering-ram-floor 16015)
+(defconst issued-castle-battering-ram-floor 16018)
+(defconst pending-castle-battering-ram-floor 16016)
+(defconst complete-castle-battering-ram-floor 16017)
+(defconst production-retry-barrier-castle-battering-ram-floor 374)
+(defconst demand-research-pikeman 16021)
+(defconst issued-research-pikeman 16024)
+(defconst pending-research-pikeman 16022)
+(defconst complete-research-pikeman 16023)
+(defconst research-retry-barrier-research-pikeman 375)
+(defconst demand-research-capped-ram 16025)
+(defconst issued-research-capped-ram 16028)
+(defconst pending-research-capped-ram 16026)
+(defconst complete-research-capped-ram 16027)
+(defconst research-retry-barrier-research-capped-ram 377)
+(defconst byzantine-dark-stone-camp-search-state-2 15860)
+(defconst byzantine-dark-stone-camp-search-remote-count-2 15863)
+(defconst byzantine-dark-stone-camp-search-state-3 15864)
+(defconst byzantine-dark-stone-camp-search-remote-count-3 15867)
+(defconst byzantine-dark-stone-camp-search-state-4 15868)
+(defconst byzantine-dark-stone-camp-search-remote-count-4 15871)
+(defconst byzantine-dark-stone-camp-search-state-5 15872)
+(defconst byzantine-dark-stone-camp-search-remote-count-5 15875)
+(defconst byzantine-stone-camp-point 15876)
+
 (defrule
     (goal byzantine-static-defense-score-state -1)
 =>
@@ -17199,408 +17229,408 @@
     (set-goal demand-economy-gold-camp-floor-1 621)
 )
 
-; economy-gold-camp-floor-2
+; economy-stone-camp-floor-2
 (defrule
-    (goal demand-economy-gold-camp-floor-2 628)
+    (goal demand-economy-stone-camp-floor-2 628)
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 0)
+    (set-goal demand-economy-stone-camp-floor-2 0)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-2 0)
-    (resource-found gold)
+    (goal demand-economy-stone-camp-floor-2 0)
+    (and (current-age >= feudal-age) (resource-found stone))
     (not (building-type-count mining-camp >= 2))
 =>
-    (set-goal demand-economy-gold-camp-floor-2 1)
+    (set-goal demand-economy-stone-camp-floor-2 1)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 628)
+    (set-goal demand-economy-stone-camp-floor-2 628)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 627)
+    (set-goal demand-economy-stone-camp-floor-2 627)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-2 627)
+    (set-goal demand-economy-stone-camp-floor-2 627)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-2 626)
-        (goal demand-economy-gold-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 626)
+        (goal demand-economy-stone-camp-floor-2 627)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
 =>
-    (set-goal demand-economy-gold-camp-floor-2 1)
-    (set-goal construction-retry-barrier-economy-gold-camp-floor-2 1)
+    (set-goal demand-economy-stone-camp-floor-2 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-2 1)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-2 1)
+    (goal demand-economy-stone-camp-floor-2 1)
     (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-2)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state byzantine-dark-stone-camp-search-state-2)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-2 1)
+    (goal demand-economy-stone-camp-floor-2 1)
     (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
     (up-set-target-object search-remote c: 1)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-get-point position-object byzantine-stone-camp-point)
+    (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-2 626)
+    (set-goal demand-economy-stone-camp-floor-2 626)
 )
 
-; economy-gold-camp-floor-3
+; economy-stone-camp-floor-3
 (defrule
-    (goal demand-economy-gold-camp-floor-3 633)
+    (goal demand-economy-stone-camp-floor-3 633)
     (building-type-count mining-camp >= 3)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 0)
+    (set-goal demand-economy-stone-camp-floor-3 0)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-3 0)
-    (resource-found gold)
+    (goal demand-economy-stone-camp-floor-3 0)
+    (and (current-age >= feudal-age) (resource-found stone))
     (not (building-type-count mining-camp >= 3))
 =>
-    (set-goal demand-economy-gold-camp-floor-3 1)
+    (set-goal demand-economy-stone-camp-floor-3 1)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (building-type-count mining-camp >= 3)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 633)
+    (set-goal demand-economy-stone-camp-floor-3 633)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 632)
+    (set-goal demand-economy-stone-camp-floor-3 632)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-3 632)
+    (set-goal demand-economy-stone-camp-floor-3 632)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-3 631)
-        (goal demand-economy-gold-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 631)
+        (goal demand-economy-stone-camp-floor-3 632)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
 =>
-    (set-goal demand-economy-gold-camp-floor-3 1)
-    (set-goal construction-retry-barrier-economy-gold-camp-floor-3 1)
+    (set-goal demand-economy-stone-camp-floor-3 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-3 1)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-3 1)
+    (goal demand-economy-stone-camp-floor-3 1)
     (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-3)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state byzantine-dark-stone-camp-search-state-3)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-3 1)
+    (goal demand-economy-stone-camp-floor-3 1)
     (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 2)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 2)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
     (up-set-target-object search-remote c: 2)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-get-point position-object byzantine-stone-camp-point)
+    (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-3 631)
+    (set-goal demand-economy-stone-camp-floor-3 631)
 )
 
-; economy-gold-camp-floor-4
+; economy-stone-camp-floor-4
 (defrule
-    (goal demand-economy-gold-camp-floor-4 638)
+    (goal demand-economy-stone-camp-floor-4 638)
     (building-type-count mining-camp >= 4)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 0)
+    (set-goal demand-economy-stone-camp-floor-4 0)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-4 0)
-    (resource-found gold)
+    (goal demand-economy-stone-camp-floor-4 0)
+    (and (current-age >= feudal-age) (resource-found stone))
     (not (building-type-count mining-camp >= 4))
 =>
-    (set-goal demand-economy-gold-camp-floor-4 1)
+    (set-goal demand-economy-stone-camp-floor-4 1)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (building-type-count mining-camp >= 4)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 638)
+    (set-goal demand-economy-stone-camp-floor-4 638)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 637)
+    (set-goal demand-economy-stone-camp-floor-4 637)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-4 637)
+    (set-goal demand-economy-stone-camp-floor-4 637)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-4 636)
-        (goal demand-economy-gold-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 636)
+        (goal demand-economy-stone-camp-floor-4 637)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
 =>
-    (set-goal demand-economy-gold-camp-floor-4 1)
-    (set-goal construction-retry-barrier-economy-gold-camp-floor-4 1)
+    (set-goal demand-economy-stone-camp-floor-4 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-4 1)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-4 1)
+    (goal demand-economy-stone-camp-floor-4 1)
     (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-4)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state byzantine-dark-stone-camp-search-state-4)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-4 1)
+    (goal demand-economy-stone-camp-floor-4 1)
     (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 3)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 3)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
     (up-set-target-object search-remote c: 3)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-get-point position-object byzantine-stone-camp-point)
+    (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-4 636)
+    (set-goal demand-economy-stone-camp-floor-4 636)
 )
 
-; economy-gold-camp-floor-5
+; economy-stone-camp-floor-5
 (defrule
-    (goal demand-economy-gold-camp-floor-5 643)
+    (goal demand-economy-stone-camp-floor-5 643)
     (building-type-count mining-camp >= 5)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 0)
+    (set-goal demand-economy-stone-camp-floor-5 0)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-5 0)
-    (resource-found gold)
+    (goal demand-economy-stone-camp-floor-5 0)
+    (and (current-age >= feudal-age) (resource-found stone))
     (not (building-type-count mining-camp >= 5))
 =>
-    (set-goal demand-economy-gold-camp-floor-5 1)
+    (set-goal demand-economy-stone-camp-floor-5 1)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 641)
+        (goal demand-economy-stone-camp-floor-5 642)
     )
     (building-type-count mining-camp >= 5)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 643)
+    (set-goal demand-economy-stone-camp-floor-5 643)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 641)
+        (goal demand-economy-stone-camp-floor-5 642)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 642)
+    (set-goal demand-economy-stone-camp-floor-5 642)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 641)
+        (goal demand-economy-stone-camp-floor-5 642)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-gold-camp-floor-5 642)
+    (set-goal demand-economy-stone-camp-floor-5 642)
 )
 
 (defrule
     (or
-        (goal demand-economy-gold-camp-floor-5 641)
-        (goal demand-economy-gold-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 641)
+        (goal demand-economy-stone-camp-floor-5 642)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
 =>
-    (set-goal demand-economy-gold-camp-floor-5 1)
-    (set-goal construction-retry-barrier-economy-gold-camp-floor-5 1)
+    (set-goal demand-economy-stone-camp-floor-5 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-5 1)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-5 1)
+    (goal demand-economy-stone-camp-floor-5 1)
     (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
+    (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
     (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: gold c: 40)
-    (up-get-search-state byzantine-dark-gold-camp-search-state-5)
+    (up-find-resource c: stone c: 40)
+    (up-get-search-state byzantine-dark-stone-camp-search-state-5)
     (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
 )
 
 (defrule
-    (goal demand-economy-gold-camp-floor-5 1)
+    (goal demand-economy-stone-camp-floor-5 1)
     (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
-    (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 4)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 4)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
     (up-set-target-object search-remote c: 4)
-    (up-get-point position-object byzantine-dark-gold-camp-point)
-    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-get-point position-object byzantine-stone-camp-point)
+    (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-gold-camp-floor-5 641)
+    (set-goal demand-economy-stone-camp-floor-5 641)
 )
 
 ; economy-stone-camp-floor-1
@@ -21775,6 +21805,110 @@
 ; Unscored plain Bombard Tower issuance is intentionally retired.
 ; The scored resource-point and fortified-front executors above own construction.
 
+; Pending diagnostics: research-pikeman
+(defrule
+    (goal demand-research-pikeman 16023)
+    (research-completed 197)
+=>
+    (set-goal demand-research-pikeman 0)
+)
+(defrule
+    (or
+        (goal demand-research-pikeman 16024)
+        (goal demand-research-pikeman 16022)
+    )
+    (research-completed 197)
+=>
+    (set-goal demand-research-pikeman 16023)
+)
+(defrule
+    (or
+        (goal demand-research-pikeman 16024)
+        (goal demand-research-pikeman 16022)
+    )
+    (not (research-completed 197))
+    (up-research-status c: 197 >= 2)
+=>
+    (set-goal demand-research-pikeman 16022)
+)
+(defrule
+    (or
+        (goal demand-research-pikeman 16024)
+        (goal demand-research-pikeman 16022)
+    )
+    (not (research-completed 197))
+    (not (up-research-status c: 197 >= 2))
+=>
+    (set-goal demand-research-pikeman 1)
+    (set-goal research-retry-barrier-research-pikeman 1)
+)
+(defrule
+    (goal demand-research-pikeman 1)
+    (not (research-completed 197))
+    (goal research-retry-barrier-research-pikeman 0)
+    (not (up-research-status c: 197 >= 2))
+    (current-age >= castle-age)
+    (unit-type-count 93 >= 6)
+    (can-research-with-escrow pikeman)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research pikeman)
+    (set-goal demand-research-pikeman 16024)
+)
+
+; Pending diagnostics: research-capped-ram
+(defrule
+    (goal demand-research-capped-ram 16027)
+    (research-completed 96)
+=>
+    (set-goal demand-research-capped-ram 0)
+)
+(defrule
+    (or
+        (goal demand-research-capped-ram 16028)
+        (goal demand-research-capped-ram 16026)
+    )
+    (research-completed 96)
+=>
+    (set-goal demand-research-capped-ram 16027)
+)
+(defrule
+    (or
+        (goal demand-research-capped-ram 16028)
+        (goal demand-research-capped-ram 16026)
+    )
+    (not (research-completed 96))
+    (up-research-status c: 96 >= 2)
+=>
+    (set-goal demand-research-capped-ram 16026)
+)
+(defrule
+    (or
+        (goal demand-research-capped-ram 16028)
+        (goal demand-research-capped-ram 16026)
+    )
+    (not (research-completed 96))
+    (not (up-research-status c: 96 >= 2))
+=>
+    (set-goal demand-research-capped-ram 1)
+    (set-goal research-retry-barrier-research-capped-ram 1)
+)
+(defrule
+    (goal demand-research-capped-ram 1)
+    (not (research-completed 96))
+    (goal research-retry-barrier-research-capped-ram 0)
+    (not (up-research-status c: 96 >= 2))
+    (current-age >= imperial-age)
+    (unit-type-count-total ram-line >= 2)
+    (can-research-with-escrow capped-ram)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research capped-ram)
+    (set-goal demand-research-capped-ram 16028)
+)
+
 ; Pending diagnostics: research-double-bit-axe
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 104 and cannot reissue from pending goal 105
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 105 is active
@@ -24734,6 +24868,124 @@
     (train bombard-cannon)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-bombard-floor 85)
+)
+
+; Pending diagnostics: castle-pikeman-floor
+(defrule
+    (goal demand-castle-pikeman-floor 16013)
+    (unit-type-count pikeman >= 6)
+=>
+    (set-goal demand-castle-pikeman-floor 0)
+)
+(defrule
+    (goal demand-castle-pikeman-floor 0)
+    (not (unit-type-count pikeman >= 6))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-pikeman-floor 1)
+)
+(defrule
+    (or
+        (goal demand-castle-pikeman-floor 16014)
+        (goal demand-castle-pikeman-floor 16012)
+    )
+    (unit-type-count pikeman >= 6)
+=>
+    (set-goal demand-castle-pikeman-floor 16013)
+)
+(defrule
+    (or
+        (goal demand-castle-pikeman-floor 16014)
+        (goal demand-castle-pikeman-floor 16012)
+    )
+    (not (unit-type-count pikeman >= 6))
+    (up-pending-objects c: 358 >= 1)
+=>
+    (set-goal demand-castle-pikeman-floor 16012)
+)
+(defrule
+    (or
+        (goal demand-castle-pikeman-floor 16014)
+        (goal demand-castle-pikeman-floor 16012)
+    )
+    (not (unit-type-count pikeman >= 6))
+    (not (up-pending-objects c: 358 >= 1))
+=>
+    (set-goal demand-castle-pikeman-floor 1)
+    (set-goal production-retry-barrier-castle-pikeman-floor 373)
+)
+(defrule
+    (goal demand-castle-pikeman-floor 1)
+    (not (unit-type-count pikeman >= 6))
+    (goal production-retry-barrier-castle-pikeman-floor 0)
+    (not (up-pending-objects c: 358 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= castle-age)
+    (can-train-with-escrow pikeman)
+    (unit-type-count-total pikeman < 6)
+=>
+    (train pikeman)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-pikeman-floor 16014)
+)
+
+; Pending diagnostics: castle-battering-ram-floor
+(defrule
+    (goal demand-castle-battering-ram-floor 16017)
+    (unit-type-count battering-ram-line >= 2)
+=>
+    (set-goal demand-castle-battering-ram-floor 0)
+)
+(defrule
+    (goal demand-castle-battering-ram-floor 0)
+    (not (unit-type-count battering-ram-line >= 2))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-battering-ram-floor 1)
+)
+(defrule
+    (or
+        (goal demand-castle-battering-ram-floor 16018)
+        (goal demand-castle-battering-ram-floor 16016)
+    )
+    (unit-type-count battering-ram-line >= 2)
+=>
+    (set-goal demand-castle-battering-ram-floor 16017)
+)
+(defrule
+    (or
+        (goal demand-castle-battering-ram-floor 16018)
+        (goal demand-castle-battering-ram-floor 16016)
+    )
+    (not (unit-type-count battering-ram-line >= 2))
+    (up-pending-objects c: 1258 >= 1)
+=>
+    (set-goal demand-castle-battering-ram-floor 16016)
+)
+(defrule
+    (or
+        (goal demand-castle-battering-ram-floor 16018)
+        (goal demand-castle-battering-ram-floor 16016)
+    )
+    (not (unit-type-count battering-ram-line >= 2))
+    (not (up-pending-objects c: 1258 >= 1))
+=>
+    (set-goal demand-castle-battering-ram-floor 1)
+    (set-goal production-retry-barrier-castle-battering-ram-floor 374)
+)
+(defrule
+    (goal demand-castle-battering-ram-floor 1)
+    (not (unit-type-count battering-ram-line >= 2))
+    (goal production-retry-barrier-castle-battering-ram-floor 0)
+    (not (up-pending-objects c: 1258 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= castle-age)
+    (can-train-with-escrow battering-ram-line)
+    (unit-type-count-total battering-ram-line < 2)
+=>
+    (train battering-ram-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-battering-ram-floor 16018)
 )
 
 ; Pending diagnostics: castle-monk-floor
