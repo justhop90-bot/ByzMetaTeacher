@@ -755,6 +755,10 @@ def emit(
                 out.append(
                     f"    {_render_duc_expression('ACTION', expression_index, expression)}"
                 )
+            for control_action in current_rule.control_actions:
+                out.append(
+                    f"    {_render_runtime_expression(control_action)}"
+                )
             out += [")", ""]
 
     if native_attack_plan is not None and not native_attack_plan.empty:
