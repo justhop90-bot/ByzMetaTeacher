@@ -356,6 +356,25 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
         self.assertEqual(demand.target.minimum, 2)
 
+    def test_checked_in_runtime_age_transition_issuance_uses_native_feasibility(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        castle_start = runtime.index("; Action issuance: Castle Age research")
+        castle_end = runtime.index("; Resource-claim cleanup after Castle Age witness.", castle_start)
+        castle_block = runtime[castle_start:castle_end]
+        self.assertNotIn("(unit-type-count-total villager >= bt-castle-age-villager-maturity)", castle_block)
+        self.assertNotIn("(building-type-count-total blacksmith >= 1)", castle_block)
+        self.assertNotIn("(building-type-count-total market >= 1)", castle_block)
+        self.assertIn("(can-research-with-escrow castle-age)", castle_block)
+
+        imperial_start = runtime.index("; Action issuance: imperial-conversion | ACTIVE -> ISSUED")
+        imperial_end = runtime.index("; Age handoff: Feudal military package ownership ends at Castle.", imperial_start)
+        imperial_block = runtime[imperial_start:imperial_end]
+        self.assertNotIn("(unit-type-count-total villager >= bt-imperial-age-villager-maturity)", imperial_block)
+        self.assertNotIn("(building-type-count-total university >= 1)", imperial_block)
+        self.assertIn("(can-research-with-escrow imperial-age)", imperial_block)
+
     def test_checked_in_runtime_preserves_maturity_aware_villager_production(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
@@ -480,7 +499,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(f"(not {castle_bank_ready})", water_economy_text)
         self.assertIn(f"(not {castle_bank_ready})", water_control_text)
 
-    def test_castle_age_transition_is_compiler_owned_and_protected(self):
+    def test_castle_age_transition_executes_from_native_feasibility_only(self):
         profile = build_byzantine_strategy(self.effective)
         transition = profile.demand("castle-age-transition")
 
@@ -488,13 +507,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             tuple(transition.execution.requirements),
             (
                 "(current-age == feudal-age)",
-                "(unit-type-count-total villager >= 28)",
-                "(building-type-count-total blacksmith >= 1)",
-                "(building-type-count-total market >= 1)",
                 "(can-research-with-escrow castle-age)",
             ),
         )
         self.assertEqual(transition.execution.action, "(research castle-age)")
+        self.assertEqual(transition.execution.witness, "(current-age >= castle-age)")
         self.assertEqual(
             transition.execution.escrow_release_resources,
             (Resource.FOOD, Resource.GOLD),
@@ -506,6 +523,39 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             ((Resource.FOOD, 800), (Resource.GOLD, 200)),
         )
+        admissibility = " ".join(item.label for item in transition.admissibility)
+        self.assertIn("28 villagers", admissibility)
+        self.assertIn("Blacksmith + Market", admissibility)
+
+        compiled = compile_strategy_profile(profile, self.effective)
+        castle_start = compiled.index("; Action issuance: castle-age-transition")
+        castle_end = compiled.index("; Action issuance:", castle_start + 1)
+        castle_block = compiled[castle_start:castle_end]
+        self.assertNotIn("(unit-type-count-total villager >= 28)", castle_block)
+        self.assertNotIn("(building-type-count-total blacksmith >= 1)", castle_block)
+        self.assertNotIn("(building-type-count-total market >= 1)", castle_block)
+        self.assertIn("(can-research-with-escrow castle-age)", castle_block)
+
+    def test_imperial_age_transition_executes_from_native_feasibility_only(self):
+        profile = build_byzantine_strategy(self.effective)
+        transition = profile.demand("imperial-conversion")
+
+        self.assertEqual(
+            tuple(transition.execution.requirements),
+            (
+                "(current-age >= castle-age)",
+                "(can-research-with-escrow imperial-age)",
+            ),
+        )
+        self.assertEqual(transition.execution.action, "(research imperial-age)")
+        self.assertEqual(transition.execution.witness, "(current-age >= imperial-age)")
+        self.assertEqual(
+            transition.execution.escrow_release_resources,
+            (Resource.FOOD, Resource.GOLD),
+        )
+        admissibility = " ".join(item.label for item in transition.admissibility)
+        self.assertIn("50 villagers", admissibility)
+        self.assertIn("University", admissibility)
 
     def test_dark_age_first_resource_camps_are_core_checkpoints(self):
         profile = build_byzantine_strategy(self.effective)
