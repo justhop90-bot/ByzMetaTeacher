@@ -398,7 +398,7 @@ def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
             ),
             lifetime="one-shot native action request; resulting garrison membership remains engine state",
             ordering="the garrison request executes at its emitted action position; same-pass membership visibility is not claimed",
-            admission="documented three-argument Action with ObjectId, c: typeOp, and UnitId parameters",
+            admission="documented three-argument Action with ObjectId, c: typeOp, and UnitId parameters; Pacific binds Villager as UnitId 83",
             completion=(
                 "unobserved by the generic Action contract; an owning controller must supply a "
                 "separate world-state witness such as object-data garrison count"
