@@ -49,6 +49,38 @@ ECONOMY_RULES = (
     "economy-controller-select-base",
 )
 
+CAMP_DEMANDS = (
+    "economy-lumber-camp-floor-1",
+    "economy-lumber-camp-floor-2",
+    "economy-wood-camp-floor-3",
+    "economy-wood-camp-floor-4",
+    "economy-wood-camp-floor-5",
+    "economy-wood-camp-floor-6",
+    "economy-gold-camp-floor-1",
+    "economy-gold-camp-floor-2",
+    "economy-gold-camp-floor-3",
+    "economy-gold-camp-floor-4",
+    "economy-gold-camp-floor-5",
+    "economy-stone-camp-floor-1",
+    "economy-stone-camp-floor-2",
+    "economy-stone-camp-floor-3",
+    "economy-stone-camp-floor-4",
+    "economy-stone-camp-floor-5",
+)
+
+CAMP_DUC_IDENTITIES = tuple(
+    [
+        f"byzantine-camp-placement-{resource}-{floor}-{phase}"
+        for resource, maximum in (("wood", 6), ("gold", 5), ("stone", 5))
+        for floor in range(1, maximum + 1)
+        for phase in ("search", "place")
+    ]
+    + ["byzantine-camp-placement-wood-1-fallback"]
+)
+
+CAMP_RUNTIME_START = "; Pending diagnostics: economy-lumber-camp-floor-1"
+CAMP_RUNTIME_END = "; Narrow Dark Age second-mill rule:"
+
 
 def _rule_block(
     source: str,
@@ -145,6 +177,56 @@ def _sync_civilian_villager_castle_admission(
         )
     patched_section = section.replace(old, new, 1)
     return runtime[:start] + patched_section + runtime[end:]
+
+
+def _demand_block(source: str, identity: str) -> str:
+    marker = f"; Pending diagnostics: {identity}"
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError(f"artifact is missing demand section: {identity}")
+    next_marker = source.find("\n; Pending diagnostics:", start + len(marker))
+    if next_marker < 0:
+        return source[start:].rstrip() + "\n"
+    return source[start:next_marker].rstrip() + "\n"
+
+
+def _resource_camp_block(generated: str) -> str:
+    duc_blocks = [
+        _rule_block(generated, identity, marker_prefix="; Native DUC rule:")
+        for identity in CAMP_DUC_IDENTITIES
+    ]
+    lifecycle_blocks = [
+        _demand_block(generated, identity)
+        for identity in CAMP_DEMANDS
+    ]
+    return (
+        ";----------------------------------------------------------------\n"
+        "; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES\n"
+        ";----------------------------------------------------------------\n"
+        + "\n".join(block.rstrip() for block in duc_blocks)
+        + "\n\n"
+        + "\n".join(block.rstrip() for block in lifecycle_blocks)
+        + "\n"
+    )
+
+
+def _replace_resource_camp_section(runtime: str, generated: str) -> str:
+    generated_block = _resource_camp_block(generated).rstrip()
+    start = runtime.find(CAMP_RUNTIME_START)
+    if start < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing camp section start: {CAMP_RUNTIME_START}"
+        )
+    end = runtime.find(CAMP_RUNTIME_END, start)
+    if end < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing camp section end: {CAMP_RUNTIME_END}"
+        )
+    current = runtime[start:end].rstrip()
+    replacement = generated_block
+    if current == replacement:
+        return runtime
+    return runtime[:start] + replacement + "\n" + runtime[end:]
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -542,6 +624,7 @@ def synchronize() -> bool:
 
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
+    runtime = _replace_resource_camp_section(runtime, generated)
 
     defense_block = _block(
         generated,
