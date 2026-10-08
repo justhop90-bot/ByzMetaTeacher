@@ -1009,7 +1009,11 @@ def community_strategy_demands(
             witness = f"(building-type-count {_slug(building.name)} >= {floor})"
             demands.append(
                 _StrategicDemandSpec(
-                    identity=f"economy-{label}-camp-floor-{floor}",
+                    identity=(
+                        f"economy-lumber-camp-floor-{floor}"
+                        if resource is CampResource.WOOD and floor <= 2
+                        else f"economy-{label}-camp-floor-{floor}"
+                    ),
                     owner=(
                         "castle-trajectory"
                         if resource is CampResource.STONE
