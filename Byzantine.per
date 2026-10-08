@@ -20275,8 +20275,230 @@
     (goal economy-posture 2)
 =>
     (set-strategic-number sn-food-gatherer-percentage 50)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 33)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 17)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20286,8 +20508,23 @@
     (goal economy-posture 3)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20297,8 +20534,23 @@
     (goal economy-posture 6)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20308,8 +20560,23 @@
     (goal economy-posture 1)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20319,8 +20586,23 @@
     (goal economy-posture 4)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20330,8 +20612,23 @@
     (goal economy-posture 5)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20341,8 +20638,23 @@
     (goal economy-posture 7)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20354,8 +20666,23 @@
     (goal economy-posture 2)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 26)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 14)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20365,8 +20692,23 @@
     (goal economy-posture 3)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20376,8 +20718,23 @@
     (goal economy-posture 4)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20387,8 +20744,23 @@
     (goal economy-posture 5)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20398,8 +20770,23 @@
     (goal economy-posture 6)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 18)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 22)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20409,8 +20796,23 @@
     (goal economy-posture 7)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 15)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20422,8 +20824,23 @@
     (goal economy-posture 2)
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20433,8 +20850,23 @@
     (goal economy-posture 3)
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20444,8 +20876,23 @@
     (goal economy-posture 7)
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20455,8 +20902,23 @@
     (goal economy-posture 8)
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
@@ -20466,8 +20928,23 @@
     (goal economy-posture 6)
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-wood-gatherer-percentage 14)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-gold-gatherer-percentage 16)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
