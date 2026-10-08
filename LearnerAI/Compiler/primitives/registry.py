@@ -820,8 +820,8 @@ class PrimitiveRegistry:
             else:
                 raise ValueError(
                     f"DUC input request '{input_request.site_key}' targets "
-                    f"'{expression.head}': only up-set-target-point, "
-                    "up-set-target-by-id, and up-create-group reads are supported"
+                    f"'{expression.head}': only up-set-target-by-id and up-create-group reads "
+                    "are supported; typed point reads use up-set-target-point."
                 )
 
         identities = tuple(rule.identity for rule in plan.rules)
