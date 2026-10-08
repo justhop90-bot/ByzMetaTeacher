@@ -446,8 +446,21 @@ def _remap_camp_duc_storage(
         generated_camp_block,
     )
     remapped_requests = _camp_duc_storage_requests(remapped)
-    if any(start in {item[1] for item in requests} for _kind, start, _width in remapped_requests):
+    original_starts = {item[1] for item in requests}
+    if any(start in original_starts for _kind, start, _width in remapped_requests):
         raise RuntimeError("camp DUC storage remap did not move every allocated span")
+
+    occupied = {
+        goal_id
+        for start, end, _kind in _storage_intervals(runtime)
+        for goal_id in range(start, end + 1)
+    }
+    for _kind, start, width in remapped_requests:
+        if any(goal_id in occupied for goal_id in range(start, start + width)):
+            raise RuntimeError(
+                f"camp DUC storage remap collides with runtime storage at "
+                f"{start}..{start + width - 1}"
+            )
     return remapped
 
 
