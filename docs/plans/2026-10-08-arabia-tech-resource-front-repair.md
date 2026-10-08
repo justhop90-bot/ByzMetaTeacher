@@ -122,7 +122,7 @@ Expected: Imperial 18-Halb/18-Elite-Skirm/12-Hussar floor and research package r
 ### Task 3: Fix the first remote gold/stone camp index
 
 **Files:**
-- Modify: the resource-front camp lowering/generation path that emits the `economy-*-camp-floor-N` search/build rules; preserve `LearnerAI/Compiler/ir/camp_control.py` for placement-radius policy.
+- Modify: checked-in `Byzantine.per` resource-front lifecycle sections around the gold/stone camp floors; `LearnerAI/Compiler/ir/camp_control.py` remains the placement-radius controller, but the exact floor-indexed search/build rules are currently maintained in the runtime artifact and were introduced by the Castle/resource-front repair commits.
 - Tests: `LearnerAI/Compiler/tests/test_byzantine_arabia_artifact.py:37`, `LearnerAI/Compiler/tests/test_strategy_opening_economy.py:456`
 - Runtime: `Byzantine.per` gold floors 2-5 around lines 17260-17663 and stone floors 2-5 around lines 17742 onward.
 
@@ -145,7 +145,7 @@ Add the same contract for stone.
 
 - [ ] **Step 2: Verify the relevant failure**
 
-Run: `python -m unittest LearnerAI.Compiler.tests.test_byzantine_arabia_artifact Byzantine.Compiler.tests.test_strategy_opening_economy` 
+Run: `python -m unittest LearnerAI.Compiler.tests.test_byzantine_arabia_artifact LearnerAI.Compiler.tests.test_strategy_opening_economy` 
 
 Expected: failure against the current floor-2 `> 1 / index 1` wiring.
 
