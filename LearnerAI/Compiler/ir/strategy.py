@@ -4637,10 +4637,13 @@ def _default_byzantine_duc_plan(
                 start_min=41,
                 start_max=15998,
             )
-            active_fact = (
-                "(and (current-age >= feudal-age) (resource-found stone))"
+            active_facts = (
+                (
+                    "(current-age >= feudal-age)",
+                    "(resource-found stone)",
+                )
                 if resource == "stone"
-                else f"(resource-found {resource})"
+                else (f"(resource-found {resource})",)
             )
             search_limit = 1 if floor == 1 else 40
             common_facts = (
@@ -4661,7 +4664,7 @@ def _default_byzantine_duc_plan(
                     "(goal action-claim-build-pass-singleton 0)",
                     SourceLocation(1),
                 ),
-                parse_expression(active_fact, SourceLocation(1)),
+                *(parse_expression(item, SourceLocation(1)) for item in active_facts),
                 parse_expression(f"(can-build {building})", SourceLocation(1)),
                 parse_expression(
                     f"(building-type-count-total {building} < {floor})",
