@@ -420,6 +420,13 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(up-pending-objects c: 1258 >= 1)", ram)
 
     def test_checked_in_runtime_researches_pikeman_in_castle_and_capped_ram_in_imperial(self):
+        profile = build_byzantine_strategy(self.effective)
+        canonical = compile_strategy_profile(profile, self.effective)
+        self.assertIn("(can-research-with-escrow ri-capped-ram)", canonical)
+        self.assertIn("(research ri-capped-ram)", canonical)
+        self.assertNotIn("(can-research-with-escrow capped-ram)", canonical)
+        self.assertNotIn("(research capped-ram)", canonical)
+
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
 
@@ -436,8 +443,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         ram = runtime[ram_start:ram_end]
         self.assertIn("(current-age >= imperial-age)", ram)
         self.assertNotIn("(current-age >= castle-age)", ram)
-        self.assertIn("(can-research-with-escrow capped-ram)", ram)
-        self.assertIn("(research capped-ram)", ram)
+        self.assertNotIn("(can-research-with-escrow capped-ram)", ram)
+        self.assertIn("(can-research-with-escrow ri-capped-ram)", ram)
+        self.assertNotIn("(research capped-ram)", ram)
+        self.assertIn("(research ri-capped-ram)", ram)
         self.assertIn("(research-completed 96)", ram)
 
     def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):

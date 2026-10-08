@@ -22019,11 +22019,11 @@
     (not (up-research-status c: 96 >= 2))
     (current-age >= imperial-age)
     (unit-type-count-total ram-line >= 2)
-    (can-research-with-escrow capped-ram)
+    (can-research-with-escrow ri-capped-ram)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research capped-ram)
+    (research ri-capped-ram)
     (set-goal demand-research-capped-ram 15956)
 )
 
@@ -23614,11 +23614,11 @@
         (goal byzantine-siege-scale byzantine-siege-scale-fortified)
     )
     (current-age >= imperial-age)
-    (can-research-with-escrow siege-ram)
+    (can-research-with-escrow ri-siege-ram)
 =>
     (release-escrow wood)
     (release-escrow gold)
-    (research siege-ram)
+    (research ri-siege-ram)
     (set-goal demand-research-siege-ram 122)
 )
 

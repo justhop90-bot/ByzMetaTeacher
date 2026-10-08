@@ -264,11 +264,12 @@ def _research_demand(
     tech_name: str,
     reason_label: str,
     resources: tuple[Resource, ...],
+    native_tech_symbol: str | None = None,
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
     additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
-    token = _slug(tech.name)
+    token = native_tech_symbol or _slug(tech.name)
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
     floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
@@ -1380,6 +1381,10 @@ def community_strategy_demands(
                 "imperial-age": "strategy-imperial-age",
             }[age],
             tech_name=tech_name,
+            native_tech_symbol={
+                "research-capped-ram": "ri-capped-ram",
+                "research-siege-ram": "ri-siege-ram",
+            }.get(identity),
             reason_label=f"Imperial military package: {tech_name}",
             resources=resources,
             additional_requirements=(unit_gate,),
