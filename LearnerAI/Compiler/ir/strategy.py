@@ -288,6 +288,7 @@ class StrategicDemandSpec:
     target: StrategicTarget
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
+    native_placement: bool = False
     initial_state: LifecycleState = LifecycleState.ACTIVE
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
