@@ -508,6 +508,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("28 villagers", admissibility)
         self.assertIn("Blacksmith + Market", admissibility)
 
+        compiled = compile_strategy_profile(profile, self.effective)
+        castle_start = compiled.index("; Action issuance: castle-age-transition")
+        castle_end = compiled.index("; Action issuance:", castle_start + 1)
+        castle_block = compiled[castle_start:castle_end]
+        self.assertNotIn("(unit-type-count-total villager >= 28)", castle_block)
+        self.assertNotIn("(building-type-count-total blacksmith >= 1)", castle_block)
+        self.assertNotIn("(building-type-count-total market >= 1)", castle_block)
+        self.assertIn("(can-research-with-escrow castle-age)", castle_block)
+
     def test_imperial_age_transition_executes_from_native_feasibility_only(self):
         profile = build_byzantine_strategy(self.effective)
         transition = profile.demand("imperial-conversion")
