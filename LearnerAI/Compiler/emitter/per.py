@@ -1238,6 +1238,13 @@ def emit(
                 "",
             ]
 
+        if demand.native_placement:
+            out += [
+                f"; Native placement owner: {demand.name} | action issuance is emitted by Native DUC",
+                "",
+            ]
+            continue
+
         out += [
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",
             "(defrule",
