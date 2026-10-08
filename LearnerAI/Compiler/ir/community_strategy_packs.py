@@ -1007,13 +1007,6 @@ def community_strategy_demands(
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
-            if resource is CampResource.WOOD and floor == 1:
-                requirements.extend(
-                    (
-                        "(current-age >= dark-age)",
-                        "(unit-type-count-total villager >= 15)",
-                    )
-                )
             building_token = _slug(building.name)
             action = f"(build {building_token})"
             witness = f"(building-type-count {_slug(building.name)} >= {floor})"
@@ -1071,8 +1064,14 @@ def community_strategy_demands(
                         witness=witness,
                         release=witness,
                     ),
-                    native_placement=not (
-                        resource is CampResource.WOOD and floor == 1
+                    native_placement=True,
+                    native_fallback_requirements=(
+                        (
+                            "(current-age == dark-age)",
+                            "(unit-type-count-total villager >= 15)",
+                        )
+                        if resource is CampResource.WOOD and floor == 1
+                        else ()
                     ),
                     initial_state=(
                         LifecycleState.ACTIVE
