@@ -313,7 +313,7 @@ class NativeAttackIrTests(unittest.TestCase):
     def test_attack_command_is_in_dedicated_executable_inventory(self):
         self.assertEqual(
             default_native_controller_executable_commands(),
-            ("attack-now",),
+            ("attack-now", "up-garrison"),
         )
 
     def test_mapping_is_narrow_issue_only_contract(self):
