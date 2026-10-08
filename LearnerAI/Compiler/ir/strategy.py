@@ -976,6 +976,8 @@ def lower_strategy_profile(
             dc_replace(
                 demand,
                 strategic_binding=execution_binding,
+                native_placement=spec.native_placement,
+                native_fallback_requirements=spec.native_fallback_requirements,
             )
         )
 
@@ -4512,6 +4514,7 @@ def _default_byzantine_duc_plan(
     """
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
+    from ..semantic.native_building_catalog import resolve_building_id
     from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
     from .native_duc import (
         NativeDucGoalInputRequest,
@@ -4604,7 +4607,7 @@ def _default_byzantine_duc_plan(
 
     camp_rule_order = len(rules)
     for resource, building, maximum in camp_specs:
-        building_id = int(effective.building(building).id)
+        building_id = resolve_building_id(building)
         for floor in range(1, maximum + 1):
             demand_name = f"economy-{resource}-camp-floor-{floor}"
             identity = f"byzantine-camp-placement-{resource}-{floor}"
