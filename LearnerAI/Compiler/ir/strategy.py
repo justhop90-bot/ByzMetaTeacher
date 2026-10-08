@@ -4731,6 +4731,10 @@ def _default_byzantine_duc_plan(
             "(up-compare-goal pacific-opening-transport-id >= 1)",
             SourceLocation(1),
         ),
+        parse_expression(
+            "(up-compare-goal pacific-opening-transport-load-count < 4)",
+            SourceLocation(1),
+        ),
     )
     rules.append(
         NativeDucRule(
@@ -4743,6 +4747,10 @@ def _default_byzantine_duc_plan(
                 parse_expression("(up-set-target-by-id g: 0)", SourceLocation(1)),
                 parse_expression(
                     "(up-target-objects 1 7 -1 -1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-garrison transport-ship c: villager)",
                     SourceLocation(1),
                 ),
             ),
