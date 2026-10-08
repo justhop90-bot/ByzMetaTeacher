@@ -69,13 +69,10 @@ CAMP_DEMANDS = (
 )
 
 CAMP_DUC_IDENTITIES = tuple(
-    [
-        f"byzantine-camp-placement-{resource}-{floor}-{phase}"
-        for resource, maximum in (("wood", 6), ("gold", 5), ("stone", 5))
-        for floor in range(1, maximum + 1)
-        for phase in ("search", "place")
-    ]
-    + ["byzantine-camp-placement-wood-1-fallback"]
+    f"byzantine-camp-placement-{resource}-{floor}-{phase}"
+    for resource, maximum in (("wood", 6), ("gold", 5), ("stone", 5))
+    for floor in range(1, maximum + 1)
+    for phase in ("search", "place")
 )
 
 CAMP_RUNTIME_START = "; Pending diagnostics: economy-lumber-camp-floor-1"
