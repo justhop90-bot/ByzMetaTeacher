@@ -35,6 +35,7 @@ class NativeDucRule:
     actions: tuple[Expression, ...]
     location: SourceLocation | None = None
     lifecycle: tuple[NativeDucLifecycleStage, ...] = ()
+    control_actions: tuple[Expression, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.identity.strip():
@@ -45,8 +46,12 @@ class NativeDucRule:
             raise ValueError(
                 f"native DUC rule '{self.identity}' requires a fact or action"
             )
-        if not isinstance(self.facts, tuple) or not isinstance(self.actions, tuple):
-            raise TypeError("native DUC rule facts/actions must be tuples")
+        if (
+            not isinstance(self.facts, tuple)
+            or not isinstance(self.actions, tuple)
+            or not isinstance(self.control_actions, tuple)
+        ):
+            raise TypeError("native DUC rule facts/actions/control_actions must be tuples")
         if not isinstance(self.lifecycle, tuple):
             raise TypeError("native DUC rule lifecycle must be a tuple")
         if len(self.lifecycle) != len(set(self.lifecycle)):
@@ -94,6 +99,7 @@ class NativeDucGoalInputRequest:
     expression_index: int
     argument_index: int
     source: StorageRequestId
+    span_offset: int = 0
 
     def __post_init__(self) -> None:
         if not self.rule_identity.strip():
@@ -102,6 +108,8 @@ class NativeDucGoalInputRequest:
             raise ValueError("native DUC input request section must be FACT or ACTION")
         if self.expression_index < 0 or self.argument_index < 0:
             raise ValueError("native DUC input request indexes must be non-negative")
+        if self.span_offset < 0:
+            raise ValueError("native DUC input request span offset must be non-negative")
 
     @property
     def site_key(self) -> tuple[str, str, int, int]:

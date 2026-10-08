@@ -997,9 +997,6 @@ def community_strategy_demands(
         active_expression = next(
             item.expression for item in observations if item.identity == active_ref
         )
-        remote_expression = next(
-            item.expression for item in observations if item.identity == remote_ref
-        )
         for floor in range(1, max_count + 1):
             count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
             requirements = [
@@ -1007,13 +1004,6 @@ def community_strategy_demands(
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
-            if floor >= 2:
-                requirements = [
-                    active_expression,
-                    remote_expression,
-                    count_guard,
-                    f"(can-build {_slug(building.name)})",
-                ]
             building_token = _slug(building.name)
             action = f"(build {building_token})"
             witness = f"(building-type-count {_slug(building.name)} >= {floor})"
@@ -1070,6 +1060,15 @@ def community_strategy_demands(
                         action=action,
                         witness=witness,
                         release=witness,
+                    ),
+                    native_placement=True,
+                    native_fallback_requirements=(
+                        (
+                            "(current-age == dark-age)",
+                            "(unit-type-count-total villager >= 15)",
+                        )
+                        if resource is CampResource.WOOD and floor == 1
+                        else ()
                     ),
                     initial_state=(
                         LifecycleState.ACTIVE
@@ -2573,6 +2572,7 @@ def build_byzantine_stock_strategy(
             stock_profile_id,
             target_control=endgame_plan.target_control,
             objective_control=endgame_plan.objective_control,
+            effective=effective,
         ),
         water_execution_plan=community_water_execution_plan(),
         map_profile=default_byzantine_map_profiles(),

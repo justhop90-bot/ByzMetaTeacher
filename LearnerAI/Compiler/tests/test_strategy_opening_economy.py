@@ -332,10 +332,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
         for resource in ("wood", "gold", "stone"):
             demand = profile.demand(f"economy-{resource}-camp-floor-2")
-            self.assertTrue(
+            self.assertFalse(
                 any("dropsite-min-distance" in req for req in demand.execution.requirements),
                 resource,
             )
+            self.assertTrue(demand.native_placement)
             self.assertEqual(demand.initial_state.name, "RELEASED")
 
     def test_adaptive_outpost_requires_feudal_pressure_and_resource_exposure(self):

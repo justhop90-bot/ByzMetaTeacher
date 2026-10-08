@@ -430,6 +430,26 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"DUC rule fact '{expression.head}' is an Action and cannot be emitted as a Fact"
                     )
+            for expression in rule.control_actions:
+                native = self.require_native(expression.head)
+                self.validate_native_signature(expression.head, len(expression.args))
+                if expression.head not in {"set-goal", "up-modify-goal"}:
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' is outside the goal-control bridge"
+                    )
+                if native.command_type not in {"Action", "Fact/Action"}:
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' is not executable"
+                    )
+                if len(expression.args) < 2 or not str(expression.args[0]).startswith("demand-"):
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' must target a demand goal"
+                    )
+                if not str(expression.args[1]).strip():
+                    raise ValueError(
+                        f"DUC control action '{expression.head}' requires a goal value"
+                    )
+
             for expression in rule.actions:
                 if expression.head in native_output_commands:
                     binding = binder.bind_native_output_command(expression.head)
@@ -706,13 +726,78 @@ class PrimitiveRegistry:
                 raise ValueError(
                     f"DUC input request '{input_request.site_key}' has no plan expression"
                 )
-            if expression.head != "up-set-target-by-id":
-                if expression.head != "up-create-group":
+
+            writer = writer_by_id.get(input_request.source)
+            if writer is None:
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' has no writer output "
+                    "request for its storage id"
+                )
+
+            if expression.head == "up-compare-goal":
+                if input_request.argument_index != 0 or len(expression.args) != 3:
                     raise ValueError(
-                        f"DUC input request '{input_request.site_key}' targets "
-                        f"'{expression.head}': only up-set-target-by-id and "
-                        "up-create-group reads are supported"
+                        f"DUC input request '{input_request.site_key}' must bind argument 0 "
+                        "of a three-argument up-compare-goal"
                     )
+                if not isinstance(writer.request, GoalSpanRequest):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' writer is not a GoalSpan"
+                    )
+                request = writer.request
+                if (
+                    request.role.value != "NATIVE_OUTPUT"
+                    or request.request_id.purpose != "up-get-search-state"
+                    or request.width != 4
+                    or request.shape.value != "EXTENDED_4"
+                    or request.contract_id != "up-get-search-state.OutputGoalId"
+                    or request.start_min != 41
+                    or request.start_max != 15996
+                    or input_request.span_offset > 3
+                ):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' requires a "
+                        "search-state four-goal span"
+                    )
+            elif expression.head == "up-set-target-point":
+                if input_request.argument_index != 0 or len(expression.args) != 1:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' must bind argument 0 "
+                        "of a one-argument up-set-target-point"
+                    )
+                if not isinstance(writer.request, GoalSpanRequest):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' writer is not a GoalSpan"
+                    )
+                request = writer.request
+                if (
+                    request.role.value != "NATIVE_OUTPUT"
+                    or request.request_id.purpose != "up-get-point"
+                    or request.width != 2
+                    or request.shape.value != "POINT_PAIR"
+                    or request.contract_id != "up-get-point.Point"
+                    or request.start_min != 41
+                    or request.start_max != 15998
+                ):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' requires a point-pair "
+                        "GoalSpan produced by up-get-point"
+                    )
+            elif expression.head == "up-set-target-by-id":
+                if input_request.argument_index != 1 or len(expression.args) != 2:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' must bind argument 1 "
+                        "of a two-argument up-set-target-by-id"
+                    )
+                if str(expression.args[0]) != "g:":
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' requires a literal g: typeOp"
+                    )
+                if not isinstance(writer.request, GoalSlotRequest):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' writer is not a GoalSlot"
+                    )
+            elif expression.head == "up-create-group":
                 if input_request.argument_index not in (0, 1) or len(expression.args) != 4:
                     raise ValueError(
                         f"DUC input request '{input_request.site_key}' must bind argument 0 "
@@ -723,25 +808,15 @@ class PrimitiveRegistry:
                         f"DUC input request '{input_request.site_key}' requires a bare "
                         "goal operand: up-create-group window arguments take no typeOp prefix"
                     )
+                if not isinstance(writer.request, GoalSlotRequest):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' writer is not a GoalSlot"
+                    )
             else:
-                if input_request.argument_index != 1 or len(expression.args) != 2:
-                    raise ValueError(
-                        f"DUC input request '{input_request.site_key}' must bind argument 1 "
-                        "of a two-argument up-set-target-by-id"
-                    )
-                if str(expression.args[0]) != "g:":
-                    raise ValueError(
-                        f"DUC input request '{input_request.site_key}' requires a literal g: typeOp"
-                    )
-            writer = writer_by_id.get(input_request.source)
-            if writer is None:
                 raise ValueError(
-                    f"DUC input request '{input_request.site_key}' has no writer output "
-                    "request for its storage id"
-                )
-            if not isinstance(writer.request, GoalSlotRequest):
-                raise ValueError(
-                    f"DUC input request '{input_request.site_key}' writer is not a GoalSlot"
+                    f"DUC input request '{input_request.site_key}' targets "
+                    f"'{expression.head}': only up-set-target-point, "
+                    "up-set-target-by-id, and up-create-group reads are supported"
                 )
 
         identities = tuple(rule.identity for rule in plan.rules)

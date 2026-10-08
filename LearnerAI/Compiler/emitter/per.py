@@ -700,17 +700,31 @@ def emit(
                 arguments[request.argument_index] = str(output_goal)
             for reader in readers:
                 writer_binding = bindings.binding_for(reader.source)
-                if not isinstance(writer_binding, GoalSlot):
-                    raise CompileError(
-                        f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
-                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
-                    )
                 if reader.argument_index >= len(arguments):
                     raise CompileError(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
                         "argument index is outside the expression"
                     )
-                arguments[reader.argument_index] = str(writer_binding.id.value)
+                if expression.head in {"up-set-target-point", "up-compare-goal"}:
+                    if not isinstance(writer_binding, GoalSpan):
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: span input '{reader.site_key}' "
+                            f"resolved to '{type(writer_binding).__name__}', expected GoalSpan"
+                        )
+                    target_goal = writer_binding.start.value + reader.span_offset
+                    if target_goal > writer_binding.start.value + writer_binding.width - 1:
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: span input '{reader.site_key}' "
+                            "offset exceeds the writer span"
+                        )
+                    arguments[reader.argument_index] = str(target_goal)
+                else:
+                    if not isinstance(writer_binding, GoalSlot):
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
+                            f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
+                        )
+                    arguments[reader.argument_index] = str(writer_binding.id.value)
             return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
 
         for current_rule in duc_plan.rules:
@@ -724,6 +738,10 @@ def emit(
             for expression_index, expression in enumerate(current_rule.actions):
                 out.append(
                     f"    {_render_duc_expression('ACTION', expression_index, expression)}"
+                )
+            for control_action in current_rule.control_actions:
+                out.append(
+                    f"    {_render_runtime_expression(control_action)}"
                 )
             out += [")", ""]
 
@@ -1237,6 +1255,53 @@ def emit(
                 ")",
                 "",
             ]
+
+        if demand.native_placement:
+            out += [
+                f"; Native placement owner: {demand.name} | action issuance is emitted by Native DUC",
+                "",
+            ]
+            if demand.native_fallback_requirements:
+                out += [
+                    f"; Native placement fallback: {demand.name}",
+                    "(defrule",
+                    f"    (goal demand-{demand.name} {lifecycle.active.value})",
+                    f"    (not {_render_runtime_expression(demand.witness)})",
+                ]
+                if construction is not None:
+                    out += [
+                        f"    (goal construction-retry-barrier-{demand.name} 0)",
+                        f"    (up-pending-objects c: {construction.native_building_id} == 0)",
+                        f"    (not {_render_runtime_expression(construction.pending_placement_fact)})",
+                    ]
+                out.append(f"    (not {_render_runtime_expression(demand.release)})")
+                request = demand.action.arbitration_request
+                if request is not None:
+                    conflict_class = request.request_id.purpose.split(":", 1)[1]
+                    out.append(f"    (goal {_claim_name(conflict_class)} 0)")
+                out.extend(
+                    f"    {_render_runtime_expression(requirement.expression)}"
+                    for requirement in demand.requirements
+                )
+                out.extend(
+                    f"    {requirement}"
+                    for requirement in demand.native_fallback_requirements
+                )
+                out.append("=>")
+                out.extend(
+                    f"    (release-escrow {operation.resource})"
+                    for operation in targeted_releases.get(demand.identity, ())
+                )
+                out.append(f"    {_render_runtime_expression(demand.action.expression)}")
+                if request is not None:
+                    conflict_class = request.request_id.purpose.split(":", 1)[1]
+                    out.append(f"    (set-goal {_claim_name(conflict_class)} 1)")
+                out += [
+                    f"    (set-goal demand-{demand.name} {lifecycle.issued.value})",
+                    ")",
+                    "",
+                ]
+            continue
 
         out += [
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",

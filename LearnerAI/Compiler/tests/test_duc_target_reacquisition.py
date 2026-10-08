@@ -384,6 +384,60 @@ class DucGoalHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "writer is not a GoalSlot"):
             default_de_registry().validate_duc_plan(plan)
 
+    def test_point_target_accepts_point_pair_goalspan_writer(self):
+        writer_request = NativeDucOutputRequest(
+            rule_identity="place",
+            section="ACTION",
+            expression_index=0,
+            request=GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId("test", "place"),
+                    "up-get-point",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="up-get-point.Point",
+                start_min=41,
+                start_max=15998,
+            ),
+            command="up-get-point",
+            argument_index=1,
+        )
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="place",
+                    order=0,
+                    facts=(_e("(true)", "true"),),
+                    actions=(
+                        _e(
+                            "(up-get-point position-object 41)",
+                            "up-get-point",
+                            "position-object",
+                            "41",
+                        ),
+                        _e(
+                            "(up-set-target-point 41)",
+                            "up-set-target-point",
+                            "41",
+                        ),
+                    ),
+                ),
+            ),
+            output_requests=(writer_request,),
+            input_requests=(
+                NativeDucGoalInputRequest(
+                    rule_identity="place",
+                    section="ACTION",
+                    expression_index=1,
+                    argument_index=0,
+                    source=writer_request.request.request_id,
+                ),
+            ),
+        )
+        default_de_registry().validate_duc_plan(plan)
+
     def test_duplicate_input_site_rejected(self):
         writer = _writer_request()
         with self.assertRaisesRegex(ValueError, "duplicate native DUC input request site"):

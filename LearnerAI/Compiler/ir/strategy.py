@@ -288,6 +288,8 @@ class StrategicDemandSpec:
     target: StrategicTarget
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
+    native_placement: bool = False
+    native_fallback_requirements: tuple[str, ...] = ()
     initial_state: LifecycleState = LifecycleState.ACTIVE
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
@@ -4499,6 +4501,7 @@ def _default_byzantine_duc_plan(
     *,
     target_control=None,
     objective_control=None,
+    effective: EffectiveCivData | None = None,
 ) -> "NativeDucPlan":
     """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
 
@@ -4511,6 +4514,7 @@ def _default_byzantine_duc_plan(
     from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
     from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
     from .native_duc import (
+        NativeDucGoalInputRequest,
         NativeDucLifecycleStage,
         NativeDucOutputRequest,
         NativeDucPlan,
@@ -4534,6 +4538,7 @@ def _default_byzantine_duc_plan(
 
     rules = []
     outputs = []
+    inputs = []
     for order, (identity, pressure_fact, search_unit, purpose) in enumerate(
         target_specs
     ):
@@ -4586,6 +4591,203 @@ def _default_byzantine_duc_plan(
             rules=tuple(rules),
             output_requests=tuple(outputs),
         )
+
+    from ..runtime_binding import GoalSlotRequest, GoalSpanRequest
+    from .model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
+    camp_specs = (
+        ("wood", "lumber-camp", 6),
+        ("gold", "mining-camp", 5),
+        ("stone", "mining-camp", 5),
+    )
+    if effective is None:
+        raise ValueError("Byzantine native camp DUC planning requires EffectiveCivData")
+
+    camp_rule_order = len(rules)
+    for resource, building, maximum in camp_specs:
+        building_id = int(effective.building(building).id)
+        for floor in range(1, maximum + 1):
+            demand_name = f"economy-{resource}-camp-floor-{floor}"
+            identity = f"byzantine-camp-placement-{resource}-{floor}"
+            search_identity = f"{identity}-search"
+            point_identity = f"{identity}-place"
+            search_request = GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId(profile_id, f"camp-search-state:{resource}:{floor}"),
+                    "up-get-search-state",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+                width=4,
+                shape=GoalSpanKind.EXTENDED_4,
+                contract_id="up-get-search-state.OutputGoalId",
+                start_min=41,
+                start_max=15996,
+            )
+            point_request = GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId(profile_id, f"camp-point:{resource}:{floor}"),
+                    "up-get-point",
+                ),
+                role=GoalRole.NATIVE_OUTPUT,
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="up-get-point.Point",
+                start_min=41,
+                start_max=15998,
+            )
+            active_fact = (
+                "(and (current-age >= feudal-age) (resource-found stone))"
+                if resource == "stone"
+                else f"(resource-found {resource})"
+            )
+            search_limit = 1 if floor == 1 else 40
+            common_facts = (
+                parse_expression(f"(goal demand-{demand_name} 1)", SourceLocation(1)),
+                parse_expression(
+                    f"(not (building-type-count {building} >= {floor}))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(goal construction-retry-barrier-{demand_name} 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(up-pending-objects c: {building_id} == 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(not (up-pending-placement c: {building_id}))",
+                    SourceLocation(1),
+                ),
+                parse_expression(active_fact, SourceLocation(1)),
+                parse_expression(f"(can-build {building})", SourceLocation(1)),
+                parse_expression(
+                    f"(building-type-count-total {building} < {floor})",
+                    SourceLocation(1),
+                ),
+            )
+            rules.append(
+                NativeDucRule(
+                    identity=search_identity,
+                    order=camp_rule_order,
+                    facts=common_facts,
+                    actions=(
+                        parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                        parse_expression(
+                            "(up-modify-sn sn-focus-player-number c:= 0)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-filter-status c: status-resource c: list-active)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-find-resource c: {resource} c: {search_limit})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-get-search-state {resource}-camp-search-state-{floor})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            "(up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    lifecycle=(
+                        NativeDucLifecycleStage.ADMISSIBILITY,
+                        NativeDucLifecycleStage.TARGET,
+                    ),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=search_identity,
+                    section="ACTION",
+                    expression_index=4,
+                    request=search_request,
+                    command="up-get-search-state",
+                    argument_index=0,
+                )
+            )
+
+            index = floor - 1
+            placement_facts = (
+                *common_facts,
+                parse_expression(
+                    f"(up-compare-goal {resource}-camp-search-state-{floor} > {index})",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    f"(up-set-target-object search-remote c: {index})",
+                    SourceLocation(1),
+                ),
+            )
+            rules.append(
+                NativeDucRule(
+                    identity=point_identity,
+                    order=camp_rule_order + 1,
+                    facts=placement_facts,
+                    actions=(
+                        parse_expression(
+                            f"(up-set-target-object search-remote c: {index})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-get-point position-object {resource}-camp-point-{floor})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-set-target-point {resource}-camp-point-{floor})",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(up-build place-point 0 c: {building})",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    control_actions=(
+                        parse_expression(
+                            f"(set-goal demand-{demand_name} issued-{demand_name})",
+                            SourceLocation(1),
+                        ),
+                    ),
+                    lifecycle=(
+                        NativeDucLifecycleStage.TARGET,
+                        NativeDucLifecycleStage.PICKUP_WITNESS,
+                        NativeDucLifecycleStage.DISPATCH,
+                    ),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=point_identity,
+                    section="ACTION",
+                    expression_index=1,
+                    request=point_request,
+                    command="up-get-point",
+                    argument_index=1,
+                )
+            )
+            inputs.extend(
+                (
+                    NativeDucGoalInputRequest(
+                        rule_identity=point_identity,
+                        section="FACT",
+                        expression_index=len(placement_facts) - 2,
+                        argument_index=0,
+                        source=search_request.request_id,
+                        span_offset=2,
+                    ),
+                    NativeDucGoalInputRequest(
+                        rule_identity=point_identity,
+                        section="ACTION",
+                        expression_index=2,
+                        argument_index=0,
+                        source=point_request.request_id,
+                    ),
+                )
+            )
+            camp_rule_order += 2
 
     if target_control is not None:
         from .endgame import EndgameFrontierState, EndgameTargetQueryKind
@@ -5121,6 +5323,7 @@ def _default_byzantine_duc_plan(
     return NativeDucPlan(
         rules=tuple((*rules, *lifecycle_rules)),
         output_requests=tuple(outputs),
+        input_requests=tuple(inputs),
     )
 
 
@@ -5681,7 +5884,10 @@ def build_byzantine_castle_strategy(
         policy_recipes=default_byzantine_policy_recipes(),
         counter_packages=default_byzantine_counter_packages(effective),
         attack_plan=_default_byzantine_attack_plan(profile.profile_id),
-        duc_plan=_default_byzantine_duc_plan(profile.profile_id),
+        duc_plan=_default_byzantine_duc_plan(
+            profile.profile_id,
+            effective=effective,
+        ),
     )
 
 def _validate_capability_intent(
