@@ -307,10 +307,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "unit-type-count-total",
             bank_and.args[0].head,
         )
-        self.assertEqual(
-            "can-afford-research",
-            bank_and.args[1].head,
-        )
+        self.assertEqual("or", bank_and.args[1].head)
+        self.assertEqual("can-afford-research", bank_and.args[1].args[0].head)
+        self.assertEqual("map-type", bank_and.args[1].args[1].head)
 
     def test_pacific_dark_age_villager_boundary_does_not_wait_for_native_research_feasibility(self):
         profile = build_byzantine_strategy(self.effective)
@@ -336,7 +335,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(
             "(not (and (current-age == dark-age) "
             "(and (unit-type-count-total villager >= 20) "
-            "(can-afford-research feudal-age))))",
+            "(or (can-afford-research feudal-age) "
+            "(map-type pacific-islands)))))",
             demand.execution.requirements,
         )
         self.assertIn(
