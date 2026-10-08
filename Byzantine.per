@@ -20271,12 +20271,6 @@
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
     (goal economy-posture 2)
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 50)
-        (up-compare-sn sn-wood-gatherer-percentage != 33)
-        (up-compare-sn sn-gold-gatherer-percentage != 17)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 50)
     (set-strategic-number sn-wood-gatherer-percentage 33)
@@ -20288,12 +20282,6 @@
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
     (or (goal economy-posture 3) (goal economy-posture 6))
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 55)
-        (up-compare-sn sn-wood-gatherer-percentage != 20)
-        (up-compare-sn sn-gold-gatherer-percentage != 25)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 20)
@@ -20308,12 +20296,6 @@
         (goal economy-posture 4)
         (goal economy-posture 5)
         (goal economy-posture 7))
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 55)
-        (up-compare-sn sn-wood-gatherer-percentage != 25)
-        (up-compare-sn sn-gold-gatherer-percentage != 20)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 25)
@@ -20325,12 +20307,6 @@
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
     (goal economy-posture 2)
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 60)
-        (up-compare-sn sn-wood-gatherer-percentage != 26)
-        (up-compare-sn sn-gold-gatherer-percentage != 14)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
     (set-strategic-number sn-wood-gatherer-percentage 26)
@@ -20344,12 +20320,6 @@
     (or (goal economy-posture 3)
         (goal economy-posture 4)
         (goal economy-posture 5))
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 60)
-        (up-compare-sn sn-wood-gatherer-percentage != 20)
-        (up-compare-sn sn-gold-gatherer-percentage != 20)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
     (set-strategic-number sn-wood-gatherer-percentage 20)
@@ -20361,12 +20331,6 @@
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
     (goal economy-posture 6)
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 60)
-        (up-compare-sn sn-wood-gatherer-percentage != 18)
-        (up-compare-sn sn-gold-gatherer-percentage != 22)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
     (set-strategic-number sn-wood-gatherer-percentage 18)
@@ -20378,12 +20342,6 @@
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
     (goal economy-posture 7)
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 60)
-        (up-compare-sn sn-wood-gatherer-percentage != 25)
-        (up-compare-sn sn-gold-gatherer-percentage != 15)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
     (set-strategic-number sn-wood-gatherer-percentage 25)
@@ -20398,12 +20356,6 @@
         (goal economy-posture 3)
         (goal economy-posture 7)
         (goal economy-posture 8))
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 70)
-        (up-compare-sn sn-wood-gatherer-percentage != 20)
-        (up-compare-sn sn-gold-gatherer-percentage != 10)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
     (set-strategic-number sn-wood-gatherer-percentage 20)
@@ -20415,12 +20367,6 @@
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
     (goal economy-posture 6)
-    (or
-        (up-compare-sn sn-food-gatherer-percentage != 70)
-        (up-compare-sn sn-wood-gatherer-percentage != 14)
-        (up-compare-sn sn-gold-gatherer-percentage != 16)
-        (up-compare-sn sn-stone-gatherer-percentage != 0)
-    )
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
     (set-strategic-number sn-wood-gatherer-percentage 14)
