@@ -590,6 +590,41 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
         practice_references=(),
     )
 
+def _garrison_mapping() -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity="transport.garrison.issue",
+        native_command="up-garrison",
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(
+            "https://airef.github.io/commands/commands-details.html#up-garrison",
+        ),
+        state_effects=(
+            "issues one native garrison operation that asks the engine to place units of the "
+            "specified UnitId into the specified ObjectId target"
+        ),
+        lifetime=(
+            "one-shot native action request; transport membership remains engine state after issuance"
+        ),
+        ordering=(
+            "the garrison request executes at its emitted action position; the compiler does not "
+            "claim same-pass visibility of resulting membership"
+        ),
+        admission=(
+            "documented three-argument Action with ObjectId, const typeOp, and UnitId parameters"
+        ),
+        completion=(
+            "garrison completion is unobserved by this mapping; Pacific transport lifecycle uses "
+            "object-data garrison count as the separate world-state witness"
+        ),
+        recovery=(
+            "reassess the garrison-count witness and reissue while the owning Pacific LOAD state "
+            "remains under-filled"
+        ),
+        practice_references=(),
+    )
+
 def _duc_group_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = "Fact" if command == "up-group-size" else "Action"
     state_effects = {
@@ -816,8 +851,8 @@ def default_escrow_executable_commands() -> tuple[str, ...]:
     return tuple(command for command, _identity in _ESCROW_COMMAND_SPECS)
 
 def default_native_controller_executable_commands() -> tuple[str, ...]:
-    """Return commands promoted through dedicated controller binders."""
-    return ("attack-now",)
+    """Return commands promoted through dedicated controller/native-control binders."""
+    return ("attack-now", "up-garrison")
 
 
 
@@ -902,6 +937,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         for command, identity in _NATIVE_OUTPUT_READER_SPECS
     )
     mappings.append(_escrow_release_mapping())
+    mappings.append(_garrison_mapping())
     mappings.append(_escrow_percentage_mapping())
     mappings.append(_attack_issue_mapping())
     mappings.extend(
