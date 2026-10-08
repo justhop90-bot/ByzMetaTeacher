@@ -1267,6 +1267,7 @@ def analyze(
                 state_accesses=state_accesses,
                 pending_diagnostics=_pending_diagnostics(demand),
                 native_placement=demand.native_placement,
+                native_fallback_requirements=demand.native_fallback_requirements,
                 construction_lifecycle=construction_lifecycle,
                 construction_retry_barrier=construction_retry_barrier,
                 production_lifecycle=production_lifecycle,
