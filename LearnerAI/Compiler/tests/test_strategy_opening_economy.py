@@ -552,7 +552,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         profile = build_byzantine_strategy(self.effective)
         canonical = compile_strategy_profile(profile, self.effective)
         for fragment in (
-            "(set-goal demand-economy-wood-camp-floor-2 0)",
+            "(set-goal demand-economy-lumber-camp-floor-2 0)",
             "(set-goal demand-economy-gold-camp-floor-2 0)",
             "(set-goal demand-economy-stone-camp-floor-1 0)",
             "(set-goal demand-adaptive-outpost 0)",
