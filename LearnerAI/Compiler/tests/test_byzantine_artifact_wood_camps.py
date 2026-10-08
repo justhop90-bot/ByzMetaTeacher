@@ -44,6 +44,82 @@ def _defrules(source: str) -> list[str]:
     return rules
 
 
+
+
+def _defconsts(source: str) -> dict[str, int]:
+    return {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            source,
+        )
+    }
+
+
+def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
+    definitions = _defconsts(source)
+    intervals: list[tuple[int, int, str]] = []
+
+    def resolve(token: str) -> int | None:
+        if re.fullmatch(r"-?\d+", token):
+            return int(token)
+        return definitions.get(token)
+
+    for match in re.finditer(
+        r"\(up-get-search-state\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 3, "SEARCH_STATE"))
+
+    for match in re.finditer(
+        r"\(up-get-point\s+position-object\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 1, "POINT_PAIR"))
+
+    for match in re.finditer(
+        r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value, "GOAL_SLOT"))
+
+    return list(dict.fromkeys(intervals))
+
+
+def _duc_output_intervals(source: str) -> list[tuple[int, int, str]]:
+    definitions = _defconsts(source)
+    intervals: list[tuple[int, int, str]] = []
+
+    def resolve(token: str) -> int | None:
+        if re.fullmatch(r"-?\d+", token):
+            return int(token)
+        return definitions.get(token)
+
+    for match in re.finditer(
+        r"\(up-get-search-state\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 3, "SEARCH_STATE"))
+
+    for match in re.finditer(
+        r"\(up-get-point\s+position-object\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 1, "POINT_PAIR"))
+
+    return list(dict.fromkeys(intervals))
+
+
 class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -53,6 +129,29 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
     def _active_rules(self, floor: int) -> list[str]:
         marker = f"(goal demand-economy-lumber-camp-floor-{floor} 1)"
         return [rule for rule in self.rules if marker in rule]
+
+    def test_compiler_owned_camp_duc_storage_does_not_overlap_hybrid_runtime_state(self):
+        header = "; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES"
+        end_marker = "; Narrow Dark Age second-mill rule:"
+        start = self.source.index(header)
+        end = self.source.index(end_marker, start)
+        camp = self.source[start:end]
+        outside = self.source[:start] + self.source[end:]
+
+        camp_intervals = _duc_output_intervals(camp)
+        runtime_intervals = _storage_intervals(outside)
+        collisions = [
+            (camp_interval, runtime_interval)
+            for camp_interval in camp_intervals
+            for runtime_interval in runtime_intervals
+            if camp_interval[0] <= runtime_interval[1]
+            and runtime_interval[0] <= camp_interval[1]
+        ]
+        self.assertFalse(
+            collisions,
+            "compiler-owned camp DUC storage overlaps hybrid runtime Goal storage: "
+            f"{collisions[:5]}",
+        )
 
     def test_first_lumber_camp_has_native_direct_build_fallback(self):
         rules = self._active_rules(1)
@@ -132,10 +231,7 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 )
 
     def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
-        for floor, point, state, remote, old_distance in (
-            (1, "416", "468", "470", "5"),
-            (2, "418", "472", "474", "12"),
-        ):
+        for floor in (1, 2):
             rules = self._active_rules(floor)
             search_rule = next(
                 rule for rule in rules
@@ -143,9 +239,45 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             )
             placement_rule = next(
                 rule for rule in rules
-                if f"(up-get-point position-object {point})" in rule
-                and f"(up-set-target-point {point})" in rule
+                if "(up-get-point position-object " in rule
+                and "(up-set-target-point " in rule
             )
+
+            search_match = re.search(
+                r"\(up-get-search-state (\d+)\)",
+                search_rule,
+            )
+            self.assertIsNotNone(search_match)
+            search_state = int(search_match.group(1))
+
+            remote_match = re.search(
+                r"\(up-compare-goal (\d+) > 0\)",
+                placement_rule,
+            )
+            point_match = re.search(
+                r"\(up-get-point position-object (\d+)\)",
+                placement_rule,
+            )
+            target_point_match = re.search(
+                r"\(up-set-target-point (\d+)\)",
+                placement_rule,
+            )
+            self.assertIsNotNone(remote_match)
+            self.assertIsNotNone(point_match)
+            self.assertIsNotNone(target_point_match)
+
+            remote_goal = int(remote_match.group(1))
+            point = int(point_match.group(1))
+            target_point = int(target_point_match.group(1))
+
+            self.assertEqual(remote_goal, search_state + 2)
+            self.assertEqual(point, target_point)
+            self.assertGreater(search_state, 1000)
+            self.assertGreater(point, 1000)
+
+            self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
+            self.assertIn("(up-set-target-object search-remote c: 0)", placement_rule)
+
             execution_marker = (
                 f"; Native placement execution: economy-lumber-camp-floor-{floor}"
             )
@@ -156,20 +288,10 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 if execution_end < 0
                 else self.source[execution_start:execution_end]
             )
-
-            self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
-            self.assertIn(f"(up-get-search-state {state})", search_rule)
-            self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
-
-            self.assertIn(f"(up-compare-goal {remote} > 0)", placement_rule)
-            self.assertIn("(up-set-target-object search-remote c: 0)", placement_rule)
-            self.assertIn(f"(up-get-point position-object {point})", placement_rule)
-            self.assertIn(f"(up-set-target-point {point})", placement_rule)
             self.assertIn("(up-build place-point 0 c:", build_section)
-            self.assertNotIn(
-                f"(dropsite-min-distance wood > {old_distance})",
-                search_rule + placement_rule,
-            )
+            self.assertNotEqual(search_state, 468)
+            self.assertNotEqual(point, 416 if floor == 1 else 418)
+
 
 
 

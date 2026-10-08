@@ -34,6 +34,32 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
                 section,
             )
 
+    def test_dark_age_lumber_then_first_mill_liveness_valve_is_present(self):
+        marker = "; Dark Age first-mill continuity safety valve"
+        self.assertIn(marker, self.artifact)
+
+        start = self.artifact.index(marker)
+        end = self.artifact.find("\n; Narrow Dark Age second-mill rule:", start)
+        self.assertGreaterEqual(end, start)
+        valve = self.artifact[start:end]
+
+        for required in (
+            "(goal demand-economy-food-mill-boom 1)",
+            "(current-age == dark-age)",
+            "(building-type-count-total lumber-camp >= 1)",
+            "(building-type-count-total mill == 0)",
+            "(up-pending-objects c: 68 == 0)",
+            "(not (up-pending-placement c: 68))",
+            "(goal action-claim-build-pass-singleton 0)",
+            "(resource-found food)",
+            "(wood-amount >= 50)",
+            "(unit-type-count-total villager >= 18)",
+            "(can-build mill)",
+            "(build mill)",
+            "(set-goal demand-economy-food-mill-boom 71)",
+        ):
+            self.assertIn(required, valve)
+
     def test_each_gold_camp_build_selects_an_indexed_active_resource(self):
         for floor in range(1, 6):
             search_marker = (

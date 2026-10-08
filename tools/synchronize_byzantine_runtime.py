@@ -188,7 +188,7 @@ def _demand_block(source: str, identity: str) -> str:
     return source[start:next_marker].rstrip() + "\n"
 
 
-def _resource_camp_block(generated: str) -> str:
+def _resource_camp_block(generated: str, runtime: str) -> str:
     duc_blocks = [
         _rule_block(generated, identity, marker_prefix="; Native DUC rule:")
         for identity in CAMP_DUC_IDENTITIES
@@ -197,19 +197,45 @@ def _resource_camp_block(generated: str) -> str:
         _demand_block(generated, identity)
         for identity in CAMP_DEMANDS
     ]
-    return (
+    camp_block = (
         ";----------------------------------------------------------------\n"
         "; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES\n"
         ";----------------------------------------------------------------\n"
         + "\n".join(block.rstrip() for block in duc_blocks)
         + "\n\n"
         + "\n".join(block.rstrip() for block in lifecycle_blocks)
+        + "\n\n"
+        + "; Dark Age first-mill continuity safety valve\n"
+        + "; First lumber owns the opening wood pass. Once that dropsite exists, guarantee\n"
+        + "; a first Mill even when the generic distance selector remains below its normal\n"
+        + "; threshold. The existing demand lifecycle still owns completion/retry.\n"
+        + "(defrule\n"
+        + " (goal demand-economy-food-mill-boom 1)\n"
+        + " (current-age == dark-age)\n"
+        + " (building-type-count-total lumber-camp >= 1)\n"
+        + " (building-type-count-total mill == 0)\n"
+        + " (up-pending-objects c: 68 == 0)\n"
+        + " (not (up-pending-placement c: 68))\n"
+        + " (goal action-claim-build-pass-singleton 0)\n"
+        + " (resource-found food)\n"
+        + " (wood-amount >= 50)\n"
+        + " (unit-type-count-total villager >= 18)\n"
+        + " (can-build mill)\n"
+        + "=>\n"
+        + " (set-strategic-number sn-allow-adjacent-dropsites 0)\n"
+        + " (set-strategic-number sn-dropsite-separation-distance 10)\n"
+        + " (set-strategic-number sn-mill-max-distance 17)\n"
+        + " (build mill)\n"
+        + " (set-goal action-claim-build-pass-singleton 1)\n"
+        + " (set-goal demand-economy-food-mill-boom 71)\n"
+        + ")\n"
+        + "\n"
         + "\n"
     )
+    return _remap_camp_duc_storage(camp_block, runtime)
 
 
 def _replace_resource_camp_section(runtime: str, generated: str) -> str:
-    generated_block = _resource_camp_block(generated).rstrip()
     header_pos = runtime.find(CAMP_RUNTIME_HEADER)
     if header_pos >= 0:
         start = runtime.rfind(";----------------------------------------------------------------", 0, header_pos)
@@ -226,11 +252,16 @@ def _replace_resource_camp_section(runtime: str, generated: str) -> str:
         raise RuntimeError(
             f"runtime artifact is missing camp section end: {CAMP_RUNTIME_END}"
         )
+
+    runtime_without_camp = runtime[:start] + runtime[end:]
+    generated_block = _resource_camp_block(
+        generated,
+        runtime_without_camp,
+    ).rstrip()
     current = runtime[start:end].rstrip()
-    replacement = generated_block
-    if current == replacement:
+    if current == generated_block:
         return runtime
-    return runtime[:start] + replacement + "\n" + runtime[end:]
+    return runtime[:start] + generated_block + "\n" + runtime[end:]
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -264,19 +295,163 @@ def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
             source,
         )
     }
+
+    def resolve(token: str) -> int | None:
+        if re.fullmatch(r"-?\d+", token):
+            value = int(token)
+        else:
+            value = definitions.get(token)
+        if value is None or not 1 <= value <= 16_000:
+            return None
+        return value
+
     patterns = (
-        (re.compile(r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\\s+([^\\s()]+)"), 1, "GOAL_SLOT"),
-        (re.compile(r"\(up-get-point\\s+position-object\\s+([^\\s()]+)"), 2, "POINT_PAIR"),
-        (re.compile(r"\(up-get-search-state\\s+([^\\s()]+)"), 4, "SEARCH_STATE"),
+        (
+            re.compile(
+                r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)"
+            ),
+            1,
+            "GOAL_SLOT",
+        ),
+        (
+            re.compile(
+                r"\(up-get-point\s+position-object\s+([^\s()]+)"
+            ),
+            2,
+            "POINT_PAIR",
+        ),
+        (
+            re.compile(
+                r"\(up-get-search-state\s+([^\s()]+)"
+            ),
+            4,
+            "SEARCH_STATE",
+        ),
     )
     intervals: list[tuple[int, int, str]] = []
     for pattern, width, kind in patterns:
         for match in pattern.finditer(source):
-            name = match.group(1)
-            if name in definitions and not re.fullmatch(r"-?\d+", name):
-                value = definitions[name]
-                intervals.append((value, value + width - 1, kind))
+            value = resolve(match.group(1))
+            if value is None:
+                continue
+            end = value + width - 1
+            if end > 16_000:
+                raise RuntimeError(
+                    f"runtime storage interval exceeds Goal range: {kind} {value}..{end}"
+                )
+            intervals.append((value, end, kind))
     return list(dict.fromkeys(intervals))
+
+
+def _camp_duc_storage_requests(generated_camp_block: str) -> tuple[tuple[str, int, int], ...]:
+    requests: set[tuple[str, int, int]] = set()
+    for match in re.finditer(
+        r"\(up-get-search-state\s+(\d+)\)",
+        generated_camp_block,
+    ):
+        requests.add(("SEARCH_STATE", int(match.group(1)), 4))
+    for match in re.finditer(
+        r"\(up-get-point\s+position-object\s+(\d+)\)",
+        generated_camp_block,
+    ):
+        requests.add(("POINT_PAIR", int(match.group(1)), 2))
+    ordered = tuple(sorted(requests, key=lambda item: (item[1], item[0], item[2])))
+    if not ordered:
+        raise RuntimeError("generated camp DUC block contains no output storage requests")
+    return ordered
+
+
+def _choose_camp_duc_storage(
+    runtime: str,
+    requests: tuple[tuple[str, int, int], ...],
+) -> dict[int, int]:
+    occupied: set[int] = set()
+    for start, end, _kind in _storage_intervals(runtime):
+        occupied.update(range(start, end + 1))
+
+    # Named runtime constants may represent persistent state that is not exercised
+    # by a storage command in the currently loaded overlay. Reserve them as well.
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            runtime,
+        )
+    }
+    occupied.update(
+        value for value in definitions.values() if 1 <= value <= 16_000
+    )
+
+    chosen: dict[int, int] = {}
+    for kind, old_start, width in requests:
+        if old_start in chosen:
+            raise RuntimeError(
+                f"multiple camp DUC storage requests share old start {old_start}"
+            )
+        start_max = 15_996 if kind == "SEARCH_STATE" else 15_998
+        candidate = start_max
+        while candidate >= 41:
+            candidate_end = candidate + width - 1
+            if candidate_end <= 16_000 and not any(
+                goal_id in occupied
+                for goal_id in range(candidate, candidate_end + 1)
+            ):
+                chosen[old_start] = candidate
+                occupied.update(range(candidate, candidate_end + 1))
+                break
+            candidate -= 1
+        else:
+            raise RuntimeError(
+                f"no free Goal storage span remains for camp DUC {kind} width {width}"
+            )
+    return chosen
+
+
+def _remap_camp_duc_storage(
+    generated_camp_block: str,
+    runtime: str,
+) -> str:
+    requests = _camp_duc_storage_requests(generated_camp_block)
+    replacements = _choose_camp_duc_storage(runtime, requests)
+
+    value_map: dict[int, int] = {}
+    for kind, old_start, width in requests:
+        new_start = replacements[old_start]
+        for offset in range(width):
+            old_value = old_start + offset
+            new_value = new_start + offset
+            if old_value in value_map and value_map[old_value] != new_value:
+                raise RuntimeError(
+                    f"camp DUC storage remap has conflicting value {old_value}"
+                )
+            value_map[old_value] = new_value
+
+    def replace_numeric(match: re.Match[str]) -> str:
+        value = int(match.group(0))
+        return str(value_map.get(value, value))
+
+    remapped = re.sub(
+        r"(?<![A-Za-z0-9_-])\d+(?![A-Za-z0-9_-])",
+        replace_numeric,
+        generated_camp_block,
+    )
+    remapped_requests = _camp_duc_storage_requests(remapped)
+    original_starts = {item[1] for item in requests}
+    if any(start in original_starts for _kind, start, _width in remapped_requests):
+        raise RuntimeError("camp DUC storage remap did not move every allocated span")
+
+    occupied = {
+        goal_id
+        for start, end, _kind in _storage_intervals(runtime)
+        for goal_id in range(start, end + 1)
+    }
+    for _kind, start, width in remapped_requests:
+        if any(goal_id in occupied for goal_id in range(start, start + width)):
+            raise RuntimeError(
+                f"camp DUC storage remap collides with runtime storage at "
+                f"{start}..{start + width - 1}"
+            )
+    return remapped
 
 
 def _choose_voice_goal_slots(runtime: str, count: int) -> list[int]:
