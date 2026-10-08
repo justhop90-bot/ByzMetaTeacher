@@ -267,6 +267,8 @@ class PrimitiveRegistry:
     def validate_escrow_plan(self, plan) -> None:
         if isinstance(plan, NativeEscrowReleasePlan):
             self.validate_escrow_release_plan(plan)
+            if plan.policy_plan is not None:
+                self.validate_escrow_policy_plan(plan.policy_plan)
             return
         if isinstance(plan, NativeEscrowPolicyPlan):
             self.validate_escrow_policy_plan(plan)

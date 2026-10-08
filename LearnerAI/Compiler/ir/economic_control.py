@@ -18,6 +18,7 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
+    PACIFIC_LAND = 9
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,7 @@ def default_byzantine_economy_controller() -> EconomyControllerPlan:
             EconomyModePolicy(EconomyMode.WATER_CONTROL, EconomyAllocation(38, 42, 20, 8)),
             EconomyModePolicy(EconomyMode.CASTLE_CONVERSION, EconomyAllocation(45, 25, 30, 7)),
             EconomyModePolicy(EconomyMode.IMPERIAL_CONVERSION, EconomyAllocation(40, 25, 35, 7)),
+            EconomyModePolicy(EconomyMode.PACIFIC_LAND, EconomyAllocation(45, 40, 15, 6)),
         ),
     )
 
@@ -150,7 +152,22 @@ def lower_economy_controller(
 
     allocation_by_mode = {item.mode: item.allocation for item in plan.policies}
     pressure = profile.observation(plan.pressure_observation).expression
+    pacific_observation = next(
+        (
+            item
+            for item in profile.observations
+            if item.identity == "strategy-pacific-islands"
+        ),
+        None,
+    )
+    pacific = (
+        pacific_observation.expression
+        if pacific_observation is not None
+        else "(map-type pacific-islands)"
+    )
     feudal_window = "(and (current-age >= feudal-age) (current-age < castle-age))"
+    pre_castle_window = "(and (current-age >= dark-age) (current-age < castle-age))"
+    pacific_window = pre_castle_window
     no_knight_pressure = "(not (players-unit-type-count any-enemy knight >= 3))"
     no_ranged_pressure = "(not (players-unit-type-count any-enemy archer-line >= 4))"
     no_infantry_pressure = "(not (players-unit-type-count any-enemy militia-line >= 5))"
@@ -161,6 +178,16 @@ def lower_economy_controller(
     )
     opening = lambda value: f"(goal {plan.opening_state} {value})"
     not_emergency_recovery = f"(not {opening(6)})"
+    castle_bank_maturity = (
+        "(and (unit-type-count-total villager >= 28) "
+        "(and (building-type-count-total blacksmith >= 1) "
+        "(building-type-count-total market >= 1)))"
+    )
+    water_pre_castle = f"(not {castle_bank_maturity})"
+    water_castle_opening = (
+        f"(or {opening(3)} "
+        f"(and (or {opening(4)} {opening(5)}) {castle_bank_maturity}))"
+    )
 
     def select_rule(
         identity: str,
@@ -221,7 +248,7 @@ def lower_economy_controller(
         select_rule(
             "economy-controller-select-fast-castle",
             EconomyMode.FAST_CASTLE,
-            (feudal_window, *no_pressure, opening(3), not_emergency_recovery),
+            (feudal_window, *no_pressure, water_castle_opening, not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-counter-feudal",
@@ -229,14 +256,19 @@ def lower_economy_controller(
             (feudal_window, *no_pressure, opening(2), not_emergency_recovery),
         ),
         select_rule(
+            "economy-controller-select-pacific-land-first",
+            EconomyMode.PACIFIC_LAND,
+            (pacific_window, *no_pressure, pacific, not_emergency_recovery),
+        ),
+        select_rule(
             "economy-controller-select-water-economy",
             EconomyMode.WATER_ECONOMY,
-            (feudal_window, *no_pressure, opening(4), not_emergency_recovery),
+            (pre_castle_window, *no_pressure, opening(4), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-water-control",
             EconomyMode.WATER_CONTROL,
-            (feudal_window, *no_pressure, opening(5), not_emergency_recovery),
+            (pre_castle_window, *no_pressure, opening(5), water_pre_castle, f"(not {pacific})", not_emergency_recovery),
         ),
         select_rule(
             "economy-controller-select-base",

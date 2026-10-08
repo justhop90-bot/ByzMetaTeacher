@@ -26,6 +26,14 @@ RECOVERY_NAMES = (
     "opening-recovery-water-proven",
 )
 
+ECONOMY_INSTALLABLE_RULES = (
+    "economy-controller-select-pacific-land-first",
+    "economy-controller-write-pacific_land-sn-food-gatherer-percentage",
+    "economy-controller-write-pacific_land-sn-wood-gatherer-percentage",
+    "economy-controller-write-pacific_land-sn-gold-gatherer-percentage",
+    "economy-controller-write-pacific_land-sn-percent-civilian-builders",
+)
+
 ELITE_SKIRMISHER_PRODUCTION_RULES = (
     "imperial-elite-skirmisher-floor",
     "imperial-open-elite-skirmisher-standard",
@@ -38,6 +46,29 @@ ELITE_SKIRMISHER_PRODUCTION_RULES = (
 
 CIVILIAN_VILLAGER_SECTION_START = "; Persistent civilian production"
 CIVILIAN_VILLAGER_SECTION_END = "; Pending diagnostics: early-defensive-spears"
+WATER_DOCK_DEMAND = "water-dock-capability"
+WATER_DOCK_GOAL_NAMES = (
+    "demand-water-dock-capability",
+    "issued-water-dock-capability",
+    "pending-water-dock-capability",
+    "complete-water-dock-capability",
+    "construction-retry-barrier-water-dock-capability",
+)
+
+AGE_TRANSITION_TRACE_GOALS = {
+    "bt-age-transition-trace-game-time": 15966,
+    "bt-age-transition-trace-current-age": 15965,
+    "bt-age-transition-trace-villagers": 15964,
+    "bt-age-transition-trace-blacksmith": 15963,
+    "bt-age-transition-trace-market": 15962,
+    "bt-age-transition-trace-university": 15961,
+    "bt-age-transition-trace-castle-research-status": 15960,
+    "bt-age-transition-trace-imperial-research-status": 15959,
+    "bt-age-transition-trace-tc-queue-count": 15979,
+    "bt-age-transition-trace-tc-action": 15980,
+}
+AGE_TRANSITION_TRACE_TIMER = ("bt-age-transition-trace-timer", 33)
+AGE_TRANSITION_TRACE_OBJECT_DATA = ("object-data-train-count", 31)
 
 
 ECONOMY_RULES = (
@@ -145,6 +176,158 @@ def _sync_civilian_villager_castle_admission(
         )
     patched_section = section.replace(old, new, 1)
     return runtime[:start] + patched_section + runtime[end:]
+
+
+def _sync_feudal_resource_claim_recovery(runtime: str) -> str:
+    marker = "; Recovery: feudal-resource-claim | FAILED ISSUANCE -> FREE"
+    if marker in runtime:
+        return runtime
+
+    block = """; Recovery: feudal-resource-claim | FAILED ISSUANCE -> FREE
+(defrule
+    (goal byzantine-resource-claim 1)
+    (goal demand-feudal-transition 83)
+    (not (up-research-status c: 101 >= 2))
+    (not (current-age >= feudal-age))
+=>
+    (set-goal byzantine-resource-claim 0)
+)
+"""
+
+    insertion_marker = "; RETRY | ISSUED/PENDING -> ACTIVE"
+    retry_start = runtime.find(insertion_marker)
+    if retry_start < 0:
+        raise RuntimeError(
+            "runtime artifact is missing the Feudal research retry boundary"
+        )
+    return runtime[:retry_start] + block + "\n" + runtime[retry_start:]
+
+
+def _first_rule_block(source: str, marker: str) -> tuple[int, int, str]:
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError(f"source is missing section marker: {marker}")
+    rule_start = source.find("(defrule", start)
+    if rule_start < 0:
+        raise RuntimeError(f"source is missing defrule after marker: {marker}")
+
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(rule_start, len(source)):
+        char = source[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == chr(92):
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return start, index + 1, source[rule_start:index + 1]
+    raise RuntimeError(f"source has unterminated defrule after marker: {marker}")
+
+
+def _demand_lifecycle_block(source: str, identity: str) -> str:
+    start_marker = f"; Pending diagnostics: {identity}"
+    start = source.find(start_marker)
+    if start < 0:
+        raise RuntimeError(f"generated artifact is missing demand lifecycle: {identity}")
+
+    candidates = []
+    for marker in ("; Invalidation: ", "; Pending diagnostics: "):
+        cursor = source.find(marker, start + len(start_marker))
+        if cursor >= 0:
+            candidates.append(cursor)
+    if not candidates:
+        raise RuntimeError(f"generated artifact has no following demand boundary: {identity}")
+    end = min(candidates)
+    return source[start:end].rstrip() + "\n"
+
+
+def _ensure_water_dock_defconsts(
+    runtime: str,
+    generated: str,
+) -> tuple[str, dict[str, int]]:
+    runtime = _ensure_reserved_water_goal_defconsts(runtime)
+    return (
+        runtime,
+        {
+            name: WATER_RUNTIME_RESERVED_GOALS[name]
+            for name in (
+                WATER_DOCK_DEMAND,
+                f"construction-retry-barrier-{WATER_DOCK_DEMAND}",
+            )
+        },
+    )
+
+def _sync_first_dock_lifecycle(runtime: str, generated: str) -> str:
+    identity = WATER_DOCK_DEMAND
+    runtime, dock_constants = _ensure_water_dock_defconsts(runtime, generated)
+    action_block = _rule_block(
+        generated,
+        identity,
+        marker_prefix="; Action issuance:",
+    )
+    lifecycle_block = _demand_lifecycle_block(generated, identity)
+    if "(build dock)" not in action_block:
+        raise RuntimeError("generated first-dock action is not a dock build")
+    if "(building-type-count dock >= 1)" not in lifecycle_block:
+        raise RuntimeError("generated first-dock lifecycle is missing its dock witness")
+
+    install_block = lifecycle_block
+    if f"; Action issuance: {identity} | ACTIVE -> ISSUED" not in install_block:
+        install_block += "\n" + action_block
+    start_marker = f"; Pending diagnostics: {identity}"
+    end_marker = "; Native Strategos voice plan"
+    start = runtime.find(start_marker)
+    end = runtime.find(end_marker, start + len(start_marker)) if start >= 0 else -1
+    if start >= 0 and end >= 0:
+        runtime = runtime[:start] + install_block.rstrip() + "\n\n" + runtime[end:]
+    else:
+        runtime = _install_once(
+            runtime,
+            end_marker,
+            install_block,
+        )
+
+    init_start, init_end, init_rule = _first_rule_block(
+        runtime,
+        "; Demand initialization",
+    )
+    init_line = f"    (set-goal demand-{identity} 1)"
+    if init_line not in init_rule:
+        disable_line = "    (disable-self)"
+        if disable_line not in init_rule:
+            raise RuntimeError("runtime demand initialization rule is missing disable-self")
+        patched_rule = init_rule.replace(
+            disable_line,
+            init_line + "\n" + disable_line,
+            1,
+        )
+        runtime = runtime[:init_start] + runtime[init_start:init_end].replace(init_rule, patched_rule, 1) + runtime[init_end:]
+
+    retry_reset = (
+        "; Native control rule: water-dock-capability-construction-retry-reset\n"
+        "(defrule\n"
+        "    (true)\n"
+        "=>\n"
+        "    (set-goal construction-retry-barrier-water-dock-capability 0)\n"
+        ")\n"
+    )
+    runtime = _install_once(
+        runtime,
+        "; Per-pass production retry barriers",
+        retry_reset,
+    )
+    return runtime
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -351,27 +534,25 @@ def _defconst_values(source: str) -> dict[str, int]:
     }
 
 
-def _choose_goal_slots(runtime: str, count: int) -> list[int]:
-    recovery_names = set(RECOVERY_NAMES)
-    used: set[int] = set()
-    for start, end, _kind in _storage_intervals(runtime):
-        if any(start <= 16_000 and end >= 1 for _ in (0,)):
-            for value in range(max(1, start), min(16_000, end) + 1):
-                used.add(value)
-
-    # The recovery slots themselves are relocatable, so remove their current
-    # intervals from the exclusion set before selecting replacement slots.
-    definitions = {
-        match.group(1): int(match.group(2))
-        for match in re.finditer(
-            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
-            runtime,
-        )
+def _choose_goal_slots(
+    runtime: str,
+    count: int,
+    *,
+    relocatable_names: tuple[str, ...] = (),
+    reserved_source: str = "",
+) -> list[int]:
+    if count <= 0:
+        return []
+    relocatable_names_set = set(relocatable_names)
+    occupants = _goal_slot_occupants(runtime)
+    if reserved_source:
+        for value, names in _goal_slot_occupants(reserved_source).items():
+            occupants.setdefault(value, set()).update(names)
+    used: set[int] = {
+        value
+        for value, names in occupants.items()
+        if not (names & relocatable_names_set)
     }
-    for name in recovery_names:
-        current = definitions.get(name)
-        if current is not None and 1 <= current <= 16_000:
-            used.discard(current)
 
     chosen: list[int] = []
     for candidate in range(16_000, 0, -1):
@@ -381,6 +562,565 @@ def _choose_goal_slots(runtime: str, count: int) -> list[int]:
         if len(chosen) == count:
             return chosen
     raise RuntimeError("no free native Goal slots remain in 1..16000")
+
+
+def _goal_slot_occupants(source: str) -> dict[int, set[str]]:
+    """Return Goal-slot users keyed by resolved native Goal id."""
+    definitions = _defconst_values(source)
+    occupants: dict[int, set[str]] = {}
+    pattern = re.compile(
+        r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)"
+    )
+    for match in pattern.finditer(source):
+        name = match.group(1)
+        value = definitions.get(name)
+        if value is None or not 1 <= value <= 16_000:
+            continue
+        occupants.setdefault(value, set()).add(name)
+    return occupants
+
+
+def _ensure_named_defconsts(
+    runtime: str,
+    generated: str,
+    names: tuple[str, ...],
+) -> str:
+    for name in names:
+        match = re.search(
+            rf"^\(defconst {re.escape(name)} (-?\d+)\)$",
+            generated,
+            flags=re.MULTILINE,
+        )
+        if not match:
+            raise RuntimeError(f"generated artifact is missing defconst: {name}")
+
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            runtime,
+        )
+    }
+    current = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        values = [value for value in current.values() if value is not None]
+        if len(values) != len(names) or any(not 1 <= value <= 16_000 for value in values):
+            return False
+        if len(set(values)) != len(values):
+            return False
+        for name, value in current.items():
+            assert value is not None
+            other_users = occupants.get(value, set()) - {name}
+            if other_users:
+                return False
+        return True
+
+    if valid_current():
+        return runtime
+
+    chosen = _choose_goal_slots(runtime, len(names), reserved_source=generated)
+    for name, value in zip(names, chosen):
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            marker = "(defconst opening-plan "
+            position = runtime.find(marker)
+            if position < 0:
+                raise RuntimeError("runtime artifact is missing opening-plan defconst")
+            line_end = runtime.find("\n", position)
+            runtime = runtime[: line_end + 1] + new_line + "\n" + runtime[line_end + 1 :]
+    return runtime
+
+
+def _ensure_age_transition_trace_storage(runtime: str) -> str:
+    """Install stable diagnostic Goal/Timer storage for the age-transition trace."""
+
+    definitions = _defconst_values(runtime)
+    missing: list[str] = []
+    for name, value in AGE_TRANSITION_TRACE_GOALS.items():
+        current = definitions.get(name)
+        if current is not None:
+            if current != value:
+                raise RuntimeError(
+                    f"age-transition trace Goal changed unexpectedly: {name}={current}"
+                )
+            continue
+        if value in definitions.values():
+            raise RuntimeError(
+                f"age-transition trace Goal slot is occupied: {name}={value}"
+            )
+        missing.append(name)
+
+    object_data_name, object_data_value = AGE_TRANSITION_TRACE_OBJECT_DATA
+    current_object_data = definitions.get(object_data_name)
+    if current_object_data is not None and current_object_data != object_data_value:
+        raise RuntimeError(
+            f"age-transition trace ObjectData changed unexpectedly: {object_data_name}={current_object_data}"
+        )
+    if current_object_data is None and object_data_value in definitions.values():
+        raise RuntimeError(
+            f"age-transition trace ObjectData slot is occupied: {object_data_name}={object_data_value}"
+        )
+
+    timer_name, timer_value = AGE_TRANSITION_TRACE_TIMER
+    current_timer = definitions.get(timer_name)    if current_timer is not None:
+        if current_timer != timer_value:
+            raise RuntimeError(
+                f"age-transition trace Timer changed unexpectedly: {timer_name}={current_timer}"
+            )
+    else:
+        if timer_value in _timer_ids(runtime) or timer_value in definitions.values():
+            raise RuntimeError(
+                f"age-transition trace Timer slot is occupied: {timer_name}={timer_value}"
+            )
+
+    if not missing and current_timer is not None and current_object_data is not None:
+        return runtime
+
+    marker = "(defconst opening-plan "
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing opening-plan defconst")
+    line_end = runtime.find("\n", position)
+    if line_end < 0:
+        line_end = len(runtime)
+
+    insertion_lines = []
+    for name in missing:
+        insertion_lines.append(
+            f"(defconst {name} {AGE_TRANSITION_TRACE_GOALS[name]})"
+        )
+    if current_timer is None:
+        insertion_lines.append(
+            f"(defconst {timer_name} {timer_value})"
+        )
+    if current_object_data is None:
+        insertion_lines.append(
+            f"(defconst {object_data_name} {object_data_value})"
+        )
+    insertion = "\n" + "\n".join(insertion_lines)
+    return runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
+
+
+def _sync_age_transition_runtime_trace(runtime: str) -> str:
+    """Install a diagnostic-only Feudal/Castle/Imperial age-transition predicate trace."""
+
+    runtime = _ensure_age_transition_trace_storage(runtime)
+    trace_marker = "; Native diagnostic control: byzantine-age-transition-trace-init"
+    voice_marker = "; Native Strategos voice plan"
+
+    block = r'''; Native diagnostic control: byzantine-age-transition-trace-init
+(defrule
+    (true)
+=>
+    (enable-timer bt-age-transition-trace-timer 15)
+    (disable-self)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-values
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+=>
+    (up-get-fact game-time 0 bt-age-transition-trace-game-time)
+    (up-get-fact current-age 0 bt-age-transition-trace-current-age)
+    (up-get-fact unit-type-count-total villager bt-age-transition-trace-villagers)
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-target-objects 1 action-default -1 -1)
+    (up-get-object-data object-data-train-count bt-age-transition-trace-tc-queue-count)
+    (up-get-object-data object-data-action bt-age-transition-trace-tc-action)
+    (up-chat-data-to-self "BTTRACE FEUDAL state=%d" g: demand-feudal-transition)
+    (up-chat-data-to-self "BTTRACE FEUDAL retry=%d" g: research-retry-barrier-feudal-transition)
+    (up-chat-data-to-self "BTTRACE FEUDAL age=%d" g: bt-age-transition-trace-current-age)
+    (up-chat-data-to-self "BTTRACE FEUDAL villagers=%d" g: bt-age-transition-trace-villagers)
+    (up-chat-data-to-self "BTTRACE FEUDAL tc-queue=%d" g: bt-age-transition-trace-tc-queue-count)
+    (up-chat-data-to-self "BTTRACE FEUDAL tc-action=%d" g: bt-age-transition-trace-tc-action)
+    (up-chat-data-to-self "BTTRACE FEUDAL claim=%d" g: byzantine-resource-claim)
+    (up-chat-data-to-self "BTTRACE FEUDAL time=%d" g: bt-age-transition-trace-game-time)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-4
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 4)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 4)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-3
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 3)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 3)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-2
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 2)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 2)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-1
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 1)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 1)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-0
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 0)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 0)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-disabled
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == -1)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status -1)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (can-research feudal-age)
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (not (can-research feudal-age))
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-escrow-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (can-research-with-escrow feudal-age)
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research-with-escrow=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-escrow-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (not (can-research-with-escrow feudal-age))
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research-with-escrow=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-values
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+=>
+    (up-get-fact game-time 0 bt-age-transition-trace-game-time)
+    (up-get-fact current-age 0 bt-age-transition-trace-current-age)
+    (up-get-fact unit-type-count-total villager bt-age-transition-trace-villagers)
+    (up-get-fact building-type-count-total blacksmith bt-age-transition-trace-blacksmith)
+    (up-get-fact building-type-count-total market bt-age-transition-trace-market)
+    (up-chat-data-to-self "BTTRACE CASTLE state=%d" g: demand-castle-age-transition)
+    (up-chat-data-to-self "BTTRACE CASTLE retry=%d" g: research-retry-barrier-castle-age-transition)
+    (up-chat-data-to-self "BTTRACE CASTLE age=%d" g: bt-age-transition-trace-current-age)
+    (up-chat-data-to-self "BTTRACE CASTLE villagers=%d" g: bt-age-transition-trace-villagers)
+    (up-chat-data-to-self "BTTRACE CASTLE blacksmith=%d" g: bt-age-transition-trace-blacksmith)
+    (up-chat-data-to-self "BTTRACE CASTLE market=%d" g: bt-age-transition-trace-market)
+    (up-chat-data-to-self "BTTRACE CASTLE claim=%d" g: byzantine-resource-claim)
+    (up-chat-data-to-self "BTTRACE CASTLE time=%d" g: bt-age-transition-trace-game-time)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-values
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+=>
+    (up-get-fact game-time 0 bt-age-transition-trace-game-time)
+    (up-get-fact current-age 0 bt-age-transition-trace-current-age)
+    (up-get-fact unit-type-count-total villager bt-age-transition-trace-villagers)
+    (up-get-fact building-type-count-total university bt-age-transition-trace-university)
+    (up-chat-data-to-self "BTTRACE IMPERIAL state=%d" g: demand-imperial-conversion)
+    (up-chat-data-to-self "BTTRACE IMPERIAL retry=%d" g: research-retry-barrier-imperial-conversion)
+    (up-chat-data-to-self "BTTRACE IMPERIAL age=%d" g: bt-age-transition-trace-current-age)
+    (up-chat-data-to-self "BTTRACE IMPERIAL villagers=%d" g: bt-age-transition-trace-villagers)
+    (up-chat-data-to-self "BTTRACE IMPERIAL university=%d" g: bt-age-transition-trace-university)
+    (up-chat-data-to-self "BTTRACE IMPERIAL claim=%d" g: byzantine-resource-claim)
+    (up-chat-data-to-self "BTTRACE IMPERIAL time=%d" g: bt-age-transition-trace-game-time)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-status-4
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (up-research-status c: 102 == 4)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 4)
+    (up-chat-data-to-self "BTTRACE CASTLE research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-status-3
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (up-research-status c: 102 == 3)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 3)
+    (up-chat-data-to-self "BTTRACE CASTLE research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-status-2
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (up-research-status c: 102 == 2)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 2)
+    (up-chat-data-to-self "BTTRACE CASTLE research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-status-1
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (up-research-status c: 102 == 1)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 1)
+    (up-chat-data-to-self "BTTRACE CASTLE research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-status-0
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (up-research-status c: 102 == 0)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 0)
+    (up-chat-data-to-self "BTTRACE CASTLE research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-status-disabled
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (up-research-status c: 102 == -1)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status -1)
+    (up-chat-data-to-self "BTTRACE CASTLE research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-status-4
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (up-research-status c: 103 == 4)
+=>
+    (set-goal bt-age-transition-trace-imperial-research-status 4)
+    (up-chat-data-to-self "BTTRACE IMPERIAL research-status=%d" g: bt-age-transition-trace-imperial-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-status-3
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (up-research-status c: 103 == 3)
+=>
+    (set-goal bt-age-transition-trace-imperial-research-status 3)
+    (up-chat-data-to-self "BTTRACE IMPERIAL research-status=%d" g: bt-age-transition-trace-imperial-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-status-2
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (up-research-status c: 103 == 2)
+=>
+    (set-goal bt-age-transition-trace-imperial-research-status 2)
+    (up-chat-data-to-self "BTTRACE IMPERIAL research-status=%d" g: bt-age-transition-trace-imperial-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-status-1
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (up-research-status c: 103 == 1)
+=>
+    (set-goal bt-age-transition-trace-imperial-research-status 1)
+    (up-chat-data-to-self "BTTRACE IMPERIAL research-status=%d" g: bt-age-transition-trace-imperial-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-status-0
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (up-research-status c: 103 == 0)
+=>
+    (set-goal bt-age-transition-trace-imperial-research-status 0)
+    (up-chat-data-to-self "BTTRACE IMPERIAL research-status=%d" g: bt-age-transition-trace-imperial-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-status-disabled
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (up-research-status c: 103 == -1)
+=>
+    (set-goal bt-age-transition-trace-imperial-research-status -1)
+    (up-chat-data-to-self "BTTRACE IMPERIAL research-status=%d" g: bt-age-transition-trace-imperial-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (can-research castle-age)
+=>
+    (up-chat-data-to-self "BTTRACE CASTLE can-research=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (not (can-research castle-age))
+=>
+    (up-chat-data-to-self "BTTRACE CASTLE can-research=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-escrow-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (can-research-with-escrow castle-age)
+=>
+    (up-chat-data-to-self "BTTRACE CASTLE can-research-with-escrow=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-escrow-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == feudal-age)
+    (not (current-age >= castle-age))
+    (not (can-research-with-escrow castle-age))
+=>
+    (up-chat-data-to-self "BTTRACE CASTLE can-research-with-escrow=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (can-research imperial-age)
+=>
+    (up-chat-data-to-self "BTTRACE IMPERIAL can-research=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (not (can-research imperial-age))
+=>
+    (up-chat-data-to-self "BTTRACE IMPERIAL can-research=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-escrow-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (can-research-with-escrow imperial-age)
+=>
+    (up-chat-data-to-self "BTTRACE IMPERIAL can-research-with-escrow=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-escrow-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == castle-age)
+    (not (current-age >= imperial-age))
+    (not (can-research-with-escrow imperial-age))
+=>
+    (up-chat-data-to-self "BTTRACE IMPERIAL can-research-with-escrow=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-rearm
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+=>
+    (disable-timer bt-age-transition-trace-timer)
+    (enable-timer bt-age-transition-trace-timer 15)
+)
+'''
+    marker = trace_marker
+    voice = runtime.find(voice_marker)
+    if voice < 0:
+        raise RuntimeError("runtime artifact is missing Native Strategos voice plan")
+    start = runtime.find(marker)
+    if start >= 0 and start < voice:
+        return runtime[:start] + block.rstrip() + "\n\n" + runtime[voice:]
+    return runtime[:voice] + block.rstrip() + "\n\n" + runtime[voice:]
 
 
 def _ensure_defconsts(runtime: str, generated: str) -> str:
@@ -427,7 +1167,12 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
     if valid_current():
         return runtime
 
-    chosen = _choose_goal_slots(runtime, len(RECOVERY_NAMES))
+    chosen = _choose_goal_slots(
+        runtime,
+        len(RECOVERY_NAMES),
+        relocatable_names=RECOVERY_NAMES,
+        reserved_source=generated,
+    )
     replacements = dict(zip(RECOVERY_NAMES, chosen))
     for name, value in replacements.items():
         old_pattern = re.compile(
@@ -443,7 +1188,7 @@ def _ensure_defconsts(runtime: str, generated: str) -> str:
                 raise RuntimeError("runtime artifact is missing opening-plan defconst")
             line_end = runtime.find("\n", position)
             runtime = runtime[: line_end + 1] + new_line + "\n" + runtime[line_end + 1 :]
-    return runtime
+    return _ensure_named_defconsts(runtime, generated, RECOVERY_NAMES)
 
 
 def _ensure_rule_requirement(
@@ -535,13 +1280,649 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
+PACIFIC_TRANSPORT_DUC_RULES = (
+    "byzantine-pacific-transport-target",
+    "byzantine-pacific-transport-select",
+    "byzantine-pacific-transport-garrison",
+    "byzantine-pacific-transport-load-witness",
+    "byzantine-pacific-transport-transit-probe",
+    "byzantine-pacific-transport-move",
+    "byzantine-pacific-transport-unload",
+)
+
+PACIFIC_RUNTIME_GOAL_NAMES = (
+    "pacific-fishing-controller",
+    "pacific-harbor-defense",
+    "pacific-transport-escort",
+    "pacific-convoy-route",
+    "pacific-transport-recovery",
+)
+
+PACIFIC_RUNTIME_STRATEGIC_NUMBERS = {
+    "sn-maximum-fish-boat-drop-distance": 236,
+    "sn-fishing-boat-whaling-percentage": 316,
+}
+PACIFIC_TRANSPORT_RUNTIME_GOALS = (
+    "pacific-transport-lifecycle",
+    "pacific-transport-transit-witness",
+    "pacific-transport-unload-witness",
+    "pacific-opening-transport-point",
+    "pacific-opening-transport-id",
+    "pacific-opening-transport-load-count",
+    "pacific-opening-transport-transit-action",
+    "pacific-opening-transport-distance",
+    "pacific-opening-transport-unload-action",
+    "pacific-opening-transport-unload-count",
+)
+
+WATER_EXECUTION_STATE_NAMES = (
+    "transport-phase",
+    "water-posture",
+    "water-transport-objective",
+    "water-transport-rebuild",
+    "pacific-opening-transport-objective",
+    "feudal-resource-island-transport-objective",
+)
+WATER_EXECUTION_NEW_STATE_NAMES = (
+    "water-transport-objective",
+    "water-transport-rebuild",
+    "pacific-opening-transport-objective",
+    "feudal-resource-island-transport-objective",
+    "feudal-resource-island-target-state",
+)
+
+WATER_LIFECYCLE_DEMANDS = (
+    "water-fishing-continuity",
+    "water-fishing-expansion",
+    "water-transport-capability",
+    "water-naval-defense",
+    "water-naval-control",
+)
+
+WATER_FISHING_EXPANSION_GOAL_NAMES = (
+    "demand-water-fishing-expansion",
+    "issued-water-fishing-expansion",
+    "pending-water-fishing-expansion",
+    "complete-water-fishing-expansion",
+    "production-retry-barrier-water-fishing-expansion",
+)
+
+
+WATER_RUNTIME_RESERVED_GOALS = {
+    "water-dock-capability": 15977,
+    "construction-retry-barrier-water-dock-capability": 15976,
+    "demand-water-dock-capability": 15975,
+    "issued-water-dock-capability": 15973,
+    "pending-water-dock-capability": 15972,
+    "complete-water-dock-capability": 15971,
+    "water-transport-objective": 15970,
+    "water-transport-rebuild": 15969,
+    "pacific-opening-transport-objective": 15968,
+    "feudal-resource-island-transport-objective": 15967,
+}
+
+
+def _ensure_reserved_water_goal_defconsts(runtime: str) -> str:
+    """Canonicalize the reserved water Goal defconst block to exactly one copy."""
+
+    lines_to_remove = {
+        re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)\n?",
+            flags=re.MULTILINE,
+        )
+        for name in WATER_RUNTIME_RESERVED_GOALS
+    }
+    for pattern in lines_to_remove:
+        runtime = pattern.sub("", runtime)
+
+    marker = "(defconst opening-plan "
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing opening-plan defconst")
+    line_end = runtime.find("\n", position)
+    if line_end < 0:
+        line_end = len(runtime)
+
+    insertion = "\n" + "\n".join(
+        f"(defconst {name} {value})"
+        for name, value in WATER_RUNTIME_RESERVED_GOALS.items()
+    )
+    return runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
+
+
+def _ensure_water_fishing_expansion_goal_defconsts(runtime: str) -> str:
+    """Bind the compiler's four-boat fishing lifecycle to free runtime Goal slots."""
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in WATER_FISHING_EXPANSION_GOAL_NAMES}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if len(resolved) != len(WATER_FISHING_EXPANSION_GOAL_NAMES):
+            return False
+        if len(set(resolved.values())) != len(resolved):
+            return False
+        return all(
+            not (occupants.get(value, set()) - {name})
+            for name, value in resolved.items()
+        )
+
+    if valid_current():
+        return runtime
+
+    chosen = _choose_goal_slots(
+        runtime,
+        len(WATER_FISHING_EXPANSION_GOAL_NAMES),
+        relocatable_names=WATER_FISHING_EXPANSION_GOAL_NAMES,
+    )
+    replacements = dict(zip(WATER_FISHING_EXPANSION_GOAL_NAMES, chosen))
+    anchor = "(defconst water-transport-rebuild "
+    position = runtime.find(anchor)
+    if position < 0:
+        raise RuntimeError("runtime artifact is missing water-transport-rebuild defconst")
+    line_end = runtime.find("\n", position)
+    if line_end < 0:
+        line_end = len(runtime)
+    for name, value in replacements.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(new_line, runtime, count=1)
+        if replaced == 0:
+            runtime = runtime[:line_end + 1] + new_line + "\n" + runtime[line_end + 1:]
+            line_end += len(new_line) + 1
+    return runtime
+
+
+def _ensure_pacific_runtime_strategic_numbers(runtime: str) -> str:
+    for name, value in PACIFIC_RUNTIME_STRATEGIC_NUMBERS.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        replacement = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(replacement, runtime, count=1)
+        if replaced:
+            continue
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        if line_end < 0:
+            line_end = len(runtime)
+        runtime = runtime[: line_end + 1] + replacement + "\n" + runtime[line_end + 1 :]
+    return runtime
+
+def _ensure_pacific_transport_goal_defconsts(runtime: str, generated: str) -> str:
+    scalar_names = tuple(
+        name
+        for name in dict.fromkeys((
+            *PACIFIC_TRANSPORT_RUNTIME_GOALS,
+            *PACIFIC_RUNTIME_GOAL_NAMES,
+        ))
+        if name != "pacific-opening-transport-point"
+    )
+    runtime = _ensure_named_defconsts(runtime, generated, scalar_names)
+
+    point_name = "pacific-opening-transport-point"
+    match = re.search(
+        rf"^\(defconst {re.escape(point_name)} (-?\d+)\)$",
+        generated,
+        flags=re.MULTILINE,
+    )
+    if not match:
+        raise RuntimeError(
+            "generated artifact is missing pacific-opening-transport-point defconst"
+        )
+    current_def = _defconst_values(runtime).get(point_name)
+    intervals = _storage_intervals(runtime)
+    if current_def is not None and all(
+        not (start <= current_def <= end or start <= current_def + 1 <= end)
+        for start, end, _kind in intervals
+    ):
+        return runtime
+
+    occupied = set()
+    for start, end, _kind in intervals:
+        occupied.update(range(max(1, start), min(16_000, end) + 1))
+    occupied.update(
+        value
+        for value in _defconst_values(runtime).values()
+        if 1 <= value <= 16_000
+    )
+    chosen = None
+    for candidate in range(15_999, 40, -1):
+        if candidate in occupied or candidate + 1 in occupied:
+            continue
+        chosen = candidate
+        break
+    if chosen is None:
+        raise RuntimeError("no free GoalSpan pair remains for pacific transport point")
+    pattern = re.compile(
+        rf"^\(defconst {re.escape(point_name)} -?\d+\)$",
+        flags=re.MULTILINE,
+    )
+    replacement = f"(defconst {point_name} {chosen})"
+    runtime, replaced = pattern.subn(replacement, runtime, count=1)
+    if replaced == 0:
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        runtime = runtime[: line_end + 1] + replacement + "\n" + runtime[line_end + 1 :]
+    return runtime
+
+
+def _replace_or_install_native_duc_rule(
+    runtime: str,
+    generated: str,
+    identity: str,
+    *,
+    insert_before: str = "Native Strategos voice plan",
+) -> str:
+    generated_block = _rule_block(
+        generated,
+        identity,
+        marker_prefix="; Native DUC rule:",
+    )
+    marker = f"; Native DUC rule: {identity}"
+    start = runtime.find(marker)
+    if start >= 0:
+        rule_start = runtime.find("(defrule", start)
+        if rule_start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing defrule for native DUC rule: {identity}"
+            )
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return runtime[:start] + generated_block.rstrip() + runtime[index + 1:]
+        raise RuntimeError(f"runtime artifact has unterminated DUC rule: {identity}")
+
+    marker = f"; {insert_before}"
+    position = runtime.find(marker)
+    if position < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing DUC insertion boundary: {insert_before}"
+        )
+    return runtime[:position] + generated_block.rstrip() + "\n\n" + runtime[position:]
+
+
+def _sync_pacific_transport_duc(runtime: str, generated: str) -> str:
+    for identity in PACIFIC_TRANSPORT_DUC_RULES:
+        runtime = _replace_or_install_native_duc_rule(runtime, generated, identity)
+    return runtime
+
+
+def _sync_water_demand_lifecycles(runtime: str, generated: str) -> str:
+    """Replace/insert compiler-owned water demand lifecycle blocks."""
+    for identity in WATER_LIFECYCLE_DEMANDS:
+        start_marker = f"; Pending diagnostics: {identity}"
+        generated_start = generated.find(start_marker)
+        if generated_start < 0:
+            raise RuntimeError(f"generated artifact is missing water demand lifecycle: {identity}")
+
+        next_generated = generated.find("; Pending diagnostics:", generated_start + len(start_marker))
+        if next_generated < 0:
+            next_generated = generated.find("; Native Strategos voice plan", generated_start)
+        if next_generated < 0:
+            raise RuntimeError(f"generated artifact is missing lifecycle end boundary: {identity}")
+        generated_block = generated[generated_start:next_generated].rstrip() + "\n"
+
+        runtime_start = runtime.find(start_marker)
+        if runtime_start >= 0:
+            next_runtime = runtime.find("; Pending diagnostics:", runtime_start + len(start_marker))
+            if next_runtime < 0:
+                next_runtime = runtime.find("; Native Strategos voice plan", runtime_start)
+            if next_runtime < 0:
+                raise RuntimeError(f"runtime artifact is missing lifecycle end boundary: {identity}")
+            runtime = runtime[:runtime_start] + generated_block + runtime[next_runtime:]
+            continue
+
+        insertion_marker = "; Pending diagnostics: water-trade-cog-floor"
+        insertion = runtime.find(insertion_marker)
+        if insertion < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing insertion boundary for water demand: {identity}"
+            )
+        runtime = runtime[:insertion] + generated_block + runtime[insertion:]
+
+    return runtime
+
+
+def _ensure_water_execution_state_defconsts(
+    runtime: str,
+) -> str:
+    names = WATER_EXECUTION_NEW_STATE_NAMES
+    definitions = _defconst_values(runtime)
+    values = {name: definitions.get(name) for name in names}
+    occupants = _goal_slot_occupants(runtime)
+
+    def valid_current() -> bool:
+        resolved = {name: int(value) for name, value in values.items() if value is not None}
+        if len(resolved) != len(names):
+            return False
+        if len(set(resolved.values())) != len(resolved):
+            return False
+        return all(
+            not (occupants.get(value, set()) - {name})
+            for name, value in resolved.items()
+        )
+
+    if valid_current():
+        return runtime
+
+    missing = [name for name in names if values[name] is None]
+    chosen = _choose_goal_slots(
+        runtime,
+        len(missing),
+        relocatable_names=tuple(name for name in names if values[name] is not None),
+    )
+    replacements = dict(zip(missing, chosen))
+    for name, value in replacements.items():
+        old_pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        new_line = f"(defconst {name} {value})"
+        runtime, replaced = old_pattern.subn(new_line, runtime, count=1)
+        if replaced:
+            continue
+
+        anchor = re.compile(
+            r"^\(defconst water-posture -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        match = anchor.search(runtime)
+        if match is None:
+            raise RuntimeError("runtime artifact is missing water-posture defconst")
+        insert_at = match.end()
+        runtime = runtime[:insert_at] + "\n" + new_line + runtime[insert_at:]
+
+    return runtime
+
+
+def _ensure_pacific_islands_water_arbitration(runtime: str) -> str:
+    """Treat Pacific Islands as the same persistent water-investment class as Islands."""
+
+    identities = (
+        "strategic-arbitration-observation-enable-strategy-water-islands",
+        "strategic-arbitration-observation-disable-strategy-water-islands",
+    )
+    replacement = "(or (map-type islands) (map-type pacific-islands))"
+
+    for identity in identities:
+        marker = f"; Native control rule: {identity}"
+        start = runtime.find(marker)
+        if start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing Pacific water arbitration rule: {identity}"
+            )
+        rule_start = runtime.find("(defrule", start)
+        if rule_start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing defrule for Pacific water arbitration: {identity}"
+            )
+
+        depth = 0
+        in_string = False
+        escape = False
+        end = None
+        for index in range(rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = index + 1
+                    break
+        if end is None:
+            raise RuntimeError(
+                f"runtime artifact has unterminated Pacific water arbitration rule: {identity}"
+            )
+
+        block = runtime[start:end]
+        if identity.endswith("enable-strategy-water-islands"):
+            old = "    (map-type islands)\n"
+            if old in block:
+                block = block.replace(old, f"    {replacement}\n", 1)
+            elif f"    {replacement}\n" not in block:
+                raise RuntimeError(
+                    f"runtime artifact has unexpected enable condition for {identity}"
+                )
+        else:
+            old = "    (not (map-type islands))\n"
+            if old in block:
+                block = block.replace(
+                    old,
+                    "    (not " + replacement + ")\n",
+                    1,
+                )
+            elif f"    (not {replacement})\n" not in block:
+                raise RuntimeError(
+                    f"runtime artifact has unexpected disable condition for {identity}"
+                )
+
+        runtime = runtime[:start] + block + runtime[end:]
+
+    return runtime
+
+
+def _replace_or_install_native_control_rule(
+    runtime: str,
+    generated: str,
+    identity: str,
+    *,
+    insert_before: str,
+) -> str:
+    """Replace one named native control rule, or install it at a stable boundary."""
+    generated_block = _rule_block(generated, identity)
+    marker = f"; Native control rule: {identity}"
+
+    runtime_start = runtime.find(marker)
+    if runtime_start >= 0:
+        rule_start = runtime.find("(defrule", runtime_start)
+        if rule_start < 0:
+            raise RuntimeError(
+                f"runtime artifact is missing defrule for native control rule: {identity}"
+            )
+
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(rule_start, len(runtime)):
+            char = runtime[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif char == chr(92):
+                    escape = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return (
+                        runtime[:runtime_start]
+                        + generated_block.rstrip()
+                        + runtime[index + 1:]
+                    )
+        raise RuntimeError(
+            f"runtime artifact has unterminated native control rule: {identity}"
+        )
+
+    insertion_marker = f"; Native control rule: {insert_before}"
+    insertion = runtime.find(insertion_marker)
+    if insertion < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing insertion boundary: {insert_before}"
+        )
+    return (
+        runtime[:insertion]
+        + generated_block.rstrip()
+        + "\n\n"
+        + runtime[insertion:]
+    )
+
+
+def _replace_between_markers(
+    runtime: str,
+    generated: str,
+    start_marker: str,
+    end_marker: str,
+) -> str:
+    generated_start = generated.find(start_marker)
+    generated_end = generated.find(end_marker, generated_start)
+    runtime_start = runtime.find(start_marker)
+    runtime_end = runtime.find(end_marker, runtime_start)
+
+    if generated_start < 0 or generated_end < 0:
+        raise RuntimeError(
+            f"generated artifact is missing control block: {start_marker}"
+        )
+    if runtime_start < 0 or runtime_end < 0:
+        raise RuntimeError(
+            f"runtime artifact is missing control block: {start_marker}"
+        )
+
+    return (
+        runtime[:runtime_start]
+        + generated[generated_start:generated_end].rstrip()
+        + "\n\n"
+        + runtime[runtime_end:]
+    )
+
+
+def _sync_strategic_arbitration_control(runtime: str, generated: str) -> str:
+    """Synchronize compiler-owned water/land arbitration by stable rule identity."""
+    identities = tuple(
+        match.group(1)
+        for match in re.finditer(
+            r"; Native control rule: (strategic-arbitration-[^\n]+)",
+            generated,
+        )
+    )
+    if not identities:
+        raise RuntimeError(
+            "generated artifact contains no strategic-arbitration control rules"
+        )
+
+    for identity in identities:
+        runtime = _replace_or_install_native_control_rule(
+            runtime,
+            generated,
+            identity,
+            insert_before="counter-package-selection-reset-000",
+        )
+    return runtime
+
+
+def _sync_opening_water_selector(runtime: str, generated: str) -> str:
+    """Synchronize Pacific-first plus generic-water opening arbitration."""
+    pacific_marker = "; Native control rule: opening-selector-pacific-land-first"
+    water_marker = "; Native control rule: opening-selector-water-control"
+    end_marker = "; Native control rule: opening-selector-fast-castle"
+
+    generated_start = generated.find(pacific_marker)
+    generated_end = generated.find(end_marker, generated_start)
+    if generated_start < 0:
+        return _replace_between_markers(runtime, generated, water_marker, end_marker)
+    if generated_end < 0:
+        raise RuntimeError("generated artifact is missing Pacific opening selector boundary")
+
+    generated_block = generated[generated_start:generated_end].rstrip() + "\n\n"
+    runtime_start = runtime.find(pacific_marker)
+    runtime_end = runtime.find(end_marker, runtime_start if runtime_start >= 0 else 0)
+    if runtime_start >= 0:
+        if runtime_end < 0:
+            raise RuntimeError("runtime artifact is missing Pacific opening selector end boundary")
+        return runtime[:runtime_start] + generated_block + runtime[runtime_end:]
+
+    insertion = runtime.find(water_marker)
+    if insertion < 0:
+        raise RuntimeError("runtime artifact is missing opening water selector insertion boundary")
+    return runtime[:insertion] + generated_block + runtime[insertion:]
+
+
+def _sync_water_execution_control(runtime: str, generated: str) -> str:
+    """Synchronize the canonical water state machine into the checked-in runtime."""
+
+    water_start = "; Native control rule: water-execution-initialize"
+    water_end = "; Native control rule: opening-recovery-defense-clear-initialize"
+
+    generated_start = generated.find(water_start)
+    generated_end = generated.find(water_end, generated_start)
+    runtime_start = runtime.find(water_start)
+    runtime_end = runtime.find(water_end, runtime_start)
+
+    if generated_start < 0 or generated_end < 0:
+        raise RuntimeError("generated artifact is missing the canonical water control block")
+    if runtime_start < 0 or runtime_end < 0:
+        raise RuntimeError("runtime artifact is missing the water control insertion boundaries")
+
+    return (
+        runtime[:runtime_start]
+        + generated[generated_start:generated_end].rstrip()
+        + "\n\n"
+        + runtime[runtime_end:]
+    )
+
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
     generated = GENERATED.read_text(encoding="utf-8")
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _sync_strategic_arbitration_control(runtime, generated)
+    runtime = _sync_water_execution_control(runtime, generated)
+    runtime = _sync_opening_water_selector(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
+    runtime = _sync_feudal_resource_claim_recovery(runtime)
+    runtime = _ensure_pacific_transport_goal_defconsts(runtime, generated)
+    runtime = _ensure_reserved_water_goal_defconsts(runtime)
+    runtime = _ensure_pacific_runtime_strategic_numbers(runtime)
+    runtime = _ensure_water_fishing_expansion_goal_defconsts(runtime)
+    runtime = _sync_water_demand_lifecycles(runtime, generated)
+    runtime = _sync_first_dock_lifecycle(runtime, generated)
+    runtime = _sync_pacific_transport_duc(runtime, generated)
+    runtime = _sync_age_transition_runtime_trace(runtime)
 
     defense_block = _block(
         generated,
@@ -584,6 +1965,14 @@ def synchronize() -> bool:
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
+
+    for identity in ECONOMY_INSTALLABLE_RULES:
+        runtime = _replace_or_install_native_control_rule(
+            runtime,
+            generated,
+            identity,
+            insert_before="economy-controller-select-water-economy",
+        )
 
     voice_marker = "; Native Strategos voice plan"
     voice_start = generated.find(voice_marker)
