@@ -33,7 +33,12 @@ class ByzantineCampControllerTests(unittest.TestCase):
             self.assertIn("dropsite-min-distance", remote.expression)
 
             for floor in range(1, max_count + 1):
-                demand_name = (\n                    f"economy-lumber-camp-floor-{floor}"\n                    if resource == "wood" and floor <= 2\n                    else f"economy-{resource}-camp-floor-{floor}"\n                )\n                demand = profile.demand(demand_name)
+                demand_name = (
+                    f"economy-lumber-camp-floor-{floor}"
+                    if resource == "wood" and floor <= 2
+                    else f"economy-{resource}-camp-floor-{floor}"
+                )
+                demand = profile.demand(demand_name)
                 self.assertEqual(demand.capability_intent.kind.value, "BUILD")
                 self.assertEqual(demand.execution_demands[0].action, f"(build {'lumber-camp' if resource == 'wood' else 'mining-camp'})")
                 self.assertTrue(demand.native_placement)
@@ -58,7 +63,11 @@ class ByzantineCampControllerTests(unittest.TestCase):
             demand = next(
                 item
                 for item in compilation.demands
-                if item.name == (\n                    "economy-lumber-camp-floor-1"\n                    if resource == "wood"\n                    else f"economy-{resource}-camp-floor-1"\n                )
+                if item.name == (
+                    "economy-lumber-camp-floor-1"
+                    if resource == "wood"
+                    else f"economy-{resource}-camp-floor-1"
+                )
             )
             self.assertIsNotNone(demand.construction_lifecycle)
             self.assertEqual(demand.construction_lifecycle.building, building)
