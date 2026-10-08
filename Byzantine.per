@@ -4523,6 +4523,11 @@
 (defconst byzantine-natural-food-stable 0)
 (defconst byzantine-natural-food-transition 1)
 (defconst byzantine-natural-food-farms 2)
+(defconst byzantine-food-pressure-state 15450)
+(defconst byzantine-food-pressure-normal 0)
+(defconst byzantine-food-pressure-warning 1)
+(defconst byzantine-food-pressure-crisis 2)
+(defconst byzantine-food-pressure-severe 3)
 ; UserPatch food-source classes used by community food retasking.
 (defconst livestock-food 958)
 (defconst forage-food 16)
@@ -4745,7 +4750,7 @@
 (defconst bt-local-wall-count 4)
 (defconst bt-castle-cataphract-floor 4)
 (defconst bt-castle-varangian-floor 3)
-(defconst bt-castle-skirmisher-floor 4)
+(defconst bt-castle-skirmisher-floor 6)
 (defconst bt-castle-mangonel-floor 2)
 (defconst bt-castle-monk-floor 4)
 (defconst bt-imperial-cavalier-target 2)
@@ -13677,7 +13682,7 @@
 ; Release: early-defensive-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-early-defensive-spears 65)
-    (unit-type-count 93 >= 2)
+    (unit-type-count 93 >= 4)
 =>
     (set-goal demand-early-defensive-spears 0)
 )
@@ -13686,7 +13691,7 @@
 (defrule
     (goal demand-early-defensive-spears 0)
     (current-age == feudal-age)
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
 =>
     (set-goal demand-early-defensive-spears 1)
 )
@@ -13697,7 +13702,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (unit-type-count 93 >= 2)
+    (unit-type-count 93 >= 4)
 =>
     (set-goal demand-early-defensive-spears 65)
 )
@@ -13708,7 +13713,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-early-defensive-spears 64)
@@ -13720,7 +13725,7 @@
         (goal demand-early-defensive-spears 66)
         (goal demand-early-defensive-spears 64)
     )
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-early-defensive-spears 1)
@@ -13730,15 +13735,15 @@
 ; Action issuance: early-defensive-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-early-defensive-spears 1)
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (goal production-retry-barrier-early-defensive-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count 93 >= 2))
+    (not (unit-type-count 93 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
     (can-train-with-escrow 93)
-    (unit-type-count-total 93 < 2)
+    (unit-type-count-total 93 < 4)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14097,7 +14102,7 @@
 ; Release: counter-mounted-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-mounted-spears 63)
-    (unit-type-count 93 >= 4)
+    (unit-type-count 93 >= 6)
 =>
     (set-goal demand-counter-mounted-spears 0)
 )
@@ -14105,7 +14110,7 @@
 ; Recovery: counter-mounted-spears | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-mounted-spears 0)
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal counter-package-mounted_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -14118,7 +14123,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (unit-type-count 93 >= 4)
+    (unit-type-count 93 >= 6)
 =>
     (set-goal demand-counter-mounted-spears 63)
 )
@@ -14129,7 +14134,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-counter-mounted-spears 62)
@@ -14141,7 +14146,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-counter-mounted-spears 1)
@@ -14151,15 +14156,15 @@
 ; Action issuance: counter-mounted-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-mounted-spears 1)
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal production-retry-barrier-counter-mounted-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (current-age >= feudal-age)
     (can-train-with-escrow 93)
-    (unit-type-count-total 93 < 4)
+    (unit-type-count-total 93 < 6)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14177,7 +14182,7 @@
 ; Release: counter-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-ranged-skirmishers 64)
-    (unit-type-count 358 >= 4)
+    (unit-type-count skirmisher-line >= 6)
 =>
     (set-goal demand-counter-ranged-skirmishers 0)
 )
@@ -14185,7 +14190,7 @@
 ; Recovery: counter-ranged-skirmishers | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-ranged-skirmishers 0)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (goal counter-package-ranged_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -14198,7 +14203,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (unit-type-count 358 >= 4)
+    (unit-type-count skirmisher-line >= 6)
 =>
     (set-goal demand-counter-ranged-skirmishers 64)
 )
@@ -14209,7 +14214,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-counter-ranged-skirmishers 63)
@@ -14221,7 +14226,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
@@ -14231,10 +14236,10 @@
 ; Action issuance: counter-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-ranged-skirmishers 1)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (goal production-retry-barrier-counter-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count skirmisher-line >= 6))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (or
@@ -14242,10 +14247,10 @@
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     )
     (current-age >= feudal-age)
-    (can-train-with-escrow 358)
-    (unit-type-count-total 358 < bt-castle-skirmisher-floor)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
 =>
-    (train 358)
+    (train skirmisher-line)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-counter-ranged-skirmishers 65)
 )
@@ -20187,8 +20192,767 @@
     (set-strategic-number sn-stone-gatherer-percentage 15)
 )
 
+; ===========================================================================
+; BYZANTINE FOOD-PRESSURE OVERLAY
+; ===========================================================================
+; Hysteresis: enter WARNING <700f, CRISIS <500f, SEVERE <350f.
+; Exit: WARNING >=850f, CRISIS >=700f, SEVERE >=600f.
+; Retask packets fire only on escalation. No food rule depends on
+; byzantine-army-reinforcement being idle. This overlay never cancels an
+; issued age-transition or military demand.
+
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 33)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 17)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+    (current-age >= feudal-age)
+    (food-amount >= 500)
+    (food-amount < 700)
+=>
+    (up-retask-gatherers food c: 2)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 350)
+    (food-amount < 500)
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (food-amount >= 850)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-normal)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount < 350)
+=>
+    (up-retask-gatherers food c: 6)
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (food-amount >= 700)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (food-amount >= 600)
+=>
+    (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+)
+
+; WARNING
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; fast-castle
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; castle conversion
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; base
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; water economy
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; water control
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; imperial fallback
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+
+; CRISIS
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 26)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 14)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; fast-castle
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; water economy
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; water control
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; castle conversion
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 18)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 22)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; imperial conversion
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 15)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+
+; SEVERE
+; counter-feudal
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 2)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; fast-castle
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; imperial
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; legacy food recovery
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; castle conversion
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-wood-gatherer-percentage 14)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-gold-gatherer-percentage 16)
+)
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+
+; Food pressure is a civilian-allocation overlay. It does not cancel an
+; already-issued Feudal/Castle research action or release a military demand.
 ; ---------------------------------------------------------------------------
-; Capacity execution. One action per pass remains the native script arbiter,
+; Capacity execution. One action per pass remains the native script arbiter, One action per pass remains the native script arbiter,
 ; but pending foundations are explicitly counted so the next capacity request
 ; can be issued without waiting for the previous building to finish.
 
@@ -21972,7 +22736,6 @@
     (goal research-retry-barrier-research-pikeman 0)
     (not (up-research-status c: 197 >= 2))
     (current-age >= castle-age)
-    (unit-type-count 93 >= 6)
     (can-research-with-escrow ri-pikeman)
 =>
     (release-escrow food)
@@ -22024,7 +22787,6 @@
     (goal research-retry-barrier-research-elite-skirmisher 0)
     (not (up-research-status c: 98 >= 2))
     (current-age >= castle-age)
-    (unit-type-count 7 >= 6)
     (can-research-with-escrow ri-elite-skirmisher)
 =>
     (release-escrow food)
@@ -30077,557 +30839,39 @@
     (set-goal demand-imperial-trash-hussar-high 123)
 )
 
-; Native Strategos voice plan
-(defconst voice-global-cooldown 50)
-(defconst voice-global-lock 15994)
-(defconst voice-latch-army-preparation 15993)
-(defconst voice-latch-army-ready 15992)
-(defconst voice-latch-attack-issued 15991)
-(defconst voice-latch-attack-witness 15990)
-(defconst voice-latch-cavalry-pressure 15989)
-(defconst voice-latch-endgame-advance 15988)
-(defconst voice-latch-gold-recovery 15987)
-(defconst voice-latch-push-failed 15986)
-(defconst voice-latch-ranged-pressure 15985)
-(defconst voice-latch-reassessment 15984)
-(defconst voice-latch-resource-abundance 15983)
-(defconst voice-latch-severe-counter 15982)
-(defconst voice-latch-siege-blocker 15981)
-(defconst voice-latch-strategos-posture 15980)
-(defconst voice-match-count 15979)
-(defconst voice-rearm-army-preparation 49)
-(defconst voice-rearm-army-ready 48)
-(defconst voice-rearm-attack-issued 47)
-(defconst voice-rearm-attack-witness 46)
-(defconst voice-rearm-cavalry-pressure 45)
-(defconst voice-rearm-endgame-advance 44)
-(defconst voice-rearm-gold-recovery 43)
-(defconst voice-rearm-push-failed 42)
-(defconst voice-rearm-ranged-pressure 41)
-(defconst voice-rearm-reassessment 40)
-(defconst voice-rearm-resource-abundance 39)
-(defconst voice-rearm-severe-counter 38)
-(defconst voice-rearm-siege-blocker 37)
-(defconst voice-rearm-strategos-posture 36)
-; Voice Goal initialization
+; RUNTIME TEST: DIRECT RESOURCE-CAMP PLACEMENT
+; Artifact-only hypothesis test for camp placement.
+; First camp builds immediately when the resource is known; a new camp
+; is allowed when the nearest existing camp is more than 12 away.
+;----------------------------------------------------------------
 (defrule
-    (true)
+    (resource-found wood)
+    (or
+        (building-type-count-total lumber-camp < 1)
+        (dropsite-min-distance wood > 12)
+    )
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build lumber-camp)
 =>
-    (set-goal voice-global-lock 0)
-    (set-goal voice-latch-army-preparation 0)
-    (set-goal voice-latch-army-ready 0)
-    (set-goal voice-latch-attack-issued 0)
-    (set-goal voice-latch-attack-witness 0)
-    (set-goal voice-latch-cavalry-pressure 0)
-    (set-goal voice-latch-endgame-advance 0)
-    (set-goal voice-latch-gold-recovery 0)
-    (set-goal voice-latch-push-failed 0)
-    (set-goal voice-latch-ranged-pressure 0)
-    (set-goal voice-latch-reassessment 0)
-    (set-goal voice-latch-resource-abundance 0)
-    (set-goal voice-latch-severe-counter 0)
-    (set-goal voice-latch-siege-blocker 0)
-    (set-goal voice-latch-strategos-posture 0)
-    (set-goal voice-match-count 0)
-    (disable-self)
+    (set-strategic-number sn-lumber-camp-max-distance 25)
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
 )
 
-; Voice Timer initialization
 (defrule
-    (true)
+    (resource-found gold)
+    (or
+        (building-type-count-total mining-camp < 1)
+        (dropsite-min-distance gold > 12)
+    )
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build mining-camp)
 =>
-    (disable-timer voice-global-cooldown)
-    (disable-timer voice-rearm-army-preparation)
-    (disable-timer voice-rearm-army-ready)
-    (disable-timer voice-rearm-attack-issued)
-    (disable-timer voice-rearm-attack-witness)
-    (disable-timer voice-rearm-cavalry-pressure)
-    (disable-timer voice-rearm-endgame-advance)
-    (disable-timer voice-rearm-gold-recovery)
-    (disable-timer voice-rearm-push-failed)
-    (disable-timer voice-rearm-ranged-pressure)
-    (disable-timer voice-rearm-reassessment)
-    (disable-timer voice-rearm-resource-abundance)
-    (disable-timer voice-rearm-severe-counter)
-    (disable-timer voice-rearm-siege-blocker)
-    (disable-timer voice-rearm-strategos-posture)
-    (disable-self)
-)
-
-; Voice global cooldown release
-(defrule
-    (timer-triggered voice-global-cooldown)
-    (or (goal voice-global-lock 1) (goal voice-global-lock 2))
-=>
-    (disable-timer voice-global-cooldown)
-    (set-goal voice-global-lock 0)
-)
-
-; Voice rearm timer: strategos-posture-castle-power
-(defrule
-    (timer-triggered voice-rearm-strategos-posture)
-    (goal voice-latch-strategos-posture 1)
-=>
-    (disable-timer voice-rearm-strategos-posture)
-    (set-goal voice-latch-strategos-posture 2)
-)
-
-; Voice clear witness: strategos-posture-castle-power
-(defrule
-    (goal voice-latch-strategos-posture 2)
-    (not (goal strategy-posture 4))
-=>
-    (set-goal voice-latch-strategos-posture 0)
-)
-
-; Voice rearm timer: strategos-cavalry-pressure
-(defrule
-    (timer-triggered voice-rearm-cavalry-pressure)
-    (goal voice-latch-cavalry-pressure 1)
-=>
-    (disable-timer voice-rearm-cavalry-pressure)
-    (set-goal voice-latch-cavalry-pressure 2)
-)
-
-; Voice clear witness: strategos-cavalry-pressure
-(defrule
-    (goal voice-latch-cavalry-pressure 2)
-    (not (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-line >= 8))))
-=>
-    (set-goal voice-latch-cavalry-pressure 0)
-)
-
-; Voice rearm timer: strategos-ranged-pressure
-(defrule
-    (timer-triggered voice-rearm-ranged-pressure)
-    (goal voice-latch-ranged-pressure 1)
-=>
-    (disable-timer voice-rearm-ranged-pressure)
-    (set-goal voice-latch-ranged-pressure 2)
-)
-
-; Voice clear witness: strategos-ranged-pressure
-(defrule
-    (goal voice-latch-ranged-pressure 2)
-    (players-unit-type-count any-enemy archer-line < 8)
-=>
-    (set-goal voice-latch-ranged-pressure 0)
-)
-
-; Voice rearm timer: strategos-severe-counter
-(defrule
-    (timer-triggered voice-rearm-severe-counter)
-    (goal voice-latch-severe-counter 1)
-=>
-    (disable-timer voice-rearm-severe-counter)
-    (set-goal voice-latch-severe-counter 2)
-)
-
-; Voice clear witness: strategos-severe-counter
-(defrule
-    (goal voice-latch-severe-counter 2)
-    (players-unit-type-count any-enemy archer-line < 12)
-=>
-    (set-goal voice-latch-severe-counter 0)
-)
-
-; Voice rearm timer: strategos-resource-abundance
-(defrule
-    (timer-triggered voice-rearm-resource-abundance)
-    (goal voice-latch-resource-abundance 1)
-=>
-    (disable-timer voice-rearm-resource-abundance)
-    (set-goal voice-latch-resource-abundance 2)
-)
-
-; Voice clear witness: strategos-resource-abundance
-(defrule
-    (goal voice-latch-resource-abundance 2)
-    (or (current-age < imperial-age) (or (food-amount < 2000) (wood-amount < 1600)))
-=>
-    (set-goal voice-latch-resource-abundance 0)
-)
-
-; Voice rearm timer: strategos-army-preparation
-(defrule
-    (timer-triggered voice-rearm-army-preparation)
-    (goal voice-latch-army-preparation 1)
-=>
-    (disable-timer voice-rearm-army-preparation)
-    (set-goal voice-latch-army-preparation 2)
-)
-
-; Voice clear witness: strategos-army-preparation
-(defrule
-    (goal voice-latch-army-preparation 2)
-    (or (current-age < castle-age) (not (goal byzantine-endgame-push-state 1)))
-=>
-    (set-goal voice-latch-army-preparation 0)
-)
-
-; Voice rearm timer: strategos-army-ready
-(defrule
-    (timer-triggered voice-rearm-army-ready)
-    (goal voice-latch-army-ready 1)
-=>
-    (disable-timer voice-rearm-army-ready)
-    (set-goal voice-latch-army-ready 2)
-)
-
-; Voice clear witness: strategos-army-ready
-(defrule
-    (goal voice-latch-army-ready 2)
-    (not (goal byzantine-army-attack-ready 1))
-=>
-    (set-goal voice-latch-army-ready 0)
-)
-
-; Voice rearm timer: strategos-siege-blocker
-(defrule
-    (timer-triggered voice-rearm-siege-blocker)
-    (goal voice-latch-siege-blocker 1)
-=>
-    (disable-timer voice-rearm-siege-blocker)
-    (set-goal voice-latch-siege-blocker 2)
-)
-
-; Voice clear witness: strategos-siege-blocker
-(defrule
-    (goal voice-latch-siege-blocker 2)
-    (or (not (goal byzantine-army-attack-ready 1)) (not (goal byzantine-siege-approach 0)))
-=>
-    (set-goal voice-latch-siege-blocker 0)
-)
-
-; Voice rearm timer: strategos-attack-issued
-(defrule
-    (timer-triggered voice-rearm-attack-issued)
-    (goal voice-latch-attack-issued 1)
-=>
-    (disable-timer voice-rearm-attack-issued)
-    (set-goal voice-latch-attack-issued 2)
-)
-
-; Voice clear witness: strategos-attack-issued
-(defrule
-    (goal voice-latch-attack-issued 2)
-    (not (goal byzantine-endgame-push-state 2))
-=>
-    (set-goal voice-latch-attack-issued 0)
-)
-
-; Voice rearm timer: strategos-attack-witness
-(defrule
-    (timer-triggered voice-rearm-attack-witness)
-    (goal voice-latch-attack-witness 1)
-=>
-    (disable-timer voice-rearm-attack-witness)
-    (set-goal voice-latch-attack-witness 2)
-)
-
-; Voice clear witness: strategos-attack-witness
-(defrule
-    (goal voice-latch-attack-witness 2)
-    (not (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness))
-=>
-    (set-goal voice-latch-attack-witness 0)
-)
-
-; Voice rearm timer: strategos-push-failed
-(defrule
-    (timer-triggered voice-rearm-push-failed)
-    (goal voice-latch-push-failed 1)
-=>
-    (disable-timer voice-rearm-push-failed)
-    (set-goal voice-latch-push-failed 2)
-)
-
-; Voice clear witness: strategos-push-failed
-(defrule
-    (goal voice-latch-push-failed 2)
-    (not (goal byzantine-endgame-push-state 5))
-=>
-    (set-goal voice-latch-push-failed 0)
-)
-
-; Voice rearm timer: strategos-gold-recovery
-(defrule
-    (timer-triggered voice-rearm-gold-recovery)
-    (goal voice-latch-gold-recovery 1)
-=>
-    (disable-timer voice-rearm-gold-recovery)
-    (set-goal voice-latch-gold-recovery 2)
-)
-
-; Voice clear witness: strategos-gold-recovery
-(defrule
-    (goal voice-latch-gold-recovery 2)
-    (not (goal byzantine-imperial-band-state 3))
-=>
-    (set-goal voice-latch-gold-recovery 0)
-)
-
-; Voice rearm timer: strategos-reassessment
-(defrule
-    (timer-triggered voice-rearm-reassessment)
-    (goal voice-latch-reassessment 1)
-=>
-    (disable-timer voice-rearm-reassessment)
-    (set-goal voice-latch-reassessment 2)
-)
-
-; Voice clear witness: strategos-reassessment
-(defrule
-    (goal voice-latch-reassessment 2)
-    (not (goal byzantine-endgame-push-state 5))
-=>
-    (set-goal voice-latch-reassessment 0)
-)
-
-; Voice rearm timer: strategos-endgame-advance
-(defrule
-    (timer-triggered voice-rearm-endgame-advance)
-    (goal voice-latch-endgame-advance 1)
-=>
-    (disable-timer voice-rearm-endgame-advance)
-    (set-goal voice-latch-endgame-advance 2)
-)
-
-; Voice clear witness: strategos-endgame-advance
-(defrule
-    (goal voice-latch-endgame-advance 2)
-    (not (goal byzantine-endgame-push-state 4))
-=>
-    (set-goal voice-latch-endgame-advance 0)
-)
-
-; Voice candidate: strategos-attack-issued
-(defrule
-    (goal byzantine-endgame-push-state 2)
-    (goal voice-latch-attack-issued 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-attack-issued 1)
-    (set-goal voice-global-lock 2)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-attack-issued 30)
-    (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "The army is ready. I am going in.")
-    (up-jump-rule 13)
-)
-
-; Voice candidate: strategos-attack-witness
-(defrule
-    (goal byzantine-offensive-objective-state byzantine-offensive-objective-state-witness)
-    (goal voice-latch-attack-witness 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-attack-witness 1)
-    (set-goal voice-global-lock 2)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-attack-witness 30)
-    (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "The objective is open. Now I can press the advantage.")
-    (up-jump-rule 12)
-)
-
-; Voice candidate: strategos-push-failed
-(defrule
-    (goal byzantine-endgame-push-state 5)
-    (goal voice-latch-push-failed 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-push-failed 1)
-    (set-goal voice-global-lock 2)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-push-failed 30)
-    (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "That push opened nothing. I know what was missing.")
-    (up-jump-rule 11)
-)
-
-; Voice candidate: strategos-endgame-advance
-(defrule
-    (goal byzantine-endgame-push-state 4)
-    (goal voice-latch-endgame-advance 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-endgame-advance 1)
-    (set-goal voice-global-lock 2)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-endgame-advance 30)
-    (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "I have spent enough time becoming stronger. Now I will use it.")
-    (up-jump-rule 10)
-)
-
-; Voice candidate: strategos-posture-castle-power
-(defrule
-    (goal strategy-posture 4)
-    (goal voice-latch-strategos-posture 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-strategos-posture 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-strategos-posture 90)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "I see the shape of the fight. I am taking the efficient road.")
-    (up-jump-rule 9)
-)
-
-; Voice candidate: strategos-cavalry-pressure
-(defrule
-    (or (players-unit-type-count any-enemy knight-line >= 8) (or (players-unit-type-count any-enemy scout-cavalry-line >= 8) (players-unit-type-count any-enemy camel-line >= 8)))
-    (goal voice-latch-cavalry-pressure 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-cavalry-pressure 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-cavalry-pressure 90)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "Their cavalry is no longer incidental. Halberdiers are the answer.")
-    (up-jump-rule 8)
-)
-
-; Voice candidate: strategos-ranged-pressure
-(defrule
-    (players-unit-type-count any-enemy archer-line >= 8)
-    (goal voice-latch-ranged-pressure 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-ranged-pressure 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-ranged-pressure 90)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "Their ranged line now dictates the field. Elite Skirmishers are the answer.")
-    (up-jump-rule 7)
-)
-
-; Voice candidate: strategos-reassessment
-(defrule
-    (goal byzantine-endgame-push-state 5)
-    (goal voice-latch-reassessment 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-reassessment 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-reassessment 90)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The old answer solved the old problem. It is no longer the right answer.")
-    (up-jump-rule 6)
-)
-
-; Voice candidate: strategos-severe-counter
-(defrule
-    (players-unit-type-count any-enemy archer-line >= 12)
-    (goal voice-latch-severe-counter 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-severe-counter 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-severe-counter 60)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "This threat justifies saturation. I am building the screen.")
-    (up-jump-rule 5)
-)
-
-; Voice candidate: strategos-siege-blocker
-(defrule
-    (and (goal byzantine-army-attack-ready 1) (goal byzantine-siege-approach 0))
-    (goal voice-latch-siege-blocker 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-siege-blocker 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-siege-blocker 60)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The screen is ready. The wall is not. I need siege.")
-    (up-jump-rule 4)
-)
-
-; Voice candidate: strategos-gold-recovery
-(defrule
-    (goal byzantine-imperial-band-state 3)
-    (goal voice-latch-gold-recovery 0)
-    (or (goal voice-global-lock 0) (goal voice-global-lock 1))
-    (up-compare-goal voice-match-count g:< 48)
-=>
-    (set-goal voice-latch-gold-recovery 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-gold-recovery 60)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The gold route has failed. The objective has not.")
-    (up-jump-rule 3)
-)
-
-; Voice candidate: strategos-army-preparation
-(defrule
-    (and (current-age >= castle-age) (goal byzantine-endgame-push-state 1))
-    (goal voice-latch-army-preparation 0)
-    (goal voice-global-lock 0)
-    (up-compare-goal voice-match-count g:< 36)
-=>
-    (set-goal voice-latch-army-preparation 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-army-preparation 45)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The force is almost ready. I am finishing the missing piece.")
-    (up-jump-rule 2)
-)
-
-; Voice candidate: strategos-army-ready
-(defrule
-    (goal byzantine-army-attack-ready 1)
-    (goal voice-latch-army-ready 0)
-    (goal voice-global-lock 0)
-    (up-compare-goal voice-match-count g:< 36)
-=>
-    (set-goal voice-latch-army-ready 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-army-ready 45)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The army is assembled. More preparation would be waste.")
-    (up-jump-rule 1)
-)
-
-; Voice candidate: strategos-resource-abundance
-(defrule
-    (and (current-age >= imperial-age) (and (food-amount >= 2400) (wood-amount >= 2000)))
-    (goal voice-latch-resource-abundance 0)
-    (goal voice-global-lock 0)
-    (up-compare-goal voice-match-count g:< 36)
-=>
-    (set-goal voice-latch-resource-abundance 1)
-    (set-goal voice-global-lock 1)
-    (up-modify-goal voice-match-count g:+ 1)
-    (enable-timer voice-rearm-resource-abundance 120)
-    (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "Food and wood are abundant. There is no reason to conserve them.")
-    (up-jump-rule 0)
-)
-
-; Voice candidate sentinel
-(defrule
-    (true)
-=>
-    (disable-self)
+    (set-strategic-number sn-mining-camp-max-distance 25)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
 )
