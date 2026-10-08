@@ -4676,10 +4676,6 @@ def _default_byzantine_duc_plan(
                     actions=(
                         parse_expression("(up-full-reset-search)", SourceLocation(1)),
                         parse_expression(
-                            "(up-modify-sn sn-focus-player-number c:= 0)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
                             "(up-filter-status c: status-resource c: list-active)",
                             SourceLocation(1),
                         ),
@@ -4689,10 +4685,6 @@ def _default_byzantine_duc_plan(
                         ),
                         parse_expression(
                             f"(up-get-search-state {resource}-camp-search-state-{floor})",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
-                            "(up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)",
                             SourceLocation(1),
                         ),
                     ),
