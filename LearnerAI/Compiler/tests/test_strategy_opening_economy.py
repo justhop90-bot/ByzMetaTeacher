@@ -356,6 +356,25 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(can-train-with-escrow fishing-ship)", requirements)
         self.assertEqual(demand.target.minimum, 2)
 
+    def test_checked_in_runtime_age_transition_issuance_uses_native_feasibility(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        castle_start = runtime.index("; Action issuance: Castle Age research")
+        castle_end = runtime.index("; Resource-claim cleanup after Castle Age witness.", castle_start)
+        castle_block = runtime[castle_start:castle_end]
+        self.assertNotIn("(unit-type-count-total villager >= bt-castle-age-villager-maturity)", castle_block)
+        self.assertNotIn("(building-type-count-total blacksmith >= 1)", castle_block)
+        self.assertNotIn("(building-type-count-total market >= 1)", castle_block)
+        self.assertIn("(can-research-with-escrow castle-age)", castle_block)
+
+        imperial_start = runtime.index("; Action issuance: imperial-conversion | ACTIVE -> ISSUED")
+        imperial_end = runtime.index("; Age handoff: Feudal military package ownership ends at Castle.", imperial_start)
+        imperial_block = runtime[imperial_start:imperial_end]
+        self.assertNotIn("(unit-type-count-total villager >= bt-imperial-age-villager-maturity)", imperial_block)
+        self.assertNotIn("(building-type-count-total university >= 1)", imperial_block)
+        self.assertIn("(can-research-with-escrow imperial-age)", imperial_block)
+
     def test_checked_in_runtime_preserves_maturity_aware_villager_production(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
