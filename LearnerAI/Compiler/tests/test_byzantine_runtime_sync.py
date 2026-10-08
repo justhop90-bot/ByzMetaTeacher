@@ -12,6 +12,131 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 
 
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
+
+    def test_synchronization_installs_canonical_water_execution_control(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                first_sync = synchronized
+                sync_runtime.synchronize()
+                second_sync = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(first_sync, second_sync)
+        self.assertIn(
+            "(defconst water-transport-objective ",
+            synchronized,
+        )
+        self.assertIn(
+            "(defconst water-transport-rebuild ",
+            synchronized,
+        )
+        reserved = {
+            "water-dock-capability": 15977,
+            "construction-retry-barrier-water-dock-capability": 15976,
+            "demand-water-dock-capability": 15975,
+            "issued-water-dock-capability": 15973,
+            "pending-water-dock-capability": 15972,
+            "complete-water-dock-capability": 15971,
+            "water-transport-objective": 15970,
+            "water-transport-rebuild": 15969,
+        }
+        for name, value in reserved.items():
+            self.assertIn(f"(defconst {name} {value})", synchronized)
+            self.assertEqual(
+                synchronized.count(f"(defconst {name} {value})"),
+                1,
+            )
+        self.assertEqual(len(set(reserved.values())), len(reserved))
+        self.assertIn(
+            "(or (map-type islands) (map-type pacific-islands))",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: transport-objective-open",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: transport-phase-reopen",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: water-posture-naval-defense",
+            synchronized,
+        )
+        self.assertIn(
+            "; Native control rule: water-posture-fishing",
+            synchronized,
+        )
+        self.assertNotIn(
+            "(defrule\\n    (map-type islands)\\n=>\\n    (set-goal water-posture 4)",
+            synchronized,
+        )
+    def test_goal_slot_allocator_returns_empty_for_zero_requests(self) -> None:
+        runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+        self.assertEqual(sync_runtime._choose_goal_slots(runtime, 0), [])
+    
+    def test_synchronization_deduplicates_preexisting_reserved_water_goals(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+            generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
+
+            insertion = (
+                "(defconst water-dock-capability 15977)\n"
+                "(defconst water-transport-rebuild 15969)\n"
+            )
+            marker = "(defconst water-dock-capability "
+            position = runtime.find(marker)
+            self.assertGreaterEqual(position, 0)
+            line_end = runtime.find("\n", position)
+            duplicated = (
+                runtime[: position]
+                + insertion
+                + runtime[position:line_end + 1]
+                + runtime[line_end + 1 :]
+            )
+            runtime_path.write_text(duplicated, encoding="utf-8")
+            generated_path.write_text(generated, encoding="utf-8")
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        for name in sync_runtime.WATER_RUNTIME_RESERVED_GOALS:
+            self.assertEqual(
+                len(re.findall(rf"^\(defconst {re.escape(name)} \d+\)$", synchronized, re.MULTILINE)),
+                1,
+            )
+
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -133,6 +258,89 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         section = synchronized[start:end]
         self.assertIn("(can-afford-research castle-age)", section)
         self.assertNotIn("(can-research-with-escrow castle-age)", section)
+
+    def test_synchronization_installs_first_dock_construction_lifecycle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                before_second_sync = synchronized
+                sync_runtime.synchronize()
+                after_second_sync = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(before_second_sync, after_second_sync)
+        self.assertIn("; Action issuance: water-dock-capability", synchronized)
+        self.assertEqual(
+            synchronized.count("; Action issuance: water-dock-capability | ACTIVE -> ISSUED"),
+            1,
+        )
+        self.assertIn("(defconst demand-water-dock-capability ", synchronized)
+        self.assertIn(
+            "(defconst construction-retry-barrier-water-dock-capability ",
+            synchronized,
+        )
+        self.assertIn("(build dock)", synchronized)
+        self.assertIn(
+            "; Completion witness: water-dock-capability | PENDING/ISSUED -> COMPLETE",
+            synchronized,
+        )
+        self.assertIn(
+            "; Release: water-dock-capability | COMPLETE -> RELEASED",
+            synchronized,
+        )
+        self.assertRegex(
+            synchronized,
+            r"\(set-goal demand-water-dock-capability 1\)",
+        )
+        self.assertIn(
+            "(set-goal construction-retry-barrier-water-dock-capability 0)",
+            synchronized,
+        )
+        definitions = {
+            match.group(1): int(match.group(2))
+            for match in re.finditer(
+                r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+                synchronized,
+            )
+        }
+        water_goal_names = (
+            "demand-water-dock-capability",
+            "issued-water-dock-capability",
+            "pending-water-dock-capability",
+            "complete-water-dock-capability",
+            "construction-retry-barrier-water-dock-capability",
+        )
+        recovery_goal_names = (
+            "opening-recovery",
+            "opening-recovery-cause",
+            "opening-recovery-defense-clear",
+            "opening-recovery-gold-proven",
+            "opening-recovery-origin",
+            "opening-recovery-water-proven",
+        )
+        water_ids = {definitions[name] for name in water_goal_names}
+        recovery_ids = {definitions[name] for name in recovery_goal_names}
+        self.assertEqual(len(water_ids), len(water_goal_names))
+        self.assertEqual(water_ids & recovery_ids, set())
 
     def test_checked_in_runtime_voice_storage_is_disjoint(self) -> None:
         source = sync_runtime.RUNTIME.read_text(encoding="utf-8")
