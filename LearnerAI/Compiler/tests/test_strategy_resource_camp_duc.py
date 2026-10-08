@@ -71,9 +71,23 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                 demand_name = f"economy-{resource}-camp-floor-{floor}"
                 demand = profile.demand(demand_name)
                 self.assertTrue(demand.native_placement)
+                if resource == "wood" and floor == 1:
+                    self.assertEqual(
+                        demand.native_fallback_requirements,
+                        (
+                            "(current-age == dark-age)",
+                            "(unit-type-count-total villager >= 15)",
+                        ),
+                    )
+                else:
+                    self.assertEqual(demand.native_fallback_requirements, ())
                 self.assertEqual(
                     demand.execution_demands[0].witness,
                     f"(building-type-count {building} >= {floor})",
+                )
+                self.assertIn(
+                    f"(set-goal demand-{demand_name} issued-{demand_name})",
+                    {action.source for action in place_rule.control_actions},
                 )
 
                 if resource == "stone":
@@ -86,13 +100,6 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                         f"(resource-found {resource})",
                         search_rule.facts[6].source,
                     )
-
-        fallback = next(
-            rule for rule in plan.rules
-            if rule.identity == "byzantine-camp-placement-wood-1-fallback"
-        )
-        self.assertIn("(current-age == dark-age)", {fact.source for fact in fallback.facts})
-        self.assertIn("(build lumber-camp)", {action.source for action in fallback.actions})
 
     def test_native_camp_placement_replaces_generic_action_issuance(self):
         output = compile_strategy_profile(
@@ -119,7 +126,11 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     output,
                 )
         self.assertIn(
-            "byzantine-camp-placement-wood-1-fallback",
+            "; Native placement fallback: economy-wood-camp-floor-1",
+            output,
+        )
+        self.assertIn(
+            "(current-age == dark-age)",
             output,
         )
 
