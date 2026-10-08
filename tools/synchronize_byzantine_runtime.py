@@ -27,6 +27,7 @@ RECOVERY_NAMES = (
 )
 
 ECONOMY_INSTALLABLE_RULES = (
+    "economy-controller-enable-islands-research-queue",
     "economy-controller-select-pacific-land-first",
     "economy-controller-write-pacific_land-sn-food-gatherer-percentage",
     "economy-controller-write-pacific_land-sn-wood-gatherer-percentage",
