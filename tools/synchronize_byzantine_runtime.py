@@ -535,6 +535,114 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
+
+CAPABILITY_EXPANSION_MARKER = "; Runtime capability expansion bridge v1"
+CAPABILITY_EXPANSION_BRIDGE = r"""
+; Runtime capability expansion bridge v1
+; Purpose: restore the first Castle -> production-capability -> TC expansion ladder
+; after recent runtime regressions. This is a bounded runtime overlay, not a second
+; scheduler. Existing lifecycle demands remain authoritative for completion/recovery.
+
+; Runtime capability bridge: Castle foundation
+(defrule
+    (not (building-type-count-total castle >= 1))
+    (up-pending-objects c: castle == 0)
+    (not (up-pending-placement c: castle))
+    (goal action-claim-build-pass-singleton 0)
+    (or
+        (current-age >= castle-age)
+        (and
+            (current-age == feudal-age)
+            (unit-type-count-total villager >= 35)
+            (food-amount >= 800)
+            (gold-amount >= 200)
+        )
+    )
+    (unit-type-count-total villager >= 35)
+    (stone-amount >= 650)
+    (not (town-under-attack))
+    (can-build castle)
+=>
+    (build castle)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Runtime capability bridge: TC2 foundation
+; Castle comes first so TC2 does not cannibalize the first Byzantine Castle bank.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total castle >= 1)
+    (building-type-count-total town-center < 2)
+    (up-pending-objects c: town-center == 0)
+    (not (up-pending-placement c: town-center))
+    (goal action-claim-build-pass-singleton 0)
+    (unit-type-count-total villager >= 45)
+    (building-type-count-total farm >= 12)
+    (food-amount >= 600)
+    (wood-amount >= 275)
+    (stone-amount >= 100)
+    (population-headroom > 6)
+    (not (town-under-attack))
+    (can-build town-center)
+=>
+    (build town-center)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Runtime capability bridge: TC3 foundation
+(defrule
+    (current-age == castle-age)
+    (building-type-count-total town-center >= 2)
+    (building-type-count-total town-center < 3)
+    (up-pending-objects c: town-center == 0)
+    (not (up-pending-placement c: town-center))
+    (goal action-claim-build-pass-singleton 0)
+    (unit-type-count-total villager >= 60)
+    (building-type-count-total farm >= 18)
+    (food-amount >= 800)
+    (wood-amount >= 275)
+    (stone-amount >= 100)
+    (population-headroom > 10)
+    (not (town-under-attack))
+    (can-build town-center)
+=>
+    (build town-center)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Runtime capability bridge: Castle stable
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total stable < 1)
+=>
+    (set-goal demand-castle-stable-capability 1)
+)
+
+; Runtime capability bridge: Castle ranged
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total archery-range < 1)
+=>
+    (set-goal demand-castle-archery-capability 1)
+)
+
+; Runtime capability bridge: Pikeman research
+(defrule
+    (current-age >= castle-age)
+    (not (research-completed 197))
+=>
+    (set-goal demand-research-pikeman 1)
+)
+
+; Runtime capability bridge: Elite Skirmisher research
+(defrule
+    (current-age >= castle-age)
+    (not (research-completed 98))
+=>
+    (set-goal demand-research-elite-skirmisher 1)
+)
+""".strip() + "\n"
+
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
     generated = GENERATED.read_text(encoding="utf-8")
@@ -584,6 +692,8 @@ def synchronize() -> bool:
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
+
+    runtime = _install_once(runtime, CAPABILITY_EXPANSION_MARKER, CAPABILITY_EXPANSION_BRIDGE)
 
     voice_marker = "; Native Strategos voice plan"
     voice_start = generated.find(voice_marker)
