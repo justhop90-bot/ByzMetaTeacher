@@ -426,6 +426,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(research ri-capped-ram)", canonical)
         self.assertNotIn("(can-research-with-escrow capped-ram)", canonical)
         self.assertNotIn("(research capped-ram)", canonical)
+        self.assertIn("(unit-type-count-total battering-ram-line >= 2)", canonical)
+        self.assertNotIn("(unit-type-count-total ram-line >= 2)", canonical)
 
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
@@ -448,6 +450,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("(research capped-ram)", ram)
         self.assertIn("(research ri-capped-ram)", ram)
         self.assertIn("(research-completed 96)", ram)
+        self.assertIn("(unit-type-count-total battering-ram-line >= 2)", ram)
+        self.assertNotIn("(unit-type-count-total ram-line >= 2)", ram)
 
     def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):
         repo_root = Path(__file__).resolve().parents[3]

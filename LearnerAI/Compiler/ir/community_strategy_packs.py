@@ -1363,8 +1363,8 @@ def community_strategy_demands(
         "research-ring-archer-armor": ("(current-age >= imperial-age)", "(unit-type-count 6 >= 18)"),
         "research-plate-barding-armor": ("(current-age >= imperial-age)", "(unit-type-count 441 >= 12)"),
         "research-plate-mail-armor": ("(current-age >= imperial-age)", "(unit-type-count 359 >= 12)"),
-        "research-capped-ram": ("(current-age >= imperial-age)", "(unit-type-count-total ram-line >= 2)"),
-        "research-siege-ram": ("(current-age >= imperial-age)", "(unit-type-count-total ram-line >= 4)"),
+        "research-capped-ram": ("(current-age >= imperial-age)", "(unit-type-count-total battering-ram-line >= 2)"),
+        "research-siege-ram": ("(current-age >= imperial-age)", "(unit-type-count-total battering-ram-line >= 4)"),
     }
     for identity, owner, age, tech_name, priority, resources in _IMPERIAL_MILITARY_RESEARCH_PACK:
         age_guard, unit_gate = imperial_research_gates[identity]
