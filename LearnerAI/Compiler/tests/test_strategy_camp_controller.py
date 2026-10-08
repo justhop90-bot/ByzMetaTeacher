@@ -36,6 +36,7 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 demand = profile.demand(f"economy-{resource}-camp-floor-{floor}")
                 self.assertEqual(demand.capability_intent.kind.value, "BUILD")
                 self.assertEqual(demand.execution_demands[0].action, f"(build {'lumber-camp' if resource == 'wood' else 'mining-camp'})")
+                self.assertTrue(demand.native_placement)
                 requirements = demand.execution_demands[0].requirements
                 self.assertIn(active.identity, {item.observation_ref for item in demand.reason})
                 self.assertIn(active.expression, requirements)
