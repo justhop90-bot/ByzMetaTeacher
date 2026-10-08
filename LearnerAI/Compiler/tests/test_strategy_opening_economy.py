@@ -436,8 +436,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         ram = runtime[ram_start:ram_end]
         self.assertIn("(current-age >= imperial-age)", ram)
         self.assertNotIn("(current-age >= castle-age)", ram)
-        self.assertIn("(can-research-with-escrow capped-ram)", ram)
-        self.assertIn("(research capped-ram)", ram)
+        self.assertNotIn("(can-research-with-escrow capped-ram)", ram)
+        self.assertIn("(can-research-with-escrow ri-capped-ram)", ram)
+        self.assertNotIn("(research capped-ram)", ram)
+        self.assertIn("(research ri-capped-ram)", ram)
         self.assertIn("(research-completed 96)", ram)
 
     def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):
