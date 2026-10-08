@@ -801,6 +801,8 @@ PACIFIC_RUNTIME_GOAL_NAMES = (
 PACIFIC_RUNTIME_STRATEGIC_NUMBERS = {
     "sn-maximum-fish-boat-drop-distance": 236,
     "sn-fishing-boat-whaling-percentage": 316,
+    "sn-maximum-garrison-fill": 274,
+    "sn-number-garrison-units": 275,
 }
 PACIFIC_TRANSPORT_RUNTIME_GOALS = (
     "pacific-transport-lifecycle",
