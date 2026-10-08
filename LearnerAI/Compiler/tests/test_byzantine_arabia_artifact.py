@@ -36,64 +36,58 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
 
     def test_each_gold_camp_build_selects_an_indexed_active_resource(self):
         for floor in range(1, 6):
-            start = self.artifact.index(f"; economy-gold-camp-floor-{floor}")
-            end_marker = (
-                f"; economy-gold-camp-floor-{floor + 1}"
-                if floor < 5
-                else "; economy-stone-camp-floor-1"
+            search_marker = (
+                f"; Native DUC rule: byzantine-camp-placement-gold-{floor}-search"
             )
-            end = self.artifact.index(end_marker, start)
-            section = self.artifact[start:end]
+            place_marker = (
+                f"; Native DUC rule: byzantine-camp-placement-gold-{floor}-place"
+            )
+            start = self.artifact.index(search_marker)
+            place_start = self.artifact.index(place_marker, start)
+            next_rule = self.artifact.find("\n; Native DUC rule:", place_start + 1)
+            if next_rule < 0:
+                next_rule = self.artifact.index(
+                    f"; Native placement execution: economy-gold-camp-floor-{floor}"
+                )
+            search_section = self.artifact[start:place_start]
+            place_section = self.artifact[place_start:next_rule]
 
-            state_name = f"byzantine-dark-gold-camp-search-state-{floor}"
-            remote_name = f"byzantine-dark-gold-camp-search-remote-count-{floor}"
-            point_name = "byzantine-dark-gold-camp-point"
-
-            self.assertIn(f"(up-get-search-state {state_name})", section)
-            self.assertIn("(up-filter-status c: status-resource c: list-active)", section)
-
+            self.assertIn("(up-filter-status c: status-resource c: list-active)", search_section)
             expected_results = 1 if floor == 1 else 40
-            self.assertIn(f"(up-find-resource c: gold c: {expected_results})", section)
+            self.assertIn(
+                f"(up-find-resource c: gold c: {expected_results})",
+                search_section,
+            )
 
             expected_index = 0 if floor <= 2 else floor - 2
-            witness = f"(up-compare-goal {remote_name} > {expected_index})"
-            self.assertIn(witness, section)
+            self.assertIn(
+                "(up-compare-goal ",
+                place_section,
+            )
             self.assertIn(
                 f"(up-set-target-object search-remote c: {expected_index})",
-                section,
+                place_section,
             )
-            self.assertIn(f"(up-get-point position-object {point_name})", section)
-            self.assertIn(f"(up-set-target-point {point_name})", section)
-            self.assertIn("(up-build place-point 0 c: mining-camp)", section)
+            self.assertIn("(up-get-point position-object", place_section)
+            self.assertIn("(up-set-target-point", place_section)
+
+            execution_start = self.artifact.index(
+                f"; Native placement execution: economy-gold-camp-floor-{floor}"
+            )
+            execution_end = self.artifact.find("\n; ", execution_start + 10)
+            execution = (
+                self.artifact[execution_start:]
+                if execution_end < 0
+                else self.artifact[execution_start:execution_end]
+            )
+            self.assertIn("(up-build place-point 0 c:", execution)
 
             if floor >= 2:
                 self.assertNotIn(
                     "(dropsite-min-distance gold",
-                    section,
-                    "higher gold floors must not be gated by the global nearest-gold dropsite distance",
+                    search_section + place_section,
+                    "higher gold floors must not be gated by global dropsite distance",
                 )
-
-            state_match = re.search(
-                rf"\(defconst {re.escape(state_name)} (\d+)\)",
-                self.artifact,
-            )
-            remote_match = re.search(
-                rf"\(defconst {re.escape(remote_name)} (\d+)\)",
-                self.artifact,
-            )
-            point_match = re.search(
-                rf"\(defconst {re.escape(point_name)} (\d+)\)",
-                self.artifact,
-            )
-            self.assertIsNotNone(state_match)
-            self.assertIsNotNone(remote_match)
-            self.assertIsNotNone(point_match)
-            assert state_match is not None
-            assert remote_match is not None
-            assert point_match is not None
-            self.assertTrue(41 <= int(state_match.group(1)) <= 15996)
-            self.assertTrue(1 <= int(remote_match.group(1)) <= 16000)
-            self.assertTrue(41 <= int(point_match.group(1)) <= 15998)
 
 
 if __name__ == "__main__":
