@@ -43,13 +43,13 @@ Files:
 
 Behavior:
 - LOAD failure remains gated by the Transport Ship pending-object witness c:545.
-- On failed LOAD, lifecycle enters RECOVERY and explicitly sets pacific-transport-recovery = 1.
-- Existing pacific-transport-lifecycle-rearm-after-loss then returns the lifecycle to LOAD when a transport still exists.
-- Load count and transport identity are cleared before reacquisition.
+- On LOAD, keep the existing targeted garrison action and add a documented up-garrison fallback for transport-ship/villagers.
+- Configure one garrison unit per pass with a four-unit maximum fill, then restore the strategic-number defaults once four units are witnessed aboard.
+- Existing LOAD retry/rearm lifecycle remains the recovery path; no new recovery state is added.
 
 Focused acceptance:
-- LOAD recovery writes the recovery entitlement.
-- Rearm consumes that entitlement and requires a live transport.
+- Garrison fallback emits up-garrison transport-ship c: villager.
+- Four-villager load witness clears the temporary garrison strategic-number overrides.
 - No new timer-as-truth or second transport controller exists.
 
 ### Task 3: Full Pacific verification
