@@ -651,6 +651,22 @@ def emit(
             and any(str(argument) == "action-attack-move" for argument in expression.args)
         }
         out.append("; Native DUC execution plan")
+        duc_uses_build_arbitration = any(
+            expression.head == "goal"
+            and any(str(argument) == "action-claim-build-pass-singleton" for argument in expression.args)
+            for rule in duc_plan.rules
+            for expression in rule.facts
+        )
+        if duc_uses_build_arbitration:
+            out += [
+                "; Native DUC per-pass build arbitration reset",
+                "(defrule",
+                "    (true)",
+                "=>",
+                "    (set-goal action-claim-build-pass-singleton 0)",
+                ")",
+                "",
+            ]
         if used_duc_action_values:
             emitted_defconsts = _defconst_bindings(out)
             if "action-attack-move" not in emitted_defconsts:
