@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from pathlib import Path
@@ -315,6 +316,411 @@ def first_broken_edge(trace: FeatureTrace) -> FeatureEdge | None:
         if edge.status is FeatureEdgeStatus.BROKEN:
             return edge
     return None
+
+
+def _feature_semantic_identity(demand) -> str:
+    return f"{demand.identity.source_unit}:{demand.identity.local_name}"
+
+
+def _feature_source_unit(demand) -> str:
+    return str(demand.identity.source_unit)
+
+
+def _feature_location(demand) -> str | None:
+    location = getattr(demand, "location", None)
+    return str(location) if location is not None else None
+
+
+def _capability_demand_for(capability_graph: CapabilityGraph, demand):
+    for candidate in capability_graph.demands:
+        if (
+            candidate.identity.source_unit == demand.identity.source_unit
+            and candidate.identity.local_name == demand.identity.local_name
+        ):
+            return candidate
+    return None
+
+
+def _feature_edge(
+    *,
+    feature_id: str,
+    source: FeatureStage,
+    target: FeatureStage,
+    contract: str,
+    expected: str,
+    observed: str | None,
+    status: FeatureEdgeStatus,
+    message: str | None = None,
+) -> FeatureEdge:
+    return FeatureEdge(
+        feature_id=feature_id,
+        source=source,
+        target=target,
+        contract=contract,
+        expected_identity=expected,
+        observed_identity=observed,
+        status=status,
+        diagnostic_code=(
+            StrategyDependencyCode.FEATURE_FIRST_BROKEN_EDGE.value
+            if status is FeatureEdgeStatus.BROKEN
+            else None
+        ),
+        message=message,
+    )
+
+
+def build_feature_traces(
+    demands: Iterable[object],
+    capability_graph: CapabilityGraph,
+    bindings,
+    artifact: str | bytes,
+    *,
+    verified_stage_identities: frozenset[str] = frozenset(),
+) -> tuple[FeatureTrace, ...]:
+    """Populate causal feature traces from verified compiler-stage outputs.
+
+    This helper is intentionally invoked only after the existing semantic,
+    capability, binding, and native-lowering gates have succeeded. It does
+    not invent downstream runtime evidence. Emission is treated as an
+    executed compiler stage; Artifact Analysis is the first stage that
+    consults emitted bytes for a feature-owned marker.
+    """
+    payload = artifact.encode("utf-8") if isinstance(artifact, str) else artifact
+    artifact_sha256 = hashlib.sha256(payload).hexdigest()
+    artifact_text = payload.decode("utf-8")
+    traces: list[FeatureTrace] = []
+
+    ordered_demands = tuple(
+        sorted(
+            demands,
+            key=lambda demand: (
+                str(
+                    getattr(
+                        getattr(demand, "strategic_binding", None),
+                        "strategic_id",
+                        "",
+                    )
+                ),
+                str(demand.identity.source_unit),
+                str(demand.identity.local_name),
+            ),
+        )
+    )
+    feature_bases = tuple(
+        (
+            str(
+                getattr(
+                    getattr(demand, "strategic_binding", None),
+                    "strategic_id",
+                    "",
+                )
+            )
+            or _feature_semantic_identity(demand),
+            _feature_semantic_identity(demand),
+        )
+        for demand in ordered_demands
+    )
+    feature_base_counts = Counter(base for base, _ in feature_bases)
+    for demand, (feature_base, semantic_identity) in zip(
+        ordered_demands,
+        feature_bases,
+    ):
+        strategic_binding = getattr(demand, "strategic_binding", None)
+        feature_id = (
+            feature_base
+            if feature_base_counts[feature_base] == 1
+            else f"{feature_base}::{semantic_identity}"
+        )
+        root_stage = (
+            FeatureStage.STRATEGY_IR
+            if strategic_binding is not None
+            else FeatureStage.SEMANTIC_IR
+        )
+        source_unit = _feature_source_unit(demand)
+        location = _feature_location(demand)
+        builder = FeatureTraceBuilder(feature_id)
+
+        if strategic_binding is not None:
+            builder.add_node(
+                FeatureNode(
+                    feature_id=feature_id,
+                    stage=FeatureStage.STRATEGY_IR,
+                    identity=feature_id,
+                    status=FeatureNodeStatus.PASS,
+                    source_unit=source_unit,
+                    location=location,
+                    evidence=("strategic_binding",),
+                )
+            )
+
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.SEMANTIC_IR,
+                identity=semantic_identity,
+                status=FeatureNodeStatus.PASS,
+                source_unit=source_unit,
+                location=location,
+                evidence=("semantic_demand",),
+            )
+        )
+        if strategic_binding is not None:
+            builder.add_edge(
+                _feature_edge(
+                    feature_id=feature_id,
+                    source=FeatureStage.STRATEGY_IR,
+                    target=FeatureStage.SEMANTIC_IR,
+                    contract="strategy-ir-semantic-lowering",
+                    expected=semantic_identity,
+                    observed=semantic_identity,
+                    status=FeatureEdgeStatus.SATISFIED,
+                )
+            )
+
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.SEMANTIC_VALIDATION,
+                identity=semantic_identity,
+                status=FeatureNodeStatus.PASS,
+                source_unit=source_unit,
+                location=location,
+                evidence=("semantic-validation-gate",),
+            )
+        )
+        builder.add_edge(
+            _feature_edge(
+                feature_id=feature_id,
+                source=FeatureStage.SEMANTIC_IR,
+                target=FeatureStage.SEMANTIC_VALIDATION,
+                contract="semantic-validation",
+                expected=semantic_identity,
+                observed=semantic_identity,
+                status=FeatureEdgeStatus.SATISFIED,
+            )
+        )
+
+        capability_demand = _capability_demand_for(capability_graph, demand)
+        capability_identity = (
+            f"{capability_demand.identity.source_unit}:{capability_demand.identity.local_name}"
+            if capability_demand is not None
+            else semantic_identity
+        )
+        capability_status = (
+            FeatureNodeStatus.PASS
+            if capability_demand is not None
+            else FeatureNodeStatus.MISSING
+        )
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.CAPABILITY_GRAPH,
+                identity=capability_identity,
+                status=capability_status,
+                source_unit=source_unit,
+                location=location,
+                evidence=("capability-graph",),
+            )
+        )
+        if capability_demand is None:
+            builder.add_edge(
+                _feature_edge(
+                    feature_id=feature_id,
+                    source=FeatureStage.SEMANTIC_VALIDATION,
+                    target=FeatureStage.CAPABILITY_GRAPH,
+                    contract="semantic-capability-projection",
+                    expected=semantic_identity,
+                    observed=None,
+                    status=FeatureEdgeStatus.BROKEN,
+                    message=(
+                        f"semantic demand '{semantic_identity}' has no projected "
+                        "CapabilityDemand"
+                    ),
+                )
+            )
+            traces.append(
+                builder.build(
+                    root_stage=root_stage,
+                    metadata=(("artifact_sha256", artifact_sha256),),
+                )
+            )
+            continue
+
+        builder.add_edge(
+            _feature_edge(
+                feature_id=feature_id,
+                source=FeatureStage.SEMANTIC_VALIDATION,
+                target=FeatureStage.CAPABILITY_GRAPH,
+                contract="semantic-capability-projection",
+                expected=semantic_identity,
+                observed=capability_identity,
+                status=FeatureEdgeStatus.SATISFIED,
+            )
+        )
+
+        try:
+            binding = bindings.binding_for(demand.lifecycle.slot.request_id)
+        except (KeyError, AttributeError):
+            binding = None
+        binding_identity = (
+            str(getattr(binding, "provenance_id", binding))
+            if binding is not None
+            else None
+        )
+        binding_status = (
+            FeatureNodeStatus.PASS
+            if binding is not None
+            else FeatureNodeStatus.MISSING
+        )
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.STORAGE_BINDING,
+                identity=binding_identity or semantic_identity,
+                status=binding_status,
+                source_unit=source_unit,
+                location=location,
+                evidence=("runtime-binding",),
+            )
+        )
+        if binding is None:
+            builder.add_edge(
+                _feature_edge(
+                    feature_id=feature_id,
+                    source=FeatureStage.CAPABILITY_GRAPH,
+                    target=FeatureStage.STORAGE_BINDING,
+                    contract="capability-storage-binding",
+                    expected=str(demand.lifecycle.slot.request_id),
+                    observed=None,
+                    status=FeatureEdgeStatus.BROKEN,
+                    message=(
+                        f"lifecycle storage request for '{semantic_identity}' "
+                        "has no runtime binding"
+                    ),
+                )
+            )
+            traces.append(
+                builder.build(
+                    root_stage=root_stage,
+                    metadata=(("artifact_sha256", artifact_sha256),),
+                )
+            )
+            continue
+
+        builder.add_edge(
+            _feature_edge(
+                feature_id=feature_id,
+                source=FeatureStage.CAPABILITY_GRAPH,
+                target=FeatureStage.STORAGE_BINDING,
+                contract="capability-storage-binding",
+                expected=str(demand.lifecycle.slot.request_id),
+                observed=binding_identity,
+                status=FeatureEdgeStatus.SATISFIED,
+            )
+        )
+
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.NATIVE_LOWERING,
+                identity=semantic_identity,
+                status=(
+                    FeatureNodeStatus.PASS
+                    if semantic_identity in verified_stage_identities
+                    else FeatureNodeStatus.UNKNOWN
+                ),
+                source_unit=source_unit,
+                location=location,
+                evidence=("native-lowering-gate",),
+            )
+        )
+        builder.add_edge(
+            _feature_edge(
+                feature_id=feature_id,
+                source=FeatureStage.STORAGE_BINDING,
+                target=FeatureStage.NATIVE_LOWERING,
+                contract="storage-native-lowering",
+                expected=semantic_identity,
+                observed=semantic_identity,
+                status=FeatureEdgeStatus.SATISFIED,
+            )
+        )
+
+        emission_identity = f"demand-{demand.identity.local_name}"
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.EMISSION,
+                identity=emission_identity,
+                status=FeatureNodeStatus.PASS,
+                source_unit=source_unit,
+                location=location,
+                evidence=("emitter-returned-artifact",),
+            )
+        )
+        builder.add_edge(
+            _feature_edge(
+                feature_id=feature_id,
+                source=FeatureStage.NATIVE_LOWERING,
+                target=FeatureStage.EMISSION,
+                contract="native-emission",
+                expected=emission_identity,
+                observed=emission_identity,
+                status=FeatureEdgeStatus.SATISFIED,
+            )
+        )
+
+        marker = f"(goal demand-{demand.identity.local_name} "
+        marker_found = marker in artifact_text
+        artifact_identity = f"sha256:{artifact_sha256}"
+        builder.add_node(
+            FeatureNode(
+                feature_id=feature_id,
+                stage=FeatureStage.ARTIFACT_ANALYSIS,
+                identity=artifact_identity,
+                status=(
+                    FeatureNodeStatus.PASS
+                    if marker_found
+                    else FeatureNodeStatus.MISSING
+                ),
+                fingerprint=artifact_sha256,
+                source_unit=source_unit,
+                location=location,
+                artifact_sha256=artifact_sha256,
+                evidence=("emitted-demand-marker",),
+            )
+        )
+        builder.add_edge(
+            _feature_edge(
+                feature_id=feature_id,
+                source=FeatureStage.EMISSION,
+                target=FeatureStage.ARTIFACT_ANALYSIS,
+                contract="emission-artifact-coverage",
+                expected=marker,
+                observed=marker if marker_found else None,
+                status=(
+                    FeatureEdgeStatus.SATISFIED
+                    if marker_found
+                    else FeatureEdgeStatus.BROKEN
+                ),
+                message=(
+                    None
+                    if marker_found
+                    else (
+                        f"emitted artifact does not contain feature marker "
+                        f"{marker!r}"
+                    )
+                ),
+            )
+        )
+        traces.append(
+            builder.build(
+                root_stage=root_stage,
+                metadata=(("artifact_sha256", artifact_sha256),),
+            )
+        )
+
+    return tuple(sorted(traces, key=lambda trace: trace.feature_id))
 
 class StrategyDependencyProof(str, Enum):
     PROVEN = "PROVEN"

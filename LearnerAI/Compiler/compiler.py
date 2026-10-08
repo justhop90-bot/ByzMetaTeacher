@@ -58,7 +58,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.duc import analyze_duc
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
-    from Compiler.semantic.strategy_dependency import analyze_strategy_dependencies
+    from Compiler.semantic.strategy_dependency import analyze_strategy_dependencies, build_feature_traces
     from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from Compiler.semantic.operational_domains import merge_operational_plan
@@ -124,7 +124,7 @@ else:
     from .semantic.duc import analyze_duc
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
-    from .semantic.strategy_dependency import analyze_strategy_dependencies
+    from .semantic.strategy_dependency import analyze_strategy_dependencies, build_feature_traces
     from .semantic.native_control import validate_native_control_plan
     from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .semantic.operational_domains import merge_operational_plan
@@ -768,10 +768,24 @@ def compile_package_with_report(
             duc_report=duc_report,
             persistent_control_report=persistent_control_report,
         )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
         strategy_capability_graph = project_capability_graph(ir, registry)
         strategy_capability_report = validate_capability_graph(
             strategy_capability_graph,
             registry,
+        )
+        feature_traces = build_feature_traces(
+            ir,
+            strategy_capability_graph,
+            bindings,
+            artifact_result,
+            verified_stage_identities=frozenset(
+                f"{demand.identity.source_unit}:{demand.identity.local_name}"
+                for demand in ir
+            ),
         )
         strategy_dependency_report = analyze_strategy_dependencies(
             ir,
@@ -781,6 +795,7 @@ def compile_package_with_report(
             persistent_state_report,
             persistent_control_report,
             duc_plan=duc_plan,
+            feature_traces=feature_traces,
         )
         duc_errors = tuple(
             item
@@ -803,10 +818,6 @@ def compile_package_with_report(
                 output,
                 rule_diagnostics=rule_report.diagnostics,
             )
-        artifact_result = append_persistent_rule_diagnostics(
-            result,
-            rule_report.diagnostics,
-        )
         strategy_dependency_report = strategy_dependency_report.with_artifact(artifact_result)
         if strategy_report is not None:
             strategy_dependency_report.write_json(strategy_report)

@@ -8,15 +8,21 @@ on:
       - main
     paths:
       - "LearnerAI/Compiler/**"
+      - "schemas/byzantine/**"
+      - "runtime/byzantine/**"
       - ".github/workflows/compiler-tests.yml"
       - "tools/synchronize_byzantine_runtime.py"
       - "Byzantine.per"
+      - "Byzantine.manifest.json"
   pull_request:
     paths:
       - "LearnerAI/Compiler/**"
+      - "schemas/byzantine/**"
+      - "runtime/byzantine/**"
       - ".github/workflows/compiler-tests.yml"
       - "tools/synchronize_byzantine_runtime.py"
       - "Byzantine.per"
+      - "Byzantine.manifest.json"
   workflow_dispatch:
 
 concurrency:
@@ -67,6 +73,100 @@ jobs:
           merge-multiple: false
       - name: Compare Python and OS snapshots
         run: python LearnerAI/Compiler/tests/compare_native_support_replays.py --root snapshots
+
+  artifact-lineage:
+    name: Byzantine artifact-lineage contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: LearnerAI
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Run focused artifact-lineage and fail-closed builder tests
+        run: |
+          python -m unittest \
+            LearnerAI.Compiler.tests.test_artifact_lineage \
+            LearnerAI.Compiler.tests.test_byzantine_runtime_assembly \
+            LearnerAI.Compiler.tests.test_byzantine_runtime_promotion \
+            LearnerAI.Compiler.tests.test_byzantine_bot_build -v
+
+      - name: Analyze checked-in Byzantine.per compiler-rule conservation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_strategy, compile_strategy_profile
+          from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+          import hashlib
+
+          def rule_blocks(payload: bytes) -> list[str]:
+              text = payload.decode("utf-8", errors="replace")
+              blocks = []
+              cursor = 0
+              while True:
+                  start = text.find("(defrule", cursor)
+                  if start < 0:
+                      return blocks
+                  depth = 0
+                  end = None
+                  for index in range(start, len(text)):
+                      char = text[index]
+                      if char == "(":
+                          depth += 1
+                      elif char == ")":
+                          depth -= 1
+                          if depth == 0:
+                              end = index + 1
+                              break
+                  if end is None:
+                      raise SystemExit("unterminated defrule")
+                  blocks.append(text[start:end])
+                  cursor = end
+
+          effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+          profile = build_byzantine_strategy(effective, include_water_continuity=True)
+          compiler = compile_strategy_profile(profile, effective).encode("utf-8")
+          root = Path("Byzantine.per").read_bytes()
+          compiler_rules = rule_blocks(compiler)
+          root_rules = rule_blocks(root)
+
+          compiler_counts = {}
+          for rule in compiler_rules:
+              compiler_counts[rule] = compiler_counts.get(rule, 0) + 1
+          root_counts = {}
+          for rule in root_rules:
+              root_counts[rule] = root_counts.get(rule, 0) + 1
+
+          missing = [rule for rule, count in compiler_counts.items() if root_counts.get(rule, 0) < count]
+          extra = [rule for rule, count in root_counts.items() if compiler_counts.get(rule, 0) < count]
+          shared = sum(min(count, root_counts.get(rule, 0)) for rule, count in compiler_counts.items())
+
+          print(f"compiler_rules={len(compiler_rules)}")
+          print(f"root_rules={len(root_rules)}")
+          print(f"compiler_unique_rules={len(compiler_counts)}")
+          print(f"root_unique_rules={len(root_counts)}")
+          print(f"compiler_rules_present_in_root={shared}")
+          print(f"compiler_rules_missing_from_root={len(missing)}")
+          print(f"compiler_rule_sha256={hashlib.sha256(compiler).hexdigest()}")
+          print(f"root_sha256={hashlib.sha256(root).hexdigest()}")
+
+          if missing:
+              print("first_missing_compiler_rule:")
+              print(missing[0][:1000])
+              raise SystemExit(2)
+
+          print("compiler_owned_rules_conserved=true")
+          PY
+      - name: Upload overlay bootstrap candidate
+        if: ${{ hashFiles('/tmp/byzantine-overlay-bootstrap.per') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: byzantine-overlay-bootstrap
+          path: /tmp/byzantine-overlay-bootstrap.per
+          if-no-files-found: error
+          retention-days: 7
 
   test:
     name: Compiler tests + native zero-findings
@@ -393,6 +493,7 @@ jobs:
     needs:
       - test
       - compare-cross-platform-native-support
+      - artifact-lineage
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -402,13 +503,15 @@ jobs:
         run: |
           test_result="${{ needs.test.result }}"
           replay_result="${{ needs['compare-cross-platform-native-support'].result }}"
+          lineage_result="${{ needs['artifact-lineage'].result }}"
           {
             echo "## Compiler verification gate"
             echo ""
             echo "- Compiler tests + native zero-findings: ${test_result}"
             echo "- Cross-platform native-support comparison: ${replay_result}"
+            echo "- Byzantine artifact-lineage contract: ${lineage_result}"
             echo "- Native parser: pinned commit 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
-            if [ "${test_result}" = "success" ] && [ "${replay_result}" = "success" ]; then
+            if [ "${test_result}" = "success" ] && [ "${replay_result}" = "success" ] && [ "${lineage_result}" = "success" ]; then
               echo "- Result: PASSED"
             else
               echo "- Result: FAILED"
@@ -423,5 +526,9 @@ jobs:
           fi
           if [ "${{ needs['compare-cross-platform-native-support'].result }}" != "success" ]; then
             echo "Cross-platform native-support comparison did not pass."
+            exit 1
+          fi
+          if [ "${{ needs['artifact-lineage'].result }}" != "success" ]; then
+            echo "Byzantine artifact-lineage contract did not pass."
             exit 1
           fi

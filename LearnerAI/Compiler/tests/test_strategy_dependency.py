@@ -23,6 +23,7 @@ from Compiler.semantic.strategy_dependency import (
     FeatureTraceBuilder,
     StrategyDependencyProof,
     analyze_strategy_dependencies,
+    build_feature_traces,
 )
 from Compiler.ir.native_duc import NativeDucLifecycleStage, NativeDucPlan, NativeDucRule
 
@@ -252,6 +253,135 @@ class StrategyDependencyTests(unittest.TestCase):
 
         self.assertEqual(report.feature_traces, (trace,))
         self.assertIs(report.feature_trace("research-pikeman"), trace)
+
+    def _feature_demand(self, name="research-pikeman"):
+        lifecycle = SimpleNamespace(
+            slot=SimpleNamespace(
+                request_id=SimpleNamespace(
+                    owner=SimpleNamespace(source_unit="test", local_name=name),
+                    purpose="lifecycle",
+                )
+            )
+        )
+        return SimpleNamespace(
+            identity=DemandId("test", name),
+            lifecycle=lifecycle,
+            location=None,
+            strategic_binding=SimpleNamespace(strategic_id=name),
+        )
+
+    def _feature_graph(self, demand):
+        capability_demand = SimpleNamespace(
+            identity=DemandId(demand.identity.source_unit, demand.identity.local_name),
+            target=CapabilityId(demand.identity.source_unit, f"{demand.name}-cap"),
+            location=None,
+        )
+        return CapabilityGraph(
+            demands=(capability_demand,),
+            capabilities=(SimpleNamespace(identity=capability_demand.target, location=None),),
+            providers=(),
+            witnesses=(),
+            edges=(),
+        )
+
+    def test_build_feature_traces_populates_real_stage_chain(self):
+        demand = self._feature_demand()
+        graph = self._feature_graph(demand)
+        bindings = SimpleNamespace(
+            binding_for=lambda request_id: SimpleNamespace(provenance_id="goal-41")
+        )
+        artifact = "(goal demand-research-pikeman 1)\n"
+
+        traces = build_feature_traces(
+            (demand,),
+            graph,
+            bindings,
+            artifact,
+            verified_stage_identities=frozenset({
+                "test:research-pikeman",
+            }),
+        )
+
+        self.assertEqual(len(traces), 1)
+        trace = traces[0]
+        self.assertEqual(trace.feature_id, "research-pikeman")
+        self.assertEqual(trace.status, FeatureNodeStatus.PASS)
+        self.assertEqual(
+            tuple(node.stage for node in trace.ordered_nodes),
+            (
+                FeatureStage.STRATEGY_IR,
+                FeatureStage.SEMANTIC_IR,
+                FeatureStage.SEMANTIC_VALIDATION,
+                FeatureStage.CAPABILITY_GRAPH,
+                FeatureStage.STORAGE_BINDING,
+                FeatureStage.NATIVE_LOWERING,
+                FeatureStage.EMISSION,
+                FeatureStage.ARTIFACT_ANALYSIS,
+            ),
+        )
+        self.assertEqual(trace.first_broken_edge, None)
+        self.assertEqual(
+            trace.ordered_nodes[-1].artifact_sha256,
+            __import__("hashlib").sha256(artifact.encode()).hexdigest(),
+        )
+
+    def test_build_feature_traces_finds_missing_capability_as_first_broken_edge(self):
+        demand = self._feature_demand()
+        graph = CapabilityGraph(
+            demands=(),
+            capabilities=(),
+            providers=(),
+            witnesses=(),
+            edges=(),
+        )
+        bindings = SimpleNamespace(
+            binding_for=lambda request_id: SimpleNamespace(provenance_id="goal-41")
+        )
+
+        trace = build_feature_traces(
+            (demand,),
+            graph,
+            bindings,
+            "(goal demand-research-pikeman 1)\\n",
+        )[0]
+
+        self.assertIsNotNone(trace.first_broken_edge)
+        self.assertEqual(
+            trace.first_broken_edge.diagnostic_code,
+            StrategyDependencyCode.FEATURE_FIRST_BROKEN_EDGE.value,
+        )
+        self.assertEqual(
+            trace.first_broken_edge.target,
+            FeatureStage.CAPABILITY_GRAPH,
+        )
+
+    def test_build_feature_traces_finds_missing_emission_evidence(self):
+        demand = self._feature_demand()
+        graph = self._feature_graph(demand)
+        bindings = SimpleNamespace(
+            binding_for=lambda request_id: SimpleNamespace(provenance_id="goal-41")
+        )
+
+        trace = build_feature_traces(
+            (demand,),
+            graph,
+            bindings,
+            "(defrule unrelated)\\n",
+        )[0]
+
+        self.assertIsNotNone(trace.first_broken_edge)
+        self.assertEqual(
+            trace.first_broken_edge.source,
+            FeatureStage.EMISSION,
+        )
+        self.assertEqual(
+            trace.first_broken_edge.target,
+            FeatureStage.ARTIFACT_ANALYSIS,
+        )
+        self.assertEqual(
+            trace.first_broken_edge.diagnostic_code,
+            StrategyDependencyCode.FEATURE_FIRST_BROKEN_EDGE.value,
+        )
 
     def test_json_is_deterministic(self):
         demand = _demand()
