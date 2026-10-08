@@ -504,3 +504,51 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_synchronization_installs_age_transition_runtime_trace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime_path = root / "Byzantine.per"
+            generated_path = root / "generated.per"
+            runtime_path.write_text(
+                sync_runtime.RUNTIME.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            generated_path.write_text(
+                sync_runtime.GENERATED.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            original_runtime = sync_runtime.RUNTIME
+            original_generated = sync_runtime.GENERATED
+            sync_runtime.RUNTIME = runtime_path
+            sync_runtime.GENERATED = generated_path
+            try:
+                sync_runtime.synchronize()
+                synchronized = runtime_path.read_text(encoding="utf-8")
+                first_sync = synchronized
+                sync_runtime.synchronize()
+                second_sync = runtime_path.read_text(encoding="utf-8")
+            finally:
+                sync_runtime.RUNTIME = original_runtime
+                sync_runtime.GENERATED = original_generated
+
+        self.assertEqual(first_sync, second_sync)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-init", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-castle-values", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-values", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-true", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-escrow-true", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-true", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-escrow-true", synchronized)
+        self.assertIn("(up-chat-data-to-self", synchronized)
+        for field in (
+            "CASTLE state=%d retry=%d claim=%d villagers=%d blacksmith=%d market=%d",
+            "CASTLE research-status=%d can-research=%d can-research-with-escrow=%d",
+            "IMPERIAL state=%d retry=%d claim=%d villagers=%d university=%d",
+            "IMPERIAL research-status=%d can-research=%d can-research-with-escrow=%d",
+        ):
+            self.assertIn(field, synchronized)
+        self.assertIn("(up-research-status c: 102 >= 3)", synchronized)
+        self.assertIn("(up-research-status c: 103 >= 3)", synchronized)
