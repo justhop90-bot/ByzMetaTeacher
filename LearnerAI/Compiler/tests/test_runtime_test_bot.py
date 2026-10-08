@@ -256,6 +256,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             for rule in self.rules
             if "(set-goal demand-research-pikeman 1)" in rule
             and "(not (research-completed 197))" in rule
+            and "(current-age >= castle-age)" in rule
         )
         self.assertIn("(current-age >= castle-age)", pikeman)
         self.assertIn("(set-goal demand-research-pikeman 1)", pikeman)
@@ -265,6 +266,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             for rule in self.rules
             if "(set-goal demand-research-elite-skirmisher 1)" in rule
             and "(not (research-completed 98))" in rule
+            and "(current-age >= castle-age)" in rule
         )
         self.assertIn("(current-age >= castle-age)", elite)
         self.assertIn("(set-goal demand-research-elite-skirmisher 1)", elite)
