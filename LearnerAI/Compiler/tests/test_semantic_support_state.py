@@ -61,6 +61,15 @@ class SemanticSupportStateTests(unittest.TestCase):
                 for name in registry.names()
             )
         )
+        self.assertEqual(
+            default_engine_semantic_mapping_registry().require("transport.garrison.issue").native_command,
+            "up-garrison",
+        )
+        self.assertEqual(
+            registry.assess_support("up-garrison").state,
+            NativeSupportState.ENGINE_SEMANTICS_MAPPED,
+        )
+
 
 
     def test_default_semantic_mapping_catalog_is_exact_and_contracted(self):
