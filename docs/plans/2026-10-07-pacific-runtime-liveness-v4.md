@@ -43,7 +43,7 @@ Files:
 
 Behavior:
 - LOAD failure remains gated by the Transport Ship pending-object witness c:545.
-- On LOAD, keep the existing targeted garrison action and add a documented up-garrison fallback for transport-ship/villagers.
+- Contract the documented up-garrison Action through the generic native semantic-support pipeline, then use it as a Pacific transport fallback for transport-ship/villagers.
 - Configure one garrison unit per pass with a four-unit maximum fill, then restore the strategic-number defaults once four units are witnessed aboard.
 - Existing LOAD retry/rearm lifecycle remains the recovery path; no new recovery state is added.
 
