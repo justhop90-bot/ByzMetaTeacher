@@ -1185,6 +1185,8 @@ def lower_water_execution_plan(
                     plan.pacific_transport_lifecycle_state,
                     int(PacificTransportLifecyclePhase.TRANSIT),
                 ),
+                parse_expression("(set-strategic-number sn-number-garrison-units 0)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-maximum-garrison-fill 0)", SourceLocation(1)),
                 parse_expression("(disable-timer pacific-transport-load-retry)", SourceLocation(1)),
             ),
         ),
