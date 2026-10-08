@@ -26,20 +26,141 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
     def test_transport_state_preserves_intent_and_enters_recovery_when_capability_is_lost(self):
         ready = WaterExecutionState(
+            water_map=True,
             transport_required=True,
             transport_capable=True,
             transport_phase=TransportExecutionPhase.READY,
         )
-        recovered = transition_transport_execution(ready, transport_required=True, transport_capable=False)
+        recovered = transition_transport_execution(
+            ready,
+            water_map=True,
+            transport_required=True,
+            transport_capable=False,
+        )
 
         self.assertEqual(recovered.transport_phase, TransportExecutionPhase.RECOVER)
         self.assertTrue(recovered.transport_required)
         self.assertFalse(recovered.transport_capable)
 
+
+    def test_recovery_holds_until_rebuild_authorization(self):
+        ready = WaterExecutionState(
+            transport_required=True,
+            transport_capable=True,
+            transport_phase=TransportExecutionPhase.READY,
+        )
+        recovered = transition_transport_execution(
+            ready,
+            water_map=True,
+            transport_required=True,
+            transport_capable=False,
+        )
+        self.assertEqual(recovered.transport_phase, TransportExecutionPhase.RECOVER)
+
+        held = transition_transport_execution(
+            recovered,
+            water_map=True,
+            transport_required=True,
+            transport_capable=False,
+        )
+        self.assertEqual(held.transport_phase, TransportExecutionPhase.RECOVER)
+
+        reopened = transition_transport_execution(
+            held,
+            water_map=True,
+            transport_required=True,
+            transport_capable=False,
+            transport_rebuild_open=True,
+        )
+        self.assertEqual(reopened.transport_phase, TransportExecutionPhase.PREPARE)
+
+    def test_water_map_and_transport_requirement_are_separate_observations(self):
+        profile = build_byzantine_strategy(self.effective)
+        plan = profile.water_execution_plan
+        self.assertIsNotNone(plan)
+        assert plan is not None
+
+        self.assertEqual(plan.water_map_observation, "strategy-water-map")
+        self.assertEqual(plan.transport_required_observation, "strategy-transport-required")
+        self.assertNotEqual(plan.water_map_observation, plan.transport_required_observation)
+        self.assertEqual(
+            profile.observation("strategy-water-map").expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
+        self.assertEqual(
+            profile.observation("strategy-transport-required").expression,
+            "(goal water-transport-objective 1)",
+        )
+
+    def test_water_posture_transport_requires_both_map_and_objective(self):
+        self.assertEqual(
+            derive_water_posture(
+                water_map=False,
+                transport_required=True,
+                dock_exists=True,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.NONE,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=False,
+                dock_exists=True,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.FISHING,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=True,
+                dock_exists=True,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.TRANSPORT_SUPPORT,
+        )
+
+    def test_water_posture_precedence_is_transport_then_naval_then_fishing(self):
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=True,
+                dock_exists=True,
+                naval_pressure=True,
+                warboat_floor_met=True,
+            ),
+            WaterPosture.TRANSPORT_SUPPORT,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=False,
+                dock_exists=True,
+                naval_pressure=True,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.NAVAL_DEFENSE,
+        )
+        self.assertEqual(
+            derive_water_posture(
+                water_map=True,
+                transport_required=False,
+                dock_exists=True,
+                naval_pressure=True,
+                warboat_floor_met=True,
+            ),
+            WaterPosture.NAVAL_CONTROL,
+        )
+
     def test_unknown_water_evidence_fails_closed(self):
         self.assertEqual(
             derive_water_posture(
-                transport_required=None,
+                water_map=None,
+                transport_required=False,
                 dock_exists=False,
                 naval_pressure=False,
                 warboat_floor_met=False,
@@ -48,6 +169,7 @@ class WaterTransportExecutionTests(unittest.TestCase):
         )
         state = transition_transport_execution(
             WaterExecutionState(),
+            water_map=True,
             transport_required=True,
             transport_capable=None,
         )
@@ -55,10 +177,13 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
     def test_runtime_state_marks_transport_loss_as_recovery(self):
         profile = build_byzantine_strategy(self.effective)
+        water_map_expression = profile.observation("strategy-water-map").expression
+        transport_required_expression = profile.observation("strategy-transport-required").expression
         transport_expression = profile.observation("strategy-own-transport-capable").expression
-        islands_expression = profile.observation("strategy-water-islands").expression
+        rebuild_expression = profile.observation("strategy-transport-rebuild-open").expression
 
         previous = WaterExecutionState(
+            water_map=True,
             transport_required=True,
             transport_capable=True,
             transport_phase=TransportExecutionPhase.READY,
@@ -67,8 +192,10 @@ class WaterTransportExecutionTests(unittest.TestCase):
             previous_posture=StrategyPosture.BOOM,
             previous_water_execution_state=previous,
             fact_results=(
-                (islands_expression, True),
+                (water_map_expression, True),
+                (transport_required_expression, True),
                 (transport_expression, False),
+                (rebuild_expression, False),
             ),
         )
 
@@ -97,13 +224,128 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertTrue(WaterExecutionState)
         self.assertTrue(WaterPosture)
 
+
+    def test_transport_demand_is_objective_driven_not_map_driven(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-transport-capability")
+        req_text = " ".join(demand.execution.requirements)
+        self.assertIn(profile.observation("strategy-water-map").expression, req_text)
+        self.assertIn(profile.observation("strategy-transport-required").expression, req_text)
+        self.assertIn("(building-type-count-total dock >= 1)", req_text)
+        invalidation_refs = {
+            evidence.observation_ref
+            for evidence in demand.invalidation
+            if evidence.observation_ref is not None
+        }
+        self.assertIn("strategy-transport-capability-lost", invalidation_refs)
+        self.assertNotIn("strategy-transport-recovery", invalidation_refs)
+
+    def test_water_lowering_has_explicit_map_gate_and_recovery_reopen(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rules = {rule.identity: rule for rule in control.rules}
+        transport = rules["water-posture-transport"]
+        transport_facts = tuple(fact.source for fact in transport.facts)
+        self.assertIn(profile.observation("strategy-water-map").expression, transport_facts)
+        self.assertIn(profile.observation("strategy-transport-required").expression, transport_facts)
+        self.assertIn("transport-phase-reopen", rules)
+
+        prepare = rules["transport-phase-prepare"]
+        prepare_text = " ".join(fact.source for fact in prepare.facts)
+        self.assertNotIn("(goal transport-phase 3)", prepare_text)
+
     def test_stock_strategy_exposes_typed_water_execution_plan(self):
         profile = build_byzantine_strategy(self.effective)
 
         self.assertIsNotNone(profile.water_execution_plan)
-        self.assertIn("strategy-water-islands", {
+        self.assertIn("strategy-water-map", {
             item.identity for item in profile.observations
         })
+        self.assertIn("strategy-transport-required", {
+            item.identity for item in profile.observations
+        })
+
+    def test_water_fishing_continuity_is_one_bounded_lifecycle_for_pacific_and_islands(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        req_text = " ".join(demand.execution.requirements)
+        self.assertIn("(map-type pacific-islands)", req_text)
+        self.assertIn("(not (map-type pacific-islands))", req_text)
+        self.assertIn("(unit-type-count-total fishing-ship < 2)", req_text)
+        self.assertIn("(unit-type-count-total fishing-ship < 4)", req_text)
+        self.assertNotIn(
+            "water-fishing-expansion",
+            {item.identity for item in profile.demands},
+        )
+        self.assertIn("(building-type-count-total dock >= 1)", req_text)
+
+    def test_transport_capability_is_a_feudal_execution_capability(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-transport-capability")
+        requirements = tuple(demand.execution.requirements)
+        self.assertIn("(current-age >= feudal-age)", requirements)
+        self.assertNotIn("(current-age >= dark-age)", requirements)
+
+    def test_naval_escalation_consumes_consolidated_enemy_naval_pressure_observation(self):
+        profile = build_byzantine_strategy(self.effective)
+        for identity in ("water-naval-defense", "water-naval-control"):
+            demand = profile.demand(identity)
+            requirements = " ".join(demand.execution.requirements)
+            self.assertIn(
+                profile.observation("strategy-enemy-naval-pressure").expression,
+                requirements,
+            )
+
+    def test_water_fishing_continuity_starts_in_dark_age_after_dock(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("water-fishing-continuity")
+        requirements = tuple(demand.execution.requirements)
+
+        self.assertIn("(current-age >= dark-age)", requirements)
+        self.assertNotIn("(current-age >= feudal-age)", requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", requirements)
+
+    def test_water_plan_enables_native_boat_exploration_after_first_fishing_ship(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        rule = next(
+            item for item in control.rules
+            if item.identity == "water-boat-exploration-enable"
+        )
+        facts = tuple(fact.source for fact in rule.facts)
+        actions = tuple(action.source for action in rule.actions)
+
+        self.assertIn(profile.observation("strategy-water-map").expression, facts)
+        self.assertIn(profile.observation("strategy-dock-exists").expression, facts)
+        self.assertIn("(unit-type-count fishing-ship >= 1)", facts)
+        self.assertIn("(set-strategic-number sn-number-boat-explore-groups 1)", actions)
+        self.assertIn("(disable-self)", actions)
+
+    def test_checked_in_runtime_contains_dark_age_water_continuity(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[3]
+        runtime = (root / "Byzantine.per").read_text(encoding="utf-8")
+
+        fishing_start = runtime.index(
+            "; Action issuance: water-fishing-continuity | ACTIVE -> ISSUED"
+        )
+        fishing_end = runtime.index(
+            "; Pending diagnostics: water-transport-capability",
+            fishing_start,
+        )
+        fishing_rule = runtime[fishing_start:fishing_end]
+        self.assertIn("(current-age >= dark-age)", fishing_rule)
+        self.assertNotIn("(current-age >= feudal-age)", fishing_rule)
+        self.assertIn("(can-train-with-escrow fishing-ship)", fishing_rule)
+        self.assertIn("(defconst sn-number-boat-explore-groups 61)", runtime)
+        self.assertIn("(set-strategic-number sn-number-boat-explore-groups 1)", runtime)
 
     def test_water_plan_lowers_into_persistent_posture_and_transport_state(self):
         profile = build_byzantine_strategy(self.effective)
@@ -113,9 +355,15 @@ class WaterTransportExecutionTests(unittest.TestCase):
         state_ids = {state.identifier for state in compilation.control_plan.states}
         self.assertIn("water-posture", state_ids)
         self.assertIn("transport-phase", state_ids)
+        self.assertIn("water-transport-objective", state_ids)
+        self.assertIn("water-transport-rebuild", state_ids)
 
         rule_ids = {rule.identity for rule in compilation.control_plan.rules}
         self.assertIn("transport-phase-recover-on-capability-loss", rule_ids)
+        self.assertIn("transport-phase-reopen", rule_ids)
+        self.assertIn("transport-rebuild-authorize", rule_ids)
+        self.assertIn("transport-objective-open", rule_ids)
+        self.assertIn("transport-objective-close", rule_ids)
         self.assertIn("transport-phase-ready", rule_ids)
         self.assertIn("water-posture-naval-defense", rule_ids)
         self.assertIn("water-posture-naval-control", rule_ids)

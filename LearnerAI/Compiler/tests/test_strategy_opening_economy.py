@@ -1,5 +1,8 @@
 import unittest
 from pathlib import Path
+
+from Compiler.ast import SourceLocation
+from Compiler.semantic.analyzer import parse_expression
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
@@ -112,13 +115,13 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         expected_opening_facts = {
             "opening-selector-water-control": (
                 "(goal opening-plan -1)",
-                "(map-type islands)",
+                "(or (map-type islands) (map-type pacific-islands))",
                 "(or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2))",
             ),
             "opening-selector-water-economy": (
                 "(goal opening-plan -1)",
-                "(map-type islands)",
+                "(or (map-type islands) (map-type pacific-islands))",
                 "(not (or (players-unit-type-count any-enemy galley-line >= 2) "
                 "(players-unit-type-count any-enemy fire-galley-line >= 2)))",
             ),
@@ -131,7 +134,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             "opening-selector-counter-feudal": (
                 "(goal opening-plan -1)",
-                "(not (map-type islands))",
+                "(not (or (map-type islands) (map-type pacific-islands)))",
                 "(not (map-type arena))",
                 "(or (players-unit-type-count any-enemy knight >= 3) "
                 "(or (players-unit-type-count any-enemy archer-line >= 4) "
@@ -139,7 +142,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             ),
             "opening-selector-defensive-standard": (
                 "(goal opening-plan -1)",
-                "(not (map-type islands))",
+                "(not (or (map-type islands) (map-type pacific-islands)))",
                 "(not (map-type arena))",
                 "(not (or (players-unit-type-count any-enemy knight >= 3) "
                 "(or (players-unit-type-count any-enemy archer-line >= 4) "
@@ -186,9 +189,46 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             requirements,
             (
                 "(current-age == dark-age)",
-                "(unit-type-count-total villager >= 21)",
+                "(unit-type-count-total villager >= 20)",
                 "(can-research-with-escrow feudal-age)",
             ),
+        )
+
+    def test_dark_age_villager_continuity_waits_for_feudal_issuability(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        self.assertIn(
+            "(not (and (current-age == dark-age) "
+            "(and (unit-type-count-total villager >= 20) "
+            "(can-research-with-escrow feudal-age))))",
+            demand.execution.requirements,
+        )
+
+    def test_dark_age_villager_pause_guard_has_feudal_issuability_as_inner_witness(self):
+        profile = build_byzantine_strategy(self.effective)
+        demand = profile.demand("civilian-villager-continuity")
+        guard = next(
+            requirement
+            for requirement in demand.execution.requirements
+            if requirement.startswith("(not (and (current-age == dark-age)")
+        )
+
+        guard_expression = parse_expression(
+            guard,
+            SourceLocation(1, 1, "<test>"),
+        )
+        self.assertEqual("not", guard_expression.head)
+        outer_and = guard_expression.args[0]
+        self.assertEqual("and", outer_and.head)
+        bank_and = outer_and.args[1]
+        self.assertEqual("and", bank_and.head)
+        self.assertEqual(
+            "unit-type-count-total",
+            bank_and.args[0].head,
+        )
+        self.assertEqual(
+            "can-research-with-escrow",
+            bank_and.args[1].head,
         )
 
     def test_villager_continuity_is_a_production_lifecycle_demand(self):
@@ -202,7 +242,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(can-train villager)", demand.execution.requirements)
         self.assertIn(
             "(not (and (current-age == dark-age) "
-            "(unit-type-count-total villager >= 21)))",
+            "(and (unit-type-count-total villager >= 20) "
+            "(can-research-with-escrow feudal-age))))",
             demand.execution.requirements,
         )
         self.assertIn(
@@ -232,7 +273,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         block = runtime[start:end]
         self.assertIn("(can-train villager)", block)
         self.assertIn("(unit-type-count-total villager < 110)", block)
-        self.assertIn("(unit-type-count-total villager >= 21)", block)
+        self.assertIn("(unit-type-count-total villager >= 20)", block)
         self.assertIn(
             "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
             block,
@@ -258,6 +299,94 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(can-research-with-escrow castle-age)",
             tuple(castle.execution.requirements),
         )
+
+    def test_pacific_uses_dedicated_land_first_economy_posture(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        pacific = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-pacific-land-first"
+        )
+        pacific_facts = tuple(fact.source for fact in pacific.facts)
+        self.assertIn(
+            profile.observation("strategy-pacific-islands").expression,
+            pacific_facts,
+        )
+        self.assertNotIn(
+            profile.observation("strategy-opening-pressure").expression,
+            pacific_facts,
+        )
+
+        water_economy = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-economy"
+        )
+        water_control = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-control"
+        )
+        self.assertIn(
+            "(not (map-type pacific-islands))",
+            tuple(fact.source for fact in water_economy.facts),
+        )
+        self.assertIn(
+            "(not (map-type pacific-islands))",
+            tuple(fact.source for fact in water_control.facts),
+        )
+
+        from LearnerAI.Compiler.clients.basilisk import EconomyMode
+        policy = next(
+            item
+            for item in profile.economy_controller.policies
+            if item.mode is EconomyMode.PACIFIC_LAND
+        )
+        self.assertEqual(
+            (policy.allocation.food, policy.allocation.wood, policy.allocation.gold),
+            (45, 40, 15),
+        )
+
+    def test_water_opening_yields_to_fast_castle_at_feudal_maturity(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        fast = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-fast-castle"
+        )
+        water_economy = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-economy"
+        )
+        water_control = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-control"
+        )
+
+        fast_text = " ".join(fact.source for fact in fast.facts)
+        water_economy_text = " ".join(fact.source for fact in water_economy.facts)
+        water_control_text = " ".join(fact.source for fact in water_control.facts)
+
+        castle_bank_ready = (
+            "(and (unit-type-count-total villager >= 28) "
+            "(and (building-type-count-total blacksmith >= 1) "
+            "(building-type-count-total market >= 1)))"
+        )
+        self.assertIn("(goal opening-plan 4)", fast_text)
+        self.assertIn("(goal opening-plan 5)", fast_text)
+        self.assertIn(castle_bank_ready, fast_text)
+        self.assertIn(f"(not {castle_bank_ready})", water_economy_text)
+        self.assertIn(f"(not {castle_bank_ready})", water_control_text)
 
     def test_castle_age_transition_is_compiler_owned_and_protected(self):
         profile = build_byzantine_strategy(self.effective)
@@ -382,7 +511,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_start,
         )
         villager_rule = runtime[villager_start:villager_end]
-        self.assertIn("(unit-type-count-total villager >= 21)", villager_rule)
+        self.assertIn("(unit-type-count-total villager >= 20)", villager_rule)
         self.assertIn(
             "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
             villager_rule,
@@ -616,7 +745,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 "(not (players-unit-type-count any-enemy knight >= 3))",
                 "(not (players-unit-type-count any-enemy archer-line >= 4))",
                 "(not (players-unit-type-count any-enemy militia-line >= 5))",
-                "(goal opening-plan 3)",
+                "(or (goal opening-plan 3) (and (or (goal opening-plan 4) (goal opening-plan 5)) (and (unit-type-count-total villager >= 28) (and (building-type-count-total blacksmith >= 1) (building-type-count-total market >= 1)))))",
                 "(not (goal opening-plan 6))",
             ),
         )
@@ -775,6 +904,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(goal opening-recovery-defense-clear 1)",
             water_cause_text,
         )
+        self.assertIn(
+            "(goal transport-phase 3)",
+            water_cause_text,
+        )
+        self.assertNotIn(
+            "(not (unit-type-count transport-ship >= 1))",
+            water_cause_text,
+        )
+
         defense_clear_rule = rules["opening-recovery-defense-clear-pressure-absent"]
         defense_clear_text = " ".join(
             fact.source for fact in defense_clear_rule.facts
@@ -1000,7 +1138,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             " ".join(water_cause_facts),
         )
         self.assertIn(
-            "(not (unit-type-count transport-ship >= 1))",
+            "(goal transport-phase 3)",
             " ".join(water_cause_facts),
         )
         self.assertIn("(current-age < castle-age)", water_cause_facts)
