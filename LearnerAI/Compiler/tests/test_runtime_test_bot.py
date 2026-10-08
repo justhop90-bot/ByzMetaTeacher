@@ -185,9 +185,12 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         castle = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: Castle foundation" in rule
+            if "(build castle)" in rule
+            and "(stone-amount >= 650)" in rule
+            and "(unit-type-count-total villager >= 35)" in rule
         )
-        self.assertIn("(current-age >= feudal-age)", castle)
+        self.assertIn("(current-age >= castle-age)", castle)
+        self.assertIn("(current-age == feudal-age)", castle)
         self.assertIn("(unit-type-count-total villager >= 35)", castle)
         self.assertIn("(stone-amount >= 650)", castle)
         self.assertIn("(can-build castle)", castle)
@@ -198,7 +201,9 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         tc2 = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: TC2 foundation" in rule
+            if "(build town-center)" in rule
+            and "(building-type-count-total town-center < 2)" in rule
+            and "(unit-type-count-total villager >= 45)" in rule
         )
         self.assertIn("(current-age >= castle-age)", tc2)
         self.assertIn("(unit-type-count-total villager >= 45)", tc2)
@@ -211,7 +216,10 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         tc3 = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: TC3 foundation" in rule
+            if "(build town-center)" in rule
+            and "(building-type-count-total town-center >= 2)" in rule
+            and "(building-type-count-total town-center < 3)" in rule
+            and "(unit-type-count-total villager >= 60)" in rule
         )
         self.assertIn("(current-age == castle-age)", tc3)
         self.assertIn("(building-type-count-total town-center >= 2)", tc3)
@@ -226,7 +234,8 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         stable = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: Castle stable" in rule
+            if "(set-goal demand-castle-stable-capability 1)" in rule
+            and "(building-type-count-total stable < 1)" in rule
         )
         self.assertIn("(current-age >= castle-age)", stable)
         self.assertIn("(building-type-count-total stable < 1)", stable)
@@ -235,7 +244,8 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         archery = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: Castle ranged" in rule
+            if "(set-goal demand-castle-archery-capability 1)" in rule
+            and "(building-type-count-total archery-range < 1)" in rule
         )
         self.assertIn("(current-age >= castle-age)", archery)
         self.assertIn("(building-type-count-total archery-range < 1)", archery)
@@ -244,7 +254,8 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         pikeman = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: Pikeman research" in rule
+            if "(set-goal demand-research-pikeman 1)" in rule
+            and "(not (research-completed 197))" in rule
         )
         self.assertIn("(current-age >= castle-age)", pikeman)
         self.assertIn("(set-goal demand-research-pikeman 1)", pikeman)
@@ -252,7 +263,8 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         elite = next(
             rule
             for rule in self.rules
-            if "; Runtime capability bridge: Elite Skirmisher research" in rule
+            if "(set-goal demand-research-elite-skirmisher 1)" in rule
+            and "(not (research-completed 98))" in rule
         )
         self.assertIn("(current-age >= castle-age)", elite)
         self.assertIn("(set-goal demand-research-elite-skirmisher 1)", elite)
