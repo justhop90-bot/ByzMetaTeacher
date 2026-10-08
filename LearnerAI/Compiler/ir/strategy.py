@@ -4537,6 +4537,7 @@ def _default_byzantine_duc_plan(
 
     rules = []
     outputs = []
+    inputs = []
     for order, (identity, pressure_fact, search_unit, purpose) in enumerate(
         target_specs
     ):
@@ -4635,7 +4636,7 @@ def _default_byzantine_duc_plan(
                 start_max=15998,
             )
             active_fact = (
-                "(and (current-age >= feudal-age) (resource-found stone)"
+                "(and (current-age >= feudal-age) (resource-found stone))"
                 if resource == "stone"
                 else f"(resource-found {resource})"
             )
