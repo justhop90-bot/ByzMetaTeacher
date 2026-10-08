@@ -356,6 +356,11 @@ def emit(
         "; Generated from validated semantic IR. Do not edit by hand.",
         ";============================================================",
         "",
+        "; AIRef native enum constants used by compiler-owned DUC filters",
+        "(defconst status-resource 3)",
+        "(defconst list-active 0)",
+        "(defconst status-ready 2)",
+        "",
         "; Demand goal constants",
     ]
 
