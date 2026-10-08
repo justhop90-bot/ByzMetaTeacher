@@ -204,53 +204,38 @@ def _resource_camp_block(generated: str, runtime: str) -> str:
         + "\n".join(block.rstrip() for block in duc_blocks)
         + "\n\n"
         + "\n".join(block.rstrip() for block in lifecycle_blocks)
+        + "\n\n"
+        + "; Dark Age first-mill continuity safety valve\n"
+        + "; First lumber owns the opening wood pass. Once that dropsite exists, guarantee\n"
+        + "; a first Mill even when the generic distance selector remains below its normal\n"
+        + "; threshold. The existing demand lifecycle still owns completion/retry.\n"
+        + "(defrule\n"
+        + " (goal demand-economy-food-mill-boom 1)\n"
+        + " (current-age == dark-age)\n"
+        + " (building-type-count-total lumber-camp >= 1)\n"
+        + " (building-type-count-total mill == 0)\n"
+        + " (up-pending-objects c: 68 == 0)\n"
+        + " (not (up-pending-placement c: 68))\n"
+        + " (goal action-claim-build-pass-singleton 0)\n"
+        + " (resource-found food)\n"
+        + " (wood-amount >= 50)\n"
+        + " (unit-type-count-total villager >= 18)\n"
+        + " (can-build mill)\n"
+        + "=>\n"
+        + " (set-strategic-number sn-allow-adjacent-dropsites 0)\n"
+        + " (set-strategic-number sn-dropsite-separation-distance 10)\n"
+        + " (set-strategic-number sn-mill-max-distance 17)\n"
+        + " (build mill)\n"
+        + " (set-goal action-claim-build-pass-singleton 1)\n"
+        + " (set-goal demand-economy-food-mill-boom 71)\n"
+        + ")\n"
         + "\n"
-    )
+        + "\n"
+        + "    )
     return _remap_camp_duc_storage(camp_block, runtime)
 
 
-def _install_dark_age_mill_safety_valve(runtime: str) -> str:
-    marker = "; Dark Age first-mill continuity safety valve"
-    if marker in runtime:
-        return runtime
-
-    block = """; Dark Age first-mill continuity safety valve
-; First lumber owns the opening wood pass. Once that dropsite exists, guarantee
-; a first Mill even when the generic distance selector remains below its normal
-; threshold. The existing demand lifecycle still owns completion/retry.
-(defrule
- (goal demand-economy-food-mill-boom 1)
- (current-age == dark-age)
- (building-type-count-total lumber-camp >= 1)
- (building-type-count-total mill == 0)
- (up-pending-objects c: 68 == 0)
- (not (up-pending-placement c: 68))
- (goal action-claim-build-pass-singleton 0)
- (resource-found food)
- (wood-amount >= 50)
- (unit-type-count-total villager >= 18)
- (can-build mill)
-=>
- (set-strategic-number sn-allow-adjacent-dropsites 0)
- (set-strategic-number sn-dropsite-separation-distance 10)
- (set-strategic-number sn-mill-max-distance 17)
- (build mill)
- (set-goal action-claim-build-pass-singleton 1)
- (set-goal demand-economy-food-mill-boom 71)
-)
-"""
-    end = runtime.find(CAMP_RUNTIME_END)
-    if end < 0:
-        raise RuntimeError(
-            f"runtime artifact is missing camp section end: {CAMP_RUNTIME_END}"
-        )
-    return runtime[:end] + block.rstrip() + "
-
-" + runtime[end:]
-
-
 def _replace_resource_camp_section(runtime: str, generated: str) -> str:
-    generated_block = _resource_camp_block(generated, runtime).rstrip()
     header_pos = runtime.find(CAMP_RUNTIME_HEADER)
     if header_pos >= 0:
         start = runtime.rfind(";----------------------------------------------------------------", 0, header_pos)
@@ -267,11 +252,16 @@ def _replace_resource_camp_section(runtime: str, generated: str) -> str:
         raise RuntimeError(
             f"runtime artifact is missing camp section end: {CAMP_RUNTIME_END}"
         )
+
+    runtime_without_camp = runtime[:start] + runtime[end:]
+    generated_block = _resource_camp_block(
+        generated,
+        runtime_without_camp,
+    ).rstrip()
     current = runtime[start:end].rstrip()
-    replacement = generated_block
-    if current == replacement:
+    if current == generated_block:
         return runtime
-    return runtime[:start] + replacement + "\n" + runtime[end:]
+    return runtime[:start] + generated_block + "\n" + runtime[end:]
 
 
 def _replace_tail_section(source: str, marker: str, block: str) -> str:
@@ -814,7 +804,6 @@ def synchronize() -> bool:
     runtime = _ensure_defconsts(runtime, generated)
     runtime = _sync_civilian_villager_castle_admission(runtime, generated)
     runtime = _replace_resource_camp_section(runtime, generated)
-    runtime = _install_dark_age_mill_safety_valve(runtime)
 
     defense_block = _block(
         generated,
