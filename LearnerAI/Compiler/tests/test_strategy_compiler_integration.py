@@ -265,6 +265,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-set-target-by-id g: 0)", garrison_actions)
         self.assertIn("(up-find-local c: 904 c: 4)", garrison_actions)
         self.assertIn("(up-target-objects 1 7 -1 -1)", garrison_actions)
+        self.assertIn("(up-garrison transport-ship c: villager)", garrison_actions)
+        garrison_facts = tuple(f.source for f in garrison.facts)
+        self.assertIn("(up-compare-goal pacific-opening-transport-load-count < 4)", garrison_facts)
         self.assertLess(
             garrison_actions.index("(up-full-reset-search)"),
             garrison_actions.index("(up-set-target-by-id g: 0)"),
