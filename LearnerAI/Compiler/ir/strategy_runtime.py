@@ -553,6 +553,7 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
+    "goal": StrategicObservationType.PERSISTENT_CONTROL_STATE,
     "up-compare-sn": StrategicObservationType.PERSISTENT_CONTROL_STATE,
     "up-train-site-ready": StrategicObservationType.TRAIN_PROVIDER_READINESS,
     "building-available": StrategicObservationType.CAPABILITY_STATE,
@@ -717,6 +718,24 @@ def _validate_expression(
             _validate_expression(
                 child, effective, registry, evidence, observations, timing_primitives, ordinal
             )
+        return
+
+    if expression.head == "goal":
+        if len(expression.args) != 2:
+            raise ValueError("goal observation requires exactly GoalId and value operands")
+        ordinal[0] += 1
+        observations.append(
+            StrategicObservation(
+                identity=f"{evidence.label}:observation:{ordinal[0]}",
+                semantic_type=StrategicObservationType.PERSISTENT_CONTROL_STATE,
+                primitive=expression.head,
+                native_parameter_contracts=(),
+                expression=expression,
+                evidence_class=evidence.kind,
+                evidence_source=evidence.source,
+                provenance=evidence.provenance,
+            )
+        )
         return
 
     primitive = registry.get(expression.head)
@@ -1205,12 +1224,23 @@ def _evaluate_demand(
     )
 
     execution_truths: list[EvidenceTruth] = []
+    from ..ast import SourceLocation
+    from ..semantic.analyzer import parse_expression
+
     for execution in demand.execution_demands:
         for index, expression in enumerate(execution.requirements):
+            parsed_expression = (
+                parse_expression(expression, SourceLocation(1))
+                if isinstance(expression, str)
+                else expression
+            )
+            if parsed_expression.head in {"goal", "up-compare-goal"}:
+                execution_truths.append(snapshot.result_for(parsed_expression))
+                continue
             binding = bind_strategic_evidence(
                 StrategicEvidence(
                     StrategicEvidenceKind.EXECUTION,
-                    expression,
+                    parsed_expression.source,
                     f"{demand.identity}:execution:{index}",
                 ),
                 effective,
@@ -1293,8 +1323,10 @@ def _evaluate_water_execution_state(
         return None, ()
 
     refs = (
+        ("water:map", plan.water_map_observation),
         ("water:transport-required", plan.transport_required_observation),
         ("water:transport-capable", plan.transport_capable_observation),
+        ("water:transport-rebuild-open", plan.transport_rebuild_open_observation),
         ("water:dock", plan.dock_observation),
         ("water:naval-pressure", plan.naval_pressure_observation),
         ("water:naval-pressure-cleared", plan.naval_pressure_cleared_observation),
@@ -1302,20 +1334,33 @@ def _evaluate_water_execution_state(
     )
     truths: dict[str, EvidenceTruth] = {}
     evaluated: list[tuple[str, EvidenceTruth]] = []
+    persistent_state_refs = {
+        plan.transport_required_observation,
+        plan.transport_rebuild_open_observation,
+    }
     for label, reference in refs:
-        evidence = StrategicEvidence(
-            kind=StrategicEvidenceKind.EXECUTION,
-            expression=None,
-            label=label,
-            observation_ref=reference,
-        )
-        binding = bind_observation_reference(
-            evidence,
-            profile,
-            effective,
-            registry,
-        )
-        truth = evaluate_binding(binding, snapshot)
+        if reference in persistent_state_refs:
+            from ..semantic.analyzer import parse_expression
+            from ..ast import SourceLocation
+            expression = parse_expression(
+                profile.observation(reference).expression,
+                SourceLocation(1),
+            )
+            truth = snapshot.result_for(expression)
+        else:
+            evidence = StrategicEvidence(
+                kind=StrategicEvidenceKind.EXECUTION,
+                expression=None,
+                label=label,
+                observation_ref=reference,
+            )
+            binding = bind_observation_reference(
+                evidence,
+                profile,
+                effective,
+                registry,
+            )
+            truth = evaluate_binding(binding, snapshot)
         truths[reference] = truth
         evaluated.append((label, truth))
 
@@ -1330,10 +1375,13 @@ def _evaluate_water_execution_state(
     prior = snapshot.previous_water_execution_state or WaterExecutionState()
     transport_state = transition_transport_execution(
         prior,
+        water_map=tri(plan.water_map_observation),
         transport_required=tri(plan.transport_required_observation),
         transport_capable=tri(plan.transport_capable_observation),
+        transport_rebuild_open=tri(plan.transport_rebuild_open_observation),
     )
     posture = derive_water_posture(
+        water_map=tri(plan.water_map_observation),
         transport_required=tri(plan.transport_required_observation),
         dock_exists=tri(plan.dock_observation),
         naval_pressure=tri(plan.naval_pressure_observation),
@@ -1343,8 +1391,10 @@ def _evaluate_water_execution_state(
         WaterExecutionState(
             posture=posture,
             transport_phase=transport_state.transport_phase,
+            water_map=transport_state.water_map,
             transport_required=transport_state.transport_required,
             transport_capable=transport_state.transport_capable,
+            transport_rebuild_open=transport_state.transport_rebuild_open,
             dock_exists=tri(plan.dock_observation),
             naval_pressure=tri(plan.naval_pressure_observation),
             warboat_floor_met=tri(plan.warboat_floor_observation),

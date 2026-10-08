@@ -45,7 +45,8 @@ Writes `point_target: DucPointRef` only (`duc.py:2914-2943`); retained across pa
 ### `up-target-objects (Option Action Formation Stance)`, `Option in {0,1}` — `SEMANTICALLY_ADAPTED`
 `0→LOCAL_SEARCH_RESULTS` (needs init list, no target); `1→SELECTED_OBJECT_ONLY` (needs target; STALE→`DUC-006`, UNKNOWN→`DUC-007` with proof-specific message; records `DucTargetConsumerEffect`). SORT degrades list-index target to UNKNOWN before opt-1 can consume provably. TEST: `:591-619`, composite rule 10.
 
-### `up-target-point` — `NATIVE_KNOWN` (recognized consumer; arity NOT contracted — do not depend on effects).
+### `up-target-point (EscrowGoalId Action Formation Stance)` — `SEMANTICALLY_ADAPTED`
+`up-target-point` consumes the current local search list and directs those units to the established point target. Its four-argument action form is now promoted through the executable DUC semantic channel; runtime action completion remains OPEN and is witnessed separately from the request.
 ### `up-clean-search (Source ObjectData Order)` — `SEMANTICALLY_ADAPTED` (STALE-vs-UNKNOWN distinction OPEN, checklist D)
 `"-1"→DEDUPE` else `SORT`; SORT keeps cardinality, DEDUPE clears to None; fingerprint rotated; target → `UNKNOWN/UNKNOWN`, `index_stable=False`; cursor NOT reset. Native SORT fact ENGINE-mapped, preservation NOT mapped.
 ### `up-remove-objects (Source ObjectData cmp Val)` — `SEMANTICALLY_ADAPTED`
