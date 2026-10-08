@@ -4701,7 +4701,7 @@ def _default_byzantine_duc_plan(
                 NativeDucOutputRequest(
                     rule_identity=search_identity,
                     section="ACTION",
-                    expression_index=4,
+                    expression_index=3,
                     request=search_request,
                     command="up-get-search-state",
                     argument_index=0,
