@@ -502,10 +502,6 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
     def test_synchronization_installs_age_transition_runtime_trace(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -536,6 +532,7 @@ if __name__ == "__main__":
 
         self.assertEqual(first_sync, second_sync)
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-init", synchronized)
+        self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-feudal-values", synchronized)
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-castle-values", synchronized)
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-values", synchronized)
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-castle-can-research-true", synchronized)
@@ -548,6 +545,15 @@ if __name__ == "__main__":
         )
         self.assertIn("(up-chat-data-to-self", synchronized)
         for field in (
+            "BTTRACE FEUDAL state=%d",
+            "BTTRACE FEUDAL retry=%d",
+            "BTTRACE FEUDAL age=%d",
+            "BTTRACE FEUDAL villagers=%d",
+            "BTTRACE FEUDAL claim=%d",
+            "BTTRACE FEUDAL time=%d",
+            "BTTRACE FEUDAL research-status=%d",
+            "BTTRACE FEUDAL can-research=%d",
+            "BTTRACE FEUDAL can-research-with-escrow=%d",
             "BTTRACE CASTLE state=%d",
             "BTTRACE CASTLE retry=%d",
             "BTTRACE CASTLE age=%d",
@@ -569,6 +575,13 @@ if __name__ == "__main__":
             "BTTRACE IMPERIAL can-research-with-escrow=%d",
         ):
             self.assertIn(field, synchronized)
+        self.assertIn("(current-age == dark-age)", synchronized)
+        self.assertIn("(up-research-status c: 101 == 4)", synchronized)
+        self.assertIn("(up-research-status c: 101 == 3)", synchronized)
+        self.assertIn("(up-research-status c: 101 == 2)", synchronized)
+        self.assertIn("(up-research-status c: 101 == 1)", synchronized)
+        self.assertIn("(up-research-status c: 101 == 0)", synchronized)
+        self.assertIn("(up-research-status c: 101 == -1)", synchronized)
         self.assertIn("(up-research-status c: 102 == 4)", synchronized)
         self.assertIn("(up-research-status c: 102 == 3)", synchronized)
         self.assertIn("(up-research-status c: 102 == 2)", synchronized)
@@ -577,3 +590,8 @@ if __name__ == "__main__":
         self.assertIn("(up-research-status c: 103 == 3)", synchronized)
         self.assertIn("(up-research-status c: 103 == 2)", synchronized)
         self.assertIn("(up-research-status c: 103 == 1)", synchronized)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
