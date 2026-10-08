@@ -92,6 +92,34 @@ def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
     return list(dict.fromkeys(intervals))
 
 
+def _duc_output_intervals(source: str) -> list[tuple[int, int, str]]:
+    definitions = _defconsts(source)
+    intervals: list[tuple[int, int, str]] = []
+
+    def resolve(token: str) -> int | None:
+        if re.fullmatch(r"-?\d+", token):
+            return int(token)
+        return definitions.get(token)
+
+    for match in re.finditer(
+        r"\(up-get-search-state\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 3, "SEARCH_STATE"))
+
+    for match in re.finditer(
+        r"\(up-get-point\s+position-object\s+([^\s()]+)\)",
+        source,
+    ):
+        value = resolve(match.group(1))
+        if value is not None:
+            intervals.append((value, value + 1, "POINT_PAIR"))
+
+    return list(dict.fromkeys(intervals))
+
+
 class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -110,7 +138,7 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         camp = self.source[start:end]
         outside = self.source[:start] + self.source[end:]
 
-        camp_intervals = _storage_intervals(camp)
+        camp_intervals = _duc_output_intervals(camp)
         runtime_intervals = _storage_intervals(outside)
         collisions = [
             (camp_interval, runtime_interval)
