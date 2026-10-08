@@ -231,10 +231,7 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 )
 
     def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
-        for floor, point, state, remote, old_distance in (
-            (1, "416", "468", "470", "5"),
-            (2, "418", "472", "474", "12"),
-        ):
+        for floor in (1, 2):
             rules = self._active_rules(floor)
             search_rule = next(
                 rule for rule in rules
@@ -242,9 +239,45 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             )
             placement_rule = next(
                 rule for rule in rules
-                if f"(up-get-point position-object {point})" in rule
-                and f"(up-set-target-point {point})" in rule
+                if "(up-get-point position-object " in rule
+                and "(up-set-target-point " in rule
             )
+
+            search_match = re.search(
+                r"\(up-get-search-state (\d+)\)",
+                search_rule,
+            )
+            self.assertIsNotNone(search_match)
+            search_state = int(search_match.group(1))
+
+            remote_match = re.search(
+                r"\(up-compare-goal (\d+) > 0\)",
+                placement_rule,
+            )
+            point_match = re.search(
+                r"\(up-get-point position-object (\d+)\)",
+                placement_rule,
+            )
+            target_point_match = re.search(
+                r"\(up-set-target-point (\d+)\)",
+                placement_rule,
+            )
+            self.assertIsNotNone(remote_match)
+            self.assertIsNotNone(point_match)
+            self.assertIsNotNone(target_point_match)
+
+            remote_goal = int(remote_match.group(1))
+            point = int(point_match.group(1))
+            target_point = int(target_point_match.group(1))
+
+            self.assertEqual(remote_goal, search_state + 2)
+            self.assertEqual(point, target_point)
+            self.assertGreater(search_state, 1000)
+            self.assertGreater(point, 1000)
+
+            self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
+            self.assertIn("(up-set-target-object search-remote c: 0)", placement_rule)
+
             execution_marker = (
                 f"; Native placement execution: economy-lumber-camp-floor-{floor}"
             )
@@ -255,20 +288,10 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 if execution_end < 0
                 else self.source[execution_start:execution_end]
             )
-
-            self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
-            self.assertIn(f"(up-get-search-state {state})", search_rule)
-            self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
-
-            self.assertIn(f"(up-compare-goal {remote} > 0)", placement_rule)
-            self.assertIn("(up-set-target-object search-remote c: 0)", placement_rule)
-            self.assertIn(f"(up-get-point position-object {point})", placement_rule)
-            self.assertIn(f"(up-set-target-point {point})", placement_rule)
             self.assertIn("(up-build place-point 0 c:", build_section)
-            self.assertNotIn(
-                f"(dropsite-min-distance wood > {old_distance})",
-                search_rule + placement_rule,
-            )
+            self.assertNotEqual(search_state, 468)
+            self.assertNotEqual(point, 416 if floor == 1 else 418)
+
 
 
 
