@@ -1372,6 +1372,7 @@ def lower_water_execution_plan(
                     int(PacificTransportLifecyclePhase.RECOVERY),
                 ),
                 goal(plan.pacific_opening_transport_state, 1),
+                goal(plan.pacific_transport_recovery_state, 0),
                 parse_expression(
                     "(unit-type-count-total transport-ship >= 1)",
                     SourceLocation(1),
