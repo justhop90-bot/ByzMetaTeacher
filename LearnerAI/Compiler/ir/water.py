@@ -1163,6 +1163,8 @@ def lower_water_execution_plan(
                 ),
                 set_goal("pacific-transport-transit-witness", 0),
                 set_goal("pacific-transport-unload-witness", 0),
+                parse_expression("(set-strategic-number sn-number-garrison-units 1)", SourceLocation(1)),
+                parse_expression("(set-strategic-number sn-maximum-garrison-fill 4)", SourceLocation(1)),
                 parse_expression("(enable-timer pacific-transport-load-retry 20)", SourceLocation(1)),
             ),
         ),
