@@ -429,7 +429,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 if floor < 5:
                     end = runtime.index(f"; economy-{resource}-camp-floor-{floor + 1}", start)
                 else:
-                    end = len(runtime)
+                    end = runtime.index("; Narrow Dark Age second-mill rule", start)
                 section = runtime[start:end]
                 self.assertIn(
                     f"(up-find-resource c: {resource} c: 40)",
