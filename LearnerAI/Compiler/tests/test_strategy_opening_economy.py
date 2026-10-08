@@ -27,8 +27,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertEqual(pikeman.capability_intent.entity_id, "spearman-line")
         self.assertEqual(pikeman.target.minimum, 6)
         self.assertIn("(current-age >= castle-age)", pikeman.execution.requirements)
-        self.assertIn("(can-train-with-escrow spearman-line)", pikeman.execution.requirements)
-        self.assertIn("(unit-type-count-total spearman-line < 6)", pikeman.execution.requirements)
+        self.assertIn("(can-train-with-escrow pikeman)", pikeman.execution.requirements)
+        self.assertIn("(unit-type-count-total pikeman < 6)", pikeman.execution.requirements)
         self.assertEqual(pikeman.execution.action, "(train pikeman)")
         self.assertEqual(pikeman.execution.witness, "(unit-type-count pikeman >= 6)")
 
@@ -416,11 +416,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     f"{resource} floor {floor} must actively search the resource front",
                 )
                 self.assertIn(
-                    f"byzantine-{resource}-camp-search-state-{floor}",
+                    f"byzantine-dark-{resource}-camp-search-state-{floor}",
                     section,
                 )
                 self.assertIn(
-                    f"byzantine-{resource}-camp-search-remote-count-{floor}",
+                    f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
                     section,
                 )
                 self.assertIn(
