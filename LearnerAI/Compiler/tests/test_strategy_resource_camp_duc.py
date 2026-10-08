@@ -160,7 +160,7 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     output,
                 )
         self.assertIn(
-            "; Native placement fallback: economy-wood-camp-floor-1",
+            "; Native placement fallback: economy-lumber-camp-floor-1",
             output,
         )
         self.assertIn("(defconst status-resource 3)", output)
