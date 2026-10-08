@@ -52,6 +52,10 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     f"(up-get-search-state {resource}-camp-search-state-{floor})",
                     search_actions,
                 )
+                self.assertNotIn(
+                    "(up-modify-sn sn-focus-player-number",
+                    search_actions,
+                )
                 self.assertIn(
                     f"(up-compare-goal {resource}-camp-search-state-{floor} > {floor - 1})",
                     place_facts,
