@@ -67,7 +67,7 @@ class RuntimeBindingTests(unittest.TestCase):
             [d.lifecycle.slot.request_id.purpose for d in ir],
             ["lifecycle", "lifecycle"],
         )
-        self.assertFalse(any(isinstance(v, int) for d in ir for v in vars(d).values()))
+        self.assertFalse(any(type(v) is int for d in ir for v in vars(d).values()))
 
     def test_lifecycle_request_contains_no_resolved_goal_id(self):
         demand = self._ir()[0]

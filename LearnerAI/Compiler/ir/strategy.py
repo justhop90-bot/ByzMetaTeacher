@@ -4609,7 +4609,13 @@ def _default_byzantine_duc_plan(
     for resource, building, maximum in camp_specs:
         building_id = resolve_building_id(building)
         for floor in range(1, maximum + 1):
-            demand_name = f"economy-{resource}-camp-floor-{floor}"
+            demand_name = (
+                f"economy-lumber-camp-floor-{floor}"
+                if resource == "wood" and floor <= 2
+                else f"economy-wood-camp-floor-{floor}"
+                if resource == "wood"
+                else f"economy-{resource}-camp-floor-{floor}"
+            )
             identity = f"byzantine-camp-placement-{resource}-{floor}"
             search_identity = f"{identity}-search"
             point_identity = f"{identity}-place"
@@ -4637,16 +4643,23 @@ def _default_byzantine_duc_plan(
                 start_min=41,
                 start_max=15998,
             )
-            active_fact = (
-                "(and (current-age >= feudal-age) (resource-found stone))"
+            active_facts = (
+                (
+                    "(current-age >= feudal-age)",
+                    "(resource-found stone)",
+                )
                 if resource == "stone"
-                else f"(resource-found {resource})"
+                else (f"(resource-found {resource})",)
             )
-            search_limit = 1 if floor == 1 else 40
+            search_limit = (
+                1
+                if (floor == 1 or (resource == "wood" and floor == 2))
+                else 40
+            )
             common_facts = (
                 parse_expression(f"(goal demand-{demand_name} 1)", SourceLocation(1)),
                 parse_expression(
-                    f"(not (building-type-count {building} >= {floor}))",
+                    f"(building-type-count {building} == {floor - 1})",
                     SourceLocation(1),
                 ),
                 parse_expression(
@@ -4658,10 +4671,10 @@ def _default_byzantine_duc_plan(
                     SourceLocation(1),
                 ),
                 parse_expression(
-                    f"(not (up-pending-placement c: {building_id}))",
+                    "(goal action-claim-build-pass-singleton 0)",
                     SourceLocation(1),
                 ),
-                parse_expression(active_fact, SourceLocation(1)),
+                *(parse_expression(item, SourceLocation(1)) for item in active_facts),
                 parse_expression(f"(can-build {building})", SourceLocation(1)),
                 parse_expression(
                     f"(building-type-count-total {building} < {floor})",
@@ -4676,10 +4689,6 @@ def _default_byzantine_duc_plan(
                     actions=(
                         parse_expression("(up-full-reset-search)", SourceLocation(1)),
                         parse_expression(
-                            "(up-modify-sn sn-focus-player-number c:= 0)",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
                             "(up-filter-status c: status-resource c: list-active)",
                             SourceLocation(1),
                         ),
@@ -4689,10 +4698,6 @@ def _default_byzantine_duc_plan(
                         ),
                         parse_expression(
                             f"(up-get-search-state {resource}-camp-search-state-{floor})",
-                            SourceLocation(1),
-                        ),
-                        parse_expression(
-                            "(up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)",
                             SourceLocation(1),
                         ),
                     ),
@@ -4706,14 +4711,14 @@ def _default_byzantine_duc_plan(
                 NativeDucOutputRequest(
                     rule_identity=search_identity,
                     section="ACTION",
-                    expression_index=4,
+                    expression_index=3,
                     request=search_request,
                     command="up-get-search-state",
                     argument_index=0,
                 )
             )
 
-            index = floor - 1
+            index = 0 if floor <= 2 else floor - 2
             placement_facts = (
                 *common_facts,
                 parse_expression(
@@ -4743,12 +4748,12 @@ def _default_byzantine_duc_plan(
                             f"(up-set-target-point {resource}-camp-point-{floor})",
                             SourceLocation(1),
                         ),
-                        parse_expression(
-                            f"(up-build place-point 0 c: {building})",
-                            SourceLocation(1),
-                        ),
                     ),
                     control_actions=(
+                        parse_expression(
+                            "(set-goal action-claim-build-pass-singleton 1)",
+                            SourceLocation(1),
+                        ),
                         parse_expression(
                             f"(set-goal demand-{demand_name} issued-{demand_name})",
                             SourceLocation(1),

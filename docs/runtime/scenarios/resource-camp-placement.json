@@ -36,7 +36,7 @@
       "lifecycle_edge": "DEMAND -> ACTION",
       "evidence_class": "COMPILER POLICY",
       "rule_identities": [
-        "economy-wood-camp-floor-1"
+        "economy-lumber-camp-floor-1"
       ],
       "expected": {
         "resource": "wood",

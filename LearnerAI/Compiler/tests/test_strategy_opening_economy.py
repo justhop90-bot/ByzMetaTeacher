@@ -289,7 +289,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
     def test_dark_age_first_resource_camps_are_core_checkpoints(self):
         profile = build_byzantine_strategy(self.effective)
 
-        wood = profile.demand("economy-wood-camp-floor-1")
+        wood = profile.demand("economy-lumber-camp-floor-1")
         gold = profile.demand("economy-gold-camp-floor-1")
         stone = profile.demand("economy-stone-camp-floor-1")
 
@@ -330,8 +330,13 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
     def test_camp_floor_two_requires_remote_resource_front_and_starts_released(self):
         profile = build_byzantine_strategy(self.effective)
 
+        demand_identities = {
+            "wood": "economy-lumber-camp-floor-2",
+            "gold": "economy-gold-camp-floor-2",
+            "stone": "economy-stone-camp-floor-2",
+        }
         for resource in ("wood", "gold", "stone"):
-            demand = profile.demand(f"economy-{resource}-camp-floor-2")
+            demand = profile.demand(demand_identities[resource])
             self.assertFalse(
                 any("dropsite-min-distance" in req for req in demand.execution.requirements),
                 resource,
@@ -547,7 +552,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         profile = build_byzantine_strategy(self.effective)
         canonical = compile_strategy_profile(profile, self.effective)
         for fragment in (
-            "(set-goal demand-economy-wood-camp-floor-2 0)",
+            "(set-goal demand-economy-lumber-camp-floor-2 0)",
             "(set-goal demand-economy-gold-camp-floor-2 0)",
             "(set-goal demand-economy-stone-camp-floor-1 0)",
             "(set-goal demand-adaptive-outpost 0)",

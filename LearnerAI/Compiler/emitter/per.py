@@ -356,6 +356,11 @@ def emit(
         "; Generated from validated semantic IR. Do not edit by hand.",
         ";============================================================",
         "",
+        "; AIRef native enum constants used by compiler-owned DUC filters",
+        "(defconst status-resource 3)",
+        "(defconst list-active 0)",
+        "(defconst status-ready 2)",
+        "",
         "; Demand goal constants",
     ]
 
@@ -1075,6 +1080,32 @@ def emit(
 
         construction = demand.construction_lifecycle
         production = demand.production_lifecycle
+
+        if demand.native_placement:
+            if construction is None:
+                raise CompileError(
+                    f"NATIVE-PLACEMENT-LIFECYCLE: demand '{demand.name}' "
+                    "requires a construction lifecycle"
+                )
+            registry.validate_native_signature("up-build", 4)
+            out += [
+                f"; Native placement execution: {demand.name} | ISSUED -> up-build",
+                "(defrule",
+                f"    (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"    (not {_render_runtime_expression(demand.witness)})",
+                f"    (goal construction-retry-barrier-{demand.name} 0)",
+                f"    (up-pending-objects c: {construction.native_building_id} == 0)",
+                f"    (not {_render_runtime_expression(construction.pending_placement_fact)})",
+                "    (goal action-claim-build-pass-singleton 1)",
+                f"    (can-build {construction.building})",
+                "=>",
+            ]
+            for operation in targeted_releases.get(demand.identity, ()):
+                out.append(f"    (release-escrow {operation.resource})")
+            out.append(
+                f"    (up-build place-point 0 c: {construction.native_building_id})"
+            )
+            out += [")", ""]
         if construction is not None:
             out += [
                 f"; Construction observation: {demand.name}",

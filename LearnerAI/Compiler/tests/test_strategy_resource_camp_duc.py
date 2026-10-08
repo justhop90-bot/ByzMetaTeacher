@@ -30,12 +30,20 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                 place_identity = f"byzantine-camp-placement-{resource}-{floor}-place"
                 search_rule = next(rule for rule in plan.rules if rule.identity == search_identity)
                 place_rule = next(rule for rule in plan.rules if rule.identity == place_identity)
+                self.assertFalse(
+                    any(
+                        expression.head in {"not", "or", "and"}
+                        for rule in (search_rule, place_rule)
+                        for expression in rule.facts
+                    ),
+                    f"{resource} floor {floor} DUC guards must be native facts",
+                )
 
                 search_actions = {expression.source for expression in search_rule.actions}
                 place_facts = {expression.source for expression in place_rule.facts}
                 place_actions = {expression.source for expression in place_rule.actions}
 
-                expected_limit = 1 if floor == 1 else 40
+                expected_limit = 1 if (floor == 1 or (resource == "wood" and floor == 2)) else 40
                 self.assertIn(
                     f"(up-find-resource c: {resource} c: {expected_limit})",
                     search_actions,
@@ -44,16 +52,21 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     f"(up-get-search-state {resource}-camp-search-state-{floor})",
                     search_actions,
                 )
+                self.assertNotIn(
+                    "(up-modify-sn sn-focus-player-number",
+                    search_actions,
+                )
+                expected_index = 0 if floor <= 2 else floor - 2
                 self.assertIn(
-                    f"(up-compare-goal {resource}-camp-search-state-{floor} > {floor - 1})",
+                    f"(up-compare-goal {resource}-camp-search-state-{floor} > {expected_index})",
                     place_facts,
                 )
                 self.assertIn(
-                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    f"(up-set-target-object search-remote c: {expected_index})",
                     place_facts,
                 )
                 self.assertIn(
-                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    f"(up-set-target-object search-remote c: {expected_index})",
                     place_actions,
                 )
                 self.assertIn(
@@ -64,11 +77,17 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     f"(up-set-target-point {resource}-camp-point-{floor})",
                     place_actions,
                 )
-                self.assertIn(
+                self.assertNotIn(
                     f"(up-build place-point 0 c: {building})",
                     place_actions,
                 )
-                demand_name = f"economy-{resource}-camp-floor-{floor}"
+                demand_name = (
+                    f"economy-lumber-camp-floor-{floor}"
+                    if resource == "wood" and floor <= 2
+                    else f"economy-wood-camp-floor-{floor}"
+                    if resource == "wood"
+                    else f"economy-{resource}-camp-floor-{floor}"
+                )
                 demand = profile.demand(demand_name)
                 self.assertTrue(demand.native_placement)
                 if resource == "wood" and floor == 1:
@@ -89,16 +108,25 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     f"(set-goal demand-{demand_name} issued-{demand_name})",
                     {action.source for action in place_rule.control_actions},
                 )
+                self.assertIn(
+                    "(set-goal action-claim-build-pass-singleton 1)",
+                    {action.source for action in place_rule.control_actions},
+                )
 
+                search_facts = {expression.source for expression in search_rule.facts}
                 if resource == "stone":
                     self.assertIn(
-                        "(and (current-age >= feudal-age) (resource-found stone))",
-                        search_rule.facts[6].source,
+                        "(current-age >= feudal-age)",
+                        search_facts,
+                    )
+                    self.assertIn(
+                        "(resource-found stone)",
+                        search_facts,
                     )
                 else:
                     self.assertIn(
                         f"(resource-found {resource})",
-                        search_rule.facts[6].source,
+                        search_facts,
                     )
 
     def test_native_camp_placement_replaces_generic_action_issuance(self):
@@ -112,7 +140,13 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
             ("stone", "mining-camp", 5),
         ):
             for floor in range(1, maximum + 1):
-                demand_name = f"economy-{resource}-camp-floor-{floor}"
+                demand_name = (
+                    f"economy-lumber-camp-floor-{floor}"
+                    if resource == "wood" and floor <= 2
+                    else f"economy-wood-camp-floor-{floor}"
+                    if resource == "wood"
+                    else f"economy-{resource}-camp-floor-{floor}"
+                )
                 self.assertNotIn(
                     f"; Action issuance: {demand_name} | ACTIVE -> ISSUED",
                     output,
@@ -126,7 +160,14 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     output,
                 )
         self.assertIn(
-            "; Native placement fallback: economy-wood-camp-floor-1",
+            "; Native placement fallback: economy-lumber-camp-floor-1",
+            output,
+        )
+        self.assertIn("(defconst status-resource 3)", output)
+        self.assertIn("(defconst list-active 0)", output)
+        self.assertIn("(defconst status-ready 2)", output)
+        self.assertIn(
+            "(set-goal action-claim-build-pass-singleton 1)",
             output,
         )
         self.assertIn(
