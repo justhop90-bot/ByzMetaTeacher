@@ -20197,8 +20197,9 @@
 ; ===========================================================================
 ; Hysteresis: enter WARNING <700f, CRISIS <500f, SEVERE <350f.
 ; Exit: WARNING >=850f, CRISIS >=700f, SEVERE >=600f.
-; Retask packets fire only on escalation. Food pressure never requires
-; byzantine-army-reinforcement to be idle and never cancels age research.
+; Retask packets fire only on escalation. No food rule depends on
+; byzantine-army-reinforcement being idle. This overlay never cancels an
+; issued age-transition or military demand.
 
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-normal)
@@ -20267,7 +20268,8 @@
     (set-goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
 )
 
-; WARNING: counter-feudal 42/38/20 -> 50/33/17.
+; WARNING
+; counter-feudal
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
     (goal economy-posture 2)
@@ -20278,10 +20280,10 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; WARNING: fast-castle / castle-conversion -> 55/20/25.
+; fast-castle
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
-    (or (goal economy-posture 3) (goal economy-posture 6))
+    (goal economy-posture 3)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 20)
@@ -20289,13 +20291,21 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; WARNING: base / water / imperial fallback -> 55/25/20.
+; castle conversion
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
-    (or (goal economy-posture 1)
-        (goal economy-posture 4)
-        (goal economy-posture 5)
-        (goal economy-posture 7))
+    (goal economy-posture 6)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 25)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; base
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 1)
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 25)
@@ -20303,7 +20313,42 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; CRISIS: counter-feudal -> 60/26/14.
+; water economy
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; water control
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; imperial fallback
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-warning)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+
+; CRISIS
+; counter-feudal
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
     (goal economy-posture 2)
@@ -20314,12 +20359,10 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; CRISIS: fast-castle / water -> 60/20/20.
+; fast-castle
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
-    (or (goal economy-posture 3)
-        (goal economy-posture 4)
-        (goal economy-posture 5))
+    (goal economy-posture 3)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
     (set-strategic-number sn-wood-gatherer-percentage 20)
@@ -20327,7 +20370,29 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; CRISIS: castle-conversion -> 60/18/22.
+; water economy
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 4)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; water control
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
+    (goal economy-posture 5)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 60)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; castle conversion
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
     (goal economy-posture 6)
@@ -20338,7 +20403,7 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; CRISIS: imperial conversion -> 60/25/15.
+; imperial conversion
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-crisis)
     (goal economy-posture 7)
@@ -20349,13 +20414,12 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; SEVERE: counter / fast-castle / imperial -> 70/20/10.
+
+; SEVERE
+; counter-feudal
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
-    (or (goal economy-posture 2)
-        (goal economy-posture 3)
-        (goal economy-posture 7)
-        (goal economy-posture 8))
+    (goal economy-posture 2)
 =>
     (set-strategic-number sn-food-gatherer-percentage 70)
     (set-strategic-number sn-wood-gatherer-percentage 20)
@@ -20363,7 +20427,40 @@
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
-; SEVERE: castle-conversion -> 70/14/16.
+; fast-castle
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 3)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; imperial
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 7)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; legacy food recovery
+(defrule
+    (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
+    (goal economy-posture 8)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 70)
+    (set-strategic-number sn-wood-gatherer-percentage 20)
+    (set-strategic-number sn-gold-gatherer-percentage 10)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; castle conversion
 (defrule
     (goal byzantine-food-pressure-state byzantine-food-pressure-severe)
     (goal economy-posture 6)
@@ -20373,6 +20470,7 @@
     (set-strategic-number sn-gold-gatherer-percentage 16)
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
+
 
 ; Food pressure is a civilian-allocation overlay. It does not cancel an
 ; already-issued Feudal/Castle research action or release a military demand.
