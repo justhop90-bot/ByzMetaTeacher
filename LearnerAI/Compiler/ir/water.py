@@ -1205,6 +1205,7 @@ def lower_water_execution_plan(
                 ),
                 set_goal("pacific-opening-transport-id", 0),
                 set_goal("pacific-opening-transport-load-count", 0),
+                set_goal("pacific-transport-recovery", 1),
                 set_goal("pacific-transport-transit-witness", 0),
                 set_goal("pacific-transport-unload-witness", 0),
                 parse_expression("(disable-timer pacific-transport-load-retry)", SourceLocation(1)),
