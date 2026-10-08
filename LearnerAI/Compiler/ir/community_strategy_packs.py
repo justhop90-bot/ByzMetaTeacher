@@ -997,9 +997,6 @@ def community_strategy_demands(
         active_expression = next(
             item.expression for item in observations if item.identity == active_ref
         )
-        remote_expression = next(
-            item.expression for item in observations if item.identity == remote_ref
-        )
         for floor in range(1, max_count + 1):
             count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
             requirements = [
