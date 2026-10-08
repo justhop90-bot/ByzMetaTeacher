@@ -407,7 +407,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_start,
         )
         villager_rule = runtime[villager_start:villager_end]
-        self.assertIn("(unit-type-count-total villager >= 21)", villager_rule)
+        self.assertIn("(unit-type-count-total villager >= 20)", villager_rule)
+        self.assertIn("(can-afford-research feudal-age)", villager_rule)
+        self.assertNotIn("(unit-type-count-total villager >= 21)))", villager_rule)
         self.assertIn(
             "(unit-type-count-total villager >= bt-castle-age-villager-maturity)",
             villager_rule,
