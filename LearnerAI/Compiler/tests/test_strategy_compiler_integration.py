@@ -279,7 +279,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         fallback = next(r for r in compilation.control_plan.rules if r.identity == "pacific-transport-garrison-fallback")
         fallback_actions = tuple(a.source for a in fallback.actions)
-        self.assertIn("(up-garrison transport-ship c: villager)", fallback_actions)
+        self.assertIn("(up-garrison transport-ship c: 83)", fallback_actions)
         fallback_facts = tuple(f.source for f in fallback.facts)
         self.assertIn("(goal pacific-transport-lifecycle 1)", fallback_facts)
         self.assertIn("(up-compare-goal pacific-opening-transport-load-count < 4)", fallback_facts)
