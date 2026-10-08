@@ -398,6 +398,27 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_rule,
         )
 
+    def test_checked_in_runtime_castle_production_floors(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        pike_start = runtime.index("; Pending diagnostics: castle-pikeman-floor")
+        pike_end = runtime.index("; Pending diagnostics: castle-battering-ram-floor", pike_start)
+        pike = runtime[pike_start:pike_end]
+        self.assertIn("(current-age >= castle-age)", pike)
+        self.assertIn("(can-train-with-escrow pikeman)", pike)
+        self.assertIn("(train pikeman)", pike)
+        self.assertIn("(unit-type-count-total pikeman < 6)", pike)
+
+        ram_start = runtime.index("; Pending diagnostics: castle-battering-ram-floor")
+        ram_end = runtime.index("; Pending diagnostics: castle-monk-floor", ram_start)
+        ram = runtime[ram_start:ram_end]
+        self.assertIn("(current-age >= castle-age)", ram)
+        self.assertIn("(can-train-with-escrow battering-ram-line)", ram)
+        self.assertIn("(train battering-ram-line)", ram)
+        self.assertIn("(unit-type-count-total battering-ram-line < 2)", ram)
+        self.assertIn("(up-pending-objects c: 1258 >= 1)", ram)
+
     def test_checked_in_runtime_researches_pikeman_in_castle_and_capped_ram_in_imperial(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
