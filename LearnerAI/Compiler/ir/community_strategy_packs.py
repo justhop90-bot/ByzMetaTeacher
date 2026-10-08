@@ -1071,6 +1071,7 @@ def community_strategy_demands(
                         witness=witness,
                         release=witness,
                     ),
+                    native_placement=True,
                     initial_state=(
                         LifecycleState.ACTIVE
                         if floor == 1 and resource is not CampResource.STONE
