@@ -286,6 +286,13 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(up-pending-objects c: 545 == 0)", facts)
         actions = tuple(action.source for action in failure.actions)
         self.assertIn("(set-goal pacific-transport-lifecycle 5)", actions)
+        rearm = rules["pacific-transport-lifecycle-rearm-after-loss"]
+        rearm_facts = tuple(fact.source for fact in rearm.facts)
+        self.assertIn("(goal pacific-opening-transport-objective 1)", rearm_facts)
+        self.assertIn("(goal pacific-transport-recovery 0)", rearm_facts)
+        self.assertIn("(unit-type-count-total transport-ship >= 1)", rearm_facts)
+        rearm_actions = tuple(action.source for action in rearm.actions)
+        self.assertIn("(set-goal pacific-transport-lifecycle 1)", rearm_actions)
         self.assertIn("(set-goal pacific-opening-transport-id 0)", actions)
         self.assertIn("(set-goal pacific-opening-transport-load-count 0)", actions)
         self.assertIn("(disable-timer pacific-transport-load-retry)", actions)
