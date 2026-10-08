@@ -146,6 +146,10 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
             output,
         )
         self.assertIn(
+            "(set-goal action-claim-build-pass-singleton 1)",
+            output,
+        )
+        self.assertIn(
             "(current-age == dark-age)",
             output,
         )
