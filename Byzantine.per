@@ -13099,6 +13099,30 @@
     (set-goal construction-retry-barrier-imperial-siege-depth-4 0)
 )
 
+(defrule
+    (true)
+=>
+    (set-goal production-retry-barrier-castle-pikeman-floor 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal production-retry-barrier-castle-battering-ram-floor 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal research-retry-barrier-research-pikeman 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal research-retry-barrier-research-capped-ram 0)
+)
+
 ; Demand initialization
 (defrule
     (true)
@@ -13126,6 +13150,10 @@
     (set-goal demand-economy-farm-boom-castle 1)
     (set-goal demand-economy-farm-boom-imperial 0)
     (disable-self)
+    (set-goal demand-castle-pikeman-floor 1)
+    (set-goal demand-castle-battering-ram-floor 1)
+    (set-goal demand-research-pikeman 1)
+    (set-goal demand-research-capped-ram 1)
 )
 
 (defrule
