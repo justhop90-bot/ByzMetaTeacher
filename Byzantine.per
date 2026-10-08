@@ -30625,6 +30625,44 @@
     (up-jump-rule 0)
 )
 
+;----------------------------------------------------------------
+; RUNTIME TEST: DIRECT RESOURCE-CAMP PLACEMENT
+; Artifact-only hypothesis test for camp placement.
+; First camp builds immediately when the resource is known; a new camp
+; is allowed when the nearest existing camp is more than 12 away.
+;----------------------------------------------------------------
+(defrule
+    (resource-found wood)
+    (or
+        (building-type-count-total lumber-camp < 1)
+        (dropsite-min-distance wood > 12)
+    )
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build lumber-camp)
+=>
+    (set-strategic-number sn-lumber-camp-max-distance 25)
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (resource-found gold)
+    (or
+        (building-type-count-total mining-camp < 1)
+        (dropsite-min-distance gold > 12)
+    )
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build mining-camp)
+=>
+    (set-strategic-number sn-mining-camp-max-distance 25)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
 ; Voice candidate sentinel
 (defrule
     (true)
