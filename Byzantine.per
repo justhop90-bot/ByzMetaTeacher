@@ -17257,6 +17257,411 @@
     (set-goal demand-economy-gold-camp-floor-1 621)
 )
 
+; economy-gold-camp-floor-2
+(defrule
+    (goal demand-economy-gold-camp-floor-2 628)
+    (building-type-count mining-camp >= 2)
+=>
+    (set-goal demand-economy-gold-camp-floor-2 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-2 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 2))
+=>
+    (set-goal demand-economy-gold-camp-floor-2 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
+    )
+    (building-type-count mining-camp >= 2)
+=>
+    (set-goal demand-economy-gold-camp-floor-2 628)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-2 627)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-2 627)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-2 626)
+        (goal demand-economy-gold-camp-floor-2 627)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-2 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-2 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-2 1)
+    (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state byzantine-dark-gold-camp-search-state-2)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-2 1)
+    (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+=>
+    (up-set-target-object search-remote c: 1)
+    (up-get-point position-object byzantine-dark-gold-camp-point)
+    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-2 626)
+)
+
+; economy-gold-camp-floor-3
+(defrule
+    (goal demand-economy-gold-camp-floor-3 633)
+    (building-type-count mining-camp >= 3)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-3 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 3))
+=>
+    (set-goal demand-economy-gold-camp-floor-3 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (building-type-count mining-camp >= 3)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 633)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 632)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-3 632)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-3 631)
+        (goal demand-economy-gold-camp-floor-3 632)
+    )
+    (not (building-type-count mining-camp >= 3))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-3 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-3 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-3 1)
+    (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state byzantine-dark-gold-camp-search-state-3)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-3 1)
+    (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 2)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
+=>
+    (up-set-target-object search-remote c: 2)
+    (up-get-point position-object byzantine-dark-gold-camp-point)
+    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-3 631)
+)
+
+; economy-gold-camp-floor-4
+(defrule
+    (goal demand-economy-gold-camp-floor-4 638)
+    (building-type-count mining-camp >= 4)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-4 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 4))
+=>
+    (set-goal demand-economy-gold-camp-floor-4 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (building-type-count mining-camp >= 4)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 638)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 637)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-4 637)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-4 636)
+        (goal demand-economy-gold-camp-floor-4 637)
+    )
+    (not (building-type-count mining-camp >= 4))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-4 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-4 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-4 1)
+    (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state byzantine-dark-gold-camp-search-state-4)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-4 1)
+    (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 3)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
+=>
+    (up-set-target-object search-remote c: 3)
+    (up-get-point position-object byzantine-dark-gold-camp-point)
+    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-4 636)
+)
+
+; economy-gold-camp-floor-5
+(defrule
+    (goal demand-economy-gold-camp-floor-5 643)
+    (building-type-count mining-camp >= 5)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 0)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-5 0)
+    (resource-found gold)
+    (not (building-type-count mining-camp >= 5))
+=>
+    (set-goal demand-economy-gold-camp-floor-5 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (building-type-count mining-camp >= 5)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 643)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 642)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-gold-camp-floor-5 642)
+)
+
+(defrule
+    (or
+        (goal demand-economy-gold-camp-floor-5 641)
+        (goal demand-economy-gold-camp-floor-5 642)
+    )
+    (not (building-type-count mining-camp >= 5))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-gold-camp-floor-5 1)
+    (set-goal construction-retry-barrier-economy-gold-camp-floor-5 1)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-5 1)
+    (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 40)
+    (up-get-search-state byzantine-dark-gold-camp-search-state-5)
+    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
+)
+
+(defrule
+    (goal demand-economy-gold-camp-floor-5 1)
+    (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 4)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
+=>
+    (up-set-target-object search-remote c: 4)
+    (up-get-point position-object byzantine-dark-gold-camp-point)
+    (up-set-target-point byzantine-dark-gold-camp-point)
+    (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-5 641)
+)
+
+
 ; economy-stone-camp-floor-2
 (defrule
     (goal demand-economy-stone-camp-floor-2 628)
