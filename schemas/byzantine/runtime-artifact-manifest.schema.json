@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.dev/schema/byzantine/runtime-artifact-manifest-1.json",
+  "title": "Byzantine Runtime Artifact Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "artifact_kind",
+    "inputs",
+    "assembly",
+    "artifact",
+    "compiler_source_revision"
+  ],
+  "properties": {
+    "schema": {
+      "const": "byzantine-runtime-artifact-1"
+    },
+    "artifact_kind": {
+      "const": "runtime"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compiler",
+        "overlay"
+      ],
+      "properties": {
+        "compiler": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_kind",
+            "path",
+            "manifest_path",
+            "sha256",
+            "manifest_sha256"
+          ],
+          "properties": {
+            "artifact_kind": {
+              "const": "compiler"
+            },
+            "path": {
+              "const": "dist/byzantine/Byzantine.compiler.per"
+            },
+            "manifest_path": {
+              "const": "dist/byzantine/Byzantine.compiler.manifest.json"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "manifest_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "artifact_kind": {
+                    "const": "compiler"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "path": {
+                    "const": "dist/byzantine/Byzantine.compiler.per"
+                  },
+                  "manifest_path": {
+                    "const": "dist/byzantine/Byzantine.compiler.manifest.json"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "overlay": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_kind",
+            "id",
+            "path",
+            "manifest_path",
+            "sha256",
+            "manifest_sha256"
+          ],
+          "properties": {
+            "artifact_kind": {
+              "const": "runtime-overlay"
+            },
+            "id": {
+              "const": "byzantine-runtime-overlay"
+            },
+            "path": {
+              "const": "runtime/byzantine/Byzantine.runtime-overlay.per"
+            },
+            "manifest_path": {
+              "const": "runtime/byzantine/Byzantine.runtime-overlay.json"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "manifest_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "artifact_kind": {
+                    "const": "runtime-overlay"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "const": "byzantine-runtime-overlay"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "order",
+        "conflict_mode",
+        "deterministic"
+      ],
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "order": {
+          "const": [
+            "compiler",
+            "runtime-overlay"
+          ]
+        },
+        "conflict_mode": {
+          "const": "reject"
+        },
+        "deterministic": {
+          "const": true
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "manifest_path",
+        "sha256",
+        "byte_length",
+        "line_count",
+        "rule_count"
+      ],
+      "properties": {
+        "path": {
+          "const": "dist/byzantine/Byzantine.runtime.per"
+        },
+        "manifest_path": {
+          "const": "dist/byzantine/Byzantine.runtime.manifest.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the exact UTF-8 bytes at artifact.path."
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rule_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "compiler_source_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "artifact_kind": {
+            "const": "runtime"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "inputs",
+          "assembly",
+          "artifact"
+        ],
+        "properties": {
+          "inputs": {
+            "properties": {
+              "compiler": {
+                "properties": {
+                  "artifact_kind": {
+                    "const": "compiler"
+                  },
+                  "path": {
+                    "const": "dist/byzantine/Byzantine.compiler.per"
+                  },
+                  "manifest_path": {
+                    "const": "dist/byzantine/Byzantine.compiler.manifest.json"
+                  }
+                }
+              },
+              "overlay": {
+                "properties": {
+                  "artifact_kind": {
+                    "const": "runtime-overlay"
+                  },
+                  "id": {
+                    "const": "byzantine-runtime-overlay"
+                  },
+                  "path": {
+                    "const": "runtime/byzantine/Byzantine.runtime-overlay.per"
+                  },
+                  "manifest_path": {
+                    "const": "runtime/byzantine/Byzantine.runtime-overlay.json"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "x-semantic-constraints": [
+    "inputs.compiler.sha256 must equal the compiler manifest artifact.sha256",
+    "inputs.compiler.manifest_sha256 must equal SHA256(inputs.compiler.manifest_path)",
+    "inputs.overlay.sha256 must equal SHA256(inputs.overlay.path)",
+    "inputs.overlay.manifest_sha256 must equal SHA256(inputs.overlay.manifest_path)",
+    "artifact.sha256 must equal SHA256(artifact.path)",
+    "compiler_source_revision must equal inputs.compiler source_revision from the referenced compiler manifest",
+    "assembly must contain exactly compiler then runtime-overlay with conflict_mode=reject"
+  ]
+}
