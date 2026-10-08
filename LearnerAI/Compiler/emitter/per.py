@@ -700,17 +700,25 @@ def emit(
                 arguments[request.argument_index] = str(output_goal)
             for reader in readers:
                 writer_binding = bindings.binding_for(reader.source)
-                if not isinstance(writer_binding, GoalSlot):
-                    raise CompileError(
-                        f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
-                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
-                    )
                 if reader.argument_index >= len(arguments):
                     raise CompileError(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
                         "argument index is outside the expression"
                     )
-                arguments[reader.argument_index] = str(writer_binding.id.value)
+                if expression.head == "up-set-target-point":
+                    if not isinstance(writer_binding, GoalSpan):
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: point input '{reader.site_key}' "
+                            f"resolved to '{type(writer_binding).__name__}', expected GoalSpan"
+                        )
+                    arguments[reader.argument_index] = str(writer_binding.start.value)
+                else:
+                    if not isinstance(writer_binding, GoalSlot):
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
+                            f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
+                        )
+                    arguments[reader.argument_index] = str(writer_binding.id.value)
             return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
 
         for current_rule in duc_plan.rules:
