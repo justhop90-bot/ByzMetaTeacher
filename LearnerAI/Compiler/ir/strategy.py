@@ -4086,14 +4086,13 @@ def build_land_castle_strategy(
                 ),
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(unit-type-count-total villager >= 28)",
+                    None,
                     "Community Castle trajectory targets 28 villagers before the age-up bank is committed",
                     observation_ref="current-feudal-age",
                 ),
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(and (building-type-count-total blacksmith >= 1) "
-                    "(building-type-count-total market >= 1))",
+                    None,
                     "Blacksmith + Market is the preferred community Castle maturity package, not an engine execution prerequisite",
                     observation_ref="current-feudal-age",
                 ),
