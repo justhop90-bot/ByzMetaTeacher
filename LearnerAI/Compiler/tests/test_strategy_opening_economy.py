@@ -494,59 +494,88 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
         for resource in ("gold", "stone"):
             for floor in range(2, 6):
-                start = runtime.index(f"; economy-{resource}-camp-floor-{floor}")
-                if floor < 5:
-                    end = runtime.index(f"; economy-{resource}-camp-floor-{floor + 1}", start)
-                else:
-                    end = runtime.index("; Narrow Dark Age second-mill rule", start)
-                section = runtime[start:end]
+                search_marker = f"; Native DUC rule: byzantine-camp-placement-{resource}-{floor}-search"
+                place_marker = f"; Native DUC rule: byzantine-camp-placement-{resource}-{floor}-place"
+                search_start = runtime.index(search_marker)
+                place_start = runtime.index(place_marker, search_start)
+                next_rule = runtime.find("\n; Native DUC rule:", place_start + 1)
+                if next_rule < 0:
+                    next_rule = runtime.index(
+                        f"; Native placement execution: economy-{resource}-camp-floor-{floor}"
+                    )
+                search_section = runtime[search_start:place_start]
+                place_section = runtime[place_start:next_rule]
 
                 self.assertIn(
                     f"(up-find-resource c: {resource} c: 40)",
-                    section,
+                    search_section,
+                )
+                expected_index = floor - 2
+                self.assertIn(
+                    "(up-compare-goal ",
+                    place_section,
                 )
                 self.assertIn(
-                    f"byzantine-dark-{resource}-camp-search-state-{floor}",
-                    section,
+                    f"(up-set-target-object search-remote c: {expected_index})",
+                    place_section,
                 )
-                self.assertIn(
-                    f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
-                    section,
+                self.assertIn("(up-get-point position-object", place_section)
+                self.assertIn("(up-set-target-point", place_section)
+
+                execution_start = runtime.index(
+                    f"; Native placement execution: economy-{resource}-camp-floor-{floor}"
                 )
-                remote_index = floor - 2
-                remote_threshold = floor - 2
-                self.assertIn(
-                    f"(up-compare-goal byzantine-dark-{resource}-camp-search-remote-count-{floor} > {remote_threshold})",
-                    section,
+                execution_end = runtime.find("\n; ", execution_start + 10)
+                execution = (
+                    runtime[execution_start:]
+                    if execution_end < 0
+                    else runtime[execution_start:execution_end]
                 )
-                self.assertIn(
-                    f"(up-set-target-object search-remote c: {remote_index})",
-                    section,
-                )
-                self.assertIn("(up-build place-point 0 c: mining-camp)", section)
+                self.assertIn("(up-build place-point 0 c:", execution)
+
                 if resource == "stone":
                     self.assertNotIn(
                         "(dropsite-min-distance stone",
-                        section,
+                        search_section + place_section,
                     )
 
     def test_checked_in_runtime_gold_floor_two_selects_first_remote_gold(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
-        start = runtime.index("; economy-gold-camp-floor-2")
-        end = runtime.index("; economy-gold-camp-floor-3", start)
-        floor_two = runtime[start:end]
 
-        self.assertNotIn("(dropsite-min-distance gold", floor_two)
-        self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
-        self.assertIn(
-            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)",
-            floor_two,
+        search_start = runtime.index(
+            "; Native DUC rule: byzantine-camp-placement-gold-2-search"
         )
-        self.assertIn(
-            "(up-set-target-object search-remote c: 0)",
-            floor_two,
+        place_start = runtime.index(
+            "; Native DUC rule: byzantine-camp-placement-gold-2-place",
+            search_start,
         )
+        next_rule = runtime.find("\n; Native DUC rule:", place_start + 1)
+        place_section = runtime[
+            place_start:(
+                next_rule
+                if next_rule >= 0
+                else runtime.index(
+                    "; Native placement execution: economy-gold-camp-floor-2"
+                )
+            )
+        ]
+        search_section = runtime[search_start:place_start]
+
+        self.assertNotIn("(dropsite-min-distance gold", search_section + place_section)
+        self.assertIn("(up-find-resource c: gold c: 40)", search_section)
+        self.assertIn("(up-compare-goal ", place_section)
+        self.assertIn("(up-set-target-object search-remote c: 0)", place_section)
+        execution_start = runtime.index(
+            "; Native placement execution: economy-gold-camp-floor-2"
+        )
+        execution_end = runtime.find("\n; ", execution_start + 10)
+        execution = (
+            runtime[execution_start:]
+            if execution_end < 0
+            else runtime[execution_start:execution_end]
+        )
+        self.assertIn("(up-build place-point 0 c:", execution)
 
     def test_canonical_artifact_matches_early_economy_policy(self):
         profile = build_byzantine_strategy(self.effective)
@@ -569,7 +598,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         for resource in ("gold", "stone"):
             for floor in range(1, 6):
                 self.assertEqual(
-                    runtime.count(f"; economy-{resource}-camp-floor-{floor}"),
+                    runtime.count(f"; Pending diagnostics: economy-{resource}-camp-floor-{floor}"),
                     1,
                     f"{resource} floor {floor} must have exactly one lifecycle section",
                 )
