@@ -64,8 +64,11 @@ AGE_TRANSITION_TRACE_GOALS = {
     "bt-age-transition-trace-university": 15961,
     "bt-age-transition-trace-castle-research-status": 15960,
     "bt-age-transition-trace-imperial-research-status": 15959,
+    "bt-age-transition-trace-tc-queue-count": 15979,
+    "bt-age-transition-trace-tc-action": 15980,
 }
 AGE_TRANSITION_TRACE_TIMER = ("bt-age-transition-trace-timer", 33)
+AGE_TRANSITION_TRACE_OBJECT_DATA = ("object-data-train-count", 31)
 
 
 ECONOMY_RULES = (
@@ -654,9 +657,19 @@ def _ensure_age_transition_trace_storage(runtime: str) -> str:
             )
         missing.append(name)
 
+    object_data_name, object_data_value = AGE_TRANSITION_TRACE_OBJECT_DATA
+    current_object_data = definitions.get(object_data_name)
+    if current_object_data is not None and current_object_data != object_data_value:
+        raise RuntimeError(
+            f"age-transition trace ObjectData changed unexpectedly: {object_data_name}={current_object_data}"
+        )
+    if current_object_data is None and object_data_value in definitions.values():
+        raise RuntimeError(
+            f"age-transition trace ObjectData slot is occupied: {object_data_name}={object_data_value}"
+        )
+
     timer_name, timer_value = AGE_TRANSITION_TRACE_TIMER
-    current_timer = definitions.get(timer_name)
-    if current_timer is not None:
+    current_timer = definitions.get(timer_name)    if current_timer is not None:
         if current_timer != timer_value:
             raise RuntimeError(
                 f"age-transition trace Timer changed unexpectedly: {timer_name}={current_timer}"
@@ -667,7 +680,7 @@ def _ensure_age_transition_trace_storage(runtime: str) -> str:
                 f"age-transition trace Timer slot is occupied: {timer_name}={timer_value}"
             )
 
-    if not missing and current_timer is not None:
+    if not missing and current_timer is not None and current_object_data is not None:
         return runtime
 
     marker = "(defconst opening-plan "
@@ -686,6 +699,10 @@ def _ensure_age_transition_trace_storage(runtime: str) -> str:
     if current_timer is None:
         insertion_lines.append(
             f"(defconst {timer_name} {timer_value})"
+        )
+    if current_object_data is None:
+        insertion_lines.append(
+            f"(defconst {object_data_name} {object_data_value})"
         )
     insertion = "\n" + "\n".join(insertion_lines)
     return runtime[: line_end + 1] + insertion + runtime[line_end + 1 :]
@@ -715,10 +732,17 @@ def _sync_age_transition_runtime_trace(runtime: str) -> str:
     (up-get-fact game-time 0 bt-age-transition-trace-game-time)
     (up-get-fact current-age 0 bt-age-transition-trace-current-age)
     (up-get-fact unit-type-count-total villager bt-age-transition-trace-villagers)
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-target-objects 1 action-default -1 -1)
+    (up-get-object-data object-data-train-count bt-age-transition-trace-tc-queue-count)
+    (up-get-object-data object-data-action bt-age-transition-trace-tc-action)
     (up-chat-data-to-self "BTTRACE FEUDAL state=%d" g: demand-feudal-transition)
     (up-chat-data-to-self "BTTRACE FEUDAL retry=%d" g: research-retry-barrier-feudal-transition)
     (up-chat-data-to-self "BTTRACE FEUDAL age=%d" g: bt-age-transition-trace-current-age)
     (up-chat-data-to-self "BTTRACE FEUDAL villagers=%d" g: bt-age-transition-trace-villagers)
+    (up-chat-data-to-self "BTTRACE FEUDAL tc-queue=%d" g: bt-age-transition-trace-tc-queue-count)
+    (up-chat-data-to-self "BTTRACE FEUDAL tc-action=%d" g: bt-age-transition-trace-tc-action)
     (up-chat-data-to-self "BTTRACE FEUDAL claim=%d" g: byzantine-resource-claim)
     (up-chat-data-to-self "BTTRACE FEUDAL time=%d" g: bt-age-transition-trace-game-time)
 )
