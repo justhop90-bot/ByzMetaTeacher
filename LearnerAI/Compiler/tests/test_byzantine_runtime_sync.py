@@ -45,6 +45,10 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
                 sync_runtime.GENERATED = original_generated
 
         self.assertEqual(before_second_sync, after_second_sync)
+        self.assertLess(
+            synchronized.index("; Runtime capability expansion bridge v1"),
+            synchronized.index("; Native Strategos voice plan"),
+        )
 
         base_source = synchronized.split("; Native Strategos voice plan", 1)[0]
         base_goal_ids = {
