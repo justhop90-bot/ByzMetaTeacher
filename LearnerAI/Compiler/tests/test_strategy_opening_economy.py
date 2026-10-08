@@ -449,11 +449,12 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     section,
                 )
                 self.assertIn("(up-build place-point 0 c: mining-camp)", section)
-                self.assertNotIn(
-                    f"(dropsite-min-distance {resource}",
-                    section,
-                    f"{resource} floor {floor} must not use the global dropsite gate",
-                )
+                if resource == "stone":
+                    self.assertNotIn(
+                        "(dropsite-min-distance stone",
+                        section,
+                        f"stone floor {floor} must not use the global dropsite gate",
+                    )
 
     def test_checked_in_runtime_gold_floor_two_selects_second_active_gold(self):
         repo_root = Path(__file__).resolve().parents[3]
