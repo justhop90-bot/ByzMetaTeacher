@@ -76,7 +76,7 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     f"(up-set-target-point {resource}-camp-point-{floor})",
                     place_actions,
                 )
-                self.assertIn(
+                self.assertNotIn(
                     f"(up-build place-point 0 c: {building})",
                     place_actions,
                 )
