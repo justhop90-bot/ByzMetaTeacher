@@ -180,6 +180,83 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertNotIn("(players-unit-type-count any-enemy mangonel-line >= 2)", rule)
         self.assertNotIn("byzantine-imperial-posture-siege", rule)
 
+
+    def test_capability_expansion_bridge_opens_castle_and_tc_capacity(self) -> None:
+        castle = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: Castle foundation" in rule
+        )
+        self.assertIn("(current-age >= feudal-age)", castle)
+        self.assertIn("(unit-type-count-total villager >= 35)", castle)
+        self.assertIn("(stone-amount >= 650)", castle)
+        self.assertIn("(can-build castle)", castle)
+        self.assertIn("(build castle)", castle)
+        self.assertIn("(up-pending-objects c: castle == 0)", castle)
+        self.assertIn("(not (up-pending-placement c: castle))", castle)
+
+        tc2 = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: TC2 foundation" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", tc2)
+        self.assertIn("(unit-type-count-total villager >= 45)", tc2)
+        self.assertIn("(wood-amount >= 275)", tc2)
+        self.assertIn("(stone-amount >= 100)", tc2)
+        self.assertIn("(building-type-count-total town-center < 2)", tc2)
+        self.assertIn("(can-build town-center)", tc2)
+        self.assertIn("(build town-center)", tc2)
+
+        tc3 = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: TC3 foundation" in rule
+        )
+        self.assertIn("(current-age == castle-age)", tc3)
+        self.assertIn("(building-type-count-total town-center >= 2)", tc3)
+        self.assertIn("(unit-type-count-total villager >= 60)", tc3)
+        self.assertIn("(building-type-count-total farm >= 18)", tc3)
+        self.assertIn("(wood-amount >= 275)", tc3)
+        self.assertIn("(stone-amount >= 100)", tc3)
+        self.assertIn("(can-build town-center)", tc3)
+        self.assertIn("(build town-center)", tc3)
+
+    def test_capability_expansion_bridge_reopens_castle_core_military_capabilities(self) -> None:
+        stable = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: Castle stable" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", stable)
+        self.assertIn("(building-type-count-total stable < 1)", stable)
+        self.assertIn("(set-goal demand-castle-stable-capability 1)", stable)
+
+        archery = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: Castle ranged" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", archery)
+        self.assertIn("(building-type-count-total archery-range < 1)", archery)
+        self.assertIn("(set-goal demand-castle-archery-capability 1)", archery)
+
+        pikeman = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: Pikeman research" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", pikeman)
+        self.assertIn("(set-goal demand-research-pikeman 1)", pikeman)
+
+        elite = next(
+            rule
+            for rule in self.rules
+            if "; Runtime capability bridge: Elite Skirmisher research" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", elite)
+        self.assertIn("(set-goal demand-research-elite-skirmisher 1)", elite)
+
     def test_no_dark_age_stone_camp_issuance(self) -> None:
         for rule in self.rules:
             if "(build mining-camp)" not in rule:
