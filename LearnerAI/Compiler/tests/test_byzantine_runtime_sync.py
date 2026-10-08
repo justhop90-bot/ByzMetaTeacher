@@ -191,6 +191,20 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
                 1,
             )
 
+    def test_synchronization_copies_native_islands_queue_strategic_number_defconsts(self) -> None:
+        generated = (
+            "(defconst opening-plan 1)\n"
+            "(defconst sn-enable-training-queue 264)\n"
+            "(defconst sn-enable-research-queue 306)\n"
+        )
+        runtime = "(defconst opening-plan 1)\n"
+        synchronized = sync_runtime._ensure_native_strategic_number_defconsts(
+            runtime,
+            generated,
+        )
+        self.assertIn("(defconst sn-enable-training-queue 264)", synchronized)
+        self.assertIn("(defconst sn-enable-research-queue 306)", synchronized)
+
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

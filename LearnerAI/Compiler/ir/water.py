@@ -592,6 +592,17 @@ def lower_water_execution_plan(
             actions=(set_goal("demand-water-fishing-continuity", 1),),
         ),
         NativeControlRule(
+            "islands-fishing-continuity-bootstrap",
+            facts=(
+                parse_expression("(map-type islands)", SourceLocation(1)),
+                dock,
+                parse_expression("(current-age >= dark-age)", SourceLocation(1)),
+                parse_expression("(unit-type-count-total fishing-ship < 2)", SourceLocation(1)),
+                goal("demand-water-fishing-continuity", 0),
+            ),
+            actions=(set_goal("demand-water-fishing-continuity", 1),),
+        ),
+        NativeControlRule(
             "pacific-fishing-controller-enter-naval-defense",
             facts=(
                 pacific,
