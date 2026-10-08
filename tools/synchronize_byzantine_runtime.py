@@ -188,7 +188,7 @@ def _demand_block(source: str, identity: str) -> str:
     return source[start:next_marker].rstrip() + "\n"
 
 
-def _resource_camp_block(generated: str) -> str:
+def _resource_camp_block(generated: str, runtime: str) -> str:
     duc_blocks = [
         _rule_block(generated, identity, marker_prefix="; Native DUC rule:")
         for identity in CAMP_DUC_IDENTITIES
@@ -197,7 +197,7 @@ def _resource_camp_block(generated: str) -> str:
         _demand_block(generated, identity)
         for identity in CAMP_DEMANDS
     ]
-    return (
+    camp_block = (
         ";----------------------------------------------------------------\n"
         "; COMPILER-OWNED AIREF RESOURCE-CAMP LIFECYCLES\n"
         ";----------------------------------------------------------------\n"
@@ -206,10 +206,11 @@ def _resource_camp_block(generated: str) -> str:
         + "\n".join(block.rstrip() for block in lifecycle_blocks)
         + "\n"
     )
+    return _remap_camp_duc_storage(camp_block, runtime)
 
 
 def _replace_resource_camp_section(runtime: str, generated: str) -> str:
-    generated_block = _resource_camp_block(generated).rstrip()
+    generated_block = _resource_camp_block(generated, runtime).rstrip()
     header_pos = runtime.find(CAMP_RUNTIME_HEADER)
     if header_pos >= 0:
         start = runtime.rfind(";----------------------------------------------------------------", 0, header_pos)
