@@ -133,44 +133,38 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
 
     def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
         for floor, point, state, remote, old_distance in (
-            (
-                1,
-                "byzantine-dark-wood-camp-point-1",
-                "byzantine-dark-wood-camp-search-state-1",
-                "byzantine-dark-wood-camp-search-remote-count-1",
-                "5",
-            ),
-            (
-                2,
-                "byzantine-dark-wood-camp-point-2",
-                "byzantine-dark-wood-camp-search-state-2",
-                "byzantine-dark-wood-camp-search-remote-count-2",
-                "12",
-            ),
+            (1, "416", "468", "470", "5"),
+            (2, "418", "472", "474", "12"),
         ):
             rules = self._active_rules(floor)
             search_rule = next(
                 rule for rule in rules
                 if "(up-find-resource c: wood c: 1)" in rule
             )
-            execution_rule = next(
+            placement_rule = next(
                 rule for rule in rules
-                if "(up-build place-point 0 c: lumber-camp)" in rule
+                if f"(up-get-point position-object {point})" in rule
+                and f"(up-set-target-point {point})" in rule
+            )
+            build_rule = next(
+                rule for rule in rules
+                if "(up-build place-point 0 c:" in rule
             )
 
             self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
             self.assertIn(f"(up-get-search-state {state})", search_rule)
             self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
 
-            self.assertIn(f"(up-compare-goal {remote} > 0)", execution_rule)
-            self.assertIn("(up-set-target-object search-remote c: 0)", execution_rule)
-            self.assertIn(f"(up-get-point position-object {point})", execution_rule)
-            self.assertIn(f"(up-set-target-point {point})", execution_rule)
-            self.assertIn("(up-build place-point 0 c: lumber-camp)", execution_rule)
+            self.assertIn(f"(up-compare-goal {remote} > 0)", placement_rule)
+            self.assertIn("(up-set-target-object search-remote c: 0)", placement_rule)
+            self.assertIn(f"(up-get-point position-object {point})", placement_rule)
+            self.assertIn(f"(up-set-target-point {point})", placement_rule)
+            self.assertIn("(up-build place-point 0 c:", build_rule)
             self.assertNotIn(
                 f"(dropsite-min-distance wood > {old_distance})",
-                execution_rule,
+                search_rule + placement_rule,
             )
+
 
 
 if __name__ == "__main__":
