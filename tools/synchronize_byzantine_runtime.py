@@ -624,6 +624,51 @@ def _ensure_named_defconsts(
     return runtime
 
 
+def _ensure_native_strategic_number_defconsts(
+    runtime: str,
+    generated: str,
+) -> str:
+    """Copy exact native Strategic Number defconst aliases into the checked-in runtime."""
+    names = (
+        "sn-enable-training-queue",
+        "sn-enable-research-queue",
+    )
+    generated_values = {}
+    for name in names:
+        match = re.search(
+            rf"^\(defconst {re.escape(name)} (-?\d+)\)$",
+            generated,
+            flags=re.MULTILINE,
+        )
+        if not match:
+            raise RuntimeError(
+                f"generated artifact is missing native Strategic Number defconst: {name}"
+            )
+        generated_values[name] = int(match.group(1))
+
+    for name, value in generated_values.items():
+        pattern = re.compile(
+            rf"^\(defconst {re.escape(name)} -?\d+\)$",
+            flags=re.MULTILINE,
+        )
+        replacement = f"(defconst {name} {value})"
+        runtime, replaced = pattern.subn(replacement, runtime, count=1)
+        if replaced:
+            continue
+        marker = "(defconst opening-plan "
+        position = runtime.find(marker)
+        if position < 0:
+            raise RuntimeError("runtime artifact is missing opening-plan defconst")
+        line_end = runtime.find("\n", position)
+        runtime = (
+            runtime[: line_end + 1]
+            + replacement
+            + "\n"
+            + runtime[line_end + 1 :]
+        )
+    return runtime
+
+
 def _ensure_defconsts(runtime: str, generated: str) -> str:
     generated_values: dict[str, int] = {}
     for name in RECOVERY_NAMES:
@@ -1411,6 +1456,7 @@ def synchronize() -> bool:
     before = runtime
 
     runtime = _ensure_defconsts(runtime, generated)
+    runtime = _ensure_native_strategic_number_defconsts(runtime, generated)
     runtime = _sync_strategic_arbitration_control(runtime, generated)
     runtime = _sync_water_execution_control(runtime, generated)
     runtime = _sync_opening_water_selector(runtime, generated)
