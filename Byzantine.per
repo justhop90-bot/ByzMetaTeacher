@@ -13149,11 +13149,11 @@
     (set-goal demand-economy-farm-floor-feudal-8 1)
     (set-goal demand-economy-farm-boom-castle 1)
     (set-goal demand-economy-farm-boom-imperial 0)
-    (disable-self)
     (set-goal demand-castle-pikeman-floor 1)
     (set-goal demand-castle-battering-ram-floor 1)
     (set-goal demand-research-pikeman 1)
     (set-goal demand-research-capped-ram 1)
+    (disable-self)
 )
 
 (defrule
@@ -17661,7 +17661,6 @@
     (set-goal demand-economy-gold-camp-floor-5 641)
 )
 
-
 ; economy-stone-camp-floor-1
 (defrule
     (goal demand-economy-stone-camp-floor-1 648)
@@ -17740,10 +17739,9 @@
     (set-goal demand-economy-stone-camp-floor-1 646)
 )
 
-
 ; economy-stone-camp-floor-2
 (defrule
-    (goal demand-economy-stone-camp-floor-2 628)
+    (goal demand-economy-stone-camp-floor-2 653)
     (building-type-count mining-camp >= 2)
 =>
     (set-goal demand-economy-stone-camp-floor-2 0)
@@ -17759,41 +17757,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
     )
     (building-type-count mining-camp >= 2)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 628)
+    (set-goal demand-economy-stone-camp-floor-2 653)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 627)
+    (set-goal demand-economy-stone-camp-floor-2 652)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-2 627)
+    (set-goal demand-economy-stone-camp-floor-2 652)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-2 626)
-        (goal demand-economy-stone-camp-floor-2 627)
+        (goal demand-economy-stone-camp-floor-2 651)
+        (goal demand-economy-stone-camp-floor-2 652)
     )
     (not (building-type-count mining-camp >= 2))
     (up-pending-objects c: 584 == 0)
@@ -17830,21 +17828,22 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
+
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 1)
 =>
     (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-2 626)
+    (set-goal demand-economy-stone-camp-floor-2 651)
 )
 
 ; economy-stone-camp-floor-3
 (defrule
-    (goal demand-economy-stone-camp-floor-3 633)
+    (goal demand-economy-stone-camp-floor-3 658)
     (building-type-count mining-camp >= 3)
 =>
     (set-goal demand-economy-stone-camp-floor-3 0)
@@ -17860,41 +17859,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
     )
     (building-type-count mining-camp >= 3)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 633)
+    (set-goal demand-economy-stone-camp-floor-3 658)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 632)
+    (set-goal demand-economy-stone-camp-floor-3 657)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-3 632)
+    (set-goal demand-economy-stone-camp-floor-3 657)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-3 631)
-        (goal demand-economy-stone-camp-floor-3 632)
+        (goal demand-economy-stone-camp-floor-3 656)
+        (goal demand-economy-stone-camp-floor-3 657)
     )
     (not (building-type-count mining-camp >= 3))
     (up-pending-objects c: 584 == 0)
@@ -17931,21 +17930,22 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 2)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
+
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 2)
 =>
     (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-3 631)
+    (set-goal demand-economy-stone-camp-floor-3 656)
 )
 
 ; economy-stone-camp-floor-4
 (defrule
-    (goal demand-economy-stone-camp-floor-4 638)
+    (goal demand-economy-stone-camp-floor-4 663)
     (building-type-count mining-camp >= 4)
 =>
     (set-goal demand-economy-stone-camp-floor-4 0)
@@ -17961,41 +17961,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
     )
     (building-type-count mining-camp >= 4)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 638)
+    (set-goal demand-economy-stone-camp-floor-4 663)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 637)
+    (set-goal demand-economy-stone-camp-floor-4 662)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-4 637)
+    (set-goal demand-economy-stone-camp-floor-4 662)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-4 636)
-        (goal demand-economy-stone-camp-floor-4 637)
+        (goal demand-economy-stone-camp-floor-4 661)
+        (goal demand-economy-stone-camp-floor-4 662)
     )
     (not (building-type-count mining-camp >= 4))
     (up-pending-objects c: 584 == 0)
@@ -18032,21 +18032,22 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 3)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
+
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 3)
 =>
     (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-4 636)
+    (set-goal demand-economy-stone-camp-floor-4 661)
 )
 
 ; economy-stone-camp-floor-5
 (defrule
-    (goal demand-economy-stone-camp-floor-5 643)
+    (goal demand-economy-stone-camp-floor-5 668)
     (building-type-count mining-camp >= 5)
 =>
     (set-goal demand-economy-stone-camp-floor-5 0)
@@ -18062,41 +18063,41 @@
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 641)
-        (goal demand-economy-stone-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
     )
     (building-type-count mining-camp >= 5)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 643)
+    (set-goal demand-economy-stone-camp-floor-5 668)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 641)
-        (goal demand-economy-stone-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 >= 1)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 642)
+    (set-goal demand-economy-stone-camp-floor-5 667)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 641)
-        (goal demand-economy-stone-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
     (up-pending-placement c: 584)
 =>
-    (set-goal demand-economy-stone-camp-floor-5 642)
+    (set-goal demand-economy-stone-camp-floor-5 667)
 )
 
 (defrule
     (or
-        (goal demand-economy-stone-camp-floor-5 641)
-        (goal demand-economy-stone-camp-floor-5 642)
+        (goal demand-economy-stone-camp-floor-5 666)
+        (goal demand-economy-stone-camp-floor-5 667)
     )
     (not (building-type-count mining-camp >= 5))
     (up-pending-objects c: 584 == 0)
@@ -18133,16 +18134,17 @@
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 4)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
+
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 4)
 =>
     (up-set-target-object search-remote c: 4)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-5 641)
+    (set-goal demand-economy-stone-camp-floor-5 666)
 )
 
 ; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
@@ -21923,34 +21925,34 @@
 
 ; Pending diagnostics: research-pikeman
 (defrule
-    (goal demand-research-pikeman 16023)
+    (goal demand-research-pikeman 15951)
     (research-completed 197)
 =>
     (set-goal demand-research-pikeman 0)
 )
 (defrule
     (or
-        (goal demand-research-pikeman 16024)
-        (goal demand-research-pikeman 16022)
+        (goal demand-research-pikeman 15952)
+        (goal demand-research-pikeman 15950)
     )
     (research-completed 197)
 =>
-    (set-goal demand-research-pikeman 16023)
+    (set-goal demand-research-pikeman 15951)
 )
 (defrule
     (or
-        (goal demand-research-pikeman 16024)
-        (goal demand-research-pikeman 16022)
+        (goal demand-research-pikeman 15952)
+        (goal demand-research-pikeman 15950)
     )
     (not (research-completed 197))
     (up-research-status c: 197 >= 2)
 =>
-    (set-goal demand-research-pikeman 16022)
+    (set-goal demand-research-pikeman 15950)
 )
 (defrule
     (or
-        (goal demand-research-pikeman 16024)
-        (goal demand-research-pikeman 16022)
+        (goal demand-research-pikeman 15952)
+        (goal demand-research-pikeman 15950)
     )
     (not (research-completed 197))
     (not (up-research-status c: 197 >= 2))
@@ -21970,42 +21972,42 @@
     (release-escrow food)
     (release-escrow wood)
     (research pikeman)
-    (set-goal demand-research-pikeman 16024)
+    (set-goal demand-research-pikeman 15952)
 )
 
 ; Pending diagnostics: research-capped-ram
 (defrule
-    (goal demand-research-capped-ram 16027)
+    (goal demand-research-capped-ram 15955)
     (research-completed 96)
 =>
     (set-goal demand-research-capped-ram 0)
 )
 (defrule
     (or
-        (goal demand-research-capped-ram 16028)
-        (goal demand-research-capped-ram 16026)
+        (goal demand-research-capped-ram 15956)
+        (goal demand-research-capped-ram 15954)
     )
     (research-completed 96)
 =>
-    (set-goal demand-research-capped-ram 16027)
+    (set-goal demand-research-capped-ram 15955)
 )
 (defrule
     (or
-        (goal demand-research-capped-ram 16028)
-        (goal demand-research-capped-ram 16026)
+        (goal demand-research-capped-ram 15956)
+        (goal demand-research-capped-ram 15954)
     )
     (not (research-completed 96))
     (up-research-status c: 96 >= 2)
 =>
-    (set-goal demand-research-capped-ram 16026)
+    (set-goal demand-research-capped-ram 15954)
 )
 (defrule
     (or
-        (goal demand-research-capped-ram 16028)
-        (goal demand-research-capped-ram 16026)
+        (goal demand-research-capped-ram 15956)
+        (goal demand-research-capped-ram 15954)
     )
     (not (research-completed 96))
-    (not (up-research-status c: 96 >= 2))
+    (up-research-status c: 96 >= 2)
 =>
     (set-goal demand-research-capped-ram 1)
     (set-goal research-retry-barrier-research-capped-ram 1)
@@ -22022,8 +22024,9 @@
     (release-escrow food)
     (release-escrow wood)
     (research capped-ram)
-    (set-goal demand-research-capped-ram 16028)
+    (set-goal demand-research-capped-ram 15956)
 )
+
 
 ; Pending diagnostics: research-double-bit-axe
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 104 and cannot reissue from pending goal 105
@@ -24988,7 +24991,7 @@
 
 ; Pending diagnostics: castle-pikeman-floor
 (defrule
-    (goal demand-castle-pikeman-floor 16013)
+    (goal demand-castle-pikeman-floor 15943)
     (unit-type-count pikeman >= 6)
 =>
     (set-goal demand-castle-pikeman-floor 0)
@@ -25002,39 +25005,39 @@
 )
 (defrule
     (or
-        (goal demand-castle-pikeman-floor 16014)
-        (goal demand-castle-pikeman-floor 16012)
+        (goal demand-castle-pikeman-floor 15944)
+        (goal demand-castle-pikeman-floor 15942)
     )
     (unit-type-count pikeman >= 6)
 =>
-    (set-goal demand-castle-pikeman-floor 16013)
+    (set-goal demand-castle-pikeman-floor 15943)
 )
 (defrule
     (or
-        (goal demand-castle-pikeman-floor 16014)
-        (goal demand-castle-pikeman-floor 16012)
+        (goal demand-castle-pikeman-floor 15944)
+        (goal demand-castle-pikeman-floor 15942)
     )
     (not (unit-type-count pikeman >= 6))
-    (up-pending-objects c: 358 >= 1)
+    (up-pending-objects c: 93 >= 1)
 =>
-    (set-goal demand-castle-pikeman-floor 16012)
+    (set-goal demand-castle-pikeman-floor 15942)
 )
 (defrule
     (or
-        (goal demand-castle-pikeman-floor 16014)
-        (goal demand-castle-pikeman-floor 16012)
+        (goal demand-castle-pikeman-floor 15944)
+        (goal demand-castle-pikeman-floor 15942)
     )
     (not (unit-type-count pikeman >= 6))
-    (not (up-pending-objects c: 358 >= 1))
+    (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-castle-pikeman-floor 1)
-    (set-goal production-retry-barrier-castle-pikeman-floor 373)
+    (set-goal production-retry-barrier-castle-pikeman-floor 15957)
 )
 (defrule
     (goal demand-castle-pikeman-floor 1)
     (not (unit-type-count pikeman >= 6))
     (goal production-retry-barrier-castle-pikeman-floor 0)
-    (not (up-pending-objects c: 358 >= 1))
+    (not (up-pending-objects c: 93 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
     (can-train-with-escrow pikeman)
@@ -25042,12 +25045,12 @@
 =>
     (train pikeman)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-castle-pikeman-floor 16014)
+    (set-goal demand-castle-pikeman-floor 15944)
 )
 
 ; Pending diagnostics: castle-battering-ram-floor
 (defrule
-    (goal demand-castle-battering-ram-floor 16017)
+    (goal demand-castle-battering-ram-floor 15947)
     (unit-type-count battering-ram-line >= 2)
 =>
     (set-goal demand-castle-battering-ram-floor 0)
@@ -25061,33 +25064,33 @@
 )
 (defrule
     (or
-        (goal demand-castle-battering-ram-floor 16018)
-        (goal demand-castle-battering-ram-floor 16016)
+        (goal demand-castle-battering-ram-floor 15948)
+        (goal demand-castle-battering-ram-floor 15946)
     )
     (unit-type-count battering-ram-line >= 2)
 =>
-    (set-goal demand-castle-battering-ram-floor 16017)
+    (set-goal demand-castle-battering-ram-floor 15947)
 )
 (defrule
     (or
-        (goal demand-castle-battering-ram-floor 16018)
-        (goal demand-castle-battering-ram-floor 16016)
+        (goal demand-castle-battering-ram-floor 15948)
+        (goal demand-castle-battering-ram-floor 15946)
     )
     (not (unit-type-count battering-ram-line >= 2))
     (up-pending-objects c: 1258 >= 1)
 =>
-    (set-goal demand-castle-battering-ram-floor 16016)
+    (set-goal demand-castle-battering-ram-floor 15946)
 )
 (defrule
     (or
-        (goal demand-castle-battering-ram-floor 16018)
-        (goal demand-castle-battering-ram-floor 16016)
+        (goal demand-castle-battering-ram-floor 15948)
+        (goal demand-castle-battering-ram-floor 15946)
     )
     (not (unit-type-count battering-ram-line >= 2))
     (not (up-pending-objects c: 1258 >= 1))
 =>
     (set-goal demand-castle-battering-ram-floor 1)
-    (set-goal production-retry-barrier-castle-battering-ram-floor 374)
+    (set-goal production-retry-barrier-castle-battering-ram-floor 15958)
 )
 (defrule
     (goal demand-castle-battering-ram-floor 1)
@@ -25101,8 +25104,9 @@
 =>
     (train battering-ram-line)
     (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-castle-battering-ram-floor 16018)
+    (set-goal demand-castle-battering-ram-floor 15948)
 )
+
 
 ; Pending diagnostics: castle-monk-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 52 and cannot reissue from pending goal 53
