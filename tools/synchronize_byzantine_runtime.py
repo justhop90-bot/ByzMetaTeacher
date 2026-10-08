@@ -692,7 +692,7 @@ def _ensure_age_transition_trace_storage(runtime: str) -> str:
 
 
 def _sync_age_transition_runtime_trace(runtime: str) -> str:
-    """Install a diagnostic-only Castle/Imperial age-transition predicate trace."""
+    """Install a diagnostic-only Feudal/Castle/Imperial age-transition predicate trace."""
 
     runtime = _ensure_age_transition_trace_storage(runtime)
     trace_marker = "; Native diagnostic control: byzantine-age-transition-trace-init"
@@ -704,6 +704,129 @@ def _sync_age_transition_runtime_trace(runtime: str) -> str:
 =>
     (enable-timer bt-age-transition-trace-timer 15)
     (disable-self)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-values
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+=>
+    (up-get-fact game-time 0 bt-age-transition-trace-game-time)
+    (up-get-fact current-age 0 bt-age-transition-trace-current-age)
+    (up-get-fact unit-type-count-total villager bt-age-transition-trace-villagers)
+    (up-chat-data-to-self "BTTRACE FEUDAL state=%d" g: demand-feudal-transition)
+    (up-chat-data-to-self "BTTRACE FEUDAL retry=%d" g: research-retry-barrier-feudal-transition)
+    (up-chat-data-to-self "BTTRACE FEUDAL age=%d" g: bt-age-transition-trace-current-age)
+    (up-chat-data-to-self "BTTRACE FEUDAL villagers=%d" g: bt-age-transition-trace-villagers)
+    (up-chat-data-to-self "BTTRACE FEUDAL claim=%d" g: byzantine-resource-claim)
+    (up-chat-data-to-self "BTTRACE FEUDAL time=%d" g: bt-age-transition-trace-game-time)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-4
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 4)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 4)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-3
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 3)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 3)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-2
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 2)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 2)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-1
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 1)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 1)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-0
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == 0)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status 0)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-status-disabled
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (up-research-status c: 101 == -1)
+=>
+    (set-goal bt-age-transition-trace-castle-research-status -1)
+    (up-chat-data-to-self "BTTRACE FEUDAL research-status=%d" g: bt-age-transition-trace-castle-research-status)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (can-research feudal-age)
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (not (can-research feudal-age))
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research=%d" c: 0)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-escrow-true
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (can-research-with-escrow feudal-age)
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research-with-escrow=%d" c: 1)
+)
+
+; Native diagnostic control: byzantine-age-transition-trace-feudal-can-research-escrow-false
+(defrule
+    (timer-triggered bt-age-transition-trace-timer)
+    (current-age == dark-age)
+    (not (current-age >= feudal-age))
+    (not (can-research-with-escrow feudal-age))
+=>
+    (up-chat-data-to-self "BTTRACE FEUDAL can-research-with-escrow=%d" c: 0)
 )
 
 ; Native diagnostic control: byzantine-age-transition-trace-castle-values
