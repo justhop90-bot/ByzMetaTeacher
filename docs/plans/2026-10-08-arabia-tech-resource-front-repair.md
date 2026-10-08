@@ -24,7 +24,7 @@
 ### Task 1: Native Castle research symbols for Pike and Elite Skirmisher
 
 **Files:**
-- Modify: `LearnerAI/Compiler/ir/community_strategy_packs.py:255, 477`
+- Modify: `LearnerAI/Compiler/ir/community_strategy_packs.py:1382` (existing native-tech mapping) and `_research_demand()` at line 255 (existing interface).
 - Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py:422`
 - Runtime: `Byzantine.per` Pike research lifecycle around line 21926; add/synchronize the missing Elite Skirmisher research lifecycle beside the existing Castle research demands.
 
@@ -43,7 +43,7 @@ Reject bare `pikeman` and `elite-skirmisher` research tokens. Also require the c
 
 - [ ] **Step 2: Verify the relevant failure**
 
-Run: `python -m unittest LearnerAI.Compiler.tests.test_strategy_opening_economy.ByzantineStrategyControlSliceTests.test_checked_in_runtime_researches_pikeman_in_castle_and_capped_ram_in_imperial`
+Run: `python -m unittest LearnerAI.Compiler.tests.test_strategy_opening_economy.ByzantineStrategyControlSliceTests.test_checked_in_runtime_researches_castle_counter_upgrades_and_capped_ram`
 
 Expected: failure showing Pike is emitted as bare `pikeman` and the Elite Skirmisher runtime lifecycle is absent.
 
@@ -74,48 +74,50 @@ Expected: Castle/Imperial research demand identities resolve and compile without
 
 ---
 
-### Task 2: Repair Elite Skirmisher Castle/Imperial production witnesses
+### Task 2: Verify the existing Elite Skirmisher Imperial production wire unlocks after research
 
 **Files:**
-- Modify: `LearnerAI/Compiler/ir/community_strategy_packs.py:1413`
-- Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py:422` and community strategy tests
-- Runtime: `Byzantine.per` Imperial Elite Skirmisher production block around the generated Imperial band section.
+- Verify: `LearnerAI/Compiler/ir/community_strategy_packs.py:1413` (existing `imperial-elite-skirmisher-floor` demand).
+- Test: `LearnerAI/Compiler/tests/test_strategy_opening_economy.py:422` plus community strategy tests.
+- Runtime: `Byzantine.per:28771` and the surrounding Imperial Elite Skirmisher band-production rules.
+
+**Observed state:**
+- The current runtime production rule already has the correct post-upgrade gates: `up-research-status 98 >= 3`, `unit-type-count 6 < 18`, `can-train-with-escrow skirmisher-line`, and `train skirmisher-line`.
+- The production is therefore blocked primarily because the Castle Elite Skirmisher research lifecycle is missing from the checked-in runtime.
 
 **Interfaces:**
-- Consumes: `_training_demand()`, `skirmisher-line`, native Elite Skirmisher ID 6, upgrade TechId 98.
-- Produces: production requirements that count the actual Skirmisher line correctly after Elite Skirmisher research.
+- Consumes: existing `imperial-elite-skirmisher-floor` demand and TechId 98 research witness.
+- Produces: a tested proof that researching Elite Skirmisher unlocks the existing Imperial production path without changing Imperial band arbitration.
 
-- [ ] **Step 1: Add focused failing assertions**
+- [ ] **Step 1: Add focused assertions**
 
-Require the Imperial Elite Skirmisher floor to use `skirmisher-line` or the concrete Elite Skirmisher unit consistently for both admission and witness. Explicitly reject the current lower-tier/incorrect witness combination `(unit-type-count 6 < 18)` and release witness that resolves to the wrong unit.
+Require the checked-in Imperial production block to contain the existing research-98 guard, Elite Skirmisher unit-count gate, `can-train-with-escrow skirmisher-line`, and `train skirmisher-line`. Also require the research test from Task 1 so this production block cannot silently remain blocked by missing research.
 
 - [ ] **Step 2: Verify the relevant failure**
 
 Run: `python -m unittest LearnerAI.Compiler.tests.test_strategy_opening_economy`
 
-Expected: failure on the Imperial Elite Skirmisher requirement/witness mismatch.
+Expected before Task 1's runtime synchronization: the production block exists, but the full Castle/Imperial research-to-production test fails because Elite Skirmisher research is absent.
 
 - [ ] **Step 3: Implement the minimum behavior**
 
-Make the standing Imperial Elite Skirmisher floor depend on the real post-upgrade unit state while preserving the existing `research-completed 98`/research-status guard. The production gate must be satisfiable once Elite Skirmisher is researched and fewer than the target number of Skirmishers exist.
-
-Do not remove the Byzantine Imperial band posture logic. The repair is only to the unit-state gate and witness.
+No new production scheduler or alternate witness is needed. The implementation is the Task 1 research lifecycle plus the existing production wire. Preserve the `up-research-status c: 98 >= 3` gate and `skirmisher-line` training action exactly.
 
 - [ ] **Step 4: Verify the focused pass**
 
 Run: `python -m unittest LearnerAI.Compiler.tests.test_strategy_opening_economy`
 
-Expected: Castle/Imperial Pikeman and Elite Skirmisher production/research assertions pass.
+Expected: Castle Pike/Elite Skirmisher research and Imperial Elite Skirmisher production assertions all pass.
 
 - [ ] **Step 5: Run the affected integration check**
 
 Run: `python -m unittest LearnerAI.Compiler.tests.test_community_strategy_packs LearnerAI.Compiler.tests.test_byzantine_arabia_endgame_bootstrap`
 
-Expected: Imperial 18-Halb/18-Elite-Skirm/12-Hussar floor and research package remain intact.
+Expected: the persistent 18 Elite Skirmisher floor remains present and connected to the research demand without changing the existing Imperial band strategy.
 
 - [ ] **Step 6: Commit the passing deliverable**
 
-`fix: make Imperial Elite Skirmisher production witness executable`
+`test: prove Elite Skirmisher research unlocks existing Imperial production`
 
 ---
 
