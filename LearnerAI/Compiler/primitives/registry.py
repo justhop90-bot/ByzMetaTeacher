@@ -1624,6 +1624,10 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
             native_storage_use_ids=("lifecycle-goal-storage",),
         ),
         Primitive(
+            "up-garrison", "ACTION", "NATIVE_CONTROL", 3, 3,
+            completion_witness=False,
+        ),
+        Primitive(
             "chat-to-player", "ACTION", "VOICE", 2, 2,
             completion_witness=False,
             engine_semantics_id="voice.chat-to-player",
