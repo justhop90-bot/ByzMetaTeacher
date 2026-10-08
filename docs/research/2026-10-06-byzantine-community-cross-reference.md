@@ -48,11 +48,13 @@ Sources:
 
 **Class:** ENGINE FACT + COMMUNITY PRACTICE
 
-AIRef publishes command-performance benchmarks and warns that repeated path-distance/movement work can be materially more expensive than ordinary facts, while DUC search operations have bounded search-list sizes. The compiler already treats DUC and attack as explicit semantic frontiers.
+AIRef publishes command-performance benchmarks and a command-cost index. The benchmarked profile shows that many DUC searches are comparatively cheap, while path-distance, large group movement/targeting, search sorting, and actual line-building can become slow or very slow. The command index independently marks operations such as `up-clean-search`, `up-get-path-distance`, `up-get-group-size`, `up-target-objects`, `up-target-point`, and `up-build-line` as high or very high cost families. citeturn222488search0turn222488search1
 
-Source: https://airef.github.io/resources/articles/command-performance.html
+Sources:
+- https://airef.github.io/resources/articles/command-performance.html
+- https://airef.github.io/commands/commands-index.html
 
-**ByzMetaTeacher consequence:** future semantic reports should expose search cardinality, repeated-pass use, path-distance usage, movement queue patterns, and attack-loop frequency as advisory behavioral diagnostics, separate from native legality findings.
+**ByzMetaTeacher consequence:** the semantic shadow now records native operation heads and assigns a conservative LOW/MODERATE/HIGH advisory cost bucket. It does not reject a rule because of cost. Instead it exposes recurrent expensive rules so runtime/CI analysis can decide whether cardinality or pass frequency is actually a problem.
 
 ## 5. Resource dropsite and camp control are native control surfaces
 

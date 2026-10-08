@@ -40,7 +40,13 @@ class SemanticDiagnosticsTests(unittest.TestCase):
         self.assertEqual(classify_evidence_source("opaque://unknown"), EvidenceLineage.UNKNOWN)
 
     def test_performance_cost_classes_keep_expensive_heads_advisory(self):
-        self.assertEqual(performance_cost_for_head("up-get-distance"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-get-path-distance"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-build-line"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-clean-search"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-target-objects"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-target-point"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-point-distance"), PerformanceCostClass.HIGH)
+        self.assertEqual(performance_cost_for_head("up-get-group-size"), PerformanceCostClass.HIGH)
         self.assertEqual(performance_cost_for_head("up-find-local"), PerformanceCostClass.MODERATE)
         self.assertEqual(performance_cost_for_head("up-find-remote"), PerformanceCostClass.MODERATE)
         self.assertEqual(performance_cost_for_head("move"), PerformanceCostClass.MODERATE)
@@ -59,7 +65,7 @@ class SemanticDiagnosticsTests(unittest.TestCase):
  (true)
  (timer-triggered 1)
 =>
- (up-get-distance 1 2)
+ (up-get-path-distance 1 2)
  (move 1 2)
 )
 """
@@ -69,11 +75,11 @@ class SemanticDiagnosticsTests(unittest.TestCase):
             manifest = semantic.build_semantic_manifest(path)
 
         rule = manifest.rules[0]
-        self.assertIn("up-get-distance", rule.operation_heads)
+        self.assertIn("up-get-path-distance", rule.operation_heads)
         self.assertIn("move", rule.operation_heads)
         self.assertEqual(rule.performance_cost, "HIGH")
         self.assertEqual(manifest.high_cost_recurrent_rules, (1,))
-        self.assertIn("up-get-distance", dict(manifest.operation_counts))
+        self.assertIn("up-get-path-distance", dict(manifest.operation_counts))
 
 
 if __name__ == "__main__":

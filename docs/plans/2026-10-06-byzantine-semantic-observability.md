@@ -8,6 +8,19 @@
 
 **Tech Stack:** Python 3, immutable dataclasses, existing AoE2 .per parser/source graph, JSON, Markdown, unittest, GitHub Actions/native validator.
 
+## Current implementation status
+
+- [x] Task 1: artifact semantic shadow manifest.
+- [x] Task 2: shared Goal/SN/Timer writer/reader ownership indexes.
+- [x] Task 3: community/engine evidence ledger with conservative source-family provenance.
+- [x] Task 4: runtime witness schema and adversarial scenario contracts.
+- [x] Task 5: deterministic semantic-manifest CLI and CI publication.
+- [ ] Task 6: live-runtime evidence capture. Infrastructure is implemented; gameplay traces remain OPEN until an actual match supplies observations.
+- [x] Task 7: advisory community convergence and operation-cost diagnostics. Cost buckets remain non-blocking and are benchmark-derived.
+- [x] Task 8: runtime-specific first-broken-edge assessment. It intentionally remains separate from compiler FeatureTrace so observed gameplay failures are not confused with compiler-stage failures.
+
+Runtime promotion rule: no scenario may be marked CONFIRMED without a captured match record carrying the exact Byzantine.per SHA-256 and direct world-state evidence.
+
 ## Global Constraints
 
 - `main` is authoritative.
