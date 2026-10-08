@@ -17662,6 +17662,85 @@
 )
 
 
+; economy-stone-camp-floor-1
+(defrule
+    (goal demand-economy-stone-camp-floor-1 648)
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 0)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-1 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (not (building-type-count mining-camp >= 1))
+=>
+    (set-goal demand-economy-stone-camp-floor-1 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 648)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 647)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-stone-camp-floor-1 647)
+)
+
+(defrule
+    (or
+        (goal demand-economy-stone-camp-floor-1 646)
+        (goal demand-economy-stone-camp-floor-1 647)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-stone-camp-floor-1 1)
+    (set-goal construction-retry-barrier-economy-stone-camp-floor-1 1)
+)
+
+(defrule
+    (goal demand-economy-stone-camp-floor-1 1)
+    (not (building-type-count mining-camp >= 1))
+    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-1 646)
+)
+
+
 ; economy-stone-camp-floor-2
 (defrule
     (goal demand-economy-stone-camp-floor-2 628)
@@ -18064,402 +18143,6 @@
     (up-build place-point 0 c: mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-5 641)
-)
-
-; economy-stone-camp-floor-1
-(defrule
-    (goal demand-economy-stone-camp-floor-1 648)
-    (building-type-count mining-camp >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-1 0)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-1 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 1))
-=>
-    (set-goal demand-economy-stone-camp-floor-1 1)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
-    )
-    (building-type-count mining-camp >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-1 648)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
-    )
-    (not (building-type-count mining-camp >= 1))
-    (up-pending-objects c: 584 >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-1 647)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
-    )
-    (not (building-type-count mining-camp >= 1))
-    (up-pending-objects c: 584 == 0)
-    (up-pending-placement c: 584)
-=>
-    (set-goal demand-economy-stone-camp-floor-1 647)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-1 646)
-        (goal demand-economy-stone-camp-floor-1 647)
-    )
-    (not (building-type-count mining-camp >= 1))
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-=>
-    (set-goal demand-economy-stone-camp-floor-1 1)
-    (set-goal construction-retry-barrier-economy-stone-camp-floor-1 1)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-1 1)
-    (not (building-type-count mining-camp >= 1))
-    (goal construction-retry-barrier-economy-stone-camp-floor-1 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 1)
-=>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-1 646)
-)
-
-; economy-stone-camp-floor-2
-(defrule
-    (goal demand-economy-stone-camp-floor-2 653)
-    (building-type-count mining-camp >= 2)
-=>
-    (set-goal demand-economy-stone-camp-floor-2 0)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-2 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 2))
-=>
-    (set-goal demand-economy-stone-camp-floor-2 1)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
-    )
-    (building-type-count mining-camp >= 2)
-=>
-    (set-goal demand-economy-stone-camp-floor-2 653)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
-    )
-    (not (building-type-count mining-camp >= 2))
-    (up-pending-objects c: 584 >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-2 652)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
-    )
-    (not (building-type-count mining-camp >= 2))
-    (up-pending-objects c: 584 == 0)
-    (up-pending-placement c: 584)
-=>
-    (set-goal demand-economy-stone-camp-floor-2 652)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-2 651)
-        (goal demand-economy-stone-camp-floor-2 652)
-    )
-    (not (building-type-count mining-camp >= 2))
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-=>
-    (set-goal demand-economy-stone-camp-floor-2 1)
-    (set-goal construction-retry-barrier-economy-stone-camp-floor-2 1)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-2 1)
-    (not (building-type-count mining-camp >= 2))
-    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
-=>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-2 651)
-)
-
-; economy-stone-camp-floor-3
-(defrule
-    (goal demand-economy-stone-camp-floor-3 658)
-    (building-type-count mining-camp >= 3)
-=>
-    (set-goal demand-economy-stone-camp-floor-3 0)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-3 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 3))
-    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
-=>
-    (set-goal demand-economy-stone-camp-floor-3 1)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
-    )
-    (building-type-count mining-camp >= 3)
-=>
-    (set-goal demand-economy-stone-camp-floor-3 658)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
-    )
-    (not (building-type-count mining-camp >= 3))
-    (up-pending-objects c: 584 >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-3 657)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
-    )
-    (not (building-type-count mining-camp >= 3))
-    (up-pending-objects c: 584 == 0)
-    (up-pending-placement c: 584)
-=>
-    (set-goal demand-economy-stone-camp-floor-3 657)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-3 656)
-        (goal demand-economy-stone-camp-floor-3 657)
-    )
-    (not (building-type-count mining-camp >= 3))
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-=>
-    (set-goal demand-economy-stone-camp-floor-3 1)
-    (set-goal construction-retry-barrier-economy-stone-camp-floor-3 1)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-3 1)
-    (not (building-type-count mining-camp >= 3))
-    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
-=>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-3 656)
-)
-
-; economy-stone-camp-floor-4
-(defrule
-    (goal demand-economy-stone-camp-floor-4 663)
-    (building-type-count mining-camp >= 4)
-=>
-    (set-goal demand-economy-stone-camp-floor-4 0)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-4 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 4))
-    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
-=>
-    (set-goal demand-economy-stone-camp-floor-4 1)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
-    )
-    (building-type-count mining-camp >= 4)
-=>
-    (set-goal demand-economy-stone-camp-floor-4 663)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
-    )
-    (not (building-type-count mining-camp >= 4))
-    (up-pending-objects c: 584 >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-4 662)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
-    )
-    (not (building-type-count mining-camp >= 4))
-    (up-pending-objects c: 584 == 0)
-    (up-pending-placement c: 584)
-=>
-    (set-goal demand-economy-stone-camp-floor-4 662)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-4 661)
-        (goal demand-economy-stone-camp-floor-4 662)
-    )
-    (not (building-type-count mining-camp >= 4))
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-=>
-    (set-goal demand-economy-stone-camp-floor-4 1)
-    (set-goal construction-retry-barrier-economy-stone-camp-floor-4 1)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-4 1)
-    (not (building-type-count mining-camp >= 4))
-    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
-=>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-4 661)
-)
-
-; economy-stone-camp-floor-5
-(defrule
-    (goal demand-economy-stone-camp-floor-5 668)
-    (building-type-count mining-camp >= 5)
-=>
-    (set-goal demand-economy-stone-camp-floor-5 0)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-5 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 5))
-    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
-=>
-    (set-goal demand-economy-stone-camp-floor-5 1)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
-    )
-    (building-type-count mining-camp >= 5)
-=>
-    (set-goal demand-economy-stone-camp-floor-5 668)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
-    )
-    (not (building-type-count mining-camp >= 5))
-    (up-pending-objects c: 584 >= 1)
-=>
-    (set-goal demand-economy-stone-camp-floor-5 667)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
-    )
-    (not (building-type-count mining-camp >= 5))
-    (up-pending-objects c: 584 == 0)
-    (up-pending-placement c: 584)
-=>
-    (set-goal demand-economy-stone-camp-floor-5 667)
-)
-
-(defrule
-    (or
-        (goal demand-economy-stone-camp-floor-5 666)
-        (goal demand-economy-stone-camp-floor-5 667)
-    )
-    (not (building-type-count mining-camp >= 5))
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-=>
-    (set-goal demand-economy-stone-camp-floor-5 1)
-    (set-goal construction-retry-barrier-economy-stone-camp-floor-5 1)
-)
-
-(defrule
-    (goal demand-economy-stone-camp-floor-5 1)
-    (not (building-type-count mining-camp >= 5))
-    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
-    (up-pending-objects c: 584 == 0)
-    (not (up-pending-placement c: 584))
-    (goal action-claim-build-pass-singleton 0)
-    (and (current-age >= feudal-age) (resource-found stone))
-    (or (dropsite-min-distance stone <= -1) (dropsite-min-distance stone s:>= sn-mining-camp-max-distance))
-    (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
-=>
-    (build mining-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-stone-camp-floor-5 666)
 )
 
 ; Narrow Dark Age second-mill rule: target a distinct Gaia forage patch.
