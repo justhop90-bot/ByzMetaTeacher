@@ -111,6 +111,10 @@ class PrimitiveRegistry:
     def validate_primitive_promotion(self, primitive: Primitive, native) -> None:
         if primitive.kind != "ACTION":
             return
+        if primitive.role == "NATIVE_CONTROL":
+            # Native-control Actions own their lifecycle witnesses/storage in the
+            # dedicated control plan; do not fabricate a generic lifecycle witness.
+            return
         if not primitive.native_witness_ids:
             raise ValueError(f"action primitive '{primitive.name}' has no native witness contract")
         if not primitive.native_storage_use_ids:
