@@ -146,9 +146,15 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 if f"(up-get-point position-object {point})" in rule
                 and f"(up-set-target-point {point})" in rule
             )
-            build_rule = next(
-                rule for rule in rules
-                if "(up-build place-point 0 c:" in rule
+            execution_marker = (
+                f"; Native placement execution: economy-lumber-camp-floor-{floor}"
+            )
+            execution_start = self.source.index(execution_marker)
+            execution_end = self.source.find("\n; ", execution_start + 10)
+            build_section = (
+                self.source[execution_start:]
+                if execution_end < 0
+                else self.source[execution_start:execution_end]
             )
 
             self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
@@ -159,7 +165,7 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             self.assertIn("(up-set-target-object search-remote c: 0)", placement_rule)
             self.assertIn(f"(up-get-point position-object {point})", placement_rule)
             self.assertIn(f"(up-set-target-point {point})", placement_rule)
-            self.assertIn("(up-build place-point 0 c:", build_rule)
+            self.assertIn("(up-build place-point 0 c:", build_section)
             self.assertNotIn(
                 f"(dropsite-min-distance wood > {old_distance})",
                 search_rule + placement_rule,
