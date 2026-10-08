@@ -265,7 +265,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-set-target-by-id g: 0)", garrison_actions)
         self.assertIn("(up-find-local c: 904 c: 4)", garrison_actions)
         self.assertIn("(up-target-objects 1 7 -1 -1)", garrison_actions)
-        self.assertIn("(up-garrison transport-ship c: villager)", garrison_actions)
         garrison_facts = tuple(f.source for f in garrison.facts)
         self.assertIn("(up-compare-goal pacific-opening-transport-load-count < 4)", garrison_facts)
         self.assertLess(
@@ -277,6 +276,13 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             if request.rule_identity == "byzantine-pacific-transport-garrison"
         )
         self.assertEqual(garrison_input.expression_index, 2)
+
+        fallback = next(r for r in plan.native_control.rules if r.identity == "pacific-transport-garrison-fallback")
+        fallback_actions = tuple(a.source for a in fallback.actions)
+        self.assertIn("(up-garrison transport-ship c: villager)", fallback_actions)
+        fallback_facts = tuple(f.source for f in fallback.facts)
+        self.assertIn("(goal pacific-transport-lifecycle 1)", fallback_facts)
+        self.assertIn("(up-compare-goal pacific-opening-transport-load-count < 4)", fallback_facts)
 
         load_witness = next(
             r for r in plan.rules if r.identity == "byzantine-pacific-transport-load-witness"
