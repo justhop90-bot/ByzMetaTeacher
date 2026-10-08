@@ -398,6 +398,27 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             villager_rule,
         )
 
+    def test_checked_in_runtime_researches_pikeman_in_castle_and_capped_ram_in_imperial(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        pike_start = runtime.index("; Pending diagnostics: research-pikeman")
+        pike_end = runtime.index("; Pending diagnostics: research-elite-skirmisher", pike_start)
+        pike = runtime[pike_start:pike_end]
+        self.assertIn("(current-age >= castle-age)", pike)
+        self.assertIn("(can-research-with-escrow pikeman)", pike)
+        self.assertIn("(research pikeman)", pike)
+        self.assertIn("(research-completed 197)", pike)
+
+        ram_start = runtime.index("; Pending diagnostics: research-capped-ram")
+        ram_end = runtime.index("; Pending diagnostics: research-siege-ram", ram_start)
+        ram = runtime[ram_start:ram_end]
+        self.assertIn("(current-age >= imperial-age)", ram)
+        self.assertNotIn("(current-age >= castle-age)", ram)
+        self.assertIn("(can-research-with-escrow capped-ram)", ram)
+        self.assertIn("(research capped-ram)", ram)
+        self.assertIn("(research-completed 96)", ram)
+
     def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
