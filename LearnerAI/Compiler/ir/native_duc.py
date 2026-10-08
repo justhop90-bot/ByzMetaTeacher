@@ -94,6 +94,7 @@ class NativeDucGoalInputRequest:
     expression_index: int
     argument_index: int
     source: StorageRequestId
+    span_offset: int = 0
 
     def __post_init__(self) -> None:
         if not self.rule_identity.strip():
@@ -102,6 +103,8 @@ class NativeDucGoalInputRequest:
             raise ValueError("native DUC input request section must be FACT or ACTION")
         if self.expression_index < 0 or self.argument_index < 0:
             raise ValueError("native DUC input request indexes must be non-negative")
+        if self.span_offset < 0:
+            raise ValueError("native DUC input request span offset must be non-negative")
 
     @property
     def site_key(self) -> tuple[str, str, int, int]:
