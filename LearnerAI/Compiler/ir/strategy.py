@@ -4749,10 +4749,7 @@ def _default_byzantine_duc_plan(
                     "(up-target-objects 1 7 -1 -1)",
                     SourceLocation(1),
                 ),
-                parse_expression(
-                    "(up-garrison transport-ship c: villager)",
-                    SourceLocation(1),
-                ),
+
             ),
             lifecycle=(
                 NativeDucLifecycleStage.PICKUP_WITNESS,
