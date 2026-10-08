@@ -972,12 +972,8 @@ def _sync_age_transition_runtime_trace(runtime: str) -> str:
         raise RuntimeError("runtime artifact is missing Native Strategos voice plan")
     start = runtime.find(marker)
     if start >= 0 and start < voice:
-        return runtime[:start] + block.rstrip() + "
-
-" + runtime[voice:]
-    return runtime[:voice] + block.rstrip() + "
-
-" + runtime[voice:]
+        return runtime[:start] + block.rstrip() + "\n\n" + runtime[voice:]
+    return runtime[:voice] + block.rstrip() + "\n\n" + runtime[voice:]
 
 
 def _ensure_defconsts(runtime: str, generated: str) -> str:
