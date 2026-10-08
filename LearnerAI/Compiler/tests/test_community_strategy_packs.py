@@ -39,6 +39,40 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertIn(identity, resolved.demand_ids)
         self.assertIn("water-fishing-continuity", resolved.demand_ids)
 
+    def test_islands_opening_has_first_dock_capability_before_fishing(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demand = profile.demand("water-dock-capability")
+
+        self.assertEqual(demand.owner, "water-economy")
+        self.assertEqual(demand.priority, StrategicPriority.CORE)
+        self.assertEqual(demand.capability_intent.kind.name, "BUILD")
+        self.assertEqual(demand.capability_intent.entity_type, "building")
+        self.assertEqual(demand.execution.action, "(build dock)")
+        self.assertIn("(or (map-type islands) (map-type pacific-islands))", demand.execution.requirements)
+        self.assertIn("(building-type-count-total dock < 1)", demand.execution.requirements)
+        self.assertIn("(can-build dock)", demand.execution.requirements)
+        self.assertEqual(demand.execution.witness, "(building-type-count dock >= 1)")
+        self.assertEqual(demand.execution.release, "(building-type-count dock >= 1)")
+
+    def test_water_map_observation_includes_pacific_islands(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        observation = profile.observation("strategy-water-map")
+
+        self.assertEqual(
+            observation.expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
+        island_profile = next(item for item in profile.map_profile if item.identity.value == "ISLANDS")
+        self.assertEqual(
+            island_profile.native_map_expression,
+            "(or (map-type islands) (map-type pacific-islands))",
+        )
+
+        self.assertIn("(goal water-transport-objective 1)", {
+            item.expression for item in profile.observations
+            if item.identity == "strategy-transport-required"
+        })
+
     def test_stock_profile_contains_complete_research_witnesses(self):
         profile = build_byzantine_stock_strategy(self.effective)
         observations = {item.identity for item in profile.observations}

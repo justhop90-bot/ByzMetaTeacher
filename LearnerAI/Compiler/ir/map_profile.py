@@ -39,7 +39,12 @@ def default_byzantine_map_profiles() -> tuple[MapProfile, ...]:
         MapProfile(MapKind.ARENA, "FAST_CASTLE", "(map-type arena)"),
         MapProfile(MapKind.STANDARD_LAND, "DEFENSIVE_STANDARD"),
         MapProfile(MapKind.HYBRID, "DEFENSIVE_STANDARD"),
-        MapProfile(MapKind.ISLANDS, "WATER_ECONOMY", "(map-type islands)", True),
+        MapProfile(
+            MapKind.ISLANDS,
+            "WATER_ECONOMY",
+            "(or (map-type islands) (map-type pacific-islands))",
+            True,
+        ),
     )
 
 
