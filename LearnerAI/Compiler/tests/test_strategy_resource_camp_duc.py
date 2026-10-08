@@ -106,15 +106,20 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                     {action.source for action in place_rule.control_actions},
                 )
 
+                search_facts = {expression.source for expression in search_rule.facts}
                 if resource == "stone":
                     self.assertIn(
-                        "(and (current-age >= feudal-age) (resource-found stone))",
-                        search_rule.facts[6].source,
+                        "(current-age >= feudal-age)",
+                        search_facts,
+                    )
+                    self.assertIn(
+                        "(resource-found stone)",
+                        search_facts,
                     )
                 else:
                     self.assertIn(
                         f"(resource-found {resource})",
-                        search_rule.facts[6].source,
+                        search_facts,
                     )
 
     def test_native_camp_placement_replaces_generic_action_issuance(self):
