@@ -697,14 +697,31 @@ def synchronize() -> bool:
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
 
-    runtime = _install_once(runtime, CAPABILITY_EXPANSION_MARKER, CAPABILITY_EXPANSION_BRIDGE)
-
     voice_marker = "; Native Strategos voice plan"
     voice_start = generated.find(voice_marker)
     if voice_start < 0:
         raise RuntimeError("generated artifact is missing Native Strategos voice plan")
     generated_voice = generated[voice_start:]
     generated_voice = _remap_voice_storage(runtime, generated_voice)
+    # Capability expansion belongs before the Strategos voice tail. This keeps
+    # the bridge in the non-voice runtime overlay and lets the voice-storage
+    # isolation test reconstruct a stale runtime without silently deleting it.
+    if CAPABILITY_EXPANSION_BRIDGE.strip() not in runtime:
+        voice_anchor = "; Native Strategos voice plan"
+        position = runtime.find(voice_anchor)
+        if position < 0:
+            raise RuntimeError(
+                "runtime artifact is missing insertion marker: "
+                f"{voice_anchor}"
+            )
+        runtime = (
+            runtime[:position].rstrip()
+            + "\n\n"
+            + CAPABILITY_EXPANSION_BRIDGE.rstrip()
+            + "\n\n"
+            + runtime[position:]
+        )
+
     runtime = _replace_tail_section(runtime, voice_marker, generated_voice)
 
     if runtime == before:
