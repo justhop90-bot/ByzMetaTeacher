@@ -277,7 +277,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(garrison_input.expression_index, 2)
 
-        fallback = next(r for r in plan.native_control.rules if r.identity == "pacific-transport-garrison-fallback")
+        fallback = next(r for r in compilation.control_plan.rules if r.identity == "pacific-transport-garrison-fallback")
         fallback_actions = tuple(a.source for a in fallback.actions)
         self.assertIn("(up-garrison transport-ship c: villager)", fallback_actions)
         fallback_facts = tuple(f.source for f in fallback.facts)
