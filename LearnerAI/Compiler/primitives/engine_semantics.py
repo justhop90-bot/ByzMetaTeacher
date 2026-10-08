@@ -382,6 +382,30 @@ def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticM
 
 
 def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    if command == "up-garrison":
+        return EngineSemanticMapping(
+            identity=identity,
+            native_command=command,
+            native_kind="Action",
+            status=EngineSemanticMappingStatus.CONTRACTED,
+            evidence_class="ENGINE FACT",
+            evidence_sources=(
+                "https://airef.github.io/commands/commands-details.html#up-garrison",
+            ),
+            state_effects=(
+                "issues one native garrison operation that asks the engine to place units of "
+                "the specified UnitId into the specified ObjectId target"
+            ),
+            lifetime="one-shot native action request; resulting garrison membership remains engine state",
+            ordering="the garrison request executes at its emitted action position; same-pass membership visibility is not claimed",
+            admission="documented three-argument Action with ObjectId, c: typeOp, and UnitId parameters",
+            completion=(
+                "unobserved by the generic Action contract; an owning controller must supply a "
+                "separate world-state witness such as object-data garrison count"
+            ),
+            recovery="reassess the owning lifecycle and reissue while its world-state garrison witness remains under target",
+            practice_references=("actions.request-not-completion",),
+        )
     witness = {
         "build": "building-type-count",
         "train": "unit-type-count",
@@ -588,41 +612,6 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
         admission="native attack-now command contract with exact zero-argument arity",
         completion="unobserved; no contracted native attack completion witness exists in this slice",
         recovery="reassess through future native evidence; no synthetic timer, release, or reset is emitted",
-        practice_references=(),
-    )
-
-def _garrison_mapping() -> EngineSemanticMapping:
-    return EngineSemanticMapping(
-        identity="transport.garrison.issue",
-        native_command="up-garrison",
-        native_kind="Action",
-        status=EngineSemanticMappingStatus.CONTRACTED,
-        evidence_class="ENGINE FACT",
-        evidence_sources=(
-            "https://airef.github.io/commands/commands-details.html#up-garrison",
-        ),
-        state_effects=(
-            "issues one native garrison operation that asks the engine to place units of the "
-            "specified UnitId into the specified ObjectId target"
-        ),
-        lifetime=(
-            "one-shot native action request; transport membership remains engine state after issuance"
-        ),
-        ordering=(
-            "the garrison request executes at its emitted action position; the compiler does not "
-            "claim same-pass visibility of resulting membership"
-        ),
-        admission=(
-            "documented three-argument Action with ObjectId, const typeOp, and UnitId parameters"
-        ),
-        completion=(
-            "garrison completion is unobserved by this mapping; Pacific transport lifecycle uses "
-            "object-data garrison count as the separate world-state witness"
-        ),
-        recovery=(
-            "reassess the garrison-count witness and reissue while the owning Pacific LOAD state "
-            "remains under-filled"
-        ),
         practice_references=(),
     )
 
@@ -938,7 +927,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         for command, identity in _NATIVE_OUTPUT_READER_SPECS
     )
     mappings.append(_escrow_release_mapping())
-    mappings.append(_garrison_mapping())
     mappings.append(_escrow_percentage_mapping())
     mappings.append(_attack_issue_mapping())
     mappings.extend(
