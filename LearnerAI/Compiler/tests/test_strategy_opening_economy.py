@@ -419,9 +419,17 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(unit-type-count-total battering-ram-line < 2)", ram)
         self.assertIn("(up-pending-objects c: 1258 >= 1)", ram)
 
-    def test_checked_in_runtime_researches_pikeman_in_castle_and_capped_ram_in_imperial(self):
+    def test_checked_in_runtime_researches_castle_counter_upgrades_and_capped_ram(self):
         profile = build_byzantine_strategy(self.effective)
         canonical = compile_strategy_profile(profile, self.effective)
+        self.assertIn("(can-research-with-escrow ri-pikeman)", canonical)
+        self.assertIn("(research ri-pikeman)", canonical)
+        self.assertNotIn("(can-research-with-escrow pikeman)", canonical)
+        self.assertNotIn("(research pikeman)", canonical)
+        self.assertIn("(can-research-with-escrow ri-elite-skirmisher)", canonical)
+        self.assertIn("(research ri-elite-skirmisher)", canonical)
+        self.assertNotIn("(can-research-with-escrow elite-skirmisher)", canonical)
+        self.assertNotIn("(research elite-skirmisher)", canonical)
         self.assertIn("(can-research-with-escrow ri-capped-ram)", canonical)
         self.assertIn("(research ri-capped-ram)", canonical)
         self.assertNotIn("(can-research-with-escrow capped-ram)", canonical)
@@ -433,12 +441,33 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
 
         pike_start = runtime.index("; Pending diagnostics: research-pikeman")
-        pike_end = runtime.index("; Pending diagnostics: research-double-bit-axe", pike_start)
+        pike_end = runtime.index("; Pending diagnostics: research-elite-skirmisher", pike_start)
         pike = runtime[pike_start:pike_end]
         self.assertIn("(current-age >= castle-age)", pike)
-        self.assertIn("(can-research-with-escrow pikeman)", pike)
-        self.assertIn("(research pikeman)", pike)
+        self.assertIn("(can-research-with-escrow ri-pikeman)", pike)
+        self.assertIn("(research ri-pikeman)", pike)
+        self.assertNotIn("(can-research-with-escrow pikeman)", pike)
+        self.assertNotIn("(research pikeman)", pike)
         self.assertIn("(research-completed 197)", pike)
+
+        elite_start = runtime.index("; Pending diagnostics: research-elite-skirmisher")
+        elite_end = runtime.index("; Pending diagnostics: research-capped-ram", elite_start)
+        elite = runtime[elite_start:elite_end]
+        self.assertIn("(current-age >= castle-age)", elite)
+        self.assertIn("(unit-type-count 7 >= 6)", elite)
+        self.assertIn("(can-research-with-escrow ri-elite-skirmisher)", elite)
+        self.assertIn("(research ri-elite-skirmisher)", elite)
+        self.assertNotIn("(can-research-with-escrow elite-skirmisher)", elite)
+        self.assertNotIn("(research elite-skirmisher)", elite)
+        self.assertIn("(research-completed 98)", elite)
+
+        production_start = runtime.index("; Action issuance: imperial-elite-skirmisher-floor")
+        production_end = runtime.index("; Pending diagnostics: imperial-open-halberdier-standard", production_start)
+        production = runtime[production_start:production_end]
+        self.assertIn("(up-research-status c: 98 >= 3)", production)
+        self.assertIn("(unit-type-count 6 < 18)", production)
+        self.assertIn("(can-train-with-escrow skirmisher-line)", production)
+        self.assertIn("(train skirmisher-line)", production)
 
         ram_start = runtime.index("; Pending diagnostics: research-capped-ram")
         ram_end = runtime.index("; Pending diagnostics: research-double-bit-axe", ram_start)
@@ -453,10 +482,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(unit-type-count-total battering-ram-line >= 2)", ram)
         self.assertNotIn("(unit-type-count-total ram-line >= 2)", ram)
 
-    def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):
+    def test_checked_in_runtime_secondary_mining_camps_select_first_remote_front(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
-        # Bound the terminal stone floor to the next executable section, not EOF.
 
         for resource in ("gold", "stone"):
             for floor in range(2, 6):
@@ -466,10 +494,10 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                 else:
                     end = runtime.index("; Narrow Dark Age second-mill rule", start)
                 section = runtime[start:end]
+
                 self.assertIn(
                     f"(up-find-resource c: {resource} c: 40)",
                     section,
-                    f"{resource} floor {floor} must actively search the resource front",
                 )
                 self.assertIn(
                     f"byzantine-dark-{resource}-camp-search-state-{floor}",
@@ -479,8 +507,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
                     section,
                 )
+                remote_index = floor - 2
+                remote_threshold = floor - 2
                 self.assertIn(
-                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    f"(up-compare-goal byzantine-dark-{resource}-camp-search-remote-count-{floor} > {remote_threshold})",
+                    section,
+                )
+                self.assertIn(
+                    f"(up-set-target-object search-remote c: {remote_index})",
                     section,
                 )
                 self.assertIn("(up-build place-point 0 c: mining-camp)", section)
@@ -488,10 +522,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     self.assertNotIn(
                         "(dropsite-min-distance stone",
                         section,
-                        f"stone floor {floor} must not use the global dropsite gate",
                     )
 
-    def test_checked_in_runtime_gold_floor_two_selects_second_active_gold(self):
+    def test_checked_in_runtime_gold_floor_two_selects_first_remote_gold(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
         start = runtime.index("; economy-gold-camp-floor-2")
@@ -501,11 +534,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("(dropsite-min-distance gold", floor_two)
         self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
         self.assertIn(
-            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)",
+            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)",
             floor_two,
         )
         self.assertIn(
-            "(up-set-target-object search-remote c: 1)",
+            "(up-set-target-object search-remote c: 0)",
             floor_two,
         )
 
