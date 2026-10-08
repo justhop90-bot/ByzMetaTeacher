@@ -262,9 +262,9 @@ def _research_demand(
     age_guard: str,
     age_observation_ref: str,
     tech_name: str,
-    native_tech_symbol: str | None = None,
     reason_label: str,
     resources: tuple[Resource, ...],
+    native_tech_symbol: str | None = None,
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
     additional_requirements: tuple[str, ...] = (),
 ) -> _StrategicDemandSpec:
