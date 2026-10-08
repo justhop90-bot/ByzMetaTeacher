@@ -851,8 +851,8 @@ def default_escrow_executable_commands() -> tuple[str, ...]:
     return tuple(command for command, _identity in _ESCROW_COMMAND_SPECS)
 
 def default_native_controller_executable_commands() -> tuple[str, ...]:
-    """Return commands promoted through dedicated controller/native-control binders."""
-    return ("attack-now", "up-garrison")
+    """Return commands promoted through dedicated controller binders."""
+    return ("attack-now",)
 
 
 
