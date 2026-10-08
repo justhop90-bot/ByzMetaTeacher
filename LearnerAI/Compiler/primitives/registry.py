@@ -714,7 +714,32 @@ class PrimitiveRegistry:
                     "request for its storage id"
                 )
 
-            if expression.head == "up-set-target-point":
+            if expression.head == "up-compare-goal":
+                if input_request.argument_index != 0 or len(expression.args) != 3:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' must bind argument 0 "
+                        "of a three-argument up-compare-goal"
+                    )
+                if not isinstance(writer.request, GoalSpanRequest):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' writer is not a GoalSpan"
+                    )
+                request = writer.request
+                if (
+                    request.role.value != "NATIVE_OUTPUT"
+                    or request.request_id.purpose != "up-get-search-state"
+                    or request.width != 4
+                    or request.shape.value != "EXTENDED_4"
+                    or request.contract_id != "up-get-search-state.OutputGoalId"
+                    or request.start_min != 41
+                    or request.start_max != 15996
+                    or input_request.span_offset > 3
+                ):
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' requires a "
+                        "search-state four-goal span"
+                    )
+            elif expression.head == "up-set-target-point":
                 if input_request.argument_index != 0 or len(expression.args) != 1:
                     raise ValueError(
                         f"DUC input request '{input_request.site_key}' must bind argument 0 "
