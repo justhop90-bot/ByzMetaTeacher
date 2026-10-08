@@ -441,6 +441,36 @@ def lower_water_execution_plan(
             ),
         ),
         NativeControlState(
+            "sn-number-garrison-units",
+            StrategicNumberRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "sn-number-garrison-units"),
+                    "water-strategic-number",
+                ),
+                why_not_goal=(
+                    "This state directly controls the number of villagers issued by the Pacific transport garrison fallback per command."
+                ),
+                stability_key=f"{plan.plan_id}:strategic-number:275",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=275,
+            ),
+        ),
+        NativeControlState(
+            "sn-maximum-garrison-fill",
+            StrategicNumberRequest(
+                StorageRequestId(
+                    SemanticId(plan.plan_id, "sn-maximum-garrison-fill"),
+                    "water-strategic-number",
+                ),
+                why_not_goal=(
+                    "This state directly caps the number of units admitted to each Pacific transport garrison target per command."
+                ),
+                stability_key=f"{plan.plan_id}:strategic-number:274",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=274,
+            ),
+        ),
+        NativeControlState(
             "pacific-transport-transit-witness",
             GoalSlotRequest(
                 StorageRequestId(
