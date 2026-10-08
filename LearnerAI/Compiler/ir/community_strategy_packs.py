@@ -1382,6 +1382,8 @@ def community_strategy_demands(
             }[age],
             tech_name=tech_name,
             native_tech_symbol={
+                "research-pikeman": "ri-pikeman",
+                "research-elite-skirmisher": "ri-elite-skirmisher",
                 "research-capped-ram": "ri-capped-ram",
                 "research-siege-ram": "ri-siege-ram",
             }.get(identity),
