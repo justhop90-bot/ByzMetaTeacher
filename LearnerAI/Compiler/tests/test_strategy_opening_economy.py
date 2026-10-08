@@ -519,8 +519,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         economy_facts = tuple(fact.source for fact in water_economy.facts)
         control_facts = tuple(fact.source for fact in water_control.facts)
 
-        self.assertIn("(current-age >= dark-age)", economy_facts)
-        self.assertIn("(current-age >= dark-age)", control_facts)
+        self.assertIn(
+            "(and (current-age >= dark-age) (current-age < castle-age))",
+            economy_facts,
+        )
+        self.assertIn(
+            "(and (current-age >= dark-age) (current-age < castle-age))",
+            control_facts,
+        )
         self.assertIn("(goal opening-plan 4)", economy_facts)
         self.assertIn("(goal opening-plan 5)", control_facts)
         self.assertNotIn("(current-age >= feudal-age)", economy_facts)
