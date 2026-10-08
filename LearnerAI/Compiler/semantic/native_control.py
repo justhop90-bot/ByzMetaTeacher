@@ -64,6 +64,7 @@ _CONTROL_COMMANDS = frozenset(
         "up-timer-status",
         "disable-self",
         "up-jump-rule",
+        "up-garrison",
     }
 )
 
