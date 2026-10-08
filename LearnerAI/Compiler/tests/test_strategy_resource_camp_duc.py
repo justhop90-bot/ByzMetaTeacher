@@ -30,6 +30,14 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                 place_identity = f"byzantine-camp-placement-{resource}-{floor}-place"
                 search_rule = next(rule for rule in plan.rules if rule.identity == search_identity)
                 place_rule = next(rule for rule in plan.rules if rule.identity == place_identity)
+                self.assertFalse(
+                    any(
+                        expression.head in {"not", "or", "and"}
+                        for rule in (search_rule, place_rule)
+                        for expression in rule.facts
+                    ),
+                    f"{resource} floor {floor} DUC guards must be native facts",
+                )
 
                 search_actions = {expression.source for expression in search_rule.actions}
                 place_facts = {expression.source for expression in place_rule.facts}
@@ -87,6 +95,10 @@ class ByzantineResourceCampDucTests(unittest.TestCase):
                 )
                 self.assertIn(
                     f"(set-goal demand-{demand_name} issued-{demand_name})",
+                    {action.source for action in place_rule.control_actions},
+                )
+                self.assertIn(
+                    "(set-goal action-claim-build-pass-singleton 1)",
                     {action.source for action in place_rule.control_actions},
                 )
 
