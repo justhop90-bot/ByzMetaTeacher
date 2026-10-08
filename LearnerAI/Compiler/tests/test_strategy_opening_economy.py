@@ -499,6 +499,33 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn(f"(not {castle_bank_ready})", water_economy_text)
         self.assertIn(f"(not {castle_bank_ready})", water_control_text)
 
+    def test_island_water_economy_controls_the_dark_age_bank(self):
+        profile = build_byzantine_strategy(self.effective)
+        compilation = lower_strategy_profile(profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+
+        water_economy = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-economy"
+        )
+        water_control = next(
+            rule
+            for rule in control.rules
+            if rule.identity == "economy-controller-select-water-control"
+        )
+
+        economy_facts = tuple(fact.source for fact in water_economy.facts)
+        control_facts = tuple(fact.source for fact in water_control.facts)
+
+        self.assertIn("(current-age >= dark-age)", economy_facts)
+        self.assertIn("(current-age >= dark-age)", control_facts)
+        self.assertIn("(goal opening-plan 4)", economy_facts)
+        self.assertIn("(goal opening-plan 5)", control_facts)
+        self.assertNotIn("(current-age >= feudal-age)", economy_facts)
+        self.assertNotIn("(current-age >= feudal-age)", control_facts)
+
     def test_castle_age_transition_executes_from_native_feasibility_only(self):
         profile = build_byzantine_strategy(self.effective)
         transition = profile.demand("castle-age-transition")
