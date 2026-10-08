@@ -272,6 +272,8 @@ class WaterTransportExecutionTests(unittest.TestCase):
 
         state_ids = {state.identifier for state in control.states}
         self.assertIn("pacific-transport-load-retry", state_ids)
+        self.assertIn("sn-number-garrison-units", state_ids)
+        self.assertIn("sn-maximum-garrison-fill", state_ids)
 
         rules = {rule.identity: rule for rule in control.rules}
         failure = rules["pacific-transport-lifecycle-load-failure-recover"]
@@ -289,6 +291,13 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertIn("(set-goal pacific-opening-transport-id 0)", actions)
         self.assertIn("(set-goal pacific-opening-transport-load-count 0)", actions)
         self.assertIn("(disable-timer pacific-transport-load-retry)", actions)
+
+        fallback = rules["pacific-transport-garrison-fallback"]
+        fallback_facts = tuple(fact.source for fact in fallback.facts)
+        fallback_actions = tuple(action.source for action in fallback.actions)
+        self.assertIn("(goal pacific-transport-lifecycle 1)", fallback_facts)
+        self.assertIn("(up-compare-goal pacific-opening-transport-load-count < 4)", fallback_facts)
+        self.assertIn("(up-garrison transport-ship c: villager)", fallback_actions)
 
         load_witness = rules["pacific-transport-lifecycle-load-witness"]
         witness_facts = tuple(fact.source for fact in load_witness.facts)
