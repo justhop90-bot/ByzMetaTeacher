@@ -20,6 +20,27 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
+    def test_castle_production_includes_pikeman_and_battering_ram_floors(self):
+        profile = build_byzantine_strategy(self.effective)
+
+        pikeman = profile.demand("castle-pikeman-floor")
+        self.assertEqual(pikeman.capability_intent.entity_id, "spearman-line")
+        self.assertEqual(pikeman.target.minimum, 6)
+        self.assertIn("(current-age >= castle-age)", pikeman.execution.requirements)
+        self.assertIn("(can-train-with-escrow pikeman)", pikeman.execution.requirements)
+        self.assertIn("(unit-type-count-total pikeman < 6)", pikeman.execution.requirements)
+        self.assertEqual(pikeman.execution.action, "(train pikeman)")
+        self.assertEqual(pikeman.execution.witness, "(unit-type-count pikeman >= 6)")
+
+        ram = profile.demand("castle-battering-ram-floor")
+        self.assertEqual(ram.capability_intent.entity_id, "ram-line")
+        self.assertEqual(ram.target.minimum, 2)
+        self.assertIn("(current-age >= castle-age)", ram.execution.requirements)
+        self.assertIn("(can-train-with-escrow battering-ram-line)", ram.execution.requirements)
+        self.assertIn("(unit-type-count-total battering-ram-line < 2)", ram.execution.requirements)
+        self.assertEqual(ram.execution.action, "(train battering-ram-line)")
+        self.assertEqual(ram.execution.witness, "(unit-type-count battering-ram-line >= 2)")
+
     def test_varangian_is_a_conditioned_castle_infantry_package(self):
         profile = build_byzantine_strategy(self.effective)
 
@@ -376,6 +397,65 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             "(not (and\n        (current-age == feudal-age)\n        (can-research-with-escrow castle-age)\n    ))",
             villager_rule,
         )
+
+    def test_checked_in_runtime_researches_pikeman_in_castle_and_capped_ram_in_imperial(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+
+        pike_start = runtime.index("; Pending diagnostics: research-pikeman")
+        pike_end = runtime.index("; Pending diagnostics: research-double-bit-axe", pike_start)
+        pike = runtime[pike_start:pike_end]
+        self.assertIn("(current-age >= castle-age)", pike)
+        self.assertIn("(can-research-with-escrow pikeman)", pike)
+        self.assertIn("(research pikeman)", pike)
+        self.assertIn("(research-completed 197)", pike)
+
+        ram_start = runtime.index("; Pending diagnostics: research-capped-ram")
+        ram_end = runtime.index("; Pending diagnostics: research-double-bit-axe", ram_start)
+        ram = runtime[ram_start:ram_end]
+        self.assertIn("(current-age >= imperial-age)", ram)
+        self.assertNotIn("(current-age >= castle-age)", ram)
+        self.assertIn("(can-research-with-escrow capped-ram)", ram)
+        self.assertIn("(research capped-ram)", ram)
+        self.assertIn("(research-completed 96)", ram)
+
+    def test_checked_in_runtime_secondary_mining_camps_select_indexed_active_resources(self):
+        repo_root = Path(__file__).resolve().parents[3]
+        runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
+        # Bound the terminal stone floor to the next executable section, not EOF.
+
+        for resource in ("gold", "stone"):
+            for floor in range(2, 6):
+                start = runtime.index(f"; economy-{resource}-camp-floor-{floor}")
+                if floor < 5:
+                    end = runtime.index(f"; economy-{resource}-camp-floor-{floor + 1}", start)
+                else:
+                    end = runtime.index("; Narrow Dark Age second-mill rule", start)
+                section = runtime[start:end]
+                self.assertIn(
+                    f"(up-find-resource c: {resource} c: 40)",
+                    section,
+                    f"{resource} floor {floor} must actively search the resource front",
+                )
+                self.assertIn(
+                    f"byzantine-dark-{resource}-camp-search-state-{floor}",
+                    section,
+                )
+                self.assertIn(
+                    f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
+                    section,
+                )
+                self.assertIn(
+                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    section,
+                )
+                self.assertIn("(up-build place-point 0 c: mining-camp)", section)
+                if resource == "stone":
+                    self.assertNotIn(
+                        "(dropsite-min-distance stone",
+                        section,
+                        f"stone floor {floor} must not use the global dropsite gate",
+                    )
 
     def test_checked_in_runtime_gold_floor_two_selects_second_active_gold(self):
         repo_root = Path(__file__).resolve().parents[3]
