@@ -426,6 +426,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(research ri-capped-ram)", canonical)
         self.assertNotIn("(can-research-with-escrow capped-ram)", canonical)
         self.assertNotIn("(research capped-ram)", canonical)
+        self.assertIn("(unit-type-count-total battering-ram-line >= 2)", canonical)
+        self.assertNotIn("(unit-type-count-total ram-line >= 2)", canonical)
 
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
