@@ -514,6 +514,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
 
+        for resource in ("gold", "stone"):
+            for floor in range(1, 6):
+                self.assertEqual(
+                    runtime.count(f"; economy-{resource}-camp-floor-{floor}"),
+                    1,
+                    f"{resource} floor {floor} must have exactly one lifecycle section",
+                )
+
         for identity in ("research-double-bit-axe", "research-horse-collar"):
             requirements = tuple(profile.demand(identity).execution.requirements)
             self.assertIn(
