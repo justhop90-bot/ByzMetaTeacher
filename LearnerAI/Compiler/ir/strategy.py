@@ -4651,7 +4651,11 @@ def _default_byzantine_duc_plan(
                 if resource == "stone"
                 else (f"(resource-found {resource})",)
             )
-            search_limit = 1 if floor == 1 else 40
+            search_limit = (
+                1
+                if (floor == 1 or (resource == "wood" and floor == 2))
+                else 40
+            )
             common_facts = (
                 parse_expression(f"(goal demand-{demand_name} 1)", SourceLocation(1)),
                 parse_expression(
