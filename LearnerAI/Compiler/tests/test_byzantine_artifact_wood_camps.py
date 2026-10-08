@@ -64,7 +64,7 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         self.assertIn("(unit-type-count-total villager >= 15)", fallback)
         self.assertIn("(resource-found wood)", fallback)
         self.assertIn("(can-build lumber-camp)", fallback)
-        self.assertIn("(building-type-count-total lumber-camp < 1)", fallback)
+        self.assertIn("(building-type-count-total 562 < 1)", fallback)
         self.assertIn("(goal action-claim-build-pass-singleton 0)", fallback)
 
     def test_point_search_constants_are_unique_and_bound_to_unused_goal_slots(self):
