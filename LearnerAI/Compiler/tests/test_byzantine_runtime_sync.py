@@ -544,11 +544,32 @@ if __name__ == "__main__":
         self.assertIn("; Native diagnostic control: byzantine-age-transition-trace-imperial-can-research-escrow-true", synchronized)
         self.assertIn("(up-chat-data-to-self", synchronized)
         for field in (
-            "CASTLE state=%d retry=%d claim=%d villagers=%d blacksmith=%d market=%d",
-            "CASTLE research-status=%d can-research=%d can-research-with-escrow=%d",
-            "IMPERIAL state=%d retry=%d claim=%d villagers=%d university=%d",
-            "IMPERIAL research-status=%d can-research=%d can-research-with-escrow=%d",
+            "BTTRACE CASTLE state=%d",
+            "BTTRACE CASTLE retry=%d",
+            "BTTRACE CASTLE age=%d",
+            "BTTRACE CASTLE villagers=%d",
+            "BTTRACE CASTLE blacksmith=%d",
+            "BTTRACE CASTLE market=%d",
+            "BTTRACE CASTLE claim=%d",
+            "BTTRACE IMPERIAL state=%d",
+            "BTTRACE IMPERIAL retry=%d",
+            "BTTRACE IMPERIAL age=%d",
+            "BTTRACE IMPERIAL villagers=%d",
+            "BTTRACE IMPERIAL university=%d",
+            "BTTRACE IMPERIAL claim=%d",
+            "BTTRACE CASTLE research-status=%d",
+            "BTTRACE IMPERIAL research-status=%d",
+            "BTTRACE CASTLE can-research=%d",
+            "BTTRACE CASTLE can-research-with-escrow=%d",
+            "BTTRACE IMPERIAL can-research=%d",
+            "BTTRACE IMPERIAL can-research-with-escrow=%d",
         ):
             self.assertIn(field, synchronized)
-        self.assertIn("(up-research-status c: 102 >= 3)", synchronized)
-        self.assertIn("(up-research-status c: 103 >= 3)", synchronized)
+        self.assertIn("(up-research-status c: 102 == 4)", synchronized)
+        self.assertIn("(up-research-status c: 102 == 3)", synchronized)
+        self.assertIn("(up-research-status c: 102 == 2)", synchronized)
+        self.assertIn("(up-research-status c: 102 == 1)", synchronized)
+        self.assertIn("(up-research-status c: 103 == 4)", synchronized)
+        self.assertIn("(up-research-status c: 103 == 3)", synchronized)
+        self.assertIn("(up-research-status c: 103 == 2)", synchronized)
+        self.assertIn("(up-research-status c: 103 == 1)", synchronized)
