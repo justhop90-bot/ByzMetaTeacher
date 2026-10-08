@@ -4609,7 +4609,13 @@ def _default_byzantine_duc_plan(
     for resource, building, maximum in camp_specs:
         building_id = resolve_building_id(building)
         for floor in range(1, maximum + 1):
-            demand_name = f"economy-{resource}-camp-floor-{floor}"
+            demand_name = (
+                f"economy-lumber-camp-floor-{floor}"
+                if resource == "wood" and floor <= 2
+                else f"economy-wood-camp-floor-{floor}"
+                if resource == "wood"
+                else f"economy-{resource}-camp-floor-{floor}"
+            )
             identity = f"byzantine-camp-placement-{resource}-{floor}"
             search_identity = f"{identity}-search"
             point_identity = f"{identity}-place"
@@ -4708,7 +4714,7 @@ def _default_byzantine_duc_plan(
                 )
             )
 
-            index = floor - 1
+            index = 0 if floor <= 2 else floor - 2
             placement_facts = (
                 *common_facts,
                 parse_expression(
