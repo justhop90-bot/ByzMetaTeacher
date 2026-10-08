@@ -4055,7 +4055,7 @@ def build_land_castle_strategy(
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age == dark-age)",
-                    "(unit-type-count-total villager >= 21)",
+                    "(unit-type-count-total villager >= 20)",
                     "(can-research-with-escrow feudal-age)",
                 ),
                 action="(research feudal-age)",
