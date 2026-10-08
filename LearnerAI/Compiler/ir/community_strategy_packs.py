@@ -1008,7 +1008,8 @@ def community_strategy_demands(
                 "(can-train villager)",
                 "(not (and (current-age == dark-age) "
                 "(and (unit-type-count-total villager >= 20) "
-                "(can-afford-research feudal-age))))",
+                "(or (can-afford-research feudal-age) "
+                "(map-type pacific-islands)))))",
                 "(not (and (current-age == feudal-age) "
                 "(and (unit-type-count-total villager >= 28) "
                 "(and (building-type-count-total blacksmith >= 1) "
