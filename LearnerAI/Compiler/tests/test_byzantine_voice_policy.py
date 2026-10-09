@@ -38,9 +38,15 @@ class ByzantineVoicePolicyTests(unittest.TestCase):
             "strategos-gold-recovery",
             "strategos-reassessment",
             "strategos-endgame-advance",
+            "strategos-online",
         }
         self.assertEqual({rule.identity for rule in plan.rules}, expected)
-        self.assertEqual(len(plan.rules), 14)
+        self.assertEqual(len(plan.rules), 15)
+        online = next(rule for rule in plan.rules if rule.identity == "strategos-online")
+        self.assertIs(online.priority, VoicePriority.FLAVOR)
+        self.assertEqual(online.audience.value, "ALL")
+        self.assertEqual(online.trigger.source, "(game-time >= 30)")
+        self.assertEqual(online.clear.source, "(game-time < 30)")
         validate_native_voice_plan(plan)
 
     def test_voice_priorities_keep_critical_combat_events_above_context(self) -> None:
