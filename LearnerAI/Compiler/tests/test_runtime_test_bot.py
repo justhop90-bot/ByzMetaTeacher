@@ -180,6 +180,58 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertNotIn("(players-unit-type-count any-enemy mangonel-line >= 2)", rule)
         self.assertNotIn("byzantine-imperial-posture-siege", rule)
 
+
+    def test_secondary_mining_camp_floors_are_age_gated_at_every_build_seam(self) -> None:
+        for rule in self.rules:
+            pre, separator, post = rule.partition("=>")
+            if not separator:
+                continue
+            demand = re.search(
+                r"\\(goal demand-economy-(gold|stone)-camp-floor-(\\d+)\\s+1\\)",
+                pre,
+            )
+            if demand is None:
+                continue
+            resource, floor_text = demand.groups()
+            floor = int(floor_text)
+            issues_mining_camp = any(
+                action in post
+                for action in (
+                    "(build mining-camp)",
+                    "(up-build place-point 0 c: mining-camp)",
+                    "(up-build place-point 0 c: 584)",
+                )
+            )
+            must_wait_for_feudal = resource == "stone" or floor >= 2
+            if issues_mining_camp and must_wait_for_feudal:
+                self.assertIn(
+                    "(current-age >= feudal-age)",
+                    pre,
+                    f"{resource} camp floor {floor} can issue before Feudal Age: {rule[:700]}",
+                )
+
+    def test_secondary_gold_demands_do_not_reactivate_during_dark_age(self) -> None:
+        for floor in range(2, 6):
+            start = self.runtime.index(f"; economy-gold-camp-floor-{floor}")
+            end_marker = (
+                f"; economy-gold-camp-floor-{floor + 1}"
+                if floor < 5
+                else "; economy-stone-camp-floor-1"
+            )
+            section = self.runtime[start:self.runtime.index(end_marker, start)]
+            activation_rules = [
+                rule for rule in defrule_blocks(section)
+                if f"(goal demand-economy-gold-camp-floor-{floor} 0)" in rule
+                and "(resource-found gold)" in rule
+                and f"(set-goal demand-economy-gold-camp-floor-{floor} 1)" in rule
+            ]
+            self.assertEqual(len(activation_rules), 1, f"gold floor {floor}")
+            self.assertIn(
+                "(current-age >= feudal-age)",
+                activation_rules[0].split("=>", 1)[0],
+                f"gold floor {floor} reactivates during Dark Age",
+            )
+
     def test_no_dark_age_stone_camp_issuance(self) -> None:
         for rule in self.rules:
             if "(build mining-camp)" not in rule:
