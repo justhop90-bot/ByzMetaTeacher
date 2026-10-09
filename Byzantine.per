@@ -29457,9 +29457,14 @@
     (goal byzantine-offensive-objective-claim 0)
     (not (town-under-attack))
     (military-population >= 40)
-    (unit-type-count halberdier >= 18)
-    (unit-type-count 6 >= 18)
-    (unit-type-count hussar >= 12)
+        (unit-type-count halberdier >= 8)
+    (or
+        (unit-type-count-total trebuchet >= 2)
+        (or
+            (unit-type-count-total bombard-cannon >= 2)
+            (unit-type-count-total battering-ram-line >= 2)
+        )
+    )
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 5)
 =>
@@ -29516,25 +29521,24 @@
 ; Native control rule: byzantine-imperial-band-clear-overwhelm-halberd-floor
 (defrule
     (goal byzantine-imperial-band-candidate 5)
-    (unit-type-count halberdier < 18)
+    (unit-type-count halberdier < 8)
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
 )
 
-; Native control rule: byzantine-imperial-band-clear-overwhelm-skirmisher-floor
+; Native control rule: byzantine-imperial-band-clear-overwhelm-siege-loss
 (defrule
     (goal byzantine-imperial-band-candidate 5)
-    (unit-type-count 6 < 18)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-overwhelm-hussar-floor
-(defrule
-    (goal byzantine-imperial-band-candidate 5)
-    (unit-type-count hussar < 12)
+    (not
+        (or
+            (unit-type-count-total trebuchet >= 2)
+            (or
+                (unit-type-count-total bombard-cannon >= 2)
+                (unit-type-count-total battering-ram-line >= 2)
+            )
+        )
+    )
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -29894,9 +29898,14 @@
     (goal byzantine-offensive-objective-claim 0)
     (not (town-under-attack))
     (military-population >= 40)
-    (unit-type-count halberdier >= 18)
-    (unit-type-count 6 >= 18)
-    (unit-type-count hussar >= 12)
+        (unit-type-count halberdier >= 8)
+    (or
+        (unit-type-count-total trebuchet >= 2)
+        (or
+            (unit-type-count-total bombard-cannon >= 2)
+            (unit-type-count-total battering-ram-line >= 2)
+        )
+    )
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
     (set-goal byzantine-imperial-band-state 1)
