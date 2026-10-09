@@ -661,10 +661,9 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         self.assertLessEqual(search_state, 15996)
         self.assertGreaterEqual(remote_count, 1)
         self.assertLessEqual(remote_count, 16000)
-        self.assertTrue(
-            remote_count < search_state or remote_count > search_state + 3,
-            "remote-count Goal must not overlap the four-slot search-state span",
-        )
+        # up-get-search-state writes four consecutive Goals; offset +3 is
+        # remote_list_count, the cardinality witness used for indexed placement.
+        self.assertEqual(remote_count, search_state + 3)
         self.assertIn(
             "(up-compare-goal byzantine-dark-mill-search-remote-count > 0)",
             build_rule,
