@@ -187,7 +187,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             if not separator:
                 continue
             demand = re.search(
-                r"\\(goal demand-economy-(gold|stone)-camp-floor-(\\d+)\\s+1\\)",
+                r"\(goal demand-economy-(gold|stone)-camp-floor-(\d+)\s+1\)",
                 pre,
             )
             if demand is None:
