@@ -338,6 +338,28 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             )
             self.assertEqual(demand.initial_state.name, "RELEASED")
 
+
+    def test_secondary_mining_camp_floors_explicitly_wait_for_feudal_age(self):
+        profile = build_byzantine_strategy(self.effective)
+        for resource in ("gold", "stone"):
+            for floor in range(2, 6):
+                demand = profile.demand(f"economy-{resource}-camp-floor-{floor}")
+                requirements = " ".join(demand.execution.requirements)
+                self.assertIn(
+                    "(current-age >= feudal-age)",
+                    requirements,
+                    f"{resource} camp floor {floor} has no Feudal-age execution gate",
+                )
+                if resource == "gold":
+                    self.assertEqual(
+                        tuple(item.observation_ref for item in demand.reason),
+                        ("camp-front-gold-secondary-active",),
+                    )
+                    self.assertEqual(
+                        tuple(item.observation_ref for item in demand.admissibility),
+                        ("camp-front-gold-secondary-active",),
+                    )
+
     def test_adaptive_outpost_requires_feudal_pressure_and_resource_exposure(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("adaptive-outpost")
@@ -507,8 +529,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
                     section,
                 )
-                remote_index = floor - 2
-                remote_threshold = floor - 2
+                remote_index = floor - 1
+                remote_threshold = floor - 1
                 self.assertIn(
                     f"(up-compare-goal byzantine-dark-{resource}-camp-search-remote-count-{floor} > {remote_threshold})",
                     section,
@@ -524,7 +546,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                         section,
                     )
 
-    def test_checked_in_runtime_gold_floor_two_selects_first_remote_gold(self):
+    def test_checked_in_runtime_gold_floor_two_skips_the_first_served_resource_object(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
         start = runtime.index("; economy-gold-camp-floor-2")
@@ -534,11 +556,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("(dropsite-min-distance gold", floor_two)
         self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
         self.assertIn(
-            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)",
+            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)",
             floor_two,
         )
         self.assertIn(
-            "(up-set-target-object search-remote c: 0)",
+            "(up-set-target-object search-remote c: 1)",
             floor_two,
         )
 

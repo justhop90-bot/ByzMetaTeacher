@@ -811,6 +811,17 @@ def community_strategy_observations(
                 ),
             )
         )
+        if resource is CampResource.GOLD:
+            observations.append(
+                _observation(
+                    "camp-front-gold-secondary-active",
+                    "(and (current-age >= feudal-age) (resource-found gold))",
+                    _airef_provenance(
+                        effective,
+                        "commands/commands-details.html#resource-found",
+                    ),
+                )
+            )
 
 
     observations.append(
@@ -1001,15 +1012,25 @@ def community_strategy_demands(
             item.expression for item in observations if item.identity == remote_ref
         )
         for floor in range(1, max_count + 1):
+            floor_active_ref = (
+                "camp-front-gold-secondary-active"
+                if resource is CampResource.GOLD and floor >= 2
+                else active_ref
+            )
+            floor_active_expression = next(
+                item.expression
+                for item in observations
+                if item.identity == floor_active_ref
+            )
             count_guard = f"(building-type-count-total {int(building.id)} < {floor})"
             requirements = [
-                active_expression,
+                floor_active_expression,
                 count_guard,
                 f"(can-build {_slug(building.name)})",
             ]
             if floor >= 2:
                 requirements = [
-                    active_expression,
+                    floor_active_expression,
                     remote_expression,
                     count_guard,
                     f"(can-build {_slug(building.name)})",
@@ -1039,14 +1060,14 @@ def community_strategy_demands(
                         _persistent(
                             f"Active {label} resource front requires a functional "
                             f"{label} dropsite floor {floor}",
-                            active_ref,
+                            floor_active_ref,
                         ),
                     ),
                     admissibility=(
                         _persistent(
                             f"The {label} camp floor remains strategically admissible "
                             "while the resource front is active",
-                            active_ref,
+                            floor_active_ref,
                         ),
                     ),
                     invalidation=(),

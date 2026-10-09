@@ -37,8 +37,18 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 self.assertEqual(demand.capability_intent.kind.value, "BUILD")
                 self.assertEqual(demand.execution_demands[0].action, f"(build {'lumber-camp' if resource == 'wood' else 'mining-camp'})")
                 requirements = demand.execution_demands[0].requirements
-                self.assertIn(active.identity, {item.observation_ref for item in demand.reason})
-                self.assertIn(active.expression, requirements)
+                floor_active = (
+                    profile.observation("camp-front-gold-secondary-active")
+                    if resource == "gold" and floor >= 2
+                    else active
+                )
+                self.assertIn(
+                    floor_active.identity,
+                    {item.observation_ref for item in demand.reason},
+                )
+                self.assertIn(floor_active.expression, requirements)
+                if resource == "gold" and floor >= 2:
+                    self.assertIn("(current-age >= feudal-age)", floor_active.expression)
                 self.assertIn("(building-type-count", demand.execution_demands[0].witness)
                 if floor >= 3:
                     self.assertIn(remote.expression, requirements)

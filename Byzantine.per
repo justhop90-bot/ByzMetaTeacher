@@ -17273,6 +17273,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-2 0)
+    (current-age >= feudal-age)
     (resource-found gold)
     (not (building-type-count mining-camp >= 2))
 =>
@@ -17327,6 +17328,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-2 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 2))
     (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
     (up-pending-objects c: 584 == 0)
@@ -17346,17 +17348,18 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-2 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 2))
     (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 =>
-    (up-set-target-object search-remote c: 0)
+    (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17374,6 +17377,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-3 0)
+    (current-age >= feudal-age)
     (resource-found gold)
     (not (building-type-count mining-camp >= 3))
 =>
@@ -17428,6 +17432,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-3 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 3))
     (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
     (up-pending-objects c: 584 == 0)
@@ -17447,17 +17452,18 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-3 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 3))
     (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 1)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 2)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 =>
-    (up-set-target-object search-remote c: 1)
+    (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17475,6 +17481,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-4 0)
+    (current-age >= feudal-age)
     (resource-found gold)
     (not (building-type-count mining-camp >= 4))
 =>
@@ -17529,6 +17536,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-4 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 4))
     (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
     (up-pending-objects c: 584 == 0)
@@ -17548,17 +17556,18 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-4 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 4))
     (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 2)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 3)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 =>
-    (up-set-target-object search-remote c: 2)
+    (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17576,6 +17585,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-5 0)
+    (current-age >= feudal-age)
     (resource-found gold)
     (not (building-type-count mining-camp >= 5))
 =>
@@ -17630,6 +17640,7 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-5 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 5))
     (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
     (up-pending-objects c: 584 == 0)
@@ -17649,17 +17660,18 @@
 
 (defrule
     (goal demand-economy-gold-camp-floor-5 1)
+    (current-age >= feudal-age)
     (not (building-type-count mining-camp >= 5))
     (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
     (up-pending-objects c: 584 == 0)
     (not (up-pending-placement c: 584))
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
-    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 3)
+    (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 4)
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 =>
-    (up-set-target-object search-remote c: 3)
+    (up-set-target-object search-remote c: 4)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17837,9 +17849,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 2)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 0)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 1)
 =>
-    (up-set-target-object search-remote c: 0)
+    (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -17939,9 +17951,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 3)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 1)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-3 > 2)
 =>
-    (up-set-target-object search-remote c: 1)
+    (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -18041,9 +18053,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 4)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 2)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-4 > 3)
 =>
-    (up-set-target-object search-remote c: 2)
+    (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
@@ -18143,9 +18155,9 @@
     (can-build mining-camp)
     (building-type-count-total mining-camp < 5)
 
-    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 3)
+    (up-compare-goal byzantine-dark-stone-camp-search-remote-count-5 > 4)
 =>
-    (up-set-target-object search-remote c: 3)
+    (up-set-target-object search-remote c: 4)
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
