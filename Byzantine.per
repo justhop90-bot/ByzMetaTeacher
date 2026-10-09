@@ -306,6 +306,13 @@
 (defconst byzantine-feudal-package-scout 3)
 (defconst byzantine-feudal-package-maa 4)
 (defconst byzantine-feudal-package-trash 5)
+
+; Feudal scout rush (taunt 99)
+(defconst byzantine-scout-rush-state 16100)
+(defconst byzantine-scout-rush-idle 0)
+(defconst byzantine-scout-rush-armed 1)
+(defconst byzantine-scout-rush-timer 16101)
+(defconst bt-byzantine-scout-rush-seconds 90)
 (defconst bt-feudal-archer-floor 4)
 (defconst bt-feudal-scout-floor 4)
 (defconst bt-feudal-maa-floor 4)
@@ -329,6 +336,34 @@
 (defconst complete-feudal-maa-upgrade 345)
 (defconst issued-feudal-maa-upgrade 346)
 (defconst research-retry-barrier-feudal-maa-upgrade 347)
+; Loom lifecycle. Tech 22 numeric (no new engine binding). IDs 16200+ are
+; verified free; same ACTIVE/ISSUED/PENDING/COMPLETE + retry-barrier family.
+(defconst demand-research-loom 400)
+(defconst pending-research-loom 401)
+(defconst complete-research-loom 402)
+(defconst issued-research-loom 403)
+(defconst research-retry-barrier-research-loom 404)
+; Research preempt flag: 1 while an armed, affordable Barracks/Range/Siege
+; upgrade waits on a queue clogged by unit trains. Verified-free goal.
+(defconst byzantine-research-preempt 405)
+; Castle-bank latch: 1 while quietly banking for Castle (Feudal, mature eco,
+; no raid). Trains check one flat goal instead of a nested veto the loader
+; rejects. Reset-first idiom: cleared every pass, reasserted while true.
+(defconst byzantine-bank-ready 434)
+; Husbandry lifecycle [game evidence: never researched; stable units ran
+; unupgraded all game]. Same family. Verified-free IDs.
+(defconst demand-research-husbandry 415)
+(defconst pending-research-husbandry 416)
+(defconst complete-research-husbandry 417)
+(defconst issued-research-husbandry 432)
+(defconst research-retry-barrier-research-husbandry 433)
+; Light Cavalry lifecycle (game evidence: absent entirely, locking Hussars).
+; Same ACTIVE/ISSUED/PENDING/COMPLETE + retry family. Verified-free IDs.
+(defconst demand-research-light-cavalry 406)
+(defconst pending-research-light-cavalry 407)
+(defconst complete-research-light-cavalry 408)
+(defconst issued-research-light-cavalry 409)
+(defconst research-retry-barrier-research-light-cavalry 413)
 ; NATIVE-PASS-CONSTRAINT build maximum-successes=1
 (defconst demand-economy-house-floor-1 69)
 (defconst issued-economy-house-floor-1 72)
@@ -635,6 +670,13 @@
 (defconst pending-research-hussar 116)
 (defconst complete-research-hussar 117)
 (defconst research-retry-barrier-research-hussar 243)
+
+; Imperial Light Cavalry floor: maintains 6+ so Hussar research gate (546 >= 6) passes
+(defconst demand-imperial-light-cavalry-floor 16000)
+(defconst issued-imperial-light-cavalry-floor 16003)
+(defconst pending-imperial-light-cavalry-floor 16001)
+(defconst complete-imperial-light-cavalry-floor 16002)
+(defconst production-retry-barrier-imperial-light-cavalry-floor 16004)
 (defconst demand-research-onager 117)
 (defconst issued-research-onager 120)
 (defconst pending-research-onager 118)
@@ -1626,6 +1668,10 @@
 (defconst byzantine-frontier-search-local-list 682)
 (defconst byzantine-frontier-search-remote-list 15375)
 (defconst bt-byzantine-army-reposition-seconds 90)
+; Defensive hold cadence [game evidence: lone defenders fed piecemeal to
+; rushes]. Verified-free timer.
+(defconst byzantine-defensive-hold-timer 23)
+(defconst bt-byzantine-defensive-hold-seconds 20)
 (defconst byzantine-university-research-claim 516)
 
 ; Defensive University research lifecycles.
@@ -1751,7 +1797,7 @@
     )
 =>
     (set-goal byzantine-relic-control-state 1)
-    (enable-timer byzantine-relic-control-timer 45)
+    (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
 )
 
 ; Native control rule: byzantine-relic-control-pickup-witness
@@ -1778,7 +1824,7 @@
     (building-type-count-total 104 >= 1)
     (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
 =>
-    (enable-timer byzantine-relic-control-timer 45)
+    (enable-timer byzantine-relic-control-timer bt-byzantine-relic-control-seconds)
 )
 
 ; Native control rule: byzantine-relic-control-carrier-loss-recovery
@@ -1800,6 +1846,33 @@
 =>
     (disable-timer byzantine-relic-control-timer)
     (set-goal byzantine-relic-control-state 0)
+)
+
+; Native control rule: byzantine-relic-control-parallel-grab
+; In-style repair: the base acquire needs carrier<1, so one carrier stalls all
+; other monks and the 5-relic Arena race is fought single-file. On Arena only
+; (Arabia untouched), when exactly one carrier is out and a second free monk
+; exists, dispatch it with the same DUC verbs as base acquire. Carriers are
+; type 286 while find-local 125 selects only free monks, so the carrier cannot
+; be picked. Sets state 2, which is already true (carrier out); self-limiting
+; because it needs state 0 and fires at most once per expiry cycle.
+(defrule
+    (current-age >= castle-age)
+    (map-type arena)
+    (goal byzantine-relic-control-state 0)
+    (building-type-count-total 104 >= 1)
+    (unit-type-count-total 125 >= 2)
+    (unit-type-count-total 286 >= 1)
+    (unit-type-count-total 286 < 2)
+    (up-gaia-type-count-total c: 285 > 0)
+    (up-timer-status byzantine-relic-control-timer c:== timer-disabled)
+=>
+    (up-full-reset-search)
+    (up-find-remote c: 285 c: 1)
+    (up-set-target-object search-remote c: 0)
+    (up-find-local c: 125 c: 1)
+    (up-target-objects 0 0 -1 stance-defensive)
+    (set-goal byzantine-relic-control-state 2)
 )
 
 ; Native DUC rule: byzantine-relic-control-acquire
@@ -1864,6 +1937,9 @@
 ; -----------------------------------------------------------------------------
 
 ; Defensive Monk state activation.
+; G3 repair: relic-lead branch. Gaia swept (<=1 left) + 2 monks standing usually
+; means we hold the income; keep them healing home instead of wandering.
+; Imperfect witness (enemy could hold them) but monks-alive dominates either way.
 (defrule
     (goal byzantine-monk-defense-state byzantine-monk-defense-idle)
     (current-age >= castle-age)
@@ -1876,7 +1952,13 @@
                 (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
                 (or
                     (goal byzantine-frontier-state byzantine-frontier-state-protected)
-                    (players-unit-type-count any-enemy mangonel-line >= 2)
+                    (or
+                        (players-unit-type-count any-enemy mangonel-line >= 2)
+                        (and
+                            (up-gaia-type-count-total c: 285 <= 1)
+                            (unit-type-count-total monk >= 2)
+                        )
+                    )
                 )
             )
         )
@@ -1901,7 +1983,13 @@
                     (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
                     (or
                         (goal byzantine-frontier-state byzantine-frontier-state-protected)
-                        (players-unit-type-count any-enemy mangonel-line >= 2)
+                        (or
+                            (players-unit-type-count any-enemy mangonel-line >= 2)
+                            (and
+                                (up-gaia-type-count-total c: 285 <= 1)
+                                (unit-type-count-total monk >= 2)
+                            )
+                        )
                     )
                 )
             )
@@ -4204,279 +4292,16 @@
 ; Castle attack-now is intentionally subordinated to the persistent army plan.
 ; The plan's own attack trigger lives below with reinforcement/reassessment.
 
-; Native escrow release plan
-; Native escrow release rule: 0
+; Native escrow release plan - CONSOLIDATED (T5 in-style repair)
+; Formerly 35 unconditional [true] release rules firing every pass [food/wood/gold
+; in various pairs]. Union is food+wood+gold with no stone, fired every pass, so
+; a single rule is behavior-identical and saves 34 rule evaluations per pass
+; toward the DE rule budget. No bitmask/escrow-saving system imported; the bot
+; runs on stock + claim-gated research issuance as before. Lifecycle unchanged.
 (defrule
     (true)
 =>
     (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 9
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 37
-(defrule
-    (true)
-=>
-    (release-escrow food)
-)
-
-; Native escrow release rule: 38
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 39
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 40
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 41
-(defrule
-    (true)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 42
-(defrule
-    (true)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 43
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 44
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 45
-(defrule
-    (true)
-=>
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 46
-(defrule
-    (true)
-=>
-    (release-escrow food)
-)
-
-; Native escrow release rule: 47
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 48
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 49
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 50
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 51
-(defrule
-    (true)
-=>
-    (release-escrow food)
-)
-
-; Native escrow release rule: 52
-(defrule
-    (true)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 53
-(defrule
-    (true)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 54
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 55
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 56
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 57
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 58
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 59
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 60
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 61
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 62
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 80
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 81
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow wood)
-)
-
-; Native escrow release rule: 82
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 83
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 84
-(defrule
-    (true)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 85
-(defrule
-    (true)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-)
-
-; Native escrow release rule: 86
-(defrule
-    (true)
-=>
     (release-escrow wood)
     (release-escrow gold)
 )
@@ -4560,6 +4385,10 @@
 (defconst issued-castle-age-transition 278)
 (defconst research-retry-barrier-castle-age-transition 280)
 (defconst bt-castle-age-villager-maturity 28)
+; Open-land maturity keeps the Castle bank sustainable behind Feudal pressure.
+; Arena FC keeps 28; Arabia standard/counter/recovery uses 31. Same threshold
+; family as bt-castle-age-villager-maturity, not a second scheduler.
+(defconst bt-castle-age-villager-arabia 31)
 ; Byzantine Imperial-Age maturity follows the community-native civilian
 ; bank discipline. This is a policy threshold, not an engine fact.
 (defconst bt-imperial-age-villager-maturity 50)
@@ -4725,6 +4554,7 @@
 (defconst byzantine-market-sell-wood 1)
 (defconst byzantine-market-buy-food 2)
 (defconst byzantine-market-buy-wood 3)
+(defconst byzantine-market-sell-stone 4)
 ; Fortification locality probe state. The probe anchors defensive checks to the
 ; nearest enemy TC rather than treating any enemy defensive building anywhere
 ; on the map as relevant to the current attack.
@@ -5597,6 +5427,10 @@
 ; Standard open-land Feudal pressure starts from Archers rather than
 ; blindly provisioning every production building. Fast-Castle and water
 ; openings stay minimal unless an actual land threat is observed.
+; G5 repair: counter-switch hysteresis. Enemy archers/spears hovering at the
+; 3/4 boundary flipped archer<->skirm/scout every pass, wasting queues and a
+; 175w Range per flip. Enter skirm at 3 / scout at 4, exit only below 2 / 3.
+; (Anti-infantry keeps no guard: 5+ militia is strong evidence either way.)
 (defrule
     (current-age == feudal-age)
     (or
@@ -5608,6 +5442,14 @@
     (not (players-unit-type-count any-enemy archer-line >= 3))
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (not (players-unit-type-count any-enemy 93 >= 4))
+    (or
+        (not (goal byzantine-feudal-army-package byzantine-feudal-package-skirmisher))
+        (players-unit-type-count any-enemy archer-line < 2)
+    )
+    (or
+        (not (goal byzantine-feudal-army-package byzantine-feudal-package-scout))
+        (players-unit-type-count any-enemy 93 < 3)
+    )
 =>
     (set-goal byzantine-feudal-army-package byzantine-feudal-package-archer)
 )
@@ -6941,6 +6783,7 @@
     (and (and (current-age >= feudal-age) (current-age < castle-age)) (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5))))
     (not (map-type arena))
     (not (goal opening-plan 6))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 2)
 )
@@ -6953,6 +6796,7 @@
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 3)
     (not (goal opening-plan 6))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 3)
 )
@@ -6965,6 +6809,7 @@
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 2)
     (not (goal opening-plan 6))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 2)
 )
@@ -6977,6 +6822,7 @@
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 4)
     (not (goal opening-plan 6))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 4)
 )
@@ -6989,6 +6835,7 @@
     (not (players-unit-type-count any-enemy militia-line >= 5))
     (goal opening-plan 5)
     (not (goal opening-plan 6))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 5)
 )
@@ -6997,6 +6844,7 @@
 (defrule
     (current-age < castle-age)
     (or (goal opening-plan 1) (goal opening-plan 6))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 1)
 )
@@ -7004,6 +6852,7 @@
 ; Native control rule: economy-controller-select-castle-conversion
 (defrule
     (and (current-age >= castle-age) (current-age < imperial-age))
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 6)
 )
@@ -7011,13 +6860,16 @@
 ; Native control rule: economy-controller-select-imperial-conversion
 (defrule
     (current-age >= imperial-age)
+    (or (not (goal economy-posture 8)) (food-amount >= 600))
 =>
     (set-goal economy-posture 7)
 )
 
 ; Native control rule: economy-controller-select-food-recovery
+; In-style repair: enter at <300 (genuine crisis, not a dip), hold via guards
+; on selectors below until food>=600. Stops 350-boundary posture flapping.
 (defrule
-    (food-amount < 350)
+    (food-amount < 300)
 =>
     (set-goal economy-posture 8)
 )
@@ -7749,6 +7601,24 @@
 (defrule
     (true)
 =>
+    (set-goal research-retry-barrier-research-loom 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal research-retry-barrier-research-light-cavalry 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal research-retry-barrier-research-husbandry 0)
+)
+
+(defrule
+    (true)
+=>
     (set-goal production-retry-barrier-counter-castle-camels 0)
 )
 
@@ -8178,11 +8048,20 @@
 )
 
 (defrule
-    (current-age >= castle-age)
+    ; D3 repair: probe ran Castle+/45v only; Feudal stuck miners never observed.
+    ; Feudal eligible at 30 vills [Castle behavior broadened 45->30, benign:
+    ; the probe only acts on missing/far dropsites with low banks].
+    (or
+        (current-age >= castle-age)
+        (and
+            (current-age == feudal-age)
+            (unit-type-count-total villager >= 30)
+        )
+    )
     (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
     (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
-    (unit-type-count-total villager >= 45)
+    (unit-type-count-total villager >= 30)
     (not (town-under-attack))
     (goal byzantine-army-reinforcement 0)
     (timer-triggered byzantine-remote-resource-productivity-timer)
@@ -8194,11 +8073,20 @@
 )
 
 (defrule
-    (current-age >= castle-age)
+    ; D3 repair: probe ran Castle+/45v only; Feudal stuck miners never observed.
+    ; Feudal eligible at 30 vills [Castle behavior broadened 45->30, benign:
+    ; the probe only acts on missing/far dropsites with low banks].
+    (or
+        (current-age >= castle-age)
+        (and
+            (current-age == feudal-age)
+            (unit-type-count-total villager >= 30)
+        )
+    )
     (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
     (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
-    (unit-type-count-total villager >= 45)
+    (unit-type-count-total villager >= 30)
     (not (town-under-attack))
     (goal byzantine-army-reinforcement 0)
     (timer-triggered byzantine-remote-resource-productivity-timer)
@@ -8210,11 +8098,20 @@
 )
 
 (defrule
-    (current-age >= castle-age)
+    ; D3 repair: probe ran Castle+/45v only; Feudal stuck miners never observed.
+    ; Feudal eligible at 30 vills [Castle behavior broadened 45->30, benign:
+    ; the probe only acts on missing/far dropsites with low banks].
+    (or
+        (current-age >= castle-age)
+        (and
+            (current-age == feudal-age)
+            (unit-type-count-total villager >= 30)
+        )
+    )
     (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
     (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
-    (unit-type-count-total villager >= 45)
+    (unit-type-count-total villager >= 30)
     (not (town-under-attack))
     (goal byzantine-army-reinforcement 0)
     (timer-triggered byzantine-remote-resource-productivity-timer)
@@ -8226,11 +8123,20 @@
 )
 
 (defrule
-    (current-age >= castle-age)
+    ; D3 repair: probe ran Castle+/45v only; Feudal stuck miners never observed.
+    ; Feudal eligible at 30 vills [Castle behavior broadened 45->30, benign:
+    ; the probe only acts on missing/far dropsites with low banks].
+    (or
+        (current-age >= castle-age)
+        (and
+            (current-age == feudal-age)
+            (unit-type-count-total villager >= 30)
+        )
+    )
     (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
     (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
     (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
-    (unit-type-count-total villager >= 45)
+    (unit-type-count-total villager >= 30)
     (not (town-under-attack))
     (goal byzantine-army-reinforcement 0)
     (timer-triggered byzantine-remote-resource-productivity-timer)
@@ -8239,6 +8145,30 @@
     (dropsite-min-distance wood > 18)
 =>
     (set-goal byzantine-remote-resource-state byzantine-remote-resource-observe)
+)
+
+; Far-gold abandon/return loop [game evidence: miners walking to enemy gold
+; under castles with no camp built]. While rich, bleed 2 miners per probe tick
+; off suicide gold (>25 tiles); while poor with a safe camp, send 2 back. The
+; 800/1500 band is hysteresis against oscillation; R1 above lands the near camp
+; that ends both conditions. Read-only on the probe timer, native verbs only.
+(defrule
+    (current-age >= imperial-age)
+    (dropsite-min-distance gold > 25)
+    (gold-amount > 1500)
+    (up-timer-status byzantine-remote-resource-productivity-timer c:== timer-triggered)
+=>
+    (up-retask-gatherers gold c: 2)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (dropsite-min-distance gold >= 0)
+    (dropsite-min-distance gold <= 25)
+    (gold-amount < 800)
+    (up-timer-status byzantine-remote-resource-productivity-timer c:== timer-triggered)
+=>
+    (up-retask-gatherers wood c: 2)
 )
 
 ; Deterministic resource winner: gold first, then wood.
@@ -8441,6 +8371,21 @@
     (set-goal demand-castle-cataphract-floor 1)
 )
 
+; W6 Castle stream: hold 8 Cataphracts, not 4, once TC2 + vil50 + 20 farms
+; carry it. Same demand, mutually exclusive with the floor above (>=4 here).
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal demand-castle-cataphract-floor 0)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count-total villager >= 50)
+    (building-type-count farm >= 20)
+    (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
+    (unit-type-count-total cataphract-line < 8)
+=>
+    (set-goal demand-castle-cataphract-floor 1)
+)
+
 (defrule
     (current-age == castle-age)
     (goal demand-castle-varangian-guard-floor 0)
@@ -8460,10 +8405,38 @@
     (set-goal demand-counter-ranged-skirmishers 1)
 )
 
+; W6 Castle stream: hold 8 Skirmishers once the eco carries it. Same demand.
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal demand-counter-ranged-skirmishers 0)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count-total villager >= 50)
+    (building-type-count farm >= 20)
+    (unit-type-count-total 358 >= bt-castle-skirmisher-floor)
+    (unit-type-count-total 358 < 8)
+=>
+    (set-goal demand-counter-ranged-skirmishers 1)
+)
+
 (defrule
     (current-age == castle-age)
     (goal demand-castle-mangonel-floor 0)
     (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+=>
+    (set-goal demand-castle-mangonel-floor 1)
+)
+
+; W6 Castle stream: hold 3 Mangonels once the eco carries it. Same demand.
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal demand-castle-mangonel-floor 0)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count-total villager >= 50)
+    (building-type-count farm >= 20)
+    (unit-type-count-total mangonel-line >= bt-castle-mangonel-floor)
+    (unit-type-count-total mangonel-line < 3)
 =>
     (set-goal demand-castle-mangonel-floor 1)
 )
@@ -8490,7 +8463,13 @@
 (defrule
     (current-age >= imperial-age)
     (goal demand-castle-varangian-guard-floor 0)
-    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+        (or
+            (players-unit-type-count any-enemy knight >= 3)
+            (players-unit-type-count any-enemy militia-line >= 5)
+        )
+    )
     (unit-type-count-total varangian-guard-line < bt-imperial-varangian-floor)
 =>
     (set-goal demand-castle-varangian-guard-floor 1)
@@ -8501,8 +8480,26 @@
 (defrule
     (current-age >= imperial-age)
     (goal demand-imperial-arbalester-floor 0)
-    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (players-unit-type-count any-enemy militia-line >= 5)
+    )
     (unit-type-count-total arbalest < bt-imperial-arbalester-floor)
+=>
+    (set-goal demand-imperial-arbalester-floor 1)
+)
+
+; G4 Imperial stream: hold 24 Arbalesters on a carried late bank [existing late
+; OR below was unreachable for the same reason as Halberdiers]. Witness/release
+; resolve through floor counts; G1 gold guard still throttles below 500 gold.
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (gold-amount > 3000)
+    (unit-type-count-total arbalest >= bt-imperial-arbalester-floor)
+    (unit-type-count-total arbalest < bt-imperial-late-arbalester-target)
 =>
     (set-goal demand-imperial-arbalester-floor 1)
 )
@@ -9701,6 +9698,48 @@
     (set-goal byzantine-market-state byzantine-market-idle)
 )
 
+; G2 stone->gold leg: late stone floats once Castles/BTs are done while gold
+; starves trebs and monks. Same last-tier guards as sell-wood; stone reserved
+; while a 2nd/3rd Castle is still wanted. Release mirrors sell-wood proportions.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (building-type-count-total market >= 1)
+    (building-type-count-total castle >= 1)
+    (not (goal byzantine-production-castle-target 2))
+    (not (goal byzantine-production-castle-target 3))
+    (stone-amount > 1200)
+    (gold-amount < 1500)
+    (can-sell-commodity stone)
+=>
+    (sell-commodity stone)
+    (set-goal byzantine-market-state byzantine-market-sell-stone)
+)
+
+(defrule
+    (goal byzantine-market-state byzantine-market-sell-stone)
+    (or
+        (stone-amount <= 800)
+        (gold-amount >= 1800)
+    )
+=>
+    (set-goal byzantine-market-state byzantine-market-idle)
+)
+
 (defrule
     (current-age >= imperial-age)
     (goal byzantine-market-state byzantine-market-idle)
@@ -9902,13 +9941,21 @@
 )
 
 ; FULL CASTLE ATTACK PACKAGE
-; Castle: 4 Cataphracts + 4 Skirmishers + 2 Mangonels + 1 Monk.
-
+; Castle: 4 Cataphracts + 4 Skirmishers + 2 Mangonels + 4 Monks.
+; In-style repair: min-timing rules above stay the monk-free Arabia path.
+; Full package is the Arena/fortified path: same reinforcement + town safety
+; as min rules, plus Arena-or-fortified admission. Lifecycle unchanged.
 (defrule
     (current-age == castle-age)
     (goal byzantine-army-plan-phase 1)
     (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
     (up-compare-sn 227 >= 75)
+    (or
+        (goal opening-plan 3)
+        (goal byzantine-fortification-threat 1)
+    )
     (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
     (unit-type-count-total 358 >= bt-castle-skirmisher-floor)
     (unit-type-count-total mangonel-line >= bt-castle-attack-siege-target)
@@ -10234,7 +10281,9 @@
     (not (up-pending-placement c: 101))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle-age)
-    (or (or (unit-type-count-total cataphract-line >= 6) (unit-type-count-total knight-line >= 6)) (unit-type-count-total camel-line >= 6))
+    ; Game evidence: 2nd stable waited on 6 cavalry while 1-2 camels trickled
+    ; against a knight flood. 4 is the response size; wood cost unchanged.
+    (or (or (unit-type-count-total cataphract-line >= 4) (unit-type-count-total knight-line >= 4)) (unit-type-count-total camel-line >= 4))
     (building-type-count-total stable < 2)
     (can-build stable)
 =>
@@ -10900,13 +10949,15 @@
 ; MINIMUM-VIABLE IMPERIAL ATTACK ADMISSION
 ; Early Imperial pressure can begin from a smaller role-balanced backbone plus
 ; one offensive siege piece. Fortified targets still use the larger package.
+; W1 repair: the band-state>=1 gate is deliberately absent here [it made early
+; pressure wait on 2400/2000/2000 banks that never come]. Shape now matches the
+; Castle min-timing rules; band remains an accelerator elsewhere.
 
 (defrule
     (current-age >= imperial-age)
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (goal byzantine-army-reinforcement 0)
-    (up-compare-goal byzantine-imperial-band-state >= 1)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)
@@ -10927,7 +10978,6 @@
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (goal byzantine-army-reinforcement 0)
-    (up-compare-goal byzantine-imperial-band-state >= 1)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total 2703 >= bt-imperial-timing-backbone-floor)
@@ -10948,7 +10998,6 @@
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
     (goal byzantine-army-reinforcement 0)
-    (up-compare-goal byzantine-imperial-band-state >= 1)
     (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (unit-type-count-total cataphract-line >= bt-imperial-timing-backbone-floor)
@@ -10970,6 +11019,8 @@
     (current-age >= imperial-age)
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
@@ -11010,6 +11061,8 @@
     (current-age >= imperial-age)
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
     (unit-type-count-total varangian-guard-line >= bt-imperial-varangian-floor)
@@ -11044,6 +11097,8 @@
     (current-age >= imperial-age)
     (goal byzantine-army-plan-phase 2)
     (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
     (up-compare-sn 227 >= 75)
     (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     (unit-type-count-total arbalest >= bt-imperial-arbalester-floor)
@@ -11251,6 +11306,80 @@
 =>
     (disable-timer byzantine-army-reposition-timer)
     (set-goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+)
+
+; Defensive hold [game evidence: lone defenders trickled into archer rushes
+; one at a time and died]. While raided, pre-attack, and below coherent mass,
+; gather the military at the Town Center on defensive stance every 20s instead
+; of feeding piecemeal. Reuses the reposition point only while its machine is
+; idle, so the two can never fight over it. Massed armies and attacks proceed.
+(defrule
+    (town-under-attack)
+    (goal byzantine-army-attack-ready 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-army-reposition-state byzantine-army-reposition-idle)
+    (military-population < 10)
+    (military-population > 0)
+    (or
+        (up-timer-status byzantine-defensive-hold-timer c:== timer-disabled)
+        (up-timer-status byzantine-defensive-hold-timer c:== timer-triggered)
+    )
+=>
+    (up-full-reset-search)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-army-reposition-point)
+    (up-set-target-point byzantine-army-reposition-point)
+    (up-filter-distance c: -1 c: 40)
+    (up-filter-include cmdid-military -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-filter-include cmdid-monk -1 -1 -1)
+    (up-find-local c: all-units-class c: 240)
+    (up-target-point 0 action-move -1 stance-defensive)
+    (disable-timer byzantine-defensive-hold-timer)
+    (enable-timer byzantine-defensive-hold-timer bt-byzantine-defensive-hold-seconds)
+)
+
+; W7 fight picker (Lanchester hold): same buckets as the overmatch veto, applied
+; BEFORE actuation instead of after. Placed after all admissions and before the
+; probe/objective/attack chain, so an admitted-but-outnumbered army reads 0 at
+; every actuator in the same pass [admissions reassert 1 while buckets hold, the
+; picker wins by file order]. When buckets clear, 1 sticks and attack proceeds.
+; Reinforcement/overmatch untouched; stale timer never arms while held.
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-army-reinforcement 0)
+    (or
+        (and
+            (players-military-population any-enemy > 5)
+            (military-population < 2)
+        )
+        (or
+            (and
+                (players-military-population any-enemy > 10)
+                (military-population < 6)
+            )
+            (or
+                (and
+                    (players-military-population any-enemy > 15)
+                    (military-population < 10)
+                )
+                (or
+                    (and
+                        (players-military-population any-enemy > 20)
+                        (military-population < 15)
+                    )
+                    (and
+                        (players-military-population any-enemy > 25)
+                        (military-population < 20)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 0)
 )
 
 ; FORTIFICATION-AWARE SIEGE APPROACH
@@ -11518,7 +11647,13 @@
         (goal byzantine-army-role-state byzantine-army-role-raid-split)
     )
 =>
+    ; Group counts mirror the open-ground issuances: threat routing above sets
+    ; number-attack-groups 0, and attack-now with 0 groups only dribbles 1-3
+    ; units plus a ram while the deathball sits home. Send the package.
+    (set-strategic-number sn-number-attack-groups 200)
     (set-strategic-number sn-percent-attack-soldiers 75)
+    (set-strategic-number sn-minimum-attack-group-size 6)
+    (set-strategic-number sn-maximum-attack-group-size 40)
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
@@ -11553,7 +11688,11 @@
     )
     (goal byzantine-army-stale-state byzantine-army-stale-ready)
 =>
+    ; Same group-count repair as the breach issuance above.
+    (set-strategic-number sn-number-attack-groups 200)
     (set-strategic-number sn-percent-attack-soldiers 100)
+    (set-strategic-number sn-minimum-attack-group-size 6)
+    (set-strategic-number sn-maximum-attack-group-size 40)
     (attack-now)
     (disable-timer byzantine-army-stale-timer)
     (enable-timer byzantine-army-stale-timer bt-army-stale-seconds)
@@ -12523,17 +12662,53 @@
     (set-goal byzantine-endgame-push-state 0)
 )
 
-; IMPERIAL BASELINE ATTACK DIAGNOSTIC
-; Deliberately bypasses mature attack-package and objective gates.
-; This is a runtime actuator floor, not the final Byzantine endgame policy.
+; IMPERIAL OVERWHELM FOLLOW-UP ADMISSION
+; Game evidence: a 50+ Imperial deathball (BBC, trebs, rams) sat home forever
+; while only 1-3 units dribbled out. Root cause is the reinforcement-clear
+; gate: leaving reinforcement=1 needs halberdier + cataphract/varangian/arb
+; floors AND treb + BBC + ram targets ALL met at once, so one missing piece
+; (or a few dead halbs) parks attack-ready at 0/2 permanently. When the army
+; is big and nothing is meaningfully attacking, force re-admission and hand
+; back to the ordinary open-ground issuance below (100%, max-40 groups) plus
+; the existing stale/overmatch machinery. Guarded by no-town-attack so home
+; defense is never stripped. If a DUC objective is running but the army is
+; idle (attack-soldier-count <= 3), the objective has stalled; clear it.
 (defrule
     (current-age >= imperial-age)
-    (military-population >= 4)
+    (or
+        (goal byzantine-army-attack-ready 0)
+        (goal byzantine-army-attack-ready 2)
+    )
+    (not (town-under-attack))
+    (military-population >= 25)
+    (attack-soldier-count <= 3)
+=>
+    (up-reset-attack-now)
+    (disable-timer byzantine-army-stale-timer)
+    (set-goal byzantine-army-stale-state byzantine-army-stale-triggered)
+    (set-goal byzantine-army-attack-ready 1)
+    (set-goal byzantine-army-reinforcement 0)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (set-goal byzantine-siege-approach-claim 0)
+    (set-goal byzantine-siege-breach-witness 0)
+    (set-goal byzantine-offensive-objective-state byzantine-offensive-objective-state-idle)
+    (set-goal byzantine-offensive-objective-claim 0)
+)
+
+; IMPERIAL BASELINE ATTACK DIAGNOSTIC - GATED (Task 1 fix)
+; Formerly bypassed mature attack-package and objective gates and suicided 4 units.
+; Now requires controlled admission: attack-ready + imperial band + no DUC objective.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-offensive-objective-claim 0)
+    (up-compare-goal byzantine-imperial-band-state >= 1)
+    (military-population >= 8)
     (attack-soldier-count <= 0)
 =>
     (set-strategic-number sn-number-attack-groups 200)
     (set-strategic-number sn-percent-attack-soldiers 100)
-    (set-strategic-number sn-minimum-attack-group-size 4)
+    (set-strategic-number sn-minimum-attack-group-size 6)
     (set-strategic-number sn-maximum-attack-group-size 40)
     (attack-now)
 )
@@ -13128,6 +13303,44 @@
     (set-goal research-retry-barrier-research-capped-ram 0)
 )
 
+; Per-pass barrier resets, batch 1 - game evidence: 23 barriers across the
+; band/Imperial/monastery lifecycles were set-on-retry but never reset, so one
+; empty queue bricked each demand for the rest of the game - the fossilized
+; 100k-bank, 3-halb endgame. Same (true)-reset idiom as every other barrier.
+; Split in two rules to respect the 32-element budget.
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-adaptive-resource-palisade 0)
+    (set-goal production-retry-barrier-castle-monk-defense-floor 0)
+    (set-goal production-retry-barrier-imperial-elite-skirmisher-floor 0)
+    (set-goal production-retry-barrier-imperial-fortified-elite-skirmisher 0)
+    (set-goal production-retry-barrier-imperial-fortified-halberdier 0)
+    (set-goal production-retry-barrier-imperial-fortified-hussar 0)
+    (set-goal production-retry-barrier-imperial-open-halberdier-standard 0)
+    (set-goal production-retry-barrier-imperial-open-halberdier-pressure 0)
+    (set-goal production-retry-barrier-imperial-open-halberdier-severe 0)
+    (set-goal production-retry-barrier-imperial-open-elite-skirmisher-standard 0)
+    (set-goal production-retry-barrier-imperial-open-elite-skirmisher-pressure 0)
+    (set-goal production-retry-barrier-imperial-open-elite-skirmisher-severe 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal production-retry-barrier-imperial-open-hussar-standard 0)
+    (set-goal production-retry-barrier-imperial-open-hussar-mobile 0)
+    (set-goal production-retry-barrier-imperial-trash-halberdier-standard 0)
+    (set-goal production-retry-barrier-imperial-trash-halberdier-high 0)
+    (set-goal production-retry-barrier-imperial-trash-elite-skirmisher-standard 0)
+    (set-goal production-retry-barrier-imperial-trash-elite-skirmisher-high 0)
+    (set-goal production-retry-barrier-imperial-trash-hussar-standard 0)
+    (set-goal production-retry-barrier-imperial-trash-hussar-high 0)
+    (set-goal research-retry-barrier-research-elite-skirmisher 0)
+    (set-goal research-retry-barrier-research-illumination 0)
+    (set-goal research-retry-barrier-research-redemption 0)
+)
+
 ; Demand initialization
 (defrule
     (true)
@@ -13222,6 +13435,10 @@
     (set-goal demand-feudal-scout-floor 0)
     (set-goal demand-feudal-maa-floor 0)
     (set-goal demand-feudal-maa-upgrade 0)
+    (set-goal demand-research-loom 0)
+    (set-goal demand-research-light-cavalry 0)
+    (set-goal demand-research-husbandry 0)
+    (set-goal byzantine-research-preempt 0)
     (set-goal demand-castle-siege-capability 1)
     (set-goal demand-castle-monastery-capability 1)
     (disable-self)
@@ -13293,6 +13510,7 @@
     (set-goal demand-research-fletching 1)
     (set-goal demand-research-cavalier 1)
     (set-goal demand-research-hussar 1)
+    (set-goal demand-imperial-light-cavalry-floor 1)
     (set-goal demand-research-onager 1)
     (set-goal demand-research-siege-ram 1)
     (set-goal demand-research-arbalester 1)
@@ -13607,12 +13825,26 @@
 ; Action issuance: Castle Age research owns the existing Byzantine resource claim.
 ; Market and Blacksmith are completed Feudal prerequisites; the native
 ; can-research-with-escrow fact remains the final engine feasibility gate.
+; In-style repair: Arena FC (plan 3) keeps 28, open-land (not plan 3) needs 31
+; so Cataphract/TC2/farm bank survives Feudal pressure. Lifecycle unchanged.
 (defrule
     (goal demand-castle-age-transition 1)
     (goal research-retry-barrier-castle-age-transition 0)
     (not (current-age >= castle-age))
     (current-age == feudal-age)
-    (unit-type-count-total villager >= bt-castle-age-villager-maturity)
+    ; Audit scope reverted (rule-too-long): water shares 31-vil maturity. The
+    ; land-plan scoping cost 7 elements on an already-maximal rule; 3 extra
+    ; villagers on Islands is the cheaper price. Lifecycle unchanged.
+    (or
+        (and
+            (goal opening-plan 3)
+            (unit-type-count-total villager >= bt-castle-age-villager-maturity)
+        )
+        (and
+            (not (goal opening-plan 3))
+            (unit-type-count-total villager >= bt-castle-age-villager-arabia)
+        )
+    )
     (building-type-count-total blacksmith >= 1)
     (building-type-count-total market >= 1)
     (goal byzantine-resource-claim 0)
@@ -13638,6 +13870,14 @@
 ; Community-native arbitration: civilian production runs while population capacity
 ; and the Byzantine resource claim are both available. The Feudal claim is asserted
 ; only after maturity and native research feasibility are simultaneously true.
+; In-style repair: villager stop mirrors issuance (28 Arena FC, 31 open-land).
+; BUDGET TRIPWIRE: this rule sits at 31 of 32 engine elements. Do not add
+; conditions here; split the rule instead. A prior water-scoping addition
+; broke the build with rule-too-long and had to be reverted.
+; NESTING TRIPWIRE (load-error bisect): can-research-with-escrow fails inside
+; nested and/or (top-level or single-not only). Keep escrow checks flat.
+; COMMENT TRIPWIRE: never leave unbalanced parens on one comment line; the
+; load parser is line-naive and a lone paren derails rule tracking.
 (defrule
     (unit-type-count-total villager < 110)
     (population-headroom > 0)
@@ -13649,7 +13889,17 @@
     (not (and
         (current-age == feudal-age)
         (and
-            (unit-type-count-total villager >= bt-castle-age-villager-maturity)
+            (or
+                (and
+                    (goal opening-plan 3)
+                    (unit-type-count-total villager >= bt-castle-age-villager-maturity)
+                )
+                   (and
+                       ; Audit scope reverted (rule-too-long): shares 31-vil.
+                       (not (goal opening-plan 3))
+                       (unit-type-count-total villager >= bt-castle-age-villager-arabia)
+                   )
+            )
             (and
                 (building-type-count-total blacksmith >= 1)
                 (and
@@ -13831,7 +14081,117 @@
     (set-goal demand-feudal-infrastructure 82)
 )
 
+; Crisis-lane production buildings [game evidence: file order IS priority, and
+; the Feudal Range/Stable issuances sit behind all eco, so a live counter
+; demand can starve for an entire 20-minute bleed losing every pass to houses
+; and farms]. Same demands, same witnesses, same singleton claim - only the
+; position is early, and strict crisis gates bound the eco impact: the lane
+; fires solely while a Feudal counter demand is armed with no building yet.
+(defrule
+    (goal demand-castle-archery-capability 1)
+    (not (building-type-count archery-range >= 1))
+    (goal construction-retry-barrier-castle-archery-capability 0)
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+    (not (building-type-count archery-range > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age == feudal-age)
+    (or
+        (town-under-attack)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 3)
+            (or
+                (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+                (players-unit-type-count any-enemy militia-line >= 5)
+            )
+        )
+    )
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-archery-capability 48)
+)
+
+(defrule
+    (goal demand-castle-stable-capability 1)
+    (not (building-type-count stable >= 1))
+    (goal construction-retry-barrier-castle-stable-capability 0)
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+    (not (building-type-count stable > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+    (or
+        (town-under-attack)
+        (players-unit-type-count any-enemy 93 >= 4)
+        (goal byzantine-scout-rush-state 1)
+    )
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-stable-capability 59)
+)
+
+; Crisis-lane siege workshop [same starvation class as the Range: its only
+; issuance sits behind all eco while a flood demands mangonels/rams now].
+(defrule
+    (goal demand-castle-siege-capability 1)
+    (not (building-type-count siege-workshop >= 1))
+    (goal construction-retry-barrier-castle-siege-capability 0)
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+    (not (building-type-count siege-workshop > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or
+        (town-under-attack)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 3)
+            (or
+                (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+                (players-unit-type-count any-enemy militia-line >= 5)
+            )
+        )
+    )
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-siege-capability 57)
+)
+
+; Crisis-lane monastery [no monastery: no monks, no healing, no conversions,
+; and Redemption/Pike-adjacent play stalls with it].
+(defrule
+    (goal demand-castle-monastery-capability 1)
+    (not (building-type-count monastery >= 1))
+    (goal construction-retry-barrier-castle-monastery-capability 0)
+    (up-pending-objects c: 104 == 0)
+    (not (up-pending-placement c: 104))
+    (not (building-type-count monastery > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or
+        (town-under-attack)
+        (or
+            (players-unit-type-count any-enemy knight >= 3)
+            (players-unit-type-count any-enemy mangonel-line >= 2)
+        )
+    )
+    (can-build monastery)
+=>
+    (build monastery)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-monastery-capability 54)
+)
+
 ; Invalidation: castle-commitment | ACTIVE / ISSUED / PENDING -> CANCELLED
+; Deep-dive fix [game evidence: castle-less Imperial fossilizes trebs, Catas,
+; BTs, Greek Fire, Logistica - everything keyed on castle>=1]. Cancel only when
+; redundant (a Castle stands); a Castle-less Imperial game keeps its demand.
 (defrule
     (or
         (goal demand-castle-commitment 1)
@@ -13841,6 +14201,7 @@
         )
     )
     (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
 =>
     (set-goal demand-castle-commitment 52)
 )
@@ -13872,6 +14233,22 @@
     (set-goal demand-castle-commitment 1)
     (set-goal demand-expected-mounted-spears 1)
     (set-goal demand-expected-ranged-skirmishers 1)
+)
+
+; Recovery twin: castle-less Imperial. A Byzantine without a Castle in
+; Imperial has no legal strategy [trebs, Cataphracts, BTs, Greek Fire land
+; path, Logistica all key on it], so re-arm on stone alone, intent-free.
+; Covers demand 0 and legacy cancellations (52); issuance owns affordability.
+(defrule
+    (or
+        (goal demand-castle-commitment 0)
+        (goal demand-castle-commitment 52)
+    )
+    (not (building-type-count castle >= 1))
+    (current-age >= imperial-age)
+    (stone-amount >= 650)
+=>
+    (set-goal demand-castle-commitment 1)
 )
 
 ; Construction observation: castle-commitment
@@ -14097,7 +14474,7 @@
 ; Release: counter-mounted-spears | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-mounted-spears 63)
-    (unit-type-count 93 >= 4)
+    (unit-type-count 93 >= 6)
 =>
     (set-goal demand-counter-mounted-spears 0)
 )
@@ -14105,9 +14482,25 @@
 ; Recovery: counter-mounted-spears | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-mounted-spears 0)
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal counter-package-mounted_pressure_feudal 1)
     (current-age >= feudal-age)
+=>
+    (set-goal demand-counter-mounted-spears 1)
+)
+
+; Castle spear bridge [game evidence: vs Castle knights with zero spears, the
+; only answer was 1-2 trickling camels]. Trains vanilla spears until Pikeman
+; research completes; then the exempt handoff above owns cleanup. Issuance,
+; witness, and the research preempt flag are untouched and converge it.
+(defrule
+    (goal demand-counter-mounted-spears 0)
+    (not (unit-type-count 93 >= 6))
+    (not (research-completed 197))
+    ; Extended past Castle [game evidence: Imperial vs knights/hussars with
+    ; zero spears - the Castle-only bridge expired one age early].
+    (current-age >= castle-age)
+    (players-unit-type-count any-enemy knight >= 3)
 =>
     (set-goal demand-counter-mounted-spears 1)
 )
@@ -14118,7 +14511,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (unit-type-count 93 >= 4)
+    (unit-type-count 93 >= 6)
 =>
     (set-goal demand-counter-mounted-spears 63)
 )
@@ -14129,7 +14522,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-counter-mounted-spears 62)
@@ -14141,7 +14534,7 @@
         (goal demand-counter-mounted-spears 64)
         (goal demand-counter-mounted-spears 62)
     )
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-counter-mounted-spears 1)
@@ -14151,15 +14544,19 @@
 ; Action issuance: counter-mounted-spears | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-mounted-spears 1)
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal production-retry-barrier-counter-mounted-spears 0)
     (not (up-pending-objects c: 93 >= 1))
-    (not (unit-type-count 93 >= 4))
+    (not (unit-type-count 93 >= 6))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (goal byzantine-research-preempt 0)
     (current-age >= feudal-age)
+    ; Bank latch (flat goal; the nested veto this replaced tripped load error
+    ; 2011, so bank logic lives in one reset-first latch rule instead).
+    (goal byzantine-bank-ready 0)
     (can-train-with-escrow 93)
-    (unit-type-count-total 93 < 4)
+    (unit-type-count-total 93 < 6)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14177,7 +14574,7 @@
 ; Release: counter-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-ranged-skirmishers 64)
-    (unit-type-count 358 >= 4)
+    (unit-type-count 358 >= 6)
 =>
     (set-goal demand-counter-ranged-skirmishers 0)
 )
@@ -14185,7 +14582,7 @@
 ; Recovery: counter-ranged-skirmishers | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-ranged-skirmishers 0)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 358 >= 6))
     (goal counter-package-ranged_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -14198,7 +14595,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (unit-type-count 358 >= 4)
+    (unit-type-count 358 >= 6)
 =>
     (set-goal demand-counter-ranged-skirmishers 64)
 )
@@ -14209,7 +14606,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 358 >= 6))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-counter-ranged-skirmishers 63)
@@ -14221,7 +14618,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 358 >= 6))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
@@ -14231,19 +14628,46 @@
 ; Action issuance: counter-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-ranged-skirmishers 1)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 358 >= 6))
     (goal production-retry-barrier-counter-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 358 >= 6))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (goal byzantine-research-preempt 0)
     (or
         (current-age < imperial-age)
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     )
     (current-age >= feudal-age)
+    ; Bank latch (flat goal; the nested veto this replaced tripped load error
+    ; 2011, so bank logic lives in one reset-first latch rule instead).
+    (goal byzantine-bank-ready 0)
     (can-train-with-escrow 358)
     (unit-type-count-total 358 < bt-castle-skirmisher-floor)
+=>
+    (train 358)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-counter-ranged-skirmishers 65)
+)
+
+; W6 Castle stream issuance: trains 4th-7th Skirmishers. Same eco gates and
+; Imperial-bank veto as Cataphracts above; completion/release already clear it.
+(defrule
+    (goal demand-counter-ranged-skirmishers 1)
+    (goal byzantine-army-plan-phase 1)
+    (unit-type-count 358 >= bt-castle-skirmisher-floor)
+    (goal production-retry-barrier-counter-ranged-skirmishers 0)
+    (not (up-pending-objects c: 7 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (goal byzantine-resource-claim 0)
+    (current-age == castle-age)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count-total villager >= 50)
+    (building-type-count farm >= 20)
+    (not (can-research-with-escrow imperial-age))
+    (can-train-with-escrow 358)
+    (unit-type-count-total 358 < 8)
 =>
     (train 358)
     (set-goal action-claim-train-arbitration 1)
@@ -14319,6 +14743,8 @@
     (building-type-count archery-range >= 1)
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    ; Bank latch (flat goal; nested veto tripped load error 2011).
+    (goal byzantine-bank-ready 0)
     (can-train-with-escrow archer-line)
     (unit-type-count-total archer-line < bt-feudal-archer-floor)
 =>
@@ -14412,6 +14838,43 @@
     (set-goal demand-feudal-scout-floor 334)
 )
 
+; Feudal Scout Rush attack: when taunt 99 armed and 2-3 scouts exist,
+; attack-move to enemy woodline (attack-now with small groups targets eco).
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-scout-rush-state byzantine-scout-rush-armed)
+    (unit-type-count scout-cavalry-line >= 2)
+    (unit-type-count scout-cavalry-line <= 4)
+    (not (town-under-attack))
+=>
+    (set-strategic-number sn-number-attack-groups 1)
+    (set-strategic-number sn-percent-attack-soldiers 100)
+    (set-strategic-number sn-minimum-attack-group-size 2)
+    (set-strategic-number sn-maximum-attack-group-size 4)
+    (attack-now)
+    (chat-to-all "Woodline located. Engaging.")
+)
+
+; Castle scout issuance: same demand, Feudal shape, to the 6-scout bridge mass.
+; Shared issued/pending/witness states; the floor release clears at 4+ and the
+; bridge re-arms below 6 until Light Cavalry lands.
+(defrule
+    (goal demand-feudal-scout-floor 1)
+    (goal production-retry-barrier-feudal-scout-floor 0)
+    (current-age == castle-age)
+    (not (research-completed ri-light-cavalry))
+    (building-type-count-total stable >= 1)
+    (goal action-claim-train-arbitration 0)
+    (goal byzantine-resource-claim 0)
+    (goal byzantine-research-preempt 0)
+    (can-train-with-escrow scout-cavalry-line)
+    (unit-type-count-total scout-cavalry-line < 6)
+=>
+    (train scout-cavalry-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-feudal-scout-floor 334)
+)
+
 ;---------------------------------------------------------------
 ; FEUDAL MAN-AT-ARMS UPGRADE
 ;---------------------------------------------------------------
@@ -14476,6 +14939,322 @@
     (release-escrow gold)
     (research ri-man-at-arms)
     (set-goal demand-feudal-maa-upgrade 346)
+)
+
+;---------------------------------------------------------------
+; LOOM (tech 22)
+; The bot never researched it: villagers died to the first scouts on Arabia.
+; Same lifecycle as MAA-upgrade above: RELEASED/COMPLETE/PENDING/RETRY/ACTIVE.
+; Dark primary (vil>=20, before the Feudal click), Feudal catch-up if missed.
+;---------------------------------------------------------------
+(defrule
+    (goal demand-research-loom 16202)
+    (research-completed 22)
+=>
+    (set-goal demand-research-loom 0)
+)
+
+(defrule
+    (goal demand-research-loom 0)
+    (not (research-completed 22))
+    (or
+        (and
+            (current-age == dark-age)
+            (unit-type-count-total villager >= 20)
+        )
+        (current-age == feudal-age)
+    )
+=>
+    (set-goal demand-research-loom 1)
+)
+
+(defrule
+    (or
+        (goal demand-research-loom 16203)
+        (goal demand-research-loom 16201)
+    )
+    (research-completed 22)
+=>
+    (set-goal demand-research-loom 16202)
+)
+
+(defrule
+    (or
+        (goal demand-research-loom 16203)
+        (goal demand-research-loom 16201)
+    )
+    (not (research-completed 22))
+    (up-research-status c: 22 >= research-pending)
+=>
+    (set-goal demand-research-loom 16201)
+)
+
+(defrule
+    (or
+        (goal demand-research-loom 16203)
+        (goal demand-research-loom 16201)
+    )
+    (not (research-completed 22))
+    (not (up-research-status c: 22 >= research-pending))
+=>
+    (set-goal demand-research-loom 1)
+    (set-goal research-retry-barrier-research-loom 1)
+)
+
+(defrule
+    (goal demand-research-loom 1)
+    (goal research-retry-barrier-research-loom 0)
+    (not (research-completed 22))
+    (not (up-research-status c: 22 >= research-pending))
+    (or
+        (and
+            (current-age == dark-age)
+            (unit-type-count-total villager >= 20)
+        )
+        (current-age == feudal-age)
+    )
+    (can-research-with-escrow 22)
+=>
+    (release-escrow gold)
+    (research 22)
+    (set-goal demand-research-loom 16203)
+)
+
+; Research preempt: building queues are shared, so a perpetually re-queued
+; train starves an armed, affordable upgrade forever [observed: no Pike, no
+; Elite Skirm across whole games]. While preempt is set, trash trains pause;
+; research issuances never check it, so the upgrade always progresses and the
+; pause self-clears. Bounded to one research cycle each.
+; Preempt flattened (load-error bisect): per-pass reset plus three single-tech
+; arms. Same semantics as the nested version with zero nesting depth: the reset
+; fires first each pass, the arms reassert while any upgrade still waits.
+(defrule
+    (true)
+=>
+    (set-goal byzantine-research-preempt 0)
+)
+
+; Pikeman preempt mirrors the forced issuance below: no unit prerequisite, so
+; demand+affordability alone is the imminent-fire condition. The old lockup
+; (armed forever while a unit prerequisite could never build) cannot recur
+; because the research itself fires on the same condition.
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-pikeman 1)
+    (not (research-completed 197))
+    (can-research-with-escrow 197)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-elite-skirmisher-upgrade 1)
+    (unit-type-count 358 >= 4)
+    (can-research-with-escrow 98)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-research-capped-ram 1)
+    (unit-type-count-total battering-ram-line >= 2)
+    (can-research-with-escrow 96)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+; Light Cavalry preempt arm (flat, top-level escrow check only). Mass-gated
+; like the rest: no pausing trains for an upgrade with no units to absorb it.
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-light-cavalry 1)
+    (unit-type-count-total scout-cavalry-line >= 3)
+    (can-research-with-escrow ri-light-cavalry)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+; Husbandry preempt arm (same shared stable queue). Mirrors its demand arming.
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-husbandry 1)
+    (or
+        (unit-type-count-total scout-cavalry-line >= 2)
+        (or
+            (unit-type-count-total camel-line >= 2)
+            (unit-type-count-total knight-line >= 1)
+        )
+    )
+    (can-research-with-escrow ri-husbandry)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+; Castle-bank latch, reset-first half: cleared every pass unconditionally.
+(defrule
+    (true)
+=>
+    (set-goal byzantine-bank-ready 0)
+)
+
+; Castle-bank latch, assert half: flat and-chain (depth 2), set while quietly
+; banking the Castle600/800 with a mature Feudal eco and no raid.
+(defrule
+    (current-age == feudal-age)
+    (not (town-under-attack))
+    (unit-type-count-total villager >= bt-castle-age-villager-arabia)
+    (building-type-count-total blacksmith >= 1)
+    (building-type-count-total market >= 1)
+    (food-amount >= 650)
+=>
+    (set-goal byzantine-bank-ready 1)
+)
+
+
+
+;---------------------------------------------------------------
+; LIGHT CAVALRY UPGRADE (the missing middle link to Hussars)
+;---------------------------------------------------------------
+(defrule
+    (goal demand-research-light-cavalry 16208)
+    (research-completed ri-light-cavalry)
+=>
+    (set-goal demand-research-light-cavalry 0)
+)
+
+(defrule
+    (goal demand-research-light-cavalry 0)
+    (not (research-completed ri-light-cavalry))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (unit-type-count-total scout-cavalry-line >= 3)
+=>
+    (set-goal demand-research-light-cavalry 1)
+)
+
+(defrule
+    (or
+        (goal demand-research-light-cavalry 16209)
+        (goal demand-research-light-cavalry 16207)
+    )
+    (research-completed ri-light-cavalry)
+=>
+    (set-goal demand-research-light-cavalry 16208)
+)
+
+(defrule
+    (or
+        (goal demand-research-light-cavalry 16209)
+        (goal demand-research-light-cavalry 16207)
+    )
+    (not (research-completed ri-light-cavalry))
+    (up-research-status c: ri-light-cavalry >= research-pending)
+=>
+    (set-goal demand-research-light-cavalry 16207)
+)
+
+(defrule
+    (or
+        (goal demand-research-light-cavalry 16209)
+        (goal demand-research-light-cavalry 16207)
+    )
+    (not (research-completed ri-light-cavalry))
+    (not (up-research-status c: ri-light-cavalry >= research-pending))
+=>
+    (set-goal demand-research-light-cavalry 1)
+    (set-goal research-retry-barrier-research-light-cavalry 1)
+)
+
+(defrule
+    (goal demand-research-light-cavalry 1)
+    (goal research-retry-barrier-research-light-cavalry 0)
+    (not (research-completed ri-light-cavalry))
+    (not (up-research-status c: ri-light-cavalry >= research-pending))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (unit-type-count-total scout-cavalry-line >= 3)
+    (can-research-with-escrow ri-light-cavalry)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-light-cavalry)
+    (set-goal demand-research-light-cavalry 16209)
+)
+
+;---------------------------------------------------------------
+; HUSBANDRY (stable speed for the scout/camel lines this bot finally fields)
+;---------------------------------------------------------------
+(defrule
+    (goal demand-research-husbandry 16213)
+    (research-completed ri-husbandry)
+=>
+    (set-goal demand-research-husbandry 0)
+)
+
+(defrule
+    (goal demand-research-husbandry 0)
+    (not (research-completed ri-husbandry))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (or
+        (unit-type-count-total scout-cavalry-line >= 2)
+        (or
+            (unit-type-count-total camel-line >= 2)
+            (unit-type-count-total knight-line >= 1)
+        )
+    )
+=>
+    (set-goal demand-research-husbandry 1)
+)
+
+(defrule
+    (or
+        (goal demand-research-husbandry 16214)
+        (goal demand-research-husbandry 16212)
+    )
+    (research-completed ri-husbandry)
+=>
+    (set-goal demand-research-husbandry 16213)
+)
+
+(defrule
+    (or
+        (goal demand-research-husbandry 16214)
+        (goal demand-research-husbandry 16212)
+    )
+    (not (research-completed ri-husbandry))
+    (up-research-status c: ri-husbandry >= research-pending)
+=>
+    (set-goal demand-research-husbandry 16212)
+)
+
+(defrule
+    (or
+        (goal demand-research-husbandry 16214)
+        (goal demand-research-husbandry 16212)
+    )
+    (not (research-completed ri-husbandry))
+    (not (up-research-status c: ri-husbandry >= research-pending))
+=>
+    (set-goal demand-research-husbandry 1)
+    (set-goal research-retry-barrier-research-husbandry 1)
+)
+
+(defrule
+    (goal demand-research-husbandry 1)
+    (goal research-retry-barrier-research-husbandry 0)
+    (not (research-completed ri-husbandry))
+    (not (up-research-status c: ri-husbandry >= research-pending))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (can-research-with-escrow ri-husbandry)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-husbandry)
+    (set-goal demand-research-husbandry 16214)
 )
 
 ;---------------------------------------------------------------
@@ -14565,6 +15344,10 @@
 
 (defrule
     (current-age >= castle-age)
+    ; Handoff exempt (game evidence): wiping here strands Castle with no spear
+    ; pipeline - Pikemen need 6 vanilla spears and nothing else trains them.
+    ; The wipe fires once Pike lands; the bridge below owns the meantime.
+    (research-completed 197)
     (or
         (goal demand-counter-mounted-spears 1)
         (or
@@ -14617,8 +15400,35 @@
     (set-goal demand-feudal-archer-floor 0)
 )
 
+; Castle scout bridge [game evidence: the Feudal scout package almost never
+; fires, so nothing feeds the Light Cavalry upgrade and Hussars are locked out
+; for the whole game]. Reuses the scout-floor demand to 6 scouts while Light
+; Cavalry is undone; witness/release/pending below own completion as usual.
+(defrule
+    (goal demand-feudal-scout-floor 0)
+    (not (unit-type-count scout-cavalry-line >= 6))
+    (not (research-completed ri-light-cavalry))
+    (current-age == castle-age)
+    (building-type-count-total stable >= 1)
+    (or
+        (players-unit-type-count any-enemy archer-line >= 4)
+        (or
+            (players-unit-type-count any-enemy mangonel-line >= 2)
+            ; Knight-flood games feed neither archer nor siege triggers, yet
+            ; still want the Light Cavalry line (raids + future Hussars).
+            (players-unit-type-count any-enemy knight >= 3)
+        )
+    )
+=>
+    (set-goal demand-feudal-scout-floor 1)
+)
+
 (defrule
     (current-age >= castle-age)
+    ; Handoff exempt [game evidence: zero light cav/hussars all game, yet this
+    ; is a trash-discount civ]. Wiped only once Light Cavalry lands; the Castle
+    ; scout bridge above owns the meantime (Hussars need upgraded scouts).
+    (research-completed ri-light-cavalry)
     (or
         (goal demand-feudal-scout-floor 1)
         (or
@@ -15090,6 +15900,17 @@
     (set-goal demand-castle-second-town-center 0)
 )
 
+; Release: castle-second-town-center | ACTIVE -> RELEASED on bridge completion.
+; In-style repair: the runtime TC2 bridge builds directly without touching this
+; demand, leaving ACTIVE stale forever once 2 TCs exist. Same witness as above;
+; the normal 1->56->55->0 path is unaffected (demand is 56 there, not 1).
+(defrule
+    (goal demand-castle-second-town-center 1)
+    (building-type-count town-center >= 2)
+=>
+    (set-goal demand-castle-second-town-center 0)
+)
+
 ; Persistent world witness: TC2 is complete while two or more town centers exist.
 ; This state survives release of the TC2 demand and remains the admission witness for TC3.
 (defrule
@@ -15212,6 +16033,15 @@
 ; Release: castle-third-town-center | COMPLETE -> RELEASED
 (defrule
     (goal demand-castle-third-town-center 325)
+    (building-type-count-total town-center >= 3)
+=>
+    (set-goal demand-castle-third-town-center 0)
+)
+
+; Release: castle-third-town-center | ACTIVE -> RELEASED on bridge completion.
+; In-style repair: same stale-ACTIVE case as TC2 above; same witness form.
+(defrule
+    (goal demand-castle-third-town-center 1)
     (building-type-count-total town-center >= 3)
 =>
     (set-goal demand-castle-third-town-center 0)
@@ -15854,7 +16684,9 @@
     (goal byzantine-natural-food-state byzantine-natural-food-stable)
     (current-age >= feudal-age)
     (not (map-type islands))
-    (unit-type-count-total villager >= 24)
+    ; Game evidence: at 22-23 vills the bot chased distant chickens instead of
+    ; farming. Start continuity with the Feudal click, not after it.
+    (unit-type-count-total villager >= 22)
     (or
         (dropsite-min-distance live-boar <= -1)
         (dropsite-min-distance live-boar > 32)
@@ -15913,10 +16745,16 @@
 )
 
 ; Recovery: economy-farm-floor-feudal-4 | RELEASED -> ACTIVE on world-state loss
+; Game evidence: scout/skirm pressure left farms destroyed while food banked
+; high, so a flat food < 600 gate made farm loss unrecoverable. Wood surplus
+; also re-arms the demand so banked wood converts back into food eco.
 (defrule
     (goal demand-economy-farm-floor-feudal-4 0)
     (not (building-type-count farm >= 4))
-    (food-amount < 600)
+    (or
+        (food-amount < 600)
+        (wood-amount >= 300)
+    )
 =>
     (set-goal demand-economy-farm-floor-feudal-4 1)
 )
@@ -15975,6 +16813,9 @@
 )
 
 ; Action issuance: economy-farm-floor-feudal-4 | ACTIVE -> ISSUED
+; Game evidence: a banked food stockpile (4k+) with wood on hand permanently
+; vetoed farm construction via the flat food < 500 gate. Wood surplus bypasses
+; both the food gate and the idle-farm gate so wood converts into farms.
 (defrule
     (goal demand-economy-farm-floor-feudal-4 1)
     (not (building-type-count farm >= 4))
@@ -15987,8 +16828,14 @@
     (building-type-count-total mill >= 1)
     (unit-type-count-total villager >= 18)
     (can-build-with-escrow farm)
-    (idle-farm-count < 2)
-    (food-amount < 500)
+    (or
+        (idle-farm-count < 2)
+        (wood-amount >= 335)
+    )
+    (or
+        (food-amount < 500)
+        (wood-amount >= 300)
+    )
     (building-type-count-total farm < 4)
 =>
     (build farm)
@@ -16013,10 +16860,15 @@
 )
 
 ; Recovery: economy-farm-floor-feudal-8 | RELEASED -> ACTIVE on world-state loss
+; Game evidence: as with the 4-farm floor, banked food blocked refire after
+; farm losses under skirm pressure. Wood surplus re-arms the demand.
 (defrule
     (goal demand-economy-farm-floor-feudal-8 0)
     (not (building-type-count farm >= 8))
-    (food-amount < 600)
+    (or
+        (food-amount < 600)
+        (wood-amount >= 300)
+    )
 =>
     (set-goal demand-economy-farm-floor-feudal-8 1)
 )
@@ -16075,6 +16927,11 @@
 )
 
 ; Action issuance: economy-farm-floor-feudal-8 | ACTIVE -> ISSUED
+; Game evidence: scout rush + skirm mass held vills under 30 with banked food
+; and idle (garrisoned) farms, so the flat vill >= 30 / food < 700 /
+; idle-farm < 2 gates deadlocked the food eco at 8 farms with 3k wood unspent.
+; Each gate gets a wood-surplus bypass; vil gate additionally admits a
+; pressured catch-up band (22+ vills with wood on hand).
 (defrule
     (goal demand-economy-farm-floor-feudal-8 1)
     (not (building-type-count farm >= 8))
@@ -16085,10 +16942,22 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= dark-age)
     (building-type-count-total mill >= 1)
-    (unit-type-count-total villager >= 30)
+    (or
+        (unit-type-count-total villager >= 30)
+        (and
+            (unit-type-count-total villager >= 22)
+            (wood-amount >= 400)
+        )
+    )
     (can-build-with-escrow farm)
-    (idle-farm-count < 2)
-    (food-amount < 700)
+    (or
+        (idle-farm-count < 2)
+        (wood-amount >= 335)
+    )
+    (or
+        (food-amount < 700)
+        (wood-amount >= 300)
+    )
     (building-type-count-total farm < 8)
 =>
     (build farm)
@@ -16238,6 +17107,35 @@
     (set-goal construction-retry-barrier-economy-farm-boom-castle 1)
 )
 
+; Action issuance (Feudal pressure catch-up): grow 8 -> 12 while stuck in Feudal.
+; Game evidence: scout rush into skirm mass pinned the bot in Feudal at 8 farms
+; with 3k wood banked, because feudal-8 caps at 8 and every castle-boom
+; issuance needs castle-age. Same demand, same witnesses, same singleton
+; claim - only the age/need gate differs. Fires only once the Feudal floor is
+; complete (farm >= 8), so normal Dark/early-Feudal progression is untouched.
+(defrule
+    (goal demand-economy-farm-boom-castle 1)
+    (not (building-type-count-total town-center >= 2))
+    (building-type-count farm >= 8)
+    (building-type-count farm < bt-castle-farm-target-1tc)
+    (goal construction-retry-barrier-economy-farm-boom-castle 0)
+    (up-pending-objects c: 50 == 0)
+    (not (up-pending-placement c: 50))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age == feudal-age)
+    (unit-type-count-total villager >= 22)
+    (building-type-count-total mill >= 1)
+    (can-build-with-escrow farm)
+    (or
+        (food-amount < 700)
+        (wood-amount >= 275)
+    )
+=>
+    (build farm)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-farm-boom-castle 67)
+)
+
 ; Action issuance: one farm per build pass toward the active TC-based target.
 (defrule
     (goal demand-economy-farm-boom-castle 1)
@@ -16248,7 +17146,8 @@
     (not (up-pending-placement c: 50))
     (goal action-claim-build-pass-singleton 0)
     (current-age == castle-age)
-    (unit-type-count-total villager >= 45)
+    ; Game evidence: boom waited for 45 vills while Castle farms lagged.
+    (unit-type-count-total villager >= 40)
     (building-type-count-total mill >= 1)
     (can-build-with-escrow farm)
     (or
@@ -16282,7 +17181,8 @@
     (not (up-pending-placement c: 50))
     (goal action-claim-build-pass-singleton 0)
     (current-age == castle-age)
-    (unit-type-count-total villager >= 45)
+    ; Game evidence: boom waited for 45 vills while Castle farms lagged.
+    (unit-type-count-total villager >= 40)
     (building-type-count-total mill >= 1)
     (can-build-with-escrow farm)
     (or
@@ -16315,7 +17215,8 @@
     (not (up-pending-placement c: 50))
     (goal action-claim-build-pass-singleton 0)
     (current-age == castle-age)
-    (unit-type-count-total villager >= 45)
+    ; Game evidence: boom waited for 45 vills while Castle farms lagged.
+    (unit-type-count-total villager >= 40)
     (building-type-count-total mill >= 1)
     (can-build-with-escrow farm)
     (or
@@ -16656,6 +17557,15 @@
 )
 
 ; Action issuance: economy-lumber-camp-floor-1 | ACTIVE -> ISSUED
+; Repair: the former DUC search/place-point pair could never fire. Its place
+; step needs search-remote-count-1 > 0, but no rule in this file ever writes
+; that goal (up-get-search-state targets the separate state span at
+; search-state-1), so the live path was only the dark-age vill>=15 fallback
+; and the first camp landed ~5 vills late. The search rule additionally ran
+; up-full-reset-search every pass while the demand was ACTIVE, clobbering
+; other DUC searches. Both dead rules are removed; the community-standard
+; direct build is the primary at normal first-camp timing with no upper age
+; bound, so recovery can also rebuild a lost camp past Dark.
 (defrule
     (goal demand-economy-lumber-camp-floor-1 1)
     (not (building-type-count lumber-camp >= 1))
@@ -16666,50 +17576,6 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= dark-age)
     (unit-type-count-total villager >= 7)
-    (resource-found wood)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 1)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number c:= 0)
-    (up-filter-status c: status-resource c: list-active)
-    (up-find-resource c: wood c: 1)
-    (up-get-search-state byzantine-dark-wood-camp-search-state-1)
-    (up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)
-)
-(defrule
-    (goal demand-economy-lumber-camp-floor-1 1)
-    (not (building-type-count lumber-camp >= 1))
-    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (not (building-type-count lumber-camp >= 1))
-    (goal action-claim-build-pass-singleton 0)
-    (resource-found wood)
-    (up-compare-goal byzantine-dark-wood-camp-search-remote-count-1 > 0)
-    (can-build lumber-camp)
-    (building-type-count-total lumber-camp < 1)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object byzantine-dark-wood-camp-point-1)
-    (up-set-target-point byzantine-dark-wood-camp-point-1)
-    (up-build place-point 0 c: lumber-camp)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-lumber-camp-floor-1 77)
-)
-
-; Safety fallback: retain the community-standard direct build path if
-; the DUC resource-point search does not produce a placement witness.
-(defrule
-    (goal demand-economy-lumber-camp-floor-1 1)
-    (not (building-type-count lumber-camp >= 1))
-    (goal construction-retry-barrier-economy-lumber-camp-floor-1 0)
-    (up-pending-objects c: 562 == 0)
-    (not (up-pending-placement c: 562))
-    (not (building-type-count lumber-camp >= 1))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age == dark-age)
-    (unit-type-count-total villager >= 15)
     (resource-found wood)
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 1)
@@ -16835,6 +17701,29 @@
     (up-get-point position-object byzantine-dark-wood-camp-point-2)
     (up-set-target-point byzantine-dark-wood-camp-point-2)
     (up-build place-point 0 c: lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-lumber-camp-floor-2 78)
+)
+
+; Direct-build fallback: the place-point rule above needs
+; search-remote-count-2 > 0, which no rule ever writes, so a second camp near
+; far woodcutters could never build. Fires ONLY on far wood: the count side of
+; activation (fewer than 2 camps) is true all game and without this gate the
+; demand would fire immediately after the first camp finishes, placing the
+; second camp right next to the first. Same guards otherwise, community-standard build.
+(defrule
+    (goal demand-economy-lumber-camp-floor-2 1)
+    (not (building-type-count lumber-camp >= 2))
+    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (resource-found wood)
+    (can-build lumber-camp)
+    (dropsite-min-distance wood > 12)
+=>
+    (build lumber-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-lumber-camp-floor-2 78)
 )
@@ -17263,6 +18152,26 @@
     (set-goal demand-economy-gold-camp-floor-1 621)
 )
 
+; Direct-build fallback: the place-point rule above needs
+; search-remote-count-1 > 0, which no rule ever writes, so without this the
+; first gold camp could never build (the stone camp was masking the witness).
+; Same guards, community-standard build.
+(defrule
+    (goal demand-economy-gold-camp-floor-1 1)
+    (not (building-type-count mining-camp >= 1))
+    (goal construction-retry-barrier-economy-gold-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-1 621)
+)
+
 ; economy-gold-camp-floor-2
 (defrule
     (goal demand-economy-gold-camp-floor-2 628)
@@ -17274,7 +18183,12 @@
 (defrule
     (goal demand-economy-gold-camp-floor-2 0)
     (resource-found gold)
-    (not (building-type-count mining-camp >= 2))
+    ; Far-gold repair: count-only activation let miners walk map-wide once
+    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
+    (or
+        (not (building-type-count mining-camp >= 2))
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (set-goal demand-economy-gold-camp-floor-2 1)
 )
@@ -17334,7 +18248,11 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 2)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -17354,12 +18272,36 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 2)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-2 626)
+)
+
+; Direct-build fallback: same dead place-point chain as gold-1. Fires ONLY on
+; far gold: the count side of activation (fewer than 2 camps) is true all game
+; and without this gate the 2..5 demands cascade into 4 back-to-back camps in
+; Dark. Same guards otherwise, community-standard build.
+(defrule
+    (goal demand-economy-gold-camp-floor-2 1)
+    (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-gold-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (dropsite-min-distance gold > 12)
+=>
+    (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-2 626)
 )
@@ -17375,7 +18317,12 @@
 (defrule
     (goal demand-economy-gold-camp-floor-3 0)
     (resource-found gold)
-    (not (building-type-count mining-camp >= 3))
+    ; Far-gold repair: count-only activation let miners walk map-wide once
+    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
+    (or
+        (not (building-type-count mining-camp >= 3))
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (set-goal demand-economy-gold-camp-floor-3 1)
 )
@@ -17435,7 +18382,11 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 3)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -17455,12 +18406,35 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 1)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 3)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 3)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-3 631)
+)
+
+; Direct-build fallback: same dead place-point chain as gold-1. Far gold only
+; (see gold-2: the count side would cascade). Same guards otherwise,
+; community-standard build.
+(defrule
+    (goal demand-economy-gold-camp-floor-3 1)
+    (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-gold-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (dropsite-min-distance gold > 12)
+=>
+    (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-3 631)
 )
@@ -17476,7 +18450,12 @@
 (defrule
     (goal demand-economy-gold-camp-floor-4 0)
     (resource-found gold)
-    (not (building-type-count mining-camp >= 4))
+    ; Far-gold repair: count-only activation let miners walk map-wide once
+    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
+    (or
+        (not (building-type-count mining-camp >= 4))
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (set-goal demand-economy-gold-camp-floor-4 1)
 )
@@ -17536,7 +18515,11 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 4)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -17556,12 +18539,35 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 2)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 4)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 4)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-4 636)
+)
+
+; Direct-build fallback: same dead place-point chain as gold-1. Far gold only
+; (see gold-2: the count side would cascade). Same guards otherwise,
+; community-standard build.
+(defrule
+    (goal demand-economy-gold-camp-floor-4 1)
+    (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-gold-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+    (dropsite-min-distance gold > 12)
+=>
+    (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-4 636)
 )
@@ -17577,7 +18583,12 @@
 (defrule
     (goal demand-economy-gold-camp-floor-5 0)
     (resource-found gold)
-    (not (building-type-count mining-camp >= 5))
+    ; Far-gold repair: count-only activation let miners walk map-wide once
+    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
+    (or
+        (not (building-type-count mining-camp >= 5))
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (set-goal demand-economy-gold-camp-floor-5 1)
 )
@@ -17637,7 +18648,11 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 5)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -17657,12 +18672,35 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 3)
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 5)
+    ; Far-gold repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 5)
+        (dropsite-min-distance gold > 12)
+    )
 =>
     (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-dark-gold-camp-point)
     (up-set-target-point byzantine-dark-gold-camp-point)
     (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-gold-camp-floor-5 641)
+)
+
+; Direct-build fallback: same dead place-point chain as gold-1. Far gold only
+; (see gold-2: the count side would cascade). Same guards otherwise,
+; community-standard build.
+(defrule
+    (goal demand-economy-gold-camp-floor-5 1)
+    (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-gold-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (resource-found gold)
+    (can-build mining-camp)
+(dropsite-min-distance gold > 12)
+=>
+    (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-gold-camp-floor-5 641)
 )
@@ -17678,7 +18716,12 @@
 (defrule
     (goal demand-economy-stone-camp-floor-1 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 1))
+    ; D1 repair: shared mining-camp counter let gold camps suppress stone camps
+    ; forever. Re-arm also when stone miners walk map-wide. Mirrors lumber-2.
+    (or
+        (not (building-type-count mining-camp >= 1))
+        (dropsite-min-distance stone > 12)
+    )
 =>
     (set-goal demand-economy-stone-camp-floor-1 1)
 )
@@ -17738,7 +18781,11 @@
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 1)
+    ; D1 repair: total-guard mirrors activation (gold camps must not veto stone).
+    (or
+        (building-type-count-total mining-camp < 1)
+        (dropsite-min-distance stone > 12)
+    )
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -17756,7 +18803,11 @@
 (defrule
     (goal demand-economy-stone-camp-floor-2 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    (not (building-type-count mining-camp >= 2))
+    ; D2 repair: same shared-counter decoupling as stone-1.
+    (or
+        (not (building-type-count mining-camp >= 2))
+        (dropsite-min-distance stone > 12)
+    )
 =>
     (set-goal demand-economy-stone-camp-floor-2 1)
 )
@@ -17835,7 +18886,11 @@
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
-    (building-type-count-total mining-camp < 2)
+    ; D2 repair: total-guard mirrors activation.
+    (or
+        (building-type-count-total mining-camp < 2)
+        (dropsite-min-distance stone > 12)
+    )
 
     (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 0)
 =>
@@ -17843,6 +18898,26 @@
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-2 626)
+)
+
+; Direct-build fallback: same dead place-point chain as the gold camps.
+; Numeric encoding (626) matches this demand's own witness block. Fires ONLY on
+; far stone: the count side of activation (fewer than 2 camps) is true all game
+; and without this gate the 2..5 demands cascade. Feudal+ gate retained.
+(defrule
+    (goal demand-economy-stone-camp-floor-2 1)
+    (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-stone-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (dropsite-min-distance stone > 12)
+=>
+    (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-2 626)
 )
@@ -17949,6 +19024,25 @@
     (set-goal demand-economy-stone-camp-floor-3 631)
 )
 
+; Direct-build fallback: same dead place-point chain as the gold camps.
+; Numeric encoding (631) matches this demand's own witness block. Far stone only
+; (see stone-2: the count side would cascade). Feudal+ gate retained.
+(defrule
+    (goal demand-economy-stone-camp-floor-3 1)
+    (not (building-type-count mining-camp >= 3))
+    (goal construction-retry-barrier-economy-stone-camp-floor-3 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (dropsite-min-distance stone > 12)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-3 631)
+)
+
 ; economy-stone-camp-floor-4
 (defrule
     (goal demand-economy-stone-camp-floor-4 638)
@@ -18051,6 +19145,25 @@
     (set-goal demand-economy-stone-camp-floor-4 636)
 )
 
+; Direct-build fallback: same dead place-point chain as the gold camps.
+; Numeric encoding (636) matches this demand's own witness block. Far stone only
+; (see stone-2: the count side would cascade). Feudal+ gate retained.
+(defrule
+    (goal demand-economy-stone-camp-floor-4 1)
+    (not (building-type-count mining-camp >= 4))
+    (goal construction-retry-barrier-economy-stone-camp-floor-4 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (dropsite-min-distance stone > 12)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-4 636)
+)
+
 ; economy-stone-camp-floor-5
 (defrule
     (goal demand-economy-stone-camp-floor-5 668)
@@ -18149,6 +19262,25 @@
     (up-get-point position-object byzantine-stone-camp-point)
     (up-set-target-point byzantine-stone-camp-point)
     (up-build place-point 0 c: mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-stone-camp-floor-5 666)
+)
+
+; Direct-build fallback: same dead place-point chain as the gold camps.
+; Numeric encoding (666) matches this demand's own witness block. Far stone only
+; (see stone-2: the count side would cascade). Feudal+ gate retained.
+(defrule
+    (goal demand-economy-stone-camp-floor-5 1)
+    (not (building-type-count mining-camp >= 5))
+    (goal construction-retry-barrier-economy-stone-camp-floor-5 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (goal action-claim-build-pass-singleton 0)
+    (and (current-age >= feudal-age) (resource-found stone))
+    (can-build mining-camp)
+    (dropsite-min-distance stone > 12)
+=>
+    (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-stone-camp-floor-5 666)
 )
@@ -18776,10 +19908,19 @@
 )
 
 ; Recovery: castle-siege-capability | RELEASED -> ACTIVE on world-state loss
+; In-style repair: mirrors archery-capability recovery [own army need, not only
+; enemy siege]. Without this the shop is never rebuilt on Arena/closed maps
+; where enemy siege stays unseen until late. Lifecycle unchanged.
 (defrule
     (goal demand-castle-siege-capability 0)
     (not (building-type-count siege-workshop >= 1))
-    (players-unit-type-count any-enemy mangonel-line >= 2)
+    (or
+        (or
+            (goal byzantine-army-plan-phase 1)
+            (goal byzantine-army-plan-phase 2)
+        )
+        (players-unit-type-count any-enemy mangonel-line >= 2)
+    )
 =>
     (set-goal demand-castle-siege-capability 1)
 )
@@ -19292,9 +20433,12 @@
 )
 
 ; Frontier wall demand and execution.
+; In-style repair: stone order is Castle > TC2 > walls. Frontier walls wait for
+; the first Castle so they cannot eat the 650 Castle bank on arrival.
 (defrule
     (goal byzantine-frontier-state byzantine-frontier-state-anchored)
     (current-age >= castle-age)
+    (building-type-count-total castle >= 1)
     (stone-amount >= 650)
     (not (town-under-attack))
     (goal demand-adaptive-stone-wall 0)
@@ -20527,6 +21671,30 @@
     (set-goal demand-byzantine-university-ballistics 1)
 )
 
+; Ballistics Imperial fallback [game evidence: the state machine needs towers
+; and walls open Arabia often never builds, so Ballistics + everything behind
+; it stayed dark all game]. A Castle standing in Imperial justifies fire
+; control on its own; same demand, claim serialization unchanged.
+(defrule
+    (current-age >= imperial-age)
+    (building-type-count university >= 1)
+    (building-type-count-total castle >= 1)
+    (goal demand-byzantine-university-ballistics 0)
+    (not (research-completed 93))
+    (or
+        (building-type-count guard-tower >= 1)
+        (or
+            (building-type-count keep >= 1)
+            (or
+                (building-type-count bombard-tower >= 1)
+                (town-under-attack)
+            )
+        )
+    )
+=>
+    (set-goal demand-byzantine-university-ballistics 1)
+)
+
 (defrule
     (or
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
@@ -20725,10 +21893,12 @@
 )
 
 ; Recovery: adaptive-watch-tower | RELEASED -> ACTIVE on world-state loss
+; In-style repair: archer threshold lowered 4->3 so a lost tower rebuilds vs
+; the same archer pressure that triggers issuance below. Lifecycle unchanged.
 (defrule
     (goal demand-adaptive-watch-tower 0)
     (not (building-type-count 79 >= 1))
-    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy militia-line >= 5)))
     (not (current-age >= imperial-age))
 =>
     (set-goal demand-adaptive-watch-tower 1)
@@ -20788,6 +21958,9 @@
 )
 
 ; Action issuance: adaptive-watch-tower | ACTIVE -> ISSUED
+; In-style repair: issuance previously omitted archers although recovery
+; allowed archer-line>=4, so archer rushes never built. Adds archer-line>=3
+; in the same binary-or nesting; witness/pending/retry unchanged.
 (defrule
     (goal demand-adaptive-watch-tower 1)
     (not (building-type-count 79 >= 1))
@@ -20798,7 +21971,15 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= feudal-age)
     (can-build 79)
-    (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 3) (players-unit-type-count any-enemy militia-line >= 5)))
+    ; Game-evidence repair: unescorted foundations under knights died at 90%,
+    ; each wasting the wood for two farms. Require a screen and a wood buffer;
+    ; demand stays ACTIVE and fires in the next raid gap. Lifecycle unchanged.
+    (or
+        (unit-type-count-total 93 >= 2)
+        (unit-type-count-total archer-line >= 2)
+    )
+    (wood-amount >= 175)
 =>
     (build 79)
     (set-goal action-claim-build-pass-singleton 1)
@@ -20884,6 +22065,8 @@
 
 ; FEUDAL: preserve the Castle trajectory while using cheap palisades as the
 ; first defensive layer. Existing tower/anchor geometry remains available.
+; In-style repair: archer 4->3 + scout-cavalry>=3 added in the same binary-or
+; nesting, wood 60->50. Demand/state/material lifecycle unchanged.
 (defrule
     (goal demand-adaptive-resource-palisade 0)
     (goal byzantine-wall-resource-state byzantine-wall-resource-idle)
@@ -20891,10 +22074,13 @@
     (or
         (players-unit-type-count any-enemy knight >= 2)
         (or
-                (players-unit-type-count any-enemy archer-line >= 4)
+                (players-unit-type-count any-enemy scout-cavalry-line >= 3)
                 (or
-                        (players-unit-type-count any-enemy militia-line >= 5)
-                        (town-under-attack)
+                        (players-unit-type-count any-enemy archer-line >= 3)
+                        (or
+                                (players-unit-type-count any-enemy militia-line >= 5)
+                                (town-under-attack)
+                            )
                     )
             )
     )
@@ -20905,7 +22091,7 @@
                 (dropsite-min-distance wood >= 7)
             )
     )
-    (wood-amount >= 60)
+    (wood-amount >= 50)
 =>
     (set-goal demand-adaptive-resource-palisade 1)
     (set-goal byzantine-wall-resource-state byzantine-wall-resource-acquire)
@@ -21612,8 +22798,16 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (up-pending-objects c: 235 == 0)
     (not (up-pending-placement c: 235))
@@ -21634,8 +22828,16 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (up-pending-objects c: 235 == 0)
     (not (up-pending-placement c: 235))
@@ -21656,8 +22858,16 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (up-pending-objects c: 235 == 0)
     (not (up-pending-placement c: 235))
@@ -21687,8 +22897,16 @@
     (not (town-under-attack))
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (up-pending-objects c: 235 == 0)
     (not (up-pending-placement c: 235))
@@ -21696,6 +22914,32 @@
 =>
     (up-assign-builders c: keep c: 1)
     (build-forward keep)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-keep-floor 92)
+)
+
+; Castle-anchored Keep fallback [game evidence: all executors need the funnel /
+; scorer coincidence open Arabia often never makes, so stone + gold sat idle
+; with zero towers]. Builds at the standing Castle once rich; shared demand
+; and witness, so it converges with the scored path. Find-to-build in one
+; rule per the relic-acquire and gold-camp-build precedents.
+(defrule
+    (goal demand-imperial-keep-floor 1)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount > 800)
+    (up-pending-objects c: 235 == 0)
+    (not (up-pending-placement c: 235))
+    (can-build keep)
+=>
+    (up-full-reset-search)
+    (up-find-local c: castle c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-defensive-build-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: keep c: 1)
+    (up-build place-point 0 c: keep)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-imperial-keep-floor 92)
 )
@@ -21843,8 +23087,16 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (gold-amount >= bt-byzantine-bombard-gold-reserve)
     (up-pending-objects c: 236 == 0)
@@ -21866,8 +23118,16 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (gold-amount >= bt-byzantine-bombard-gold-reserve)
     (up-pending-objects c: 236 == 0)
@@ -21889,8 +23149,16 @@
     (goal action-claim-build-pass-singleton 0)
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
-    (not (goal byzantine-production-castle-target 2))
-    (not (goal byzantine-production-castle-target 3))
+    ; Rich-game release (deep dive): castle-target suppression reserves stone
+    ; for the next Castle only while stone is actually tight; past 1250 both
+    ; the Castle (650) and the tower fit, and Castles win pass races anyway.
+    (or
+        (stone-amount > 1250)
+        (and
+            (not (goal byzantine-production-castle-target 2))
+            (not (goal byzantine-production-castle-target 3))
+        )
+    )
     (stone-amount >= bt-byzantine-static-stone-reserve)
     (gold-amount >= bt-byzantine-bombard-gold-reserve)
     (up-pending-objects c: 236 == 0)
@@ -21921,6 +23189,31 @@
 =>
     (up-assign-builders c: bombard-tower c: 1)
     (build-forward bombard-tower)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-bombard-tower-floor 86)
+)
+
+; Bombard Tower castle-anchored fallback (same game evidence as Keep above).
+; Shared demand and witness; rich-gated (1250 stone / 1000 gold) so Castles
+; keep first claim on stone through the guards above.
+(defrule
+    (goal demand-imperial-bombard-tower-floor 1)
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (stone-amount > 1250)
+    (gold-amount >= bt-byzantine-bombard-gold-reserve)
+    (up-pending-objects c: 236 == 0)
+    (not (up-pending-placement c: 236))
+    (can-build bombard-tower)
+=>
+    (up-full-reset-search)
+    (up-find-local c: castle c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object byzantine-defensive-build-point)
+    (up-set-target-point byzantine-defensive-build-point)
+    (up-assign-builders c: bombard-tower c: 1)
+    (up-build place-point 0 c: bombard-tower)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-imperial-bombard-tower-floor 86)
 )
@@ -21972,12 +23265,16 @@
     (goal research-retry-barrier-research-pikeman 0)
     (not (up-research-status c: 197 >= 2))
     (current-age >= castle-age)
-    (unit-type-count 93 >= 6)
-    (can-research-with-escrow ri-pikeman)
+    ; Forced Castle Pike: game evidence showed spears dying under pressure
+    ; held this gate at zero spears forever, so the upgrade never fired even
+    ; with banked resources. No escrow-saving system exists in this file, so
+    ; can-research-with-escrow is plain affordability: research whenever
+    ; available in Castle, no unit prerequisite.
+    (can-research-with-escrow 197)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research ri-pikeman)
+    (research 197)
     (set-goal demand-research-pikeman 15952)
 )
 
@@ -22077,11 +23374,11 @@
     (not (up-research-status c: 96 >= 2))
     (current-age >= imperial-age)
     (unit-type-count-total battering-ram-line >= 2)
-    (can-research-with-escrow ri-capped-ram)
+    (can-research-with-escrow 96)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research ri-capped-ram)
+    (research 96)
     (set-goal demand-research-capped-ram 15956)
 )
 
@@ -22817,18 +24114,52 @@
     (goal byzantine-university-research-claim 0)
     (not (up-research-status c: 93 >= 2))
     (building-type-count university >= 1)
+    ; W5 repair: issuance demanded tower-network + 2 anchors while arming fires
+    ; at hardened-perimeter + 1 static asset, so the demand sat armed forever.
+    ; Issuance now mirrors arming; claim/escrow serialization unchanged.
     (or
-        (goal byzantine-university-state byzantine-university-state-tower-network)
-        (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
+        (or
+            (goal byzantine-university-state byzantine-university-state-tower-network)
+            (goal byzantine-university-state byzantine-university-state-imperial-gunline)
+        )
     )
-    (up-compare-goal byzantine-wall-anchor-pair > 0)
     (or
-        (building-type-count guard-tower >= 2)
-        (and
-            (building-type-count guard-tower >= 1)
+        (building-type-count guard-tower >= 1)
+        (or
+            (building-type-count castle >= 1)
             (or
                 (building-type-count keep >= 1)
                 (building-type-count bombard-tower >= 1)
+            )
+        )
+    )
+    (can-research-with-escrow ri-ballistics)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-ballistics)
+    (set-goal byzantine-university-research-claim 1)
+    (set-goal demand-byzantine-university-ballistics 531)
+)
+
+; Ballistics Imperial fallback issuance: same demand/claim, no state machine.
+(defrule
+    (goal demand-byzantine-university-ballistics 530)
+    (not (research-completed 93))
+    (goal research-retry-barrier-byzantine-university-ballistics 0)
+    (goal byzantine-university-research-claim 0)
+    (not (up-research-status c: 93 >= 2))
+    (building-type-count university >= 1)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (or
+        (building-type-count guard-tower >= 1)
+        (or
+            (building-type-count keep >= 1)
+            (or
+                (building-type-count bombard-tower >= 1)
+                (town-under-attack)
             )
         )
     )
@@ -22954,16 +24285,18 @@
         (goal byzantine-university-state byzantine-university-state-hardened-perimeter)
         (goal byzantine-university-state byzantine-university-state-tower-network)
     )
+    ; W5 repair: issuance needed wall AND tower pending together (rare) while
+    ; arming accepts either (plus palisade). Mirror arming; claim unchanged.
     (or
         (goal byzantine-frontier-state byzantine-frontier-state-wall-pending)
         (or
-            (and
-                (up-pending-objects c: 117 >= 1)
-                (up-pending-objects c: 234 >= 1)
-            )
-            (and
-                (up-pending-objects c: 117 >= 1)
-                (up-pending-objects c: 235 >= 1)
+            (up-pending-objects c: 117 >= 1)
+            (or
+                (up-pending-objects c: 72 >= 1)
+                (or
+                    (up-pending-objects c: 234 >= 1)
+                    (up-pending-objects c: 235 >= 1)
+                )
             )
         )
     )
@@ -23533,6 +24866,41 @@
     (set-goal demand-research-hussar 118)
 )
 
+; Imperial Light Cavalry floor: maintains 6+ Light Cavalry (546) so Hussar research gate passes
+; Release when floor met
+(defrule
+    (goal demand-imperial-light-cavalry-floor 16002)
+    (unit-type-count 546 >= 6)
+=>
+    (set-goal demand-imperial-light-cavalry-floor 0)
+)
+
+; Re-arm if lost in Imperial
+(defrule
+    (goal demand-imperial-light-cavalry-floor 0)
+    (current-age >= imperial-age)
+    (unit-type-count 546 < 6)
+=>
+    (set-goal demand-imperial-light-cavalry-floor 1)
+)
+
+; Action issuance: train Light Cavalry to 6 in Imperial
+(defrule
+    (goal demand-imperial-light-cavalry-floor 1)
+    (goal production-retry-barrier-imperial-light-cavalry-floor 0)
+    (not (up-pending-objects c: 312 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (building-type-count-total stable >= 1)
+    (research-completed ri-light-cavalry)
+    (can-train-with-escrow 546)
+    (unit-type-count 546 < 6)
+=>
+    (train 546)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-light-cavalry-floor 16003)
+)
+
 ; Pending diagnostics: research-onager
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 117 and cannot reissue from pending goal 118
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 118 is active
@@ -24033,8 +25401,9 @@
     (set-goal demand-imperial-elite-varangian-upgrade issued-imperial-elite-varangian-upgrade)
 )
 
-; Elite Skirmisher: keep the existing discounted skirmisher counter, but upgrade it
-; only when the ranged-counter posture is actually selected.
+; Elite Skirmisher: keep the existing discounted skirmisher counter.
+; W3 repair: was chained behind Elite Varangian (1454), so non-Varangian games
+; never upgraded. Ranged posture OR fielded skirm mass now arms it.
 (defrule
     (goal demand-imperial-elite-skirmisher-upgrade complete-imperial-elite-skirmisher-upgrade)
     (research-completed 98)
@@ -24045,7 +25414,13 @@
     (goal demand-imperial-elite-skirmisher-upgrade 0)
     (not (research-completed 98))
     (current-age >= imperial-age)
-    (research-completed 1454)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (and
+            (unit-type-count 358 >= 6)
+            (building-type-count-total archery-range >= 1)
+        )
+    )
     (unit-type-count 358 >= 4)
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 1)
@@ -24084,7 +25459,13 @@
     (goal demand-imperial-elite-skirmisher-upgrade 1)
     (goal research-retry-barrier-imperial-elite-skirmisher-upgrade 0)
     (current-age >= imperial-age)
-    (research-completed 1454)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (and
+            (unit-type-count 358 >= 6)
+            (building-type-count-total archery-range >= 1)
+        )
+    )
     (unit-type-count 358 >= 4)
     (building-type-count-total archery-range >= 1)
     (not (research-completed 98))
@@ -24727,6 +26108,29 @@
     (set-goal demand-castle-cataphract-floor 50)
 )
 
+; W6 Castle stream issuance: trains 4th-7th Cataphracts. Mutually exclusive
+; with the floor above (<4 vs >=4). Pauses when the Imperial bank is full so
+; the stream cannot snipe the age-up; completion/release already clear it.
+(defrule
+    (goal demand-castle-cataphract-floor 1)
+    (goal byzantine-army-plan-phase 1)
+    (unit-type-count cataphract-line >= bt-castle-cataphract-floor)
+    (goal production-retry-barrier-castle-cataphract-floor 0)
+    (not (up-pending-objects c: 40 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age == castle-age)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count-total villager >= 50)
+    (building-type-count farm >= 20)
+    (not (can-research-with-escrow imperial-age))
+    (can-train-with-escrow cataphract-line)
+    (unit-type-count-total cataphract-line < 8)
+=>
+    (train cataphract-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-cataphract-floor 50)
+)
+
 (defrule
     (goal demand-castle-cataphract-floor 1)
     (goal byzantine-army-plan-phase 2)
@@ -24735,6 +26139,12 @@
     (not (up-pending-objects c: 40 >= 1))
     (goal action-claim-train-arbitration 0)
     (current-age >= castle-age)
+    ; G1 repair: gold conservation. Below 500 gold Imperial, Catas yield to
+    ; siege/monks/trebs (exempt by design); trash holds the field instead.
+    (not (and
+        (current-age >= imperial-age)
+        (gold-amount < 500)
+    ))
     (can-train-with-escrow cataphract-line)
     (or
         (unit-type-count-total cataphract-line < bt-imperial-cataphract-floor)
@@ -24843,7 +26253,13 @@
 (defrule
     (goal demand-castle-varangian-guard-floor 1)
     (goal byzantine-army-plan-phase 2)
-    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+        (or
+            (players-unit-type-count any-enemy knight >= 3)
+            (players-unit-type-count any-enemy militia-line >= 5)
+        )
+    )
     (not (unit-type-count varangian-guard-line >= bt-imperial-varangian-floor))
     (goal production-retry-barrier-castle-varangian-guard-floor 0)
     (not (up-pending-objects c: 2703 >= 1))
@@ -24941,6 +26357,28 @@
     (current-age >= castle-age)
     (can-train-with-escrow mangonel-line)
     (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+=>
+    (train mangonel-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-mangonel-floor 53)
+)
+
+; W6 Castle stream issuance: trains the 3rd Mangonel. Same eco gates and
+; Imperial-bank veto; completion/release already clear it.
+(defrule
+    (goal demand-castle-mangonel-floor 1)
+    (goal byzantine-army-plan-phase 1)
+    (unit-type-count mangonel-line >= bt-castle-mangonel-floor)
+    (goal production-retry-barrier-castle-mangonel-floor 0)
+    (not (up-pending-objects c: 280 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age == castle-age)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count-total villager >= 50)
+    (building-type-count farm >= 20)
+    (not (can-research-with-escrow imperial-age))
+    (can-train-with-escrow mangonel-line)
+    (unit-type-count-total mangonel-line < 3)
 =>
     (train mangonel-line)
     (set-goal action-claim-train-arbitration 1)
@@ -25469,15 +26907,30 @@
 
 ; Action issuance: imperial-hussar-floor | ACTIVE -> ISSUED
 (defrule
-    (goal demand-imperial-hussar-floor 1)
-    (not (unit-type-count hussar >= bt-imperial-hussar-target))
-    (goal production-retry-barrier-imperial-hussar-floor 0)
-    (not (up-pending-objects c: 441 >= 1))
-    (not (unit-type-count hussar >= bt-imperial-hussar-target))
-    (goal action-claim-train-arbitration 0)
-    (current-age >= imperial-age)
-    (can-train-with-escrow hussar)
-    (unit-type-count-total hussar < bt-imperial-hussar-target)
+       (goal demand-imperial-hussar-floor 1)
+       (not (unit-type-count hussar >= 16))
+       (goal production-retry-barrier-imperial-hussar-floor 0)
+       (not (up-pending-objects c: 441 >= 1))
+       (not (unit-type-count hussar >= 16))
+       (goal action-claim-train-arbitration 0)
+       (current-age >= imperial-age)
+       (can-train-with-escrow hussar)
+       (or
+           (unit-type-count-total hussar < bt-imperial-hussar-target)
+           (and
+               (goal byzantine-late-resource-burn 1)
+               (and
+                   (goal byzantine-late-upgrade-priority 0)
+                   (and
+                       (or
+                           (wood-amount > 3000)
+                           (food-amount > 3500)
+                       )
+                       (unit-type-count-total hussar < 16)
+                   )
+               )
+           )
+       )
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
@@ -25819,12 +27272,17 @@
 ; Action issuance: imperial-arbalester-floor | ACTIVE -> ISSUED
 (defrule
     (goal demand-imperial-arbalester-floor 1)
-    (not (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))
+    (not (unit-type-count-total arbalest >= bt-imperial-late-arbalester-target))
     (goal production-retry-barrier-imperial-arbalester-floor 0)
     (not (up-pending-objects c: 492 >= 1))
-    (not (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))
+    (not (unit-type-count-total arbalest >= bt-imperial-late-arbalester-target))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
+    ; G1 repair: same gold conservation as Cataphracts above.
+    (not (and
+        (current-age >= imperial-age)
+        (gold-amount < 500)
+    ))
     (can-train-with-escrow arbalest)
     (or
         (unit-type-count-total arbalest < bt-imperial-arbalester-floor)
@@ -25989,10 +27447,10 @@
 ; Action issuance: imperial-halberdier-floor | ACTIVE -> ISSUED
 (defrule
     (goal demand-imperial-halberdier-floor 1)
-    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (not (unit-type-count 359 >= bt-imperial-late-halberdier-target))
     (goal production-retry-barrier-imperial-halberdier-floor 0)
     (not (up-pending-objects c: 359 >= 1))
-    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (not (unit-type-count 359 >= bt-imperial-late-halberdier-target))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (can-train-with-escrow 359)
@@ -26102,6 +27560,11 @@
         )
     )
     (current-age >= imperial-age)
+    ; G1 repair: same gold conservation as Cataphracts above.
+    (not (and
+        (current-age >= imperial-age)
+        (gold-amount < 500)
+    ))
     (can-train-with-escrow 330)
     (unit-type-count-total 330 < bt-imperial-heavy-camel-target)
 =>
@@ -27847,6 +29310,12 @@
     (enable-timer byzantine-imperial-band-dwell-timer 30)
 )
 
+; W2 repair: band entry is by mass, banks are exit. Removed 2400/2000-class bank
+; conjunctions from all candidates/transitions, deleted bank-loss clears,
+; sustain-loss clears, and three unconditional catch-all clears that wiped every
+; candidacy same-pass (guard timer never triggered, transitions never fired).
+; Kept: situational/mass/identity evidence, trash gold<=800, recovery gold>=1800,
+; economic bank exit, rearm dampers, floor-breaks, dwell/guard timers.
 ; Native control rule: byzantine-imperial-band-fortified-candidate
 (defrule
     (up-compare-goal byzantine-imperial-band-state != 2)
@@ -27854,9 +29323,6 @@
     (goal byzantine-siege-approach byzantine-siege-approach-fortified)
     (goal byzantine-offensive-objective-claim 1)
     (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet >= 2) (unit-type-count-total bombard-cannon >= 2)))
-    (food-amount >= 2400)
-    (wood-amount >= 2400)
-    (gold-amount >= 2600)
     (or (up-compare-goal byzantine-imperial-band-rearm != 2) (timer-triggered byzantine-imperial-band-rearm-timer))
     (or (up-compare-goal byzantine-imperial-band-state != 0) (timer-triggered byzantine-imperial-band-dwell-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 2)
@@ -27889,14 +29355,10 @@
     (goal byzantine-imperial-band-state 0)
     (timer-triggered byzantine-imperial-band-dwell-timer)
     (goal byzantine-fortification-threat 0)
-    (food-amount >= 2400)
-    (wood-amount >= 2200)
     (gold-amount <= 800)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 3)
@@ -27913,14 +29375,9 @@
     (goal byzantine-fortification-threat 0)
     (goal byzantine-offensive-objective-claim 1)
     (players-military-population any-enemy >= 12)
-    (food-amount >= 2400)
-    (wood-amount >= 2000)
-    (gold-amount >= 2000)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 1)
@@ -27935,14 +29392,10 @@
     (goal byzantine-imperial-band-state 1)
     (timer-triggered byzantine-imperial-band-dwell-timer)
     (goal byzantine-fortification-threat 0)
-    (food-amount >= 2400)
-    (wood-amount >= 2200)
     (gold-amount <= 800)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 3)
@@ -27960,14 +29413,10 @@
     (goal byzantine-fortification-threat 0)
     (goal byzantine-offensive-objective-claim 1)
     (players-military-population any-enemy >= 12)
-    (food-amount >= 2400)
-    (wood-amount >= 2000)
     (gold-amount >= 1800)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 1)
@@ -27986,14 +29435,9 @@
     (goal byzantine-fortification-threat 0)
     (goal byzantine-offensive-objective-claim 1)
     (players-military-population any-enemy >= 12)
-    (food-amount >= 2400)
-    (wood-amount >= 2000)
-    (gold-amount >= 2000)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 1)
@@ -28010,14 +29454,10 @@
     (goal byzantine-fortification-threat 0)
     (not (goal byzantine-offensive-objective-class byzantine-offensive-objective-class-siege))
     (goal byzantine-fortification-threat 0)
-    (food-amount >= 2400)
-    (wood-amount >= 2200)
     (gold-amount <= 800)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
     (up-compare-goal byzantine-imperial-band-candidate != 3)
@@ -28025,6 +29465,30 @@
     (set-goal byzantine-imperial-band-candidate 3)
     (disable-timer byzantine-imperial-band-guard-timer)
     (enable-timer byzantine-imperial-band-guard-timer 20)
+)
+
+; Native control rule: byzantine-imperial-band-mass-candidate
+; Fallback for deathball armies with no DUC objective. Game evidence: 60+ Imp
+; army (BBC, trebs, rams, halbs) sat home forever because candidate 1 needs
+; offensive-objective-claim 1. When military pop is very high and no objective
+; owns the army, force candidate 1 so band state reaches 1 and baseline attack
+; admits the push. Guarded by no town-attack so defense is never stripped.
+(defrule
+    (goal byzantine-imperial-band-state 0)
+    (timer-triggered byzantine-imperial-band-dwell-timer)
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 0)
+    (players-military-population any-enemy >= 12)
+    (military-population >= 40)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+    (up-compare-goal byzantine-imperial-band-candidate != 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 1)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (enable-timer byzantine-imperial-band-guard-timer 10)
 )
 
 ; Native control rule: byzantine-imperial-band-clear-fortified-candidate
@@ -28081,55 +29545,10 @@
     (disable-timer byzantine-imperial-band-guard-timer)
 )
 
-; Native control rule: byzantine-imperial-band-clear-fortified-candidate-07
-(defrule
-    (goal byzantine-imperial-band-candidate 2)
-    (food-amount < 2400)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-fortified-candidate-08
-(defrule
-    (goal byzantine-imperial-band-candidate 2)
-    (wood-amount < 2400)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-fortified-candidate-09
-(defrule
-    (goal byzantine-imperial-band-candidate 2)
-    (gold-amount < 2600)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
 ; Native control rule: byzantine-imperial-band-clear-trash-candidate
 (defrule
     (goal byzantine-imperial-band-candidate 3)
     (goal byzantine-fortification-threat 1)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-trash-candidate-02
-(defrule
-    (goal byzantine-imperial-band-candidate 3)
-    (food-amount < 2400)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-trash-candidate-03
-(defrule
-    (goal byzantine-imperial-band-candidate 3)
-    (wood-amount < 2200)
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -28171,33 +29590,6 @@
     (disable-timer byzantine-imperial-band-guard-timer)
 )
 
-; Native control rule: byzantine-imperial-band-clear-trash-candidate-08
-(defrule
-    (goal byzantine-imperial-band-candidate 3)
-    (food-amount < 2000)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-trash-candidate-09
-(defrule
-    (goal byzantine-imperial-band-candidate 3)
-    (wood-amount < 1700)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-trash-candidate-10
-(defrule
-    (goal byzantine-imperial-band-candidate 3)
-
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
 ; Native control rule: byzantine-imperial-band-clear-open-candidate
 (defrule
     (goal byzantine-imperial-band-candidate 1)
@@ -28223,36 +29615,6 @@
     (goal byzantine-imperial-band-candidate 1)
     (up-compare-goal byzantine-imperial-band-state != 3)
     (players-military-population any-enemy < 12)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-candidate-04
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (up-compare-goal byzantine-imperial-band-state != 3)
-    (food-amount < 2400)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-candidate-05
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (up-compare-goal byzantine-imperial-band-state != 3)
-    (wood-amount < 2000)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-candidate-06
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (up-compare-goal byzantine-imperial-band-state != 3)
-    (gold-amount < 2000)
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -28288,36 +29650,6 @@
     (disable-timer byzantine-imperial-band-guard-timer)
 )
 
-; Native control rule: byzantine-imperial-band-clear-open-candidate-10
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (up-compare-goal byzantine-imperial-band-state != 3)
-    (food-amount < 2000)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-candidate-11
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (up-compare-goal byzantine-imperial-band-state != 3)
-    (wood-amount < 1700)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-candidate-12
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (up-compare-goal byzantine-imperial-band-state != 3)
-
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
 ; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate
 (defrule
     (goal byzantine-imperial-band-candidate 1)
@@ -28343,26 +29675,6 @@
     (goal byzantine-imperial-band-candidate 1)
     (goal byzantine-imperial-band-state 3)
     (players-military-population any-enemy < 12)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-04
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (goal byzantine-imperial-band-state 3)
-    (food-amount < 2400)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-05
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (goal byzantine-imperial-band-state 3)
-    (wood-amount < 2000)
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -28403,36 +29715,6 @@
     (goal byzantine-imperial-band-candidate 1)
     (goal byzantine-imperial-band-state 3)
     (unit-type-count hussar < 12)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-10
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (goal byzantine-imperial-band-state 3)
-    (food-amount < 2000)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-11
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (goal byzantine-imperial-band-state 3)
-    (wood-amount < 1700)
-=>
-    (set-goal byzantine-imperial-band-candidate 0)
-    (disable-timer byzantine-imperial-band-guard-timer)
-)
-
-; Native control rule: byzantine-imperial-band-clear-open-recovery-candidate-12
-(defrule
-    (goal byzantine-imperial-band-candidate 1)
-    (goal byzantine-imperial-band-state 3)
-
 =>
     (set-goal byzantine-imperial-band-candidate 0)
     (disable-timer byzantine-imperial-band-guard-timer)
@@ -28485,9 +29767,6 @@
     (goal byzantine-siege-approach byzantine-siege-approach-fortified)
     (goal byzantine-offensive-objective-claim 1)
     (or (unit-type-count-total mangonel-line >= 2) (or (unit-type-count-total trebuchet >= 2) (unit-type-count-total bombard-cannon >= 2)))
-    (food-amount >= 2400)
-    (wood-amount >= 2400)
-    (gold-amount >= 2600)
     (or (up-compare-goal byzantine-imperial-band-rearm != 2) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
     (set-goal byzantine-imperial-band-state 2)
@@ -28517,14 +29796,10 @@
     (goal byzantine-imperial-band-candidate 3)
     (timer-triggered byzantine-imperial-band-guard-timer)
     (goal byzantine-fortification-threat 0)
-    (food-amount >= 2400)
-    (wood-amount >= 2200)
     (gold-amount <= 800)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 3) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
@@ -28544,14 +29819,9 @@
     (goal byzantine-fortification-threat 0)
     (goal byzantine-offensive-objective-claim 1)
     (players-military-population any-enemy >= 12)
-    (food-amount >= 2400)
-    (wood-amount >= 2000)
-    (gold-amount >= 2000)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
@@ -28571,14 +29841,10 @@
     (goal byzantine-fortification-threat 0)
     (goal byzantine-offensive-objective-claim 1)
     (players-military-population any-enemy >= 12)
-    (food-amount >= 2400)
-    (wood-amount >= 2000)
     (gold-amount >= 1800)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
-    (food-amount >= 2000)
-    (wood-amount >= 1700)
 
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
@@ -28622,20 +29888,73 @@
 =>
     (set-goal demand-imperial-elite-skirmisher-floor 1)
 )
+
+; G4 Imperial stream: hold 24 ESkirms on a carried late bank. Base re-arm above
+; stops at 18 and release clears at 18, so this re-arms 18-23; witness/release
+; already resolve through the floor counts. Trash costs no gold.
 (defrule
     (current-age >= imperial-age)
-    (goal demand-imperial-halberdier-floor 0)
-    (unit-type-count-total 359 < 18)
+    (goal demand-imperial-elite-skirmisher-floor 0)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (or
+        (wood-amount > 3000)
+        (food-amount > 3500)
+    )
+    (unit-type-count-total skirmisher-line >= 18)
+    (unit-type-count-total skirmisher-line < 24)
 =>
-    (set-goal demand-imperial-halberdier-floor 1)
+    (set-goal demand-imperial-elite-skirmisher-floor 1)
 )
-(defrule
-    (current-age >= imperial-age)
-    (goal demand-imperial-hussar-floor 0)
-    (unit-type-count-total hussar < 12)
-=>
-    (set-goal demand-imperial-hussar-floor 1)
-)
+   (defrule
+       (current-age >= imperial-age)
+       (goal demand-imperial-halberdier-floor 0)
+       (unit-type-count-total 359 < 18)
+   =>
+       (set-goal demand-imperial-halberdier-floor 1)
+   )
+
+; G4 Imperial stream: hold 30 Halberdiers on a carried late bank [the existing
+; late OR below was unreachable: preconditions stopped at 18 and nothing
+; re-armed 18-29]. Witness/release already resolve through floor counts.
+   (defrule
+       (current-age >= imperial-age)
+       (goal demand-imperial-halberdier-floor 0)
+       (goal byzantine-late-resource-burn 1)
+       (goal byzantine-late-upgrade-priority 0)
+       (or
+           (wood-amount > 3000)
+           (food-amount > 3500)
+       )
+       (unit-type-count-total 359 >= 18)
+       (unit-type-count-total 359 < 30)
+   =>
+       (set-goal demand-imperial-halberdier-floor 1)
+   )
+   (defrule
+       (current-age >= imperial-age)
+       (goal demand-imperial-hussar-floor 0)
+       (unit-type-count-total hussar < 12)
+   =>
+       (set-goal demand-imperial-hussar-floor 1)
+   )
+
+; G4 Imperial stream: hold 16 Hussars. Demand already re-arms unconditionally
+; below 12; this extends 12-15 on a carried bank. Witness/release resolve it.
+   (defrule
+       (current-age >= imperial-age)
+       (goal demand-imperial-hussar-floor 0)
+       (goal byzantine-late-resource-burn 1)
+       (goal byzantine-late-upgrade-priority 0)
+       (or
+           (wood-amount > 3000)
+           (food-amount > 3500)
+       )
+       (unit-type-count-total hussar >= 12)
+       (unit-type-count-total hussar < 16)
+   =>
+       (set-goal demand-imperial-hussar-floor 1)
+   )
 ; Imperial band-specific replacement reconciliation
 (defrule
     (current-age >= imperial-age)
@@ -28829,16 +30148,31 @@
 ; Action issuance: imperial-elite-skirmisher-floor | ACTIVE -> ISSUED
 (defrule
     (goal demand-imperial-elite-skirmisher-floor 1)
-    (not (unit-type-count skirmisher-line >= 18))
+    (not (unit-type-count skirmisher-line >= 24))
     (goal production-retry-barrier-imperial-elite-skirmisher-floor 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count 6 >= 18))
+    (not (unit-type-count 6 >= 24))
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (up-research-status c: 98 >= 3)
-    (unit-type-count 6 < 18)
+    (unit-type-count 6 < 24)
     (can-train-with-escrow skirmisher-line)
-    (unit-type-count-total skirmisher-line < 18)
+    (or
+        (unit-type-count-total skirmisher-line < 18)
+        (and
+            (goal byzantine-late-resource-burn 1)
+            (and
+                (goal byzantine-late-upgrade-priority 0)
+                (and
+                    (or
+                        (wood-amount > 3000)
+                        (food-amount > 3500)
+                    )
+                    (unit-type-count-total skirmisher-line < 24)
+                )
+            )
+        )
+    )
 =>
     (train skirmisher-line)
     (set-goal action-claim-train-arbitration 1)
@@ -30077,6 +31411,122 @@
     (set-goal demand-imperial-trash-hussar-high 123)
 )
 
+; Runtime capability expansion bridge v1
+; Purpose: restore the first Castle -> production-capability -> TC expansion ladder
+; after recent runtime regressions. This is a bounded runtime overlay, not a second
+; scheduler. Existing lifecycle demands remain authoritative for completion/recovery.
+
+; Runtime capability bridge: Castle foundation
+; In-style repair: removed the dead Feudal pre-bank branch. It could never issue
+; because can-build castle is false before Castle age; the outer vil/stone/safety
+; guards already restate its economy conditions. Behavior-identical on stock data.
+(defrule
+    (not (building-type-count-total castle >= 1))
+    (up-pending-objects c: castle == 0)
+    (not (up-pending-placement c: castle))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (unit-type-count-total villager >= 35)
+    (stone-amount >= 650)
+    (not (town-under-attack))
+    (can-build castle)
+=>
+    (build castle)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Runtime capability bridge: TC2 foundation
+; Castle comes first so TC2 does not cannibalize the first Byzantine Castle bank.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total castle >= 1)
+    (building-type-count-total town-center < 2)
+    (up-pending-objects c: town-center == 0)
+    (not (up-pending-placement c: town-center))
+    (goal action-claim-build-pass-singleton 0)
+    (unit-type-count-total villager >= 45)
+    (building-type-count-total farm >= 12)
+    (food-amount >= 600)
+    (wood-amount >= 275)
+    (stone-amount >= 100)
+    (population-headroom > 6)
+    (not (town-under-attack))
+    (can-build town-center)
+=>
+    (build town-center)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Runtime capability bridge: TC3 foundation
+(defrule
+    (current-age == castle-age)
+    (building-type-count-total town-center >= 2)
+    (building-type-count-total town-center < 3)
+    (up-pending-objects c: town-center == 0)
+    (not (up-pending-placement c: town-center))
+    (goal action-claim-build-pass-singleton 0)
+    (unit-type-count-total villager >= 60)
+    (building-type-count-total farm >= 18)
+    (food-amount >= 800)
+    (wood-amount >= 275)
+    (stone-amount >= 100)
+    (population-headroom > 10)
+    (not (town-under-attack))
+    (can-build town-center)
+=>
+    (build town-center)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Runtime capability bridge: Castle stable
+; In-style repair: Cataphracts train at the Castle, so an unconditional Stable
+; wastes 175w on the default Cata/Varangian/skirm/monk backbone. Bridge only on
+; real cavalry need (camel demands or fielded camel/knight/scouts). Lifecycle
+; unchanged; the capability recovery below still owns world-state loss.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total stable < 1)
+    (or
+        (goal demand-counter-castle-camels 1)
+        (or
+            (goal demand-castle-camel-transition-floor 1)
+            (or
+                (unit-type-count-total camel-line >= 1)
+                (or
+                    (unit-type-count-total knight-line >= 1)
+                    (unit-type-count-total scout-cavalry-line >= 2)
+                )
+            )
+        )
+    )
+=>
+    (set-goal demand-castle-stable-capability 1)
+)
+
+; Runtime capability bridge: Castle ranged
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total archery-range < 1)
+=>
+    (set-goal demand-castle-archery-capability 1)
+)
+
+; Runtime capability bridge: Pikeman research
+(defrule
+    (current-age >= castle-age)
+    (not (research-completed 197))
+=>
+    (set-goal demand-research-pikeman 1)
+)
+
+; Runtime capability bridge: Elite Skirmisher research
+(defrule
+    (current-age >= castle-age)
+    (not (research-completed 98))
+=>
+    (set-goal demand-research-elite-skirmisher 1)
+)
+
 ; Native Strategos voice plan
 (defconst voice-global-cooldown 50)
 (defconst voice-global-lock 15994)
@@ -30109,6 +31559,7 @@
 (defconst voice-rearm-severe-counter 38)
 (defconst voice-rearm-siege-blocker 37)
 (defconst voice-rearm-strategos-posture 36)
+(defconst voice-mute 15978)
 ; Voice Goal initialization
 (defrule
     (true)
@@ -30129,6 +31580,7 @@
     (set-goal voice-latch-siege-blocker 0)
     (set-goal voice-latch-strategos-posture 0)
     (set-goal voice-match-count 0)
+    (set-goal voice-mute 0)
     (disable-self)
 )
 
@@ -30161,6 +31613,66 @@
 =>
     (disable-timer voice-global-cooldown)
     (set-goal voice-global-lock 0)
+)
+
+; Flavor mute: taunt 107 silences the Strategos, 108 restores him. Implemented
+; as a sentinel global-lock (3), which no candidate or release rule accepts, so
+; all 14 voice lines go quiet with zero edits to their admission logic.
+(defrule
+    (taunt-detected any-ally 107)
+    (goal voice-mute 0)
+=>
+    (set-goal voice-mute 1)
+    (set-goal voice-global-lock 3)
+    (chat-to-all "Strategos silenced. Taunt 108 to restore him.")
+)
+
+(defrule
+    (taunt-detected any-ally 108)
+    (goal voice-mute 1)
+=>
+    (set-goal voice-mute 0)
+    (set-goal voice-global-lock 0)
+    (chat-to-all "Strategos restored.")
+)
+
+; Feudal Scout Rush: taunt 99. Arms a 2-3 scout woodline raid.
+; Only arms in Feudal with scout package active.
+(defrule
+    (taunt-detected any-ally 99)
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+    (goal byzantine-scout-rush-state byzantine-scout-rush-idle)
+    (unit-type-count scout-cavalry-line >= 2)
+=>
+    (set-goal byzantine-scout-rush-state byzantine-scout-rush-armed)
+    (enable-timer byzantine-scout-rush-timer bt-byzantine-scout-rush-seconds)
+    (chat-to-all "Scout rush engaged. Two blades for the woodline.")
+)
+
+(defrule
+    (taunt-detected any-ally 99)
+    (goal byzantine-scout-rush-state byzantine-scout-rush-armed)
+=>
+    (enable-timer byzantine-scout-rush-timer bt-byzantine-scout-rush-seconds)
+    (chat-to-all "Re-engaging. Woodline will bleed.")
+)
+
+(defrule
+    (timer-triggered byzantine-scout-rush-timer)
+    (goal byzantine-scout-rush-state byzantine-scout-rush-armed)
+=>
+    (disable-timer byzantine-scout-rush-timer)
+    (set-goal byzantine-scout-rush-state byzantine-scout-rush-idle)
+    (chat-to-all "Rush window closed. Regroup.")
+)
+
+(defrule
+    (game-time >= 30)
+    (goal voice-mute 0)
+=>
+    (chat-to-all "Strategos online. Taunt 107 for silence.")
+    (disable-self)
 )
 
 ; Voice rearm timer: strategos-posture-castle-power
@@ -30413,7 +31925,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-attack-issued 30)
     (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "The army is ready. I am going in.")
+    (chat-to-all "The army is ready. We march.")
     (up-jump-rule 13)
 )
 
@@ -30429,7 +31941,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-attack-witness 30)
     (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "The objective is open. Now I can press the advantage.")
+    (chat-to-all "The objective is open. Pressing now.")
     (up-jump-rule 12)
 )
 
@@ -30445,7 +31957,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-push-failed 30)
     (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "That push opened nothing. I know what was missing.")
+    (chat-to-all "That push opened nothing. Noted.")
     (up-jump-rule 11)
 )
 
@@ -30461,7 +31973,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-endgame-advance 30)
     (enable-timer voice-global-cooldown 4)
-    (chat-to-player focus-player "I have spent enough time becoming stronger. Now I will use it.")
+    (chat-to-all "Done becoming stronger. Using it now.")
     (up-jump-rule 10)
 )
 
@@ -30477,7 +31989,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-strategos-posture 90)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "I see the shape of the fight. I am taking the efficient road.")
+    (chat-to-all "I see the shape of it. Taking the efficient road.")
     (up-jump-rule 9)
 )
 
@@ -30493,7 +32005,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-cavalry-pressure 90)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "Their cavalry is no longer incidental. Halberdiers are the answer.")
+    (chat-to-all "Their cavalry is no longer incidental. Halberdiers.")
     (up-jump-rule 8)
 )
 
@@ -30509,7 +32021,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-ranged-pressure 90)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "Their ranged line now dictates the field. Elite Skirmishers are the answer.")
+    (chat-to-all "Their archers dictate the field. Elite Skirmishers.")
     (up-jump-rule 7)
 )
 
@@ -30525,7 +32037,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-reassessment 90)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The old answer solved the old problem. It is no longer the right answer.")
+    (chat-to-all "Lanchester says no. Lanchester is usually right.")
     (up-jump-rule 6)
 )
 
@@ -30541,7 +32053,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-severe-counter 60)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "This threat justifies saturation. I am building the screen.")
+    (chat-to-all "Saturation justified. Building the screen.")
     (up-jump-rule 5)
 )
 
@@ -30557,7 +32069,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-siege-blocker 60)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The screen is ready. The wall is not. I need siege.")
+    (chat-to-all "Screen ready. Wall is not. Siege next.")
     (up-jump-rule 4)
 )
 
@@ -30573,7 +32085,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-gold-recovery 60)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The gold route has failed. The objective has not.")
+    (chat-to-all "Gold route failed. Objective stands.")
     (up-jump-rule 3)
 )
 
@@ -30589,7 +32101,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-army-preparation 45)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The force is almost ready. I am finishing the missing piece.")
+    (chat-to-all "Almost ready. Finishing the missing piece.")
     (up-jump-rule 2)
 )
 
@@ -30605,7 +32117,7 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-army-ready 45)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "The army is assembled. More preparation would be waste.")
+    (chat-to-all "Assembled. More preparation would be waste.")
     (up-jump-rule 1)
 )
 
@@ -30621,9 +32133,10 @@
     (up-modify-goal voice-match-count g:+ 1)
     (enable-timer voice-rearm-resource-abundance 120)
     (enable-timer voice-global-cooldown 12)
-    (chat-to-player focus-player "Food and wood are abundant. There is no reason to conserve them.")
+    (chat-to-all "Food and wood abundant. No reason to conserve.")
     (up-jump-rule 0)
 )
+
 
 ; Voice candidate sentinel
 (defrule
