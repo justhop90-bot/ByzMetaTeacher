@@ -30105,8 +30105,9 @@
 (defconst voice-latch-resource-abundance 15983)
 (defconst voice-latch-severe-counter 15982)
 (defconst voice-latch-siege-blocker 15981)
-(defconst voice-latch-strategos-posture 15980)
-(defconst voice-match-count 15979)
+(defconst voice-latch-strategos-online 15980)
+(defconst voice-latch-strategos-posture 15979)
+(defconst voice-match-count 15978)
 (defconst voice-rearm-army-preparation 49)
 (defconst voice-rearm-army-ready 48)
 (defconst voice-rearm-attack-issued 47)
@@ -30120,7 +30121,8 @@
 (defconst voice-rearm-resource-abundance 39)
 (defconst voice-rearm-severe-counter 38)
 (defconst voice-rearm-siege-blocker 37)
-(defconst voice-rearm-strategos-posture 36)
+(defconst voice-rearm-strategos-online 36)
+(defconst voice-rearm-strategos-posture 35)
 ; Voice Goal initialization
 (defrule
     (true)
@@ -30139,6 +30141,7 @@
     (set-goal voice-latch-resource-abundance 0)
     (set-goal voice-latch-severe-counter 0)
     (set-goal voice-latch-siege-blocker 0)
+    (set-goal voice-latch-strategos-online 0)
     (set-goal voice-latch-strategos-posture 0)
     (set-goal voice-match-count 0)
     (disable-self)
@@ -30162,6 +30165,7 @@
     (disable-timer voice-rearm-resource-abundance)
     (disable-timer voice-rearm-severe-counter)
     (disable-timer voice-rearm-siege-blocker)
+    (disable-timer voice-rearm-strategos-online)
     (disable-timer voice-rearm-strategos-posture)
     (disable-self)
 )
@@ -30413,6 +30417,23 @@
     (set-goal voice-latch-endgame-advance 0)
 )
 
+; Voice rearm timer: strategos-online
+(defrule
+    (timer-triggered voice-rearm-strategos-online)
+    (goal voice-latch-strategos-online 1)
+=>
+    (disable-timer voice-rearm-strategos-online)
+    (set-goal voice-latch-strategos-online 2)
+)
+
+; Voice clear witness: strategos-online
+(defrule
+    (goal voice-latch-strategos-online 2)
+    (game-time < 30)
+=>
+    (set-goal voice-latch-strategos-online 0)
+)
+
 ; Voice candidate: strategos-attack-issued
 (defrule
     (goal byzantine-endgame-push-state 2)
@@ -30426,7 +30447,7 @@
     (enable-timer voice-rearm-attack-issued 30)
     (enable-timer voice-global-cooldown 4)
     (chat-to-player focus-player "The army is ready. I am going in.")
-    (up-jump-rule 13)
+    (up-jump-rule 14)
 )
 
 ; Voice candidate: strategos-attack-witness
@@ -30442,7 +30463,7 @@
     (enable-timer voice-rearm-attack-witness 30)
     (enable-timer voice-global-cooldown 4)
     (chat-to-player focus-player "The objective is open. Now I can press the advantage.")
-    (up-jump-rule 12)
+    (up-jump-rule 13)
 )
 
 ; Voice candidate: strategos-push-failed
@@ -30458,7 +30479,7 @@
     (enable-timer voice-rearm-push-failed 30)
     (enable-timer voice-global-cooldown 4)
     (chat-to-player focus-player "That push opened nothing. I know what was missing.")
-    (up-jump-rule 11)
+    (up-jump-rule 12)
 )
 
 ; Voice candidate: strategos-endgame-advance
@@ -30474,7 +30495,7 @@
     (enable-timer voice-rearm-endgame-advance 30)
     (enable-timer voice-global-cooldown 4)
     (chat-to-player focus-player "I have spent enough time becoming stronger. Now I will use it.")
-    (up-jump-rule 10)
+    (up-jump-rule 11)
 )
 
 ; Voice candidate: strategos-posture-castle-power
@@ -30490,7 +30511,7 @@
     (enable-timer voice-rearm-strategos-posture 90)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "I see the shape of the fight. I am taking the efficient road.")
-    (up-jump-rule 9)
+    (up-jump-rule 10)
 )
 
 ; Voice candidate: strategos-cavalry-pressure
@@ -30506,7 +30527,7 @@
     (enable-timer voice-rearm-cavalry-pressure 90)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "Their cavalry is no longer incidental. Halberdiers are the answer.")
-    (up-jump-rule 8)
+    (up-jump-rule 9)
 )
 
 ; Voice candidate: strategos-ranged-pressure
@@ -30522,7 +30543,7 @@
     (enable-timer voice-rearm-ranged-pressure 90)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "Their ranged line now dictates the field. Elite Skirmishers are the answer.")
-    (up-jump-rule 7)
+    (up-jump-rule 8)
 )
 
 ; Voice candidate: strategos-reassessment
@@ -30538,7 +30559,7 @@
     (enable-timer voice-rearm-reassessment 90)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "The old answer solved the old problem. It is no longer the right answer.")
-    (up-jump-rule 6)
+    (up-jump-rule 7)
 )
 
 ; Voice candidate: strategos-severe-counter
@@ -30554,7 +30575,7 @@
     (enable-timer voice-rearm-severe-counter 60)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "This threat justifies saturation. I am building the screen.")
-    (up-jump-rule 5)
+    (up-jump-rule 6)
 )
 
 ; Voice candidate: strategos-siege-blocker
@@ -30570,7 +30591,7 @@
     (enable-timer voice-rearm-siege-blocker 60)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "The screen is ready. The wall is not. I need siege.")
-    (up-jump-rule 4)
+    (up-jump-rule 5)
 )
 
 ; Voice candidate: strategos-gold-recovery
@@ -30586,7 +30607,7 @@
     (enable-timer voice-rearm-gold-recovery 60)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "The gold route has failed. The objective has not.")
-    (up-jump-rule 3)
+    (up-jump-rule 4)
 )
 
 ; Voice candidate: strategos-army-preparation
@@ -30602,7 +30623,7 @@
     (enable-timer voice-rearm-army-preparation 45)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "The force is almost ready. I am finishing the missing piece.")
-    (up-jump-rule 2)
+    (up-jump-rule 3)
 )
 
 ; Voice candidate: strategos-army-ready
@@ -30618,7 +30639,7 @@
     (enable-timer voice-rearm-army-ready 45)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "The army is assembled. More preparation would be waste.")
-    (up-jump-rule 1)
+    (up-jump-rule 2)
 )
 
 ; Voice candidate: strategos-resource-abundance
@@ -30634,6 +30655,22 @@
     (enable-timer voice-rearm-resource-abundance 120)
     (enable-timer voice-global-cooldown 12)
     (chat-to-player focus-player "Food and wood are abundant. There is no reason to conserve them.")
+    (up-jump-rule 1)
+)
+
+; Voice candidate: strategos-online
+(defrule
+    (game-time >= 30)
+    (goal voice-latch-strategos-online 0)
+    (goal voice-global-lock 0)
+    (up-compare-goal voice-match-count g:< 36)
+=>
+    (set-goal voice-latch-strategos-online 1)
+    (set-goal voice-global-lock 1)
+    (up-modify-goal voice-match-count g:+ 1)
+    (enable-timer voice-rearm-strategos-online 120)
+    (enable-timer voice-global-cooldown 12)
+    (chat-to-all "Strategos online. I will speak when the field changes.")
     (up-jump-rule 0)
 )
 

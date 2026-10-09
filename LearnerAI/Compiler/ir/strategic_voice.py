@@ -32,6 +32,7 @@ class VoicePriority(IntEnum):
 class VoiceAudience(str, Enum):
     PLAYER = "PLAYER"
     ALLIES = "ALLIES"
+    ALL = "ALL"
 
 
 class VoiceLatchMode(str, Enum):

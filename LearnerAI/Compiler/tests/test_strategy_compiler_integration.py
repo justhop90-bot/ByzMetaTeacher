@@ -241,7 +241,12 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             '(chat-to-player focus-player "The army is ready. I am going in.")',
             voice,
         )
-        self.assertIn("(up-jump-rule 13)", voice)
+        self.assertIn(
+            '(chat-to-all "Strategos online. I will speak when the field changes.")',
+            voice,
+        )
+        self.assertIn("(game-time >= 30)", voice)
+        self.assertIn("(up-jump-rule 14)", voice)
         self.assertNotIn("chat-local-to-self", voice)
         self.assertIn("(goal voice-latch-attack-issued 0)", voice)
         self.assertIn("(goal voice-latch-attack-issued 2)", voice)
