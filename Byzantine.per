@@ -17764,6 +17764,7 @@
     (resource-found wood)
     (can-build lumber-camp)
     (dropsite-min-distance wood > 12)
+    (building-type-count-total lumber-camp < 2)
 =>
     (build lumber-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -18304,6 +18305,7 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
     (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
 =>
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18327,6 +18329,7 @@
     (resource-found gold)
     (can-build mining-camp)
     (dropsite-min-distance gold > 12)
+    (building-type-count-total mining-camp < 2)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -18423,6 +18426,7 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 1)
     (can-build mining-camp)
+    (building-type-count-total mining-camp < 3)
 =>
     (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18445,6 +18449,7 @@
     (resource-found gold)
     (can-build mining-camp)
     (dropsite-min-distance gold > 12)
+    (building-type-count-total mining-camp < 3)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -18541,6 +18546,7 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 2)
     (can-build mining-camp)
+    (building-type-count-total mining-camp < 4)
 =>
     (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18563,6 +18569,7 @@
     (resource-found gold)
     (can-build mining-camp)
     (dropsite-min-distance gold > 12)
+    (building-type-count-total mining-camp < 4)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -18659,6 +18666,7 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 3)
     (can-build mining-camp)
+    (building-type-count-total mining-camp < 5)
 =>
     (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18681,6 +18689,7 @@
     (resource-found gold)
     (can-build mining-camp)
 (dropsite-min-distance gold > 12)
+    (building-type-count-total mining-camp < 5)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -18866,6 +18875,7 @@
     (can-build mining-camp)
 
     (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 0)
+    (building-type-count-total mining-camp < 2)
 =>
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-stone-camp-point)
@@ -18889,6 +18899,7 @@
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (dropsite-min-distance stone > 12)
+    (building-type-count-total mining-camp < 2)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -19010,6 +19021,7 @@
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (dropsite-min-distance stone > 12)
+    (building-type-count-total mining-camp < 3)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -19131,6 +19143,7 @@
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (dropsite-min-distance stone > 12)
+    (building-type-count-total mining-camp < 4)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
@@ -19252,6 +19265,7 @@
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
     (dropsite-min-distance stone > 12)
+    (building-type-count-total mining-camp < 5)
 =>
     (build mining-camp)
     (set-goal action-claim-build-pass-singleton 1)
