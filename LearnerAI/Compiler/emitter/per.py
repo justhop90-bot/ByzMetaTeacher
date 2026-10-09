@@ -231,11 +231,12 @@ def _emit_native_voice_plan(
             if rule.critical
             else plan.budget.ordinary_global_cooldown_seconds
         )
-        chat = (
-            f'(chat-to-player focus-player "{rule.message}")'
-            if rule.audience is VoiceAudience.PLAYER
-            else f'(chat-to-allies "{rule.message}")'
-        )
+        if rule.audience is VoiceAudience.PLAYER:
+            chat = f'(chat-to-player focus-player "{rule.message}")'
+        elif rule.audience is VoiceAudience.ALLIES:
+            chat = f'(chat-to-allies "{rule.message}")'
+        else:
+            chat = f'(chat-to-all "{rule.message}")'
         out.extend([
             f"; Voice candidate: {rule.identity}",
             "(defrule",
