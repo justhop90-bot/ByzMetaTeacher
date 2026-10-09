@@ -18245,11 +18245,6 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 2)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -18269,11 +18264,6 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 2)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-set-target-object search-remote c: 0)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18374,11 +18364,6 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 3)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -18398,11 +18383,6 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-3 > 1)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 3)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-set-target-object search-remote c: 1)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18502,11 +18482,6 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 4)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -18526,11 +18501,6 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-4 > 2)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 4)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-set-target-object search-remote c: 2)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18630,11 +18600,6 @@
     (goal action-claim-build-pass-singleton 0)
     (resource-found gold)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 5)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number c:= 0)
@@ -18654,11 +18619,6 @@
     (resource-found gold)
     (up-compare-goal byzantine-dark-gold-camp-search-remote-count-5 > 3)
     (can-build mining-camp)
-    ; Far-gold repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 5)
-        (dropsite-min-distance gold > 12)
-    )
 =>
     (up-set-target-object search-remote c: 3)
     (up-get-point position-object byzantine-dark-gold-camp-point)
@@ -18864,11 +18824,6 @@
     (goal action-claim-build-pass-singleton 0)
     (and (current-age >= feudal-age) (resource-found stone))
     (can-build mining-camp)
-    ; D2 repair: total-guard mirrors activation.
-    (or
-        (building-type-count-total mining-camp < 2)
-        (dropsite-min-distance stone > 12)
-    )
 
     (up-compare-goal byzantine-dark-stone-camp-search-remote-count-2 > 0)
 =>
