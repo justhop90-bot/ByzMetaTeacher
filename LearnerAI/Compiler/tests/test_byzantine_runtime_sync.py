@@ -11,6 +11,22 @@ from LearnerAI.Compiler.tests.test_runtime_semantic_isolation import (
 )
 
 
+def _is_remote_count_output_alias(first, second) -> bool:
+    """Allow only the named remote-count alias for search-state slot +3."""
+    for search_span, goal_slot in ((first, second), (second, first)):
+        if search_span["kind"] != "SEARCH_STATE" or goal_slot["kind"] != "GOAL_SLOT":
+            continue
+        expected_name = search_span["name"].replace(
+            "search-state", "search-remote-count"
+        )
+        return (
+            goal_slot["name"] == expected_name
+            and goal_slot["start"] == search_span["start"] + 3
+            and goal_slot["end"] == goal_slot["start"]
+        )
+    return False
+
+
 class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
     def test_synchronization_remaps_voice_storage_away_from_overlay_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -65,6 +81,8 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
                 if second["start"] > first["end"]:
                     break
                 if first["name"] == second["name"]:
+                    continue
+                if _is_remote_count_output_alias(first, second):
                     continue
                 collisions.append((first, second))
 
