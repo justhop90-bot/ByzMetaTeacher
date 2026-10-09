@@ -465,7 +465,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         production_end = runtime.index("; Pending diagnostics: imperial-open-halberdier-standard", production_start)
         production = runtime[production_start:production_end]
         self.assertIn("(up-research-status c: 98 >= 3)", production)
-        self.assertIn("(unit-type-count 6 < 18)", production)
+        self.assertIn("(unit-type-count 6 < 24)", production)
+        self.assertIn("(unit-type-count-total skirmisher-line < 18)", production)
         self.assertIn("(can-train-with-escrow skirmisher-line)", production)
         self.assertIn("(train skirmisher-line)", production)
 
@@ -518,11 +519,30 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     section,
                 )
                 self.assertIn("(up-build place-point 0 c: mining-camp)", section)
-                if resource == "stone":
-                    self.assertNotIn(
-                        "(dropsite-min-distance stone",
-                        section,
-                    )
+                # Keep the indexed resource target independent from the
+                # global nearest-dropsite distance. Only the direct fallback
+                # uses distance, and it must remain below the floor's count cap.
+                point_fragment = next(
+                    fragment
+                    for fragment in section.split("(defrule")
+                    if "(up-build place-point 0 c: mining-camp)" in fragment
+                )
+                point_rule = point_fragment.split("\n)", 1)[0]
+                self.assertNotIn(f"(dropsite-min-distance {resource}", point_rule)
+
+                fallback_fragment = next(
+                    fragment
+                    for fragment in section.split("(defrule")
+                    if "(build mining-camp)" in fragment
+                    and "(up-build place-point 0 c: mining-camp)" not in fragment
+                )
+                self.assertIn(
+                    f"(not (building-type-count mining-camp >= {floor}))",
+                    fallback_fragment,
+                )
+                self.assertIn(f"(dropsite-min-distance {resource} > 12)", fallback_fragment)
+                self.assertIn("(resource-found " + resource + ")", fallback_fragment)
+                self.assertIn("(can-build mining-camp)", fallback_fragment)
 
     def test_checked_in_runtime_gold_floor_two_selects_first_remote_gold(self):
         repo_root = Path(__file__).resolve().parents[3]
@@ -531,7 +551,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         end = runtime.index("; economy-gold-camp-floor-3", start)
         floor_two = runtime[start:end]
 
-        self.assertNotIn("(dropsite-min-distance gold", floor_two)
+        # The far-front repair may use distance as an activation guard, but
+        # the actual target must still come from indexed active-resource search.
+        self.assertIn("(dropsite-min-distance gold > 12)", floor_two)
+        self.assertIn("(not (building-type-count mining-camp >= 2))", floor_two)
+        self.assertIn("(building-type-count-total mining-camp < 2)", floor_two)
         self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
         self.assertIn(
             "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)",

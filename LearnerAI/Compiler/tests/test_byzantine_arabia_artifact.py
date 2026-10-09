@@ -55,10 +55,11 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             expected_results = 1 if floor == 1 else 40
             self.assertIn(f"(up-find-resource c: gold c: {expected_results})", section)
 
-            witness = f"(up-compare-goal {remote_name} > {floor - 1})"
+            remote_index = max(0, floor - 2)
+            witness = f"(up-compare-goal {remote_name} > {remote_index})"
             self.assertIn(witness, section)
             self.assertIn(
-                f"(up-set-target-object search-remote c: {floor - 1})",
+                f"(up-set-target-object search-remote c: {remote_index})",
                 section,
             )
             self.assertIn(f"(up-get-point position-object {point_name})", section)
@@ -66,11 +67,31 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             self.assertIn("(up-build place-point 0 c: mining-camp)", section)
 
             if floor >= 2:
-                self.assertNotIn(
-                    "(dropsite-min-distance gold",
-                    section,
-                    "higher gold floors must not be gated by the global nearest-gold dropsite distance",
+                # The indexed point-placement path must not be gated by the
+                # global nearest dropsite distance. A separate direct-build
+                # fallback is allowed only when the current floor is still
+                # below its camp-count target and the resource is far away.
+                point_fragment = next(
+                    fragment
+                    for fragment in section.split("(defrule")
+                    if "(up-build place-point 0 c: mining-camp)" in fragment
                 )
+                point_rule = point_fragment.split("\n)", 1)[0]
+                self.assertNotIn("(dropsite-min-distance gold", point_rule)
+
+                fallback_fragment = next(
+                    fragment
+                    for fragment in section.split("(defrule")
+                    if "(build mining-camp)" in fragment
+                    and "(up-build place-point 0 c: mining-camp)" not in fragment
+                )
+                self.assertIn(
+                    f"(not (building-type-count mining-camp >= {floor}))",
+                    fallback_fragment,
+                )
+                self.assertIn("(dropsite-min-distance gold > 12)", fallback_fragment)
+                self.assertIn("(resource-found gold)", fallback_fragment)
+                self.assertIn("(can-build mining-camp)", fallback_fragment)
 
             state_match = re.search(
                 rf"\(defconst {re.escape(state_name)} (\d+)\)",

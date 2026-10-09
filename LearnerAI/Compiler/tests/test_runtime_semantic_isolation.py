@@ -73,6 +73,22 @@ def _storage_intervals(source: str):
     return tuple(dedup.values())
 
 
+def _is_remote_count_output_alias(first, second) -> bool:
+    """Allow only the named remote-count alias for search-state slot +3."""
+    for search_span, goal_slot in ((first, second), (second, first)):
+        if search_span["kind"] != "SEARCH_STATE" or goal_slot["kind"] != "GOAL_SLOT":
+            continue
+        expected_name = search_span["name"].replace(
+            "search-state", "search-remote-count"
+        )
+        return (
+            goal_slot["name"] == expected_name
+            and goal_slot["start"] == search_span["start"] + 3
+            and goal_slot["end"] == goal_slot["start"]
+        )
+    return False
+
+
 class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -102,12 +118,53 @@ class ByzantineRuntimeSemanticIsolationTests(unittest.TestCase):
                     break
                 if first["name"] == second["name"]:
                     continue
+                if _is_remote_count_output_alias(first, second):
+                    continue
                 failures.append((first, second))
         self.assertEqual(
             failures,
             [],
             "live Goal/GoalSpan storage overlaps: " + repr(failures[:20]),
         )
+
+    def test_camp_remote_counts_alias_search_state_remote_list_slot(self) -> None:
+        pairs = [
+            *[
+                (
+                    f"byzantine-dark-gold-camp-search-state-{floor}",
+                    f"byzantine-dark-gold-camp-search-remote-count-{floor}",
+                )
+                for floor in range(1, 6)
+            ],
+            (
+                "byzantine-dark-mill-search-state",
+                "byzantine-dark-mill-search-remote-count",
+            ),
+            *[
+                (
+                    f"byzantine-dark-wood-camp-search-state-{floor}",
+                    f"byzantine-dark-wood-camp-search-remote-count-{floor}",
+                )
+                for floor in range(1, 3)
+            ],
+            *[
+                (
+                    f"byzantine-dark-stone-camp-search-state-{floor}",
+                    f"byzantine-dark-stone-camp-search-remote-count-{floor}",
+                )
+                for floor in range(2, 6)
+            ],
+        ]
+        for search_state, remote_count in pairs:
+            with self.subTest(search_state=search_state):
+                self.assertIn(search_state, self.definitions)
+                self.assertIn(remote_count, self.definitions)
+                # Native up-get-search-state writes local_search_count,
+                # local_list_count, remote_search_count, remote_list_count.
+                self.assertEqual(
+                    self.definitions[remote_count][0],
+                    self.definitions[search_state][0] + 3,
+                )
 
     def test_live_timer_storage_is_unique_and_in_range(self) -> None:
         timer_names: dict[int, list[str]] = {}
