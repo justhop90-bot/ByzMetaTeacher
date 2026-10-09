@@ -15152,7 +15152,7 @@
         (goal demand-research-light-cavalry 16207)
     )
     (not (research-completed ri-light-cavalry))
-    (up-research-status c: ri-light-cavalry >= research-pending)
+    (up-research-status c: 254 >= research-pending)
 =>
     (set-goal demand-research-light-cavalry 16207)
 )
@@ -15163,7 +15163,7 @@
         (goal demand-research-light-cavalry 16207)
     )
     (not (research-completed ri-light-cavalry))
-    (not (up-research-status c: ri-light-cavalry >= research-pending))
+    (not (up-research-status c: 254 >= research-pending))
 =>
     (set-goal demand-research-light-cavalry 1)
     (set-goal research-retry-barrier-research-light-cavalry 1)
@@ -15173,7 +15173,7 @@
     (goal demand-research-light-cavalry 1)
     (goal research-retry-barrier-research-light-cavalry 0)
     (not (research-completed ri-light-cavalry))
-    (not (up-research-status c: ri-light-cavalry >= research-pending))
+    (not (up-research-status c: 254 >= research-pending))
     (current-age >= castle-age)
     (building-type-count-total stable >= 1)
     (unit-type-count-total scout-cavalry-line >= 3)
@@ -15227,7 +15227,7 @@
         (goal demand-research-husbandry 16212)
     )
     (not (research-completed ri-husbandry))
-    (up-research-status c: ri-husbandry >= research-pending)
+    (up-research-status c: 39 >= research-pending)
 =>
     (set-goal demand-research-husbandry 16212)
 )
@@ -15238,7 +15238,7 @@
         (goal demand-research-husbandry 16212)
     )
     (not (research-completed ri-husbandry))
-    (not (up-research-status c: ri-husbandry >= research-pending))
+    (not (up-research-status c: 39 >= research-pending))
 =>
     (set-goal demand-research-husbandry 1)
     (set-goal research-retry-barrier-research-husbandry 1)
@@ -15248,7 +15248,7 @@
     (goal demand-research-husbandry 1)
     (goal research-retry-barrier-research-husbandry 0)
     (not (research-completed ri-husbandry))
-    (not (up-research-status c: ri-husbandry >= research-pending))
+    (not (up-research-status c: 39 >= research-pending))
     (current-age >= castle-age)
     (building-type-count-total stable >= 1)
     (can-research-with-escrow ri-husbandry)
