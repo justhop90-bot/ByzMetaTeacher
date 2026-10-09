@@ -15015,10 +15015,10 @@
         )
         (current-age == feudal-age)
     )
-    (can-research-with-escrow 22)
+    (can-research-with-escrow ri-loom)
 =>
     (release-escrow gold)
-    (research 22)
+    (research ri-loom)
     (set-goal demand-research-loom 16203)
 )
 
@@ -15044,7 +15044,7 @@
     (current-age >= castle-age)
     (goal demand-research-pikeman 1)
     (not (research-completed 197))
-    (can-research-with-escrow 197)
+    (can-research-with-escrow ri-pikeman)
 =>
     (set-goal byzantine-research-preempt 1)
 )
@@ -15053,7 +15053,7 @@
     (current-age >= imperial-age)
     (goal demand-imperial-elite-skirmisher-upgrade 1)
     (unit-type-count 358 >= 4)
-    (can-research-with-escrow 98)
+    (can-research-with-escrow ri-elite-skirmisher)
 =>
     (set-goal byzantine-research-preempt 1)
 )
@@ -15062,7 +15062,7 @@
     (current-age >= imperial-age)
     (goal demand-research-capped-ram 1)
     (unit-type-count-total battering-ram-line >= 2)
-    (can-research-with-escrow 96)
+    (can-research-with-escrow ri-capped-ram)
 =>
     (set-goal byzantine-research-preempt 1)
 )
@@ -17577,7 +17577,7 @@
     (not (building-type-count lumber-camp >= 1))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= dark-age)
-    (unit-type-count-total villager >= 7)
+    (unit-type-count-total villager >= 15)
     (resource-found wood)
     (can-build lumber-camp)
     (building-type-count-total lumber-camp < 1)
@@ -23272,11 +23272,11 @@
     ; with banked resources. No escrow-saving system exists in this file, so
     ; can-research-with-escrow is plain affordability: research whenever
     ; available in Castle, no unit prerequisite.
-    (can-research-with-escrow 197)
+    (can-research-with-escrow ri-pikeman)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 197)
+    (research ri-pikeman)
     (set-goal demand-research-pikeman 15952)
 )
 
@@ -23364,7 +23364,7 @@
         (goal demand-research-capped-ram 15954)
     )
     (not (research-completed 96))
-    (up-research-status c: 96 >= 2)
+    (not (up-research-status c: 96 >= 2))
 =>
     (set-goal demand-research-capped-ram 1)
     (set-goal research-retry-barrier-research-capped-ram 1)
@@ -23376,11 +23376,11 @@
     (not (up-research-status c: 96 >= 2))
     (current-age >= imperial-age)
     (unit-type-count-total battering-ram-line >= 2)
-    (can-research-with-escrow 96)
+    (can-research-with-escrow ri-capped-ram)
 =>
     (release-escrow food)
     (release-escrow wood)
-    (research 96)
+    (research ri-capped-ram)
     (set-goal demand-research-capped-ram 15956)
 )
 
