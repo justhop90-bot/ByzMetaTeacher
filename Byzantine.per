@@ -29446,22 +29446,98 @@
 ; offensive-objective-claim 1. When military pop is very high and no objective
 ; owns the army, force candidate 1 so band state reaches 1 and baseline attack
 ; admits the push. Guarded by no town-attack so defense is never stripped.
+; Native control rule: byzantine-imperial-band-mass-candidate
+; Bounded recovery for the previously observed Imperial deathball stall. This
+; path is independent of enemy army size and never strips home defense.
 (defrule
+    (current-age >= imperial-age)
     (goal byzantine-imperial-band-state 0)
     (timer-triggered byzantine-imperial-band-dwell-timer)
     (goal byzantine-fortification-threat 0)
     (goal byzantine-offensive-objective-claim 0)
-    (players-military-population any-enemy >= 12)
+    (not (town-under-attack))
     (military-population >= 40)
     (unit-type-count halberdier >= 18)
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
-    (up-compare-goal byzantine-imperial-band-candidate != 1)
+    (up-compare-goal byzantine-imperial-band-candidate != 5)
 =>
-    (set-goal byzantine-imperial-band-candidate 1)
+    (set-goal byzantine-imperial-band-candidate 5)
     (disable-timer byzantine-imperial-band-guard-timer)
     (enable-timer byzantine-imperial-band-guard-timer 10)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-town-attack
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (town-under-attack)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-fortification
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-objective-takeover
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (goal byzantine-offensive-objective-claim 1)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-state-changed
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (up-compare-goal byzantine-imperial-band-state != 0)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-military-floor
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (military-population < 40)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-halberd-floor
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (unit-type-count halberdier < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-skirmisher-floor
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (unit-type-count 6 < 18)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+)
+
+; Native control rule: byzantine-imperial-band-clear-overwhelm-hussar-floor
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (unit-type-count hussar < 12)
+=>
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
 )
 
 ; Native control rule: byzantine-imperial-band-clear-fortified-candidate
@@ -29796,6 +29872,31 @@
     (unit-type-count 6 >= 18)
     (unit-type-count hussar >= 12)
 
+    (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
+=>
+    (set-goal byzantine-imperial-band-state 1)
+    (set-goal byzantine-imperial-band-reason 60)
+    (set-goal byzantine-imperial-band-candidate 0)
+    (disable-timer byzantine-imperial-band-guard-timer)
+    (disable-timer byzantine-imperial-band-dwell-timer)
+    (enable-timer byzantine-imperial-band-dwell-timer 60)
+)
+
+; Native control rule: byzantine-imperial-band-transition-overwhelm
+; Candidate 5 is the explicit no-objective fallback. It bypasses candidate 1's
+; objective-claim requirement but retains age, safety, army-floor, dwell, and
+; re-arm witnesses before enabling the ordinary attack issuance path.
+(defrule
+    (goal byzantine-imperial-band-candidate 5)
+    (timer-triggered byzantine-imperial-band-guard-timer)
+    (goal byzantine-imperial-band-state 0)
+    (goal byzantine-fortification-threat 0)
+    (goal byzantine-offensive-objective-claim 0)
+    (not (town-under-attack))
+    (military-population >= 40)
+    (unit-type-count halberdier >= 18)
+    (unit-type-count 6 >= 18)
+    (unit-type-count hussar >= 12)
     (or (up-compare-goal byzantine-imperial-band-rearm != 1) (timer-triggered byzantine-imperial-band-rearm-timer))
 =>
     (set-goal byzantine-imperial-band-state 1)
