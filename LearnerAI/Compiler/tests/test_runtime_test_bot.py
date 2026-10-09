@@ -266,6 +266,42 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-minimum-attack-group-size 6)", rule)
         self.assertIn("(set-strategic-number sn-maximum-attack-group-size 40)", rule)
 
+    def test_imperial_overwhelm_fallback_survives_without_objective_claim(self) -> None:
+        admission = next(
+            rule
+            for rule in self.rules
+            if "(set-goal byzantine-imperial-band-candidate 5)" in rule
+            and "(military-population >= 40)" in rule
+        )
+        self.assertIn("(current-age >= imperial-age)", admission)
+        self.assertIn("(goal byzantine-imperial-band-state 0)", admission)
+        self.assertIn("(goal byzantine-offensive-objective-claim 0)", admission)
+        self.assertIn("(not (town-under-attack))", admission)
+        self.assertIn("(goal byzantine-fortification-threat 0)", admission)
+        self.assertIn("(unit-type-count halberdier >= 18)", admission)
+        self.assertIn("(unit-type-count 6 >= 18)", admission)
+        self.assertIn("(unit-type-count hussar >= 12)", admission)
+        self.assertNotIn("(players-military-population any-enemy", admission)
+
+        transition = next(
+            rule
+            for rule in self.rules
+            if "(goal byzantine-imperial-band-candidate 5)" in rule
+            and "(set-goal byzantine-imperial-band-state 1)" in rule
+        )
+        self.assertIn("(timer-triggered byzantine-imperial-band-guard-timer)", transition)
+        self.assertIn("(goal byzantine-offensive-objective-claim 0)", transition)
+        self.assertIn("(not (town-under-attack))", transition)
+        self.assertIn("(military-population >= 40)", transition)
+        self.assertIn("(unit-type-count halberdier >= 18)", transition)
+        self.assertIn("(unit-type-count 6 >= 18)", transition)
+        self.assertIn("(unit-type-count hussar >= 12)", transition)
+
+        # The regular candidate-1 clear rule deliberately requires a claim,
+        # while the separate candidate-5 route exists for a stalled army with
+        # no objective owner. It must not feed candidate 1 into that clear path.
+        self.assertNotIn("(set-goal byzantine-imperial-band-candidate 1)", admission)
+
     def test_reposition_controller_has_single_town_under_attack_guard(self) -> None:
         matching = [
             rule
