@@ -123,28 +123,62 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 self.assertTrue(1 <= start <= 16000)
             self.assertTrue(start <= end <= 16000)
 
+        self.assertEqual(
+            values["byzantine-dark-wood-camp-search-remote-count-1"],
+            values["byzantine-dark-wood-camp-search-state-1"] + 3,
+        )
+        self.assertEqual(
+            values["byzantine-dark-wood-camp-search-remote-count-2"],
+            values["byzantine-dark-wood-camp-search-state-2"] + 3,
+        )
         for index, (start, end) in enumerate(intervals):
-            for other_start, other_end in intervals[index + 1 :]:
+            for other_index, (other_start, other_end) in enumerate(
+                intervals[index + 1 :], start=index + 1
+            ):
+                # The named remote-count is the remote_list_count cell of its
+                # own four-slot native search-state output span.
+                if (index, other_index) in ((1, 2), (4, 5)):
+                    self.assertEqual(other_start, start + 3)
+                    self.assertEqual(other_end, start + 3)
+                    continue
                 self.assertTrue(
                     end < other_start or other_end < start,
                     f"wood-camp storage overlaps: {(start, end)} with "
                     f"{(other_start, other_end)}",
                 )
 
-    def test_first_two_lumber_camps_have_native_fallback_when_point_witness_is_absent(self):
+    def test_first_two_lumber_camps_use_indexed_placement_with_native_fallback(self):
         floor1 = self._active_rules(1)
-        first_camp = next(
+        first_search = next(
+            rule for rule in floor1
+            if "(up-find-resource c: wood c: 1)" in rule
+        )
+        first_point = next(
+            rule for rule in floor1
+            if "(up-build place-point 0 c: lumber-camp)" in rule
+        )
+        first_fallback = next(
             rule for rule in floor1
             if "(build lumber-camp)" in rule
             and "(up-build place-point 0 c: lumber-camp)" not in rule
         )
-        self.assertIn("(unit-type-count-total villager >= 15)", first_camp)
-        self.assertIn("(resource-found wood)", first_camp)
-        self.assertIn("(can-build lumber-camp)", first_camp)
-        self.assertIn("(building-type-count-total lumber-camp < 1)", first_camp)
-        self.assertIn("(goal action-claim-build-pass-singleton 0)", first_camp)
-        # This artifact deliberately removed the dead first-camp DUC path;
-        # the live rule is the native direct build guarded by the resource fact.
+        self.assertIn(
+            "(up-get-search-state byzantine-dark-wood-camp-search-state-1)",
+            first_search,
+        )
+        self.assertIn(
+            "(up-compare-goal byzantine-dark-wood-camp-search-remote-count-1 > 0)",
+            first_point,
+        )
+        self.assertIn("(up-set-target-object search-remote c: 0)", first_point)
+        self.assertIn("(up-get-point position-object byzantine-dark-wood-camp-point-1)", first_point)
+        self.assertIn("(up-set-target-point byzantine-dark-wood-camp-point-1)", first_point)
+        self.assertNotIn("(dropsite-min-distance wood", first_point)
+        self.assertIn("(unit-type-count-total villager >= 15)", first_fallback)
+        self.assertIn("(resource-found wood)", first_fallback)
+        self.assertIn("(can-build lumber-camp)", first_fallback)
+        self.assertIn("(building-type-count-total lumber-camp < 1)", first_fallback)
+        self.assertIn("(goal action-claim-build-pass-singleton 0)", first_fallback)
 
         floor2 = self._active_rules(2)
         search_rule = next(
