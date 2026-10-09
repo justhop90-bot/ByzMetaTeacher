@@ -217,6 +217,14 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertGreater(len(attack_rules), 0)
         for rule in attack_rules:
             pre = rule.split("=>", 1)[0]
+            if "(goal byzantine-scout-rush-state byzantine-scout-rush-armed)" in pre:
+                # This is an intentionally separate, bounded Feudal scout-rush
+                # route. It must be armed, small, and suspended during a raid.
+                self.assertIn("(current-age == feudal-age)", pre)
+                self.assertIn("(unit-type-count scout-cavalry-line >= 2)", pre)
+                self.assertIn("(unit-type-count scout-cavalry-line <= 4)", pre)
+                self.assertIn("(not (town-under-attack))", pre)
+                continue
             self.assertTrue(
                 "(goal byzantine-army-attack-ready " in pre
                 or "(attack-soldier-count " in pre,
@@ -239,21 +247,24 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(attack-now)", matching[0])
         self.assertIn("(set-goal byzantine-army-attack-ready 2)", matching[0])
 
-    def test_imperial_baseline_attack_issues_attack_now_with_minimal_force(self) -> None:
+    def test_imperial_baseline_attack_uses_bounded_mature_army_admission(self) -> None:
         matching = [
             rule
             for rule in self.rules
             if "(current-age >= imperial-age)" in rule
-            and "(military-population >= 4)" in rule
+            and "(military-population >= 8)" in rule
             and "(attack-soldier-count <= 0)" in rule
             and "(attack-now)" in rule
         ]
         self.assertEqual(len(matching), 1)
-        self.assertNotIn("(goal byzantine-army-attack-ready 1)", matching[0])
-        self.assertIn("(set-strategic-number sn-number-attack-groups 200)", matching[0])
-        self.assertIn("(set-strategic-number sn-percent-attack-soldiers 100)", matching[0])
-        self.assertIn("(set-strategic-number sn-minimum-attack-group-size 4)", matching[0])
-        self.assertIn("(set-strategic-number sn-maximum-attack-group-size 40)", matching[0])
+        rule = matching[0]
+        self.assertIn("(goal byzantine-army-attack-ready 1)", rule)
+        self.assertIn("(goal byzantine-offensive-objective-claim 0)", rule)
+        self.assertIn("(up-compare-goal byzantine-imperial-band-state >= 1)", rule)
+        self.assertIn("(set-strategic-number sn-number-attack-groups 200)", rule)
+        self.assertIn("(set-strategic-number sn-percent-attack-soldiers 100)", rule)
+        self.assertIn("(set-strategic-number sn-minimum-attack-group-size 6)", rule)
+        self.assertIn("(set-strategic-number sn-maximum-attack-group-size 40)", rule)
 
     def test_reposition_controller_has_single_town_under_attack_guard(self) -> None:
         matching = [
