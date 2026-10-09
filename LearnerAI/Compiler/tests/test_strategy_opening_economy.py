@@ -529,8 +529,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
                     section,
                 )
-                remote_index = floor - 2
-                remote_threshold = floor - 2
+                remote_index = floor - 1
+                remote_threshold = floor - 1
                 self.assertIn(
                     f"(up-compare-goal byzantine-dark-{resource}-camp-search-remote-count-{floor} > {remote_threshold})",
                     section,
@@ -546,7 +546,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                         section,
                     )
 
-    def test_checked_in_runtime_gold_floor_two_selects_first_remote_gold(self):
+    def test_checked_in_runtime_gold_floor_two_skips_the_first_served_resource_object(self):
         repo_root = Path(__file__).resolve().parents[3]
         runtime = (repo_root / "Byzantine.per").read_text(encoding="utf-8")
         start = runtime.index("; economy-gold-camp-floor-2")
@@ -556,11 +556,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("(dropsite-min-distance gold", floor_two)
         self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
         self.assertIn(
-            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)",
+            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)",
             floor_two,
         )
         self.assertIn(
-            "(up-set-target-object search-remote c: 0)",
+            "(up-set-target-object search-remote c: 1)",
             floor_two,
         )
 
