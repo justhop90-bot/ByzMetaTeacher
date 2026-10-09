@@ -67,11 +67,31 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             self.assertIn("(up-build place-point 0 c: mining-camp)", section)
 
             if floor >= 2:
-                self.assertNotIn(
-                    "(dropsite-min-distance gold",
-                    section,
-                    "higher gold floors must not be gated by the global nearest-gold dropsite distance",
+                # The indexed point-placement path must not be gated by the
+                # global nearest dropsite distance. A separate direct-build
+                # fallback is allowed only when the current floor is still
+                # below its camp-count target and the resource is far away.
+                point_fragment = next(
+                    fragment
+                    for fragment in section.split("(defrule")
+                    if "(up-build place-point 0 c: mining-camp)" in fragment
                 )
+                point_rule = point_fragment.split("\\n)", 1)[0]
+                self.assertNotIn("(dropsite-min-distance gold", point_rule)
+
+                fallback_fragment = next(
+                    fragment
+                    for fragment in section.split("(defrule")
+                    if "(build mining-camp)" in fragment
+                    and "(up-build place-point 0 c: mining-camp)" not in fragment
+                )
+                self.assertIn(
+                    f"(not (building-type-count mining-camp >= {floor}))",
+                    fallback_fragment,
+                )
+                self.assertIn("(dropsite-min-distance gold > 12)", fallback_fragment)
+                self.assertIn("(resource-found gold)", fallback_fragment)
+                self.assertIn("(can-build mining-camp)", fallback_fragment)
 
             state_match = re.search(
                 rf"\(defconst {re.escape(state_name)} (\d+)\)",
