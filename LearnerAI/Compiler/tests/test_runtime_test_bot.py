@@ -278,9 +278,10 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(goal byzantine-offensive-objective-claim 0)", admission)
         self.assertIn("(not (town-under-attack))", admission)
         self.assertIn("(goal byzantine-fortification-threat 0)", admission)
-        self.assertIn("(unit-type-count halberdier >= 18)", admission)
-        self.assertIn("(unit-type-count 6 >= 18)", admission)
-        self.assertIn("(unit-type-count hussar >= 12)", admission)
+        self.assertIn("(unit-type-count halberdier >= 8)", admission)
+        self.assertIn("(unit-type-count-total trebuchet >= 2)", admission)
+        self.assertIn("(unit-type-count-total bombard-cannon >= 2)", admission)
+        self.assertIn("(unit-type-count-total battering-ram-line >= 2)", admission)
         self.assertNotIn("(players-military-population any-enemy", admission)
 
         transition = next(
@@ -293,9 +294,20 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(goal byzantine-offensive-objective-claim 0)", transition)
         self.assertIn("(not (town-under-attack))", transition)
         self.assertIn("(military-population >= 40)", transition)
-        self.assertIn("(unit-type-count halberdier >= 18)", transition)
-        self.assertIn("(unit-type-count 6 >= 18)", transition)
-        self.assertIn("(unit-type-count hussar >= 12)", transition)
+        self.assertIn("(unit-type-count halberdier >= 8)", transition)
+        self.assertIn("(unit-type-count-total trebuchet >= 2)", transition)
+        self.assertIn("(unit-type-count-total bombard-cannon >= 2)", transition)
+        self.assertIn("(unit-type-count-total battering-ram-line >= 2)", transition)
+
+        siege_release = next(
+            rule
+            for rule in self.rules
+            if "(goal byzantine-imperial-band-candidate 5)" in rule
+            and "(set-goal byzantine-imperial-band-candidate 0)" in rule
+            and "(unit-type-count-total battering-ram-line >= 2)" in rule
+            and "(not" in rule
+        )
+        self.assertIn("(disable-timer byzantine-imperial-band-guard-timer)", siege_release)
 
         # The regular candidate-1 clear rule deliberately requires a claim,
         # while the separate candidate-5 route exists for a stalled army with
