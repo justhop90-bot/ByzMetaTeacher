@@ -2470,6 +2470,14 @@ def default_byzantine_voice_plan(profile_id: str = "byzantine-stock-v1") -> _Nat
             "I have spent enough time becoming stronger. Now I will use it.",
             "voice-latch-endgame-advance", "voice-rearm-endgame-advance", 30,
         ),
+        _VoiceRule(
+            "strategos-online", 14, _VoicePriority.FLAVOR,
+            expr("(game-time >= 30)"),
+            expr("(game-time < 30)"),
+            "Strategos online. I will speak when the field changes.",
+            "voice-latch-strategos-online", "voice-rearm-strategos-online", 120,
+            audience=_VoiceAudience.ALL,
+        ),
     )
 
     goals = (
