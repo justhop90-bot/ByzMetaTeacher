@@ -76,7 +76,7 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
                     for fragment in section.split("(defrule")
                     if "(up-build place-point 0 c: mining-camp)" in fragment
                 )
-                point_rule = point_fragment.split("\\n)", 1)[0]
+                point_rule = point_fragment.split("\n)", 1)[0]
                 self.assertNotIn("(dropsite-min-distance gold", point_rule)
 
                 fallback_fragment = next(
