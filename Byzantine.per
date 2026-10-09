@@ -14125,8 +14125,10 @@
     (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
     (or
         (town-under-attack)
-        (players-unit-type-count any-enemy 93 >= 4)
-        (goal byzantine-scout-rush-state 1)
+        (or
+            (players-unit-type-count any-enemy 93 >= 4)
+            (goal byzantine-scout-rush-state 1)
+        )
     )
     (can-build stable)
 =>
