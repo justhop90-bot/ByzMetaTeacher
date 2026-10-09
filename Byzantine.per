@@ -18185,12 +18185,7 @@
 (defrule
     (goal demand-economy-gold-camp-floor-2 0)
     (resource-found gold)
-    ; Far-gold repair: count-only activation let miners walk map-wide once
-    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
-    (or
-        (not (building-type-count mining-camp >= 2))
-        (dropsite-min-distance gold > 12)
-    )
+    (not (building-type-count mining-camp >= 2))
 =>
     (set-goal demand-economy-gold-camp-floor-2 1)
 )
@@ -18319,12 +18314,7 @@
 (defrule
     (goal demand-economy-gold-camp-floor-3 0)
     (resource-found gold)
-    ; Far-gold repair: count-only activation let miners walk map-wide once
-    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
-    (or
-        (not (building-type-count mining-camp >= 3))
-        (dropsite-min-distance gold > 12)
-    )
+    (not (building-type-count mining-camp >= 3))
 =>
     (set-goal demand-economy-gold-camp-floor-3 1)
 )
@@ -18452,12 +18442,7 @@
 (defrule
     (goal demand-economy-gold-camp-floor-4 0)
     (resource-found gold)
-    ; Far-gold repair: count-only activation let miners walk map-wide once
-    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
-    (or
-        (not (building-type-count mining-camp >= 4))
-        (dropsite-min-distance gold > 12)
-    )
+    (not (building-type-count mining-camp >= 4))
 =>
     (set-goal demand-economy-gold-camp-floor-4 1)
 )
@@ -18585,12 +18570,7 @@
 (defrule
     (goal demand-economy-gold-camp-floor-5 0)
     (resource-found gold)
-    ; Far-gold repair: count-only activation let miners walk map-wide once
-    ; N camps existed. Re-arm also on far gold, mirroring lumber-2/D1.
-    (or
-        (not (building-type-count mining-camp >= 5))
-        (dropsite-min-distance gold > 12)
-    )
+    (not (building-type-count mining-camp >= 5))
 =>
     (set-goal demand-economy-gold-camp-floor-5 1)
 )
@@ -18805,11 +18785,7 @@
 (defrule
     (goal demand-economy-stone-camp-floor-2 0)
     (and (current-age >= feudal-age) (resource-found stone))
-    ; D2 repair: same shared-counter decoupling as stone-1.
-    (or
-        (not (building-type-count mining-camp >= 2))
-        (dropsite-min-distance stone > 12)
-    )
+    (not (building-type-count mining-camp >= 2))
 =>
     (set-goal demand-economy-stone-camp-floor-2 1)
 )
