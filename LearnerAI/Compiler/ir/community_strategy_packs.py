@@ -1008,8 +1008,14 @@ def community_strategy_demands(
                 f"(can-build {_slug(building.name)})",
             ]
             if floor >= 2:
+                age_gate = (
+                    ["(current-age >= feudal-age)"]
+                    if resource is CampResource.GOLD
+                    else []
+                )
                 requirements = [
                     active_expression,
+                    *age_gate,
                     remote_expression,
                     count_guard,
                     f"(can-build {_slug(building.name)})",
