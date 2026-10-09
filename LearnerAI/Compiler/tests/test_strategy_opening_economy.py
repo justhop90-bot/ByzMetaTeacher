@@ -350,6 +350,15 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     requirements,
                     f"{resource} camp floor {floor} has no Feudal-age execution gate",
                 )
+                if resource == "gold":
+                    self.assertEqual(
+                        tuple(item.observation_ref for item in demand.reason),
+                        ("camp-front-gold-secondary-active",),
+                    )
+                    self.assertEqual(
+                        tuple(item.observation_ref for item in demand.admissibility),
+                        ("camp-front-gold-secondary-active",),
+                    )
 
     def test_adaptive_outpost_requires_feudal_pressure_and_resource_exposure(self):
         profile = build_byzantine_strategy(self.effective)
