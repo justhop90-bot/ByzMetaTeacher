@@ -338,6 +338,19 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             )
             self.assertEqual(demand.initial_state.name, "RELEASED")
 
+
+    def test_secondary_mining_camp_floors_explicitly_wait_for_feudal_age(self):
+        profile = build_byzantine_strategy(self.effective)
+        for resource in ("gold", "stone"):
+            for floor in range(2, 6):
+                demand = profile.demand(f"economy-{resource}-camp-floor-{floor}")
+                requirements = " ".join(demand.execution.requirements)
+                self.assertIn(
+                    "(current-age >= feudal-age)",
+                    requirements,
+                    f"{resource} camp floor {floor} has no Feudal-age execution gate",
+                )
+
     def test_adaptive_outpost_requires_feudal_pressure_and_resource_exposure(self):
         profile = build_byzantine_strategy(self.effective)
         demand = profile.demand("adaptive-outpost")
