@@ -131,46 +131,53 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                     f"{(other_start, other_end)}",
                 )
 
-    def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
-        for floor, point, state, remote, old_distance in (
-            (
-                1,
-                "byzantine-dark-wood-camp-point-1",
-                "byzantine-dark-wood-camp-search-state-1",
-                "byzantine-dark-wood-camp-search-remote-count-1",
-                "5",
-            ),
-            (
-                2,
-                "byzantine-dark-wood-camp-point-2",
-                "byzantine-dark-wood-camp-search-state-2",
-                "byzantine-dark-wood-camp-search-remote-count-2",
-                "12",
-            ),
-        ):
-            rules = self._active_rules(floor)
-            search_rule = next(
-                rule for rule in rules
-                if "(up-find-resource c: wood c: 1)" in rule
-            )
-            execution_rule = next(
-                rule for rule in rules
-                if "(up-build place-point 0 c: lumber-camp)" in rule
-            )
+    def test_first_two_lumber_camps_have_native_fallback_when_point_witness_is_absent(self):
+        floor1 = self._active_rules(1)
+        first_camp = next(
+            rule for rule in floor1
+            if "(build lumber-camp)" in rule
+            and "(up-build place-point 0 c: lumber-camp)" not in rule
+        )
+        self.assertIn("(unit-type-count-total villager >= 15)", first_camp)
+        self.assertIn("(resource-found wood)", first_camp)
+        self.assertIn("(can-build lumber-camp)", first_camp)
+        self.assertIn("(building-type-count-total lumber-camp < 1)", first_camp)
+        self.assertIn("(goal action-claim-build-pass-singleton 0)", first_camp)
+        # This artifact deliberately removed the dead first-camp DUC path;
+        # the live rule is the native direct build guarded by the resource fact.
 
-            self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
-            self.assertIn(f"(up-get-search-state {state})", search_rule)
-            self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
+        floor2 = self._active_rules(2)
+        search_rule = next(
+            rule for rule in floor2
+            if "(up-find-resource c: wood c: 1)" in rule
+        )
+        point_rule = next(
+            rule for rule in floor2
+            if "(up-build place-point 0 c: lumber-camp)" in rule
+        )
+        direct_fallback = next(
+            rule for rule in floor2
+            if "(build lumber-camp)" in rule
+            and "(up-build place-point 0 c: lumber-camp)" not in rule
+        )
 
-            self.assertIn(f"(up-compare-goal {remote} > 0)", execution_rule)
-            self.assertIn("(up-set-target-object search-remote c: 0)", execution_rule)
-            self.assertIn(f"(up-get-point position-object {point})", execution_rule)
-            self.assertIn(f"(up-set-target-point {point})", execution_rule)
-            self.assertIn("(up-build place-point 0 c: lumber-camp)", execution_rule)
-            self.assertNotIn(
-                f"(dropsite-min-distance wood > {old_distance})",
-                execution_rule,
-            )
+        self.assertIn(
+            "(up-get-search-state byzantine-dark-wood-camp-search-state-2)",
+            search_rule,
+        )
+        self.assertIn(
+            "(up-compare-goal byzantine-dark-wood-camp-search-remote-count-2 > 0)",
+            point_rule,
+        )
+        self.assertIn("(up-set-target-object search-remote c: 0)", point_rule)
+        self.assertIn("(up-get-point position-object byzantine-dark-wood-camp-point-2)", point_rule)
+        self.assertIn("(up-set-target-point byzantine-dark-wood-camp-point-2)", point_rule)
+        self.assertNotIn("(dropsite-min-distance wood", point_rule)
+        self.assertIn("(dropsite-min-distance wood > 12)", direct_fallback)
+        self.assertIn("(not (building-type-count lumber-camp >= 2))", direct_fallback)
+        self.assertIn("(resource-found wood)", direct_fallback)
+        self.assertIn("(can-build lumber-camp)", direct_fallback)
+        self.assertIn("(goal action-claim-build-pass-singleton 0)", direct_fallback)
 
 
 if __name__ == "__main__":
