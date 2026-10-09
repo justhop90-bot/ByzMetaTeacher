@@ -23,9 +23,11 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         self.assertIn("(up-build place-point 0 c: bombard-tower)", self.per)
 
     def test_attack_reset_now_has_only_the_army_recovery_owners(self):
+        # The OpenCode branch adds a fifth, bounded Imperial overwhelm
+        # recovery owner. Keep its admission guards explicit below.
         self.assertEqual(
             self.per.count("(up-reset-attack-now)"),
-            4,
+            5,
         )
 
         reset_sites = (
@@ -45,6 +47,10 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
                 "(timer-triggered byzantine-army-stale-timer)",
                 "(attack-soldier-count <= 3)",
             ),
+            (
+                "(current-age >= imperial-age)",
+                "(military-population >= 25)",
+            ),
         )
 
         remaining = self.per
@@ -59,6 +65,17 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "(goal byzantine-army-role-recovery-request 1)\n=>\n    (up-reset-attack-now)",
             self.per,
         )
+
+        imperial = self.per.split(
+            "; IMPERIAL OVERWHELM FOLLOW-UP ADMISSION", 1
+        )[1].split("; IMPERIAL BASELINE ATTACK DIAGNOSTIC", 1)[0]
+        self.assertIn("(not (town-under-attack))", imperial)
+        self.assertIn("(military-population >= 25)", imperial)
+        self.assertIn("(attack-soldier-count <= 3)", imperial)
+        self.assertIn("(goal byzantine-army-attack-ready 0)", imperial)
+        self.assertIn("(goal byzantine-army-attack-ready 2)", imperial)
+        self.assertIn("(set-goal byzantine-army-attack-ready 1)", imperial)
+        self.assertIn("(set-goal byzantine-offensive-objective-claim 0)", imperial)
 
     def test_static_defense_has_a_single_stone_spend_channel(self):
         self.assertIn(
