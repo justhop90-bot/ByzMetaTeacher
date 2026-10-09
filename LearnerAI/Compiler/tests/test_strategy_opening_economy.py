@@ -518,9 +518,18 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     section,
                 )
                 self.assertIn("(up-build place-point 0 c: mining-camp)", section)
+                # A second camp is justified when it opens a new resource
+                # front; if the current resource dropsite is already near, do
+                # not spend another camp just because another floor is active.
                 if resource == "stone":
-                    self.assertNotIn(
-                        "(dropsite-min-distance stone",
+                    self.assertIn(
+                        f"(building-type-count-total mining-camp < {floor})",
+                        section,
+                    )
+                    self.assertIn("(dropsite-min-distance stone > 12)", section)
+                    self.assertIn(
+                        f"(or\n        (building-type-count-total mining-camp < {floor})"
+                        "\n        (dropsite-min-distance stone > 12)\n    )",
                         section,
                     )
 
@@ -531,7 +540,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         end = runtime.index("; economy-gold-camp-floor-3", start)
         floor_two = runtime[start:end]
 
-        self.assertNotIn("(dropsite-min-distance gold", floor_two)
+        # The far-front repair may use distance as an activation guard, but
+        # the actual target must still come from indexed active-resource search.
+        self.assertIn("(dropsite-min-distance gold > 12)", floor_two)
+        self.assertIn("(not (building-type-count mining-camp >= 2))", floor_two)
+        self.assertIn("(building-type-count-total mining-camp < 2)", floor_two)
         self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
         self.assertIn(
             "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 0)",
