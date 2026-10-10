@@ -68,7 +68,7 @@ class FranksBotBuildTests(unittest.TestCase):
     def test_goal_comparisons_use_native_comparison_primitive(self):
         source = SOURCE.read_text(encoding="utf-8")
         invalid = re.findall(
-            r"\\(goal\\s+[^\\s()]+\\s+(?:==|!=|<=|>=|<|>)\\s+[^()]+\\)",
+            r"\(goal\s+[^\s()]+\s+(?:==|!=|<=|>=|<|>)\s+[^()]+\)",
             source,
         )
         self.assertEqual(
