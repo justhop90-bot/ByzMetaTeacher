@@ -123,6 +123,14 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertIn("(research ri-capped-ram)", source)
         self.assertIn("(defconst frank-c-capped-ram-tech 96)", source)
 
+    def test_enemy_elephant_counter_uses_a_registered_unit_line(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        self.assertNotIn("(players-unit-type-count any-enemy elephant-line", source)
+        self.assertIn(
+            "(players-unit-type-count any-enemy armored-elephant-line >= 3)",
+            source,
+        )
+
     def test_forage_predicates_use_native_food_resource_class(self):
         source = SOURCE.read_text(encoding="utf-8")
         self.assertNotIn("(resource-found forage)", source)
