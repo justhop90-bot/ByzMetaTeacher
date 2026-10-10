@@ -67,7 +67,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             end_marker = (
                 f"; economy-gold-camp-floor-{floor + 1}"
                 if floor < 5
-                else "; economy-stone-camp-floor-1"
+                else "; Pending diagnostics: economy-food-mill-boom"
             )
             section = _section(
                 self.source,
