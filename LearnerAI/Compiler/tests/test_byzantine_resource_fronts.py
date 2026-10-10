@@ -67,7 +67,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             end_marker = (
                 f"; economy-gold-camp-floor-{floor + 1}"
                 if floor < 5
-                else "; Narrow Dark Age second-mill rule"
+                else "; economy-stone-camp-floor-1"
             )
             section = _section(
                 self.source,
@@ -106,7 +106,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             end_marker = (
                 f"; economy-stone-camp-floor-{floor + 1}"
                 if floor < 5
-                else "; economy-stone-camp-floor-1"
+                else "; Narrow Dark Age second-mill rule"
             )
             section = _section(
                 self.source,
