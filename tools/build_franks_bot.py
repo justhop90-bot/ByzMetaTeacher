@@ -35,7 +35,6 @@ REQUIRED_FRAGMENTS = (
     "(defconst sn-total-number-explorers 18)",
     "(defconst sn-cap-civilian-explorers 3)",
     "(defconst sn-percent-half-exploration 179)",
-    "(defconst sn-percent-half-exploration 179)",
     "(set-strategic-number sn-number-explore-groups 1)",
     "(set-strategic-number sn-total-number-explorers 10)",
     "(set-strategic-number sn-cap-civilian-explorers 0)",
