@@ -160,7 +160,13 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             self.assertIn(f"(up-get-search-state {state})", search_rule)
             self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
 
-            remote_goal = values[state] + 2
+            state_match = re.search(
+                rf"\(defconst {re.escape(state)} (\d+)\)",
+                self.source,
+            )
+            self.assertIsNotNone(state_match, state)
+            assert state_match is not None
+            remote_goal = int(state_match.group(1)) + 2
             self.assertIn(f"(up-compare-goal {remote_goal} > {target_index})", execution_rule)
             self.assertIn(f"(up-set-target-object search-remote c: {target_index})", execution_rule)
             self.assertIn(f"(up-get-point position-object {point})", execution_rule)
