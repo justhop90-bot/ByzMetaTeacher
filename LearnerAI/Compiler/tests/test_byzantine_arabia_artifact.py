@@ -55,7 +55,14 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             expected_results = 1 if floor == 1 else 40
             self.assertIn(f"(up-find-resource c: gold c: {expected_results})", section)
 
-            witness = f"(up-compare-goal {remote_name} > {floor - 1})"
+            witness_state = re.search(
+                rf"\(defconst {re.escape(state_name)} (\d+)\)",
+                self.artifact,
+            )
+            self.assertIsNotNone(witness_state)
+            assert witness_state is not None
+            remote_goal = int(witness_state.group(1)) + 2
+            witness = f"(up-compare-goal {remote_goal} > {floor - 1})"
             self.assertIn(witness, section)
             self.assertIn(
                 f"(up-set-target-object search-remote c: {floor - 1})",
@@ -76,22 +83,17 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
                 rf"\(defconst {re.escape(state_name)} (\d+)\)",
                 self.artifact,
             )
-            remote_match = re.search(
-                rf"\(defconst {re.escape(remote_name)} (\d+)\)",
-                self.artifact,
-            )
             point_match = re.search(
                 rf"\(defconst {re.escape(point_name)} (\d+)\)",
                 self.artifact,
             )
             self.assertIsNotNone(state_match)
-            self.assertIsNotNone(remote_match)
             self.assertIsNotNone(point_match)
             assert state_match is not None
-            assert remote_match is not None
             assert point_match is not None
             self.assertTrue(41 <= int(state_match.group(1)) <= 15996)
-            self.assertTrue(1 <= int(remote_match.group(1)) <= 16000)
+            self.assertNotIn(f"(defconst {remote_name} ", self.artifact)
+            self.assertEqual(remote_goal, int(state_match.group(1)) + 2)
             self.assertTrue(41 <= int(point_match.group(1)) <= 15998)
 
 

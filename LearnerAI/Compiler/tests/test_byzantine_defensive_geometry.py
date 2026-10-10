@@ -637,19 +637,21 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             return int(matches[0])
 
         search_state = defconst_value("byzantine-dark-mill-search-state")
-        remote_count = defconst_value("byzantine-dark-mill-search-remote-count")
+        remote_count = search_state + 2
+        self.assertNotIn("(defconst byzantine-dark-mill-search-remote-count ", self.per)
 
         # Native up-get-search-state consumes a contiguous four-Goal span.
         self.assertGreaterEqual(search_state, 41)
         self.assertLessEqual(search_state, 15996)
         self.assertGreaterEqual(remote_count, 1)
         self.assertLessEqual(remote_count, 16000)
-        self.assertTrue(
-            remote_count < search_state or remote_count > search_state + 3,
-            "remote-count Goal must not overlap the four-slot search-state span",
+        self.assertEqual(
+            remote_count,
+            search_state + 2,
+            "remote-count Goal must alias the third search-state output (remote-list total)",
         )
         self.assertIn(
-            "(up-compare-goal byzantine-dark-mill-search-remote-count > 0)",
+            f"(up-compare-goal {remote_count} > 0)",
             build_rule,
         )
         self.assertNotIn(
