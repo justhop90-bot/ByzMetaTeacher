@@ -95,5 +95,39 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
             self.assertTrue(41 <= int(point_match.group(1)) <= 15998)
 
 
+    def test_camp_remote_count_aliases_fourth_search_state_output(self):
+        # AIRef up-get-search-state writes four consecutive goals:
+        # local total, local inserted count, remote total, remote inserted count.
+        # The camp placement selector indexes search-remote, so its count witness
+        # must read the fourth output at base + 3, not an unrelated goal.
+        for resource, floors in (
+            ("gold", range(1, 6)),
+            ("wood", range(1, 3)),
+            ("stone", range(2, 6)),
+        ):
+            for floor in floors:
+                with self.subTest(resource=resource, floor=floor):
+                    state_name = f"byzantine-dark-{resource}-camp-search-state-{floor}"
+                    remote_name = f"byzantine-dark-{resource}-camp-search-remote-count-{floor}"
+                    state_match = re.search(
+                        rf"\\(defconst {re.escape(state_name)} (\\d+)\\)",
+                        self.artifact,
+                    )
+                    remote_match = re.search(
+                        rf"\\(defconst {re.escape(remote_name)} (\\d+)\\)",
+                        self.artifact,
+                    )
+                    self.assertIsNotNone(state_match, state_name)
+                    self.assertIsNotNone(remote_match, remote_name)
+                    assert state_match is not None
+                    assert remote_match is not None
+                    self.assertEqual(
+                        int(remote_match.group(1)),
+                        int(state_match.group(1)) + 3,
+                        f"{remote_name} must alias the fourth up-get-search-state output",
+                    )
+
+
+
 if __name__ == "__main__":
     unittest.main()
