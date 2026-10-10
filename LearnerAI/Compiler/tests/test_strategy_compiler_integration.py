@@ -1,3 +1,4 @@
+import re
 import tempfile
 import unittest
 from dataclasses import replace
@@ -309,7 +310,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             duc_plan=plan,
         )
         search_start = int(
-            __import__("re").search(
+            re.search(
                 r"\\(up-get-search-state (\\d+)\\)",
                 output,
             ).group(1)
