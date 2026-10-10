@@ -4647,11 +4647,9 @@ def _default_byzantine_duc_plan(
             ]
             search_actions = (
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
-                parse_expression("(up-modify-sn sn-focus-player-number c:= 0)", SourceLocation(1)),
                 parse_expression("(up-filter-status c: status-resource c: list-active)", SourceLocation(1)),
                 parse_expression(f"(up-find-resource c: {resource} c: 40)", SourceLocation(1)),
                 parse_expression("(up-get-search-state resource-camp-search-state)", SourceLocation(1)),
-                parse_expression("(up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)", SourceLocation(1)),
             )
             rules.append(
                 NativeDucRule(
@@ -4670,7 +4668,7 @@ def _default_byzantine_duc_plan(
                 NativeDucOutputRequest(
                     rule_identity=search_identity,
                     section="ACTION",
-                    expression_index=4,
+                    expression_index=3,
                     request=search_output,
                     command="up-get-search-state",
                     argument_index=0,
