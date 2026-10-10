@@ -180,6 +180,25 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertNotIn("(players-unit-type-count any-enemy mangonel-line >= 2)", rule)
         self.assertNotIn("byzantine-imperial-posture-siege", rule)
 
+    def test_ranged_skirmisher_responses_train_skirmishers_not_pikemen(self) -> None:
+        for demand in (
+            "demand-expected-ranged-skirmishers",
+            "demand-counter-ranged-skirmishers",
+        ):
+            with self.subTest(demand=demand):
+                matches = [
+                    rule for rule in self.rules
+                    if f"(goal {demand} 1)" in rule
+                    and "(train skirmisher-line)" in rule
+                ]
+                self.assertEqual(len(matches), 1, demand)
+                rule = matches[0]
+                self.assertIn("(can-train-with-escrow skirmisher-line)", rule)
+                self.assertIn("(unit-type-count-total skirmisher-line <", rule)
+                self.assertNotIn("(train 358)", rule)
+                self.assertNotIn("(unit-type-count 358", rule)
+                self.assertNotIn("(unit-type-count-total 358", rule)
+
     def test_pikeman_research_is_not_blocked_by_spearman_count_and_preempts_training(self) -> None:
         pike = next(
             rule for rule in self.rules
@@ -243,6 +262,25 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             ("demand-imperial-light-cavalry-floor", "(train 546)"),
             ("demand-imperial-heavy-camel-floor", "(train 330)"),
             ("demand-imperial-siege-ram-floor", "(train battering-ram-line)"),
+            ("demand-castle-cataphract-floor", "(train cataphract-line)"),
+            ("demand-castle-varangian-guard-floor", "(train varangian-guard-line)"),
+            ("demand-castle-mangonel-floor", "(train mangonel-line)"),
+            ("demand-castle-battering-ram-floor", "(train battering-ram-line)"),
+            ("demand-imperial-bombard-floor", "(train bombard-cannon)"),
+            ("demand-imperial-onager-floor", "(train onager)"),
+            ("demand-imperial-halberdier-floor", "(train 359)"),
+            ("demand-imperial-open-halberdier-standard", "(train halberdier)"),
+            ("demand-imperial-open-halberdier-pressure", "(train halberdier)"),
+            ("demand-imperial-open-halberdier-severe", "(train halberdier)"),
+            ("demand-imperial-fortified-halberdier", "(train halberdier)"),
+            ("demand-imperial-trash-halberdier-standard", "(train halberdier)"),
+            ("demand-imperial-trash-halberdier-high", "(train halberdier)"),
+            ("demand-imperial-open-hussar-standard", "(train hussar)"),
+            ("demand-imperial-open-hussar-mobile", "(train hussar)"),
+            ("demand-imperial-fortified-hussar", "(train hussar)"),
+            ("demand-imperial-trash-hussar-standard", "(train hussar)"),
+            ("demand-imperial-trash-hussar-high", "(train hussar)"),
+            ("demand-imperial-arbalester-floor", "(train arbalest)"),
         )
         for demand, action in queue_actions:
             with self.subTest(demand=demand):
@@ -250,12 +288,27 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
                     rule for rule in self.rules
                     if f"(goal {demand} 1)" in rule and action in rule
                 ]
-                self.assertEqual(len(matches), 1, demand)
-                self.assertIn(
-                    "(goal byzantine-research-preempt 0)",
-                    matches[0],
-                    f"{demand} can occupy a queue needed by an affordable upgrade",
-                )
+                self.assertGreaterEqual(len(matches), 1, demand)
+                for rule in matches:
+                    self.assertIn(
+                        "(goal byzantine-research-preempt 0)",
+                        rule,
+                        f"{demand} can occupy a queue needed by an affordable upgrade",
+                    )
+
+    def test_hussar_and_halberdier_research_preempt_the_stable_and_barracks(self) -> None:
+        for demand, tech in (
+            ("demand-research-halberdier", "(can-research-with-escrow 429)"),
+            ("demand-research-hussar", "(can-research-with-escrow hussar)"),
+        ):
+            with self.subTest(demand=demand):
+                matching = [
+                    rule for rule in self.rules
+                    if f"(goal {demand} 1)" in rule
+                    and tech in rule
+                    and "(set-goal byzantine-research-preempt 1)" in rule
+                ]
+                self.assertEqual(len(matching), 1, demand)
 
     def test_light_cavalry_upgrade_and_imperial_floor_make_hussar_research_reachable(self) -> None:
         research = next(
