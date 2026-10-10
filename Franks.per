@@ -167,6 +167,9 @@
     (set-strategic-number sn-number-explore-groups 1)
     (set-strategic-number sn-total-number-explorers 10)
     (set-strategic-number sn-cap-civilian-explorers 0)
+    ; SN changes do not cancel villagers already assigned to explore.
+    ; Reset native scout tasks so the military Scout can take the explore group.
+    (up-reset-scouts)
     (set-goal frank-init-stage-goal 5)
     (set-goal frank-initialized-goal 1)
 )
@@ -324,16 +327,6 @@
     (research imperial-age)
 )
 
-; Keep Town Centers producing villagers independent of age-up arbitration.
-; can-train villager already checks resources, housing headroom, queue capacity,
-; and availability of a ready Town Center; do not duplicate those gates.
-(defrule
-    (unit-type-count-total villager < 90)
-    (can-train villager)
-=>
-    (train villager)
-)
-
 ; Build houses before population pressure blocks villager and army production.
 (defrule
     (population-headroom < 8)
@@ -342,6 +335,16 @@
     (can-build house)
 =>
     (build house)
+)
+
+; Keep Town Centers producing villagers independent of age-up arbitration.
+; can-train villager already checks resources, housing headroom, queue capacity,
+; and availability of a ready Town Center; do not duplicate those gates.
+(defrule
+    (unit-type-count-total villager < 90)
+    (can-train villager)
+=>
+    (train villager)
 )
 
 ; Build the first lumber camp when wood is being gathered.
