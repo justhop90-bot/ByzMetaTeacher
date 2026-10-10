@@ -83,8 +83,10 @@ class NativeDucGoalInputRequest:
 
     The reader operand at (rule_identity, section, expression_index,
     argument_index) is rewritten at emission to the bound goal of the
-    writer's storage request (`source`). The writer must be a GoalSlot
-    output request in the same plan. Position contracts are
+    writer's storage request (`source`). The writer must be a GoalSlot or
+    GoalSpan output request in the same plan. GoalSpan readers use
+    `source_offset` to name a slot inside the allocated span, such as the
+    fourth output of `up-get-search-state`. Position contracts are
     head-specific and registry-validated. Readers never allocate
     storage: without an input request the operand emits verbatim.
     """
