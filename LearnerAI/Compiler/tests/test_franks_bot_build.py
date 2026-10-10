@@ -40,11 +40,11 @@ class FranksBotBuildTests(unittest.TestCase):
         start = source.index("; Initialize all Frankish strategic state in bounded, one-shot stages.")
         end = source.index("; Acquire a valid enemy player", start)
         initialization = source[start:end]
-        rules = re.findall(r"\\(defrule\\b(.*?)\\n\\)", initialization, flags=re.S)
+        rules = re.findall(r"\(defrule\b(.*?)\n\)", initialization, flags=re.S)
 
         self.assertEqual(len(rules), 3)
         form_counts = [
-            sum(bool(re.match(r"^ {4}\\(", line)) for line in rule.splitlines())
+            sum(bool(re.match(r"^ {4}\(", line)) for line in rule.splitlines())
             for rule in rules
         ]
         self.assertLessEqual(
