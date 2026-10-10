@@ -45,14 +45,14 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             start = _const_value(self.source, state_name)
             remote_count = _const_value(self.source, remote_count_name)
             self.assertGreaterEqual(start, 41, state_name)
-            self.assertLessEqual(start + 2, 16000, state_name)
+            self.assertLessEqual(start + 3, 16000, state_name)
             self.assertEqual(
                 remote_count,
                 start + 2,
                 f"{remote_count_name} must refer to the stored remote-list count, "
                 f"the third output of {state_name}",
             )
-            spans.append((start, start + 2, state_name))
+            spans.append((start, start + 3, state_name))
 
         for index, (start, end, name) in enumerate(spans):
             for other_start, other_end, other_name in spans[index + 1:]:
