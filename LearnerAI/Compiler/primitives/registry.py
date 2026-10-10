@@ -444,6 +444,25 @@ class PrimitiveRegistry:
                             f"native output action '{expression.head}' is a Fact and cannot be emitted as an Action"
                         )
                     continue
+                if expression.head in self._native_contracts.duc_lifecycle_actions:
+                    # Lifecycle state writes are not DUC commands. Validate them through
+                    # the native engine-effect contract and keep this allowlist explicit.
+                    self.validate_native_signature(expression.head, len(expression.args))
+                    native = self.require_native(expression.head)
+                    if native.command_type not in {"Action", "Fact/Action"}:
+                        raise ValueError(
+                            f"DUC lifecycle action '{expression.head}' is a Fact and cannot be emitted as an Action"
+                        )
+                    effect_ok, effect_message = default_native_engine_effect_catalog().validate_effect(
+                        expression.head,
+                        self._native,
+                    )
+                    if not effect_ok:
+                        raise ValueError(
+                            f"DUC lifecycle action '{expression.head}' has no valid native effect contract: "
+                            f"{effect_message}"
+                        )
+                    continue
                 if expression.head not in duc_commands:
                     raise ValueError(
                         f"DUC rule action '{expression.head}' is not a contracted DUC command"

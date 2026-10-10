@@ -254,6 +254,26 @@ class NativeDucPlanTests(unittest.TestCase):
         )
         default_de_registry().validate_duc_plan(plan)
 
+    def test_registry_accepts_set_goal_for_duc_lifecycle_handoff(self):
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="mark-resource-camp-issued",
+                    order=1,
+                    facts=(_expr("(true)", "true"),),
+                    actions=(
+                        _expr(
+                            "(set-goal demand-economy-wood-camp-floor-2 issued-economy-wood-camp-floor-2)",
+                            "set-goal",
+                            "demand-economy-wood-camp-floor-2",
+                            "issued-economy-wood-camp-floor-2",
+                        ),
+                    ),
+                ),
+            )
+        )
+        default_de_registry().validate_duc_plan(plan)
+
     def test_registry_accepts_up_get_fact_as_fact_output(self):
         plan = NativeDucPlan(
             rules=(

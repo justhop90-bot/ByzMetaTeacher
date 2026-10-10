@@ -1371,6 +1371,8 @@ class NativeContractCatalog:
     duc_groups: Tuple[NativeDucGroupContract, ...] = ()
     # Point-based DUC construction is a distinct execution action, not just a target consumer.
     duc_build_commands: Tuple[str, ...] = ("up-build",)
+    # DUC placement rules may perform an explicitly contracted persistent-state handoff.
+    duc_lifecycle_actions: Tuple[str, ...] = ("set-goal",)
     duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
     native_output_goal_contracts: Tuple[NativeOutputGoalContract, ...] = ()
     duc_consumer_commands: Tuple[str, ...] = (
@@ -1463,6 +1465,10 @@ class NativeContractCatalog:
             raise ValueError("duplicate DUC build command")
         if any(not command.strip() for command in self.duc_build_commands):
             raise ValueError("DUC build command identity must not be empty")
+        if len(self.duc_lifecycle_actions) != len(set(self.duc_lifecycle_actions)):
+            raise ValueError("duplicate DUC lifecycle action")
+        if any(not command.strip() for command in self.duc_lifecycle_actions):
+            raise ValueError("DUC lifecycle action identity must not be empty")
         if not self.duc_output_evidence_ids:
             raise ValueError("DUC output evidence requires at least one evidence identifier")
         if len(self.duc_output_evidence_ids) != len(set(self.duc_output_evidence_ids)):
