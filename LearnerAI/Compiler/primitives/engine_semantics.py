@@ -225,6 +225,7 @@ _DUC_COMMAND_SPECS = (
     ("up-set-target-object", "duc.target.object"),
     ("up-set-target-point", "duc.target.point"),
     ("up-target-objects", "duc.target.consume-objects"),
+    ("up-build", "duc.execution.build-point"),
 )
 
 
@@ -739,6 +740,47 @@ def _duc_point_mapping(command: str, identity: str) -> EngineSemanticMapping:
     )
 
 
+def _duc_build_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(
+            "https://airef.github.io/commands/commands-details.html#up-build",
+            _AOERF_PER,
+        ),
+        state_effects=(
+            "issues a native building-placement request at the selected placement "
+            "mode; for place-point, it consumes the point established by "
+            "up-set-target-point"
+        ),
+        lifetime=(
+            "one-shot construction request; foundation and completed-building "
+            "state are observed separately by native pending and world-state facts"
+        ),
+        ordering=(
+            "the selected point must be established before the placement request; "
+            "source order alone does not prove a foundation or completed building"
+        ),
+        admission=(
+            "the pinned AIRef command schema contracts the Action signature "
+            "(PlacementType, EscrowGoalId, typeOp, BuildingId); compiler policy "
+            "must guard execution with the relevant can-build and count facts"
+        ),
+        completion=(
+            "the request is not completion evidence; completed building count "
+            "remains the construction lifecycle witness"
+        ),
+        recovery=(
+            "if no foundation or completed building is observed, retain the active "
+            "construction demand and reassess using its existing retry lifecycle"
+        ),
+        practice_references=("build.can-pending-witness",),
+    )
+
+
 def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = {
         "up-can-search": "Fact",
@@ -889,7 +931,11 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
                 else (
                     _duc_point_mapping(command, identity)
                     if command == "up-get-point"
-                    else _duc_mapping(command, identity)
+                    else (
+                        _duc_build_mapping(command, identity)
+                        if command == "up-build"
+                        else _duc_mapping(command, identity)
+                    )
                 )
             )
         )
