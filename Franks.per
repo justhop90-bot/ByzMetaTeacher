@@ -1096,10 +1096,10 @@
     (train skirmisher-line)
 )
 
-; Activate a small Monk package against elephant-heavy enemy armies.
+; Activate a small Monk package when the enemy fields Armored Elephants.
 (defrule
     (current-age >= castle-age)
-    (players-unit-type-count any-enemy elephant-line >= 3)
+    (players-unit-type-count any-enemy armored-elephant-line >= 3)
     (up-compare-goal frank-monk-target-goal != 3)
 =>
     (set-goal frank-monk-target-goal 3)
