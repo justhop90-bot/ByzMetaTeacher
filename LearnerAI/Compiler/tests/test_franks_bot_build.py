@@ -122,6 +122,7 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertIn("(can-research-with-escrow imperial-age)", imperial_rule)
         self.assertNotIn("(building-type-count market >= 1)", imperial_rule)
         self.assertIn("(building-type-count-total university < 1)", source)
+        self.assertIn("(not (can-build castle))", source)
         self.assertIn("(building-type-count siege-workshop >= 1)", source)
 
     def test_counter_upgrades_and_new_mounted_crossbow_upgrade_have_witnesses(self):
