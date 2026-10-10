@@ -122,6 +122,13 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertIn("(research ri-capped-ram)", source)
         self.assertIn("(defconst frank-c-capped-ram-tech 96)", source)
 
+    def test_forage_predicates_use_native_food_resource_class(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        self.assertNotIn("(resource-found forage)", source)
+        self.assertNotIn("(dropsite-min-distance forage", source)
+        self.assertIn("(resource-found food)", source)
+        self.assertIn("(dropsite-min-distance food", source)
+
     def test_dark_age_has_second_building_fallback_without_distance_deadlock(self):
         source = SOURCE.read_text(encoding="utf-8")
         lumber_start = source.index("; Build the first lumber camp")
