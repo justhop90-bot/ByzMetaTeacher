@@ -563,7 +563,7 @@ def _occupied_goal_slots(source: str) -> set[int]:
     """Conservatively find Goal ids that a remapped DUC span must not reuse."""
     occupied = {
         int(match.group(1))
-        for match in re.finditer(r"(?<![A-Za-z0-9_-])-?\d+", source)
+        for match in re.finditer(r"(?<![A-Za-z0-9_-])(-?\d+)", source)
         if 1 <= int(match.group(1)) <= 16_000
     }
     definitions = {
