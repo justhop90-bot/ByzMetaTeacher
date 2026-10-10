@@ -79,6 +79,29 @@ class FranksBotBuildTests(unittest.TestCase):
 
 
 
+
+    def test_counter_target_thresholds_do_not_overwrite_higher_tier(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        spear_start = source.index("; Set an eight-Spearman counter against a committed enemy cavalry force.")
+        spear_end = source.index("; Scale Spearmen against very heavy mounted-unit pressure.", spear_start)
+        spear_rule = source[spear_start:spear_end]
+        self.assertIn("(players-unit-type-count any-enemy knight-line < 8)", spear_rule)
+        self.assertIn("(players-unit-type-count any-enemy camel-rider-line < 8)", spear_rule)
+
+        thrower_start = source.index("; Deploy Throwing Axemen against infantry and Spearman-line bodies.")
+        thrower_end = source.index("; Scale Throwing Axemen against mass infantry.", thrower_start)
+        thrower_rule = source[thrower_start:thrower_end]
+        self.assertIn("(players-unit-type-count any-enemy spearman-line < 9)", thrower_rule)
+        self.assertIn("(players-unit-type-count any-enemy militiaman-line < 12)", thrower_rule)
+
+        mounted_start = source.index("; Add Mounted Crossbowmen to support Knights against spear-heavy armies.")
+        mounted_end = source.index("; Scale Mounted Crossbowmen after Ordonnance Companies reduces gold pressure.", mounted_start)
+        mounted_rule = source[mounted_start:mounted_end]
+        self.assertIn(
+            "(up-research-status c: ri-ordonnance-companies < research-complete)",
+            mounted_rule,
+        )
+
     def test_age_up_gate_stays_closed_until_each_age_research_completes(self):
         source = SOURCE.read_text(encoding="utf-8")
         feudal_restore_start = source.index("; Restore Feudal allocation only when the Castle Age click is not pending.")
