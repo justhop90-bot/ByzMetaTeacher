@@ -78,6 +78,49 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertNotIn("(population-headroom", rule)
 
 
+
+    def test_age_up_gate_stays_closed_until_each_age_research_completes(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        feudal_restore_start = source.index("; Restore Feudal allocation only when the Castle Age click is not pending.")
+        castle_transition_start = source.index("; Castle completion releases the age-up research gate exactly once.")
+        imperial_transition_start = source.index("; Imperial completion releases the gate even if combat losses reduced villager count.")
+        loom_start = source.index("; Research Loom late and only when the Feudal click is not currently feasible.")
+        feudal_restore = source[feudal_restore_start:castle_transition_start]
+        castle_transition = source[castle_transition_start:imperial_transition_start]
+        imperial_transition = source[imperial_transition_start:loom_start]
+
+        self.assertIn("(current-age == feudal-age)", feudal_restore)
+        self.assertIn("(goal train-civ-goal 0)", feudal_restore)
+        self.assertIn(
+            "(up-research-status c: frank-c-castle-age-tech < research-pending)",
+            feudal_restore,
+        )
+        self.assertNotIn("(current-age >= feudal-age)", feudal_restore)
+        self.assertIn("(set-goal train-civ-goal 1)", castle_transition)
+        self.assertIn("(current-age >= castle-age)", castle_transition)
+        self.assertIn("(set-goal train-civ-goal 1)", imperial_transition)
+        self.assertNotIn(
+            "(unit-type-count villager >= frank-imperial-villagers)",
+            imperial_transition,
+        )
+
+    def test_every_optional_research_rule_defers_during_age_up(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        rules = re.findall(r"\(defrule\\b(.*?)\n\)", source, flags=re.S)
+        missing = []
+        for index, body in enumerate(rules, start=1):
+            arrow = body.find("=>")
+            if arrow < 0:
+                continue
+            conditions, actions = body[:arrow], body[arrow + 2:]
+            if re.search(r"\(research\s+[^()\s]+\)", actions) and "(goal train-civ-goal 1)" not in conditions:
+                missing.append(index)
+        self.assertEqual(
+            missing,
+            [],
+            f"research rules must respect the age-up commitment gate: {missing}",
+        )
+
     def test_strategy_contains_full_match_milestones_and_patch_specific_units(self):
         source = SOURCE.read_text(encoding="utf-8")
         expected = (
