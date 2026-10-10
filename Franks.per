@@ -43,6 +43,7 @@
 (defconst frank-age-failure-backoff-goal 751)
 (defconst frank-target-player-goal 752)
 (defconst frank-economy-recovery-goal 753)
+(defconst frank-init-stage-goal 754)
 (defconst frank-mounted-crossbowman 2700)
 (defconst frank-heavy-mounted-crossbowman 2701)
 (defconst frank-throwing-axeman 281)
@@ -113,12 +114,19 @@
 (defconst frank-castle-villagers 31)
 (defconst frank-imperial-villagers 55)
 
-; Initialize all Frankish strategic state once.
+; Initialize all Frankish strategic state in bounded, one-shot stages. Keep the
+; initialized sentinel unset until every state value has been established.
 (defrule
     (goal frank-initialized-goal 0)
+    (goal frank-init-stage-goal 0)
 =>
-    (set-goal frank-initialized-goal 1)
+    (set-goal frank-init-stage-goal 1)
     (set-goal train-civ-goal 1)
+    (set-strategic-number sn-target-player-number 0)
+)
+(defrule
+    (goal frank-init-stage-goal 1)
+=>
     (set-goal frank-cavalry-target-goal 0)
     (set-goal frank-scout-target-goal 0)
     (set-goal frank-spear-target-goal 0)
@@ -131,12 +139,18 @@
     (set-goal frank-attack-state-goal 0)
     (set-goal frank-target-player-goal 0)
     (set-goal frank-economy-recovery-goal 0)
-    (set-strategic-number sn-target-player-number 0)
+    (set-goal frank-init-stage-goal 2)
+)
+(defrule
+    (goal frank-init-stage-goal 2)
+=>
     (set-strategic-number sn-intelligent-gathering 1)
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 45)
     (set-strategic-number sn-gold-gatherer-percentage 0)
     (set-strategic-number sn-stone-gatherer-percentage 0)
+    (set-goal frank-init-stage-goal 3)
+    (set-goal frank-initialized-goal 1)
 )
 
 ; Acquire a valid enemy player before target-player facts and attack control depend on it.
