@@ -21,7 +21,15 @@ REQUIRED_FRAGMENTS = (
     "(train knight-line)",
     "(train frank-throwing-axeman)",
     "(train frank-mounted-crossbowman)",
+    "(research 1451)",
     "(research ri-ordonnance-companies)",
+    "(research ri-pikeman)",
+    "(research ri-halberdier)",
+    "(research ri-elite-skirmisher)",
+    "(research ri-capped-ram)",
+    "(up-reset-attack-now)",
+    "(building-type-count-total university < 1)",
+    "(goal frank-economy-recovery-goal 0)",
     "(train battering-ram-line)",
     "(train trebuchet)",
     "(attack-now)",
@@ -75,7 +83,15 @@ def build(output_dir: Path) -> tuple[Path, Path]:
     line_count = len(source.splitlines())
     if rule_count < 80:
         raise RuntimeError(f"Franks.per unexpectedly has only {rule_count} rules")
-    for forbidden in ("cataphract", "varangian-guard", "ri-bearded-axe", "cavalry-archer-line"):
+    for forbidden in (
+        "cataphract",
+        "varangian-guard",
+        "ri-bearded-axe",
+        "cavalry-archer-line",
+        "(research ri-siege-ram)",
+        "(research ri-two-man-saw)",
+        "frank-c-two-man-saw-tech",
+    ):
         if forbidden in source.lower():
             raise RuntimeError(f"Franks.per contains stale or foreign strategy material: {forbidden}")
 
