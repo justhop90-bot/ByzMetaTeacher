@@ -67,7 +67,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             end_marker = (
                 f"; economy-gold-camp-floor-{floor + 1}"
                 if floor < 5
-                else "; Pending diagnostics: economy-food-mill-boom"
+                else "; Narrow Dark Age second-mill rule"
             )
             section = _section(
                 self.source,
@@ -90,7 +90,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
     def test_wood_second_camp_searches_enough_candidates_and_advances_index(self):
         section = _section(
             self.source,
-            "; economy-lumber-camp-floor-2",
+            "; Action issuance: economy-lumber-camp-floor-2 | ACTIVE -> ISSUED",
             "; RESOURCE-SPECIFIC BYZANTINE CAMP LIFECYCLES",
         )
         self.assertIn("(up-find-resource c: wood c: 40)", section)
