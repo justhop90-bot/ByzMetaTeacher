@@ -488,7 +488,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         light_cav_floor_start = runtime.index("; Action issuance: imperial-light-cavalry-floor")
         light_cav_floor_end = runtime.index("; Pending diagnostics: imperial-onager-floor", light_cav_floor_start)
         light_cav_floor = runtime[light_cav_floor_start:light_cav_floor_end]
-        self.assertIn("(research-completed ri-light-cavalry)", light_cav_floor)
+        self.assertIn("(current-age >= imperial-age)", light_cav_floor)
         self.assertIn("(can-train-with-escrow 546)", light_cav_floor)
         self.assertIn("(train 546)", light_cav_floor)
         self.assertIn("(unit-type-count 546 < 6)", light_cav_floor)

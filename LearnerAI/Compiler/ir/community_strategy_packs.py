@@ -1469,7 +1469,6 @@ def community_strategy_demands(
                 action_symbol="546",
                 witness_symbol="546",
                 release_symbol="546",
-                additional_requirements=("(research-completed ri-light-cavalry)",),
             ),
             _training_demand(
                 effective=effective,
