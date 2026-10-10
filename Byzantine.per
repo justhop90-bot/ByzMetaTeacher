@@ -8471,7 +8471,7 @@
 (defrule
     (current-age == castle-age)
     (goal demand-counter-ranged-skirmishers 0)
-    (unit-type-count-total 358 < bt-castle-skirmisher-floor)
+    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
 )
@@ -13758,6 +13758,8 @@
     (current-age >= feudal-age)
     (can-train-with-escrow 93)
     (unit-type-count-total 93 < 2)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14029,6 +14031,8 @@
     (and (players-building-type-count any-enemy stable >= 1) (players-unit-type-count any-enemy scout-cavalry-line < 3))
     (can-train-with-escrow 93)
     (unit-type-count-total 93 < 2)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train 93)
     (set-goal action-claim-train-arbitration 1)
@@ -14046,7 +14050,7 @@
 ; Release: expected-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-expected-ranged-skirmishers 79)
-    (unit-type-count 358 >= 2)
+    (unit-type-count 7 >= 2)
 =>
     (set-goal demand-expected-ranged-skirmishers 0)
 )
@@ -14057,7 +14061,7 @@
         (goal demand-expected-ranged-skirmishers 80)
         (goal demand-expected-ranged-skirmishers 78)
     )
-    (unit-type-count 358 >= 2)
+    (unit-type-count 7 >= 2)
 =>
     (set-goal demand-expected-ranged-skirmishers 79)
 )
@@ -14068,7 +14072,7 @@
         (goal demand-expected-ranged-skirmishers 80)
         (goal demand-expected-ranged-skirmishers 78)
     )
-    (not (unit-type-count 358 >= 2))
+    (not (unit-type-count 7 >= 2))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-expected-ranged-skirmishers 78)
@@ -14080,7 +14084,7 @@
         (goal demand-expected-ranged-skirmishers 80)
         (goal demand-expected-ranged-skirmishers 78)
     )
-    (not (unit-type-count 358 >= 2))
+    (not (unit-type-count 7 >= 2))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-expected-ranged-skirmishers 1)
@@ -14090,17 +14094,19 @@
 ; Action issuance: expected-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-expected-ranged-skirmishers 1)
-    (not (unit-type-count 358 >= 2))
+    (not (unit-type-count 7 >= 2))
     (goal production-retry-barrier-expected-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count 358 >= 2))
+    (not (unit-type-count 7 >= 2))
     (goal action-claim-train-arbitration 0)
     (current-age >= feudal-age)
     (and (players-building-type-count any-enemy archery-range >= 1) (players-unit-type-count any-enemy archer-line < 3))
-    (can-train-with-escrow 358)
-    (unit-type-count-total 358 < 2)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < 2)
+
+    (goal byzantine-research-preempt 0)
 =>
-    (train 358)
+    (train skirmisher-line)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-expected-ranged-skirmishers 80)
 )
@@ -14197,7 +14203,7 @@
 ; Release: counter-ranged-skirmishers | COMPLETE -> RELEASED
 (defrule
     (goal demand-counter-ranged-skirmishers 64)
-    (unit-type-count 358 >= 4)
+    (unit-type-count 7 >= 4)
 =>
     (set-goal demand-counter-ranged-skirmishers 0)
 )
@@ -14205,7 +14211,7 @@
 ; Recovery: counter-ranged-skirmishers | RELEASED -> ACTIVE on world-state loss
 (defrule
     (goal demand-counter-ranged-skirmishers 0)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 7 >= 4))
     (goal counter-package-ranged_pressure_feudal 1)
     (current-age >= feudal-age)
 =>
@@ -14218,7 +14224,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (unit-type-count 358 >= 4)
+    (unit-type-count 7 >= 4)
 =>
     (set-goal demand-counter-ranged-skirmishers 64)
 )
@@ -14229,7 +14235,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 7 >= 4))
     (up-pending-objects c: 7 >= 1)
 =>
     (set-goal demand-counter-ranged-skirmishers 63)
@@ -14241,7 +14247,7 @@
         (goal demand-counter-ranged-skirmishers 65)
         (goal demand-counter-ranged-skirmishers 63)
     )
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 7 >= 4))
     (not (up-pending-objects c: 7 >= 1))
 =>
     (set-goal demand-counter-ranged-skirmishers 1)
@@ -14251,10 +14257,10 @@
 ; Action issuance: counter-ranged-skirmishers | ACTIVE -> ISSUED
 (defrule
     (goal demand-counter-ranged-skirmishers 1)
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 7 >= 4))
     (goal production-retry-barrier-counter-ranged-skirmishers 0)
     (not (up-pending-objects c: 7 >= 1))
-    (not (unit-type-count 358 >= 4))
+    (not (unit-type-count 7 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
     (goal byzantine-research-preempt 0)
@@ -14263,10 +14269,10 @@
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
     )
     (current-age >= feudal-age)
-    (can-train-with-escrow 358)
-    (unit-type-count-total 358 < bt-castle-skirmisher-floor)
+    (can-train-with-escrow skirmisher-line)
+    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
 =>
-    (train 358)
+    (train skirmisher-line)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-counter-ranged-skirmishers 65)
 )
@@ -14738,6 +14744,8 @@
     (current-age >= castle-age)
     (can-train-with-escrow 329)
     (unit-type-count-total camel-line < 3)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train 329)
     (set-goal action-claim-train-arbitration 1)
@@ -14896,6 +14904,8 @@
     (current-age >= castle-age)
     (can-train-with-escrow knight-line)
     (unit-type-count-total knight-line < 2)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train knight-line)
     (set-goal action-claim-train-arbitration 1)
@@ -15031,6 +15041,24 @@
         )
     )
     (can-research-with-escrow ri-husbandry)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-research-halberdier 1)
+    (not (research-completed 429))
+    (can-research-with-escrow 429)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-research-hussar 1)
+    (not (research-completed 428))
+    (can-research-with-escrow hussar)
 =>
     (set-goal byzantine-research-preempt 1)
 )
@@ -24965,6 +24993,7 @@
     (current-age >= castle-age)
     (can-train-with-escrow cataphract-line)
     (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+    (goal byzantine-research-preempt 0)
 =>
     (train cataphract-line)
     (set-goal action-claim-train-arbitration 1)
@@ -24993,6 +25022,7 @@
             )
         )
     )
+    (goal byzantine-research-preempt 0)
 =>
     (train cataphract-line)
     (set-goal action-claim-train-arbitration 1)
@@ -25078,6 +25108,7 @@
     (current-age >= castle-age)
     (can-train-with-escrow varangian-guard-line)
     (unit-type-count-total varangian-guard-line < bt-castle-varangian-floor)
+    (goal byzantine-research-preempt 0)
 =>
     (train varangian-guard-line)
     (set-goal action-claim-train-arbitration 1)
@@ -25107,6 +25138,7 @@
             )
         )
     )
+    (goal byzantine-research-preempt 0)
 =>
     (train varangian-guard-line)
     (set-goal action-claim-train-arbitration 1)
@@ -25185,6 +25217,7 @@
     (current-age >= castle-age)
     (can-train-with-escrow mangonel-line)
     (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+    (goal byzantine-research-preempt 0)
 =>
     (train mangonel-line)
     (set-goal action-claim-train-arbitration 1)
@@ -25285,6 +25318,7 @@
     (current-age >= imperial-age)
     (research-completed 47)
     (can-train-with-escrow bombard-cannon)
+    (goal byzantine-research-preempt 0)
 =>
     (train bombard-cannon)
     (set-goal action-claim-train-arbitration 1)
@@ -25403,6 +25437,7 @@
     (current-age >= castle-age)
     (can-train-with-escrow battering-ram-line)
     (unit-type-count-total battering-ram-line < 2)
+    (goal byzantine-research-preempt 0)
 =>
     (train battering-ram-line)
     (set-goal action-claim-train-arbitration 1)
@@ -25643,6 +25678,8 @@
     (current-age >= imperial-age)
     (can-train-with-escrow cavalier)
     (unit-type-count-total cavalier < bt-imperial-cavalier-target)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train cavalier)
     (set-goal action-claim-train-arbitration 1)
@@ -25722,6 +25759,8 @@
     (current-age >= imperial-age)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < bt-imperial-hussar-target)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
@@ -25795,6 +25834,8 @@
     (research-completed ri-light-cavalry)
     (can-train-with-escrow 546)
     (unit-type-count-total 546 < 6)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train 546)
     (set-goal action-claim-train-arbitration 1)
@@ -25880,6 +25921,7 @@
     (current-age >= imperial-age)
     (can-train-with-escrow onager)
     (unit-type-count-total onager < bt-imperial-onager-target)
+    (goal byzantine-research-preempt 0)
 =>
     (train onager)
     (set-goal action-claim-train-arbitration 1)
@@ -25976,6 +26018,8 @@
     (goal action-claim-train-arbitration 0)
     (current-age >= imperial-age)
     (can-train-with-escrow battering-ram-line)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train battering-ram-line)
     (set-goal action-claim-train-arbitration 1)
@@ -26156,6 +26200,7 @@
             )
         )
     )
+    (goal byzantine-research-preempt 0)
 =>
     (train arbalest)
     (set-goal action-claim-train-arbitration 1)
@@ -26235,6 +26280,8 @@
     (current-age >= castle-age)
     (can-train-with-escrow 329)
     (unit-type-count-total 329 < 2)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train 329)
     (set-goal action-claim-train-arbitration 1)
@@ -26329,6 +26376,7 @@
             )
         )
     )
+    (goal byzantine-research-preempt 0)
 =>
     (train 359)
     (set-goal action-claim-train-arbitration 1)
@@ -26421,6 +26469,8 @@
     (current-age >= imperial-age)
     (can-train-with-escrow 330)
     (unit-type-count-total 330 < bt-imperial-heavy-camel-target)
+
+    (goal byzantine-research-preempt 0)
 =>
     (train 330)
     (set-goal action-claim-train-arbitration 1)
@@ -29228,6 +29278,7 @@
     (unit-type-count 359 < 24)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 24)
+    (goal byzantine-research-preempt 0)
 =>
     (train halberdier)
     (set-goal action-claim-train-arbitration 1)
@@ -29301,6 +29352,7 @@
     (unit-type-count 359 < 30)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 30)
+    (goal byzantine-research-preempt 0)
 =>
     (train halberdier)
     (set-goal action-claim-train-arbitration 1)
@@ -29373,6 +29425,7 @@
     (unit-type-count 359 < 36)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 36)
+    (goal byzantine-research-preempt 0)
 =>
     (train halberdier)
     (set-goal action-claim-train-arbitration 1)
@@ -29665,6 +29718,7 @@
     (unit-type-count hussar < 16)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 16)
+    (goal byzantine-research-preempt 0)
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
@@ -29737,6 +29791,7 @@
     (unit-type-count hussar < 20)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 20)
+    (goal byzantine-research-preempt 0)
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
@@ -29808,6 +29863,7 @@
     (unit-type-count 359 < 24)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 24)
+    (goal byzantine-research-preempt 0)
 =>
     (train halberdier)
     (set-goal action-claim-train-arbitration 1)
@@ -29951,6 +30007,7 @@
     (unit-type-count hussar < 10)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 10)
+    (goal byzantine-research-preempt 0)
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
@@ -30023,6 +30080,7 @@
     (unit-type-count 359 < 30)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 30)
+    (goal byzantine-research-preempt 0)
 =>
     (train halberdier)
     (set-goal action-claim-train-arbitration 1)
@@ -30096,6 +30154,7 @@
     (unit-type-count 359 < 36)
     (can-train-with-escrow halberdier)
     (unit-type-count-total halberdier < 36)
+    (goal byzantine-research-preempt 0)
 =>
     (train halberdier)
     (set-goal action-claim-train-arbitration 1)
@@ -30315,6 +30374,7 @@
     (unit-type-count hussar < 18)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 18)
+    (goal byzantine-research-preempt 0)
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
@@ -30388,6 +30448,7 @@
     (unit-type-count hussar < 24)
     (can-train-with-escrow hussar)
     (unit-type-count-total hussar < 24)
+    (goal byzantine-research-preempt 0)
 =>
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
