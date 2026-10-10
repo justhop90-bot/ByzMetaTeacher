@@ -288,6 +288,18 @@ def emit(
         )
     if duc_plan is not None:
         registry.validate_duc_plan(duc_plan)
+        demand_by_name = {demand.name: demand for demand in demands}
+        for managed_name in duc_plan.managed_demand_identities:
+            managed_demand = demand_by_name.get(managed_name)
+            if managed_demand is None:
+                raise CompileError(
+                    f"EMITTER-DUC-MANAGED-DEMAND: DUC plan references unknown demand '{managed_name}'"
+                )
+            if managed_demand.construction_lifecycle is None:
+                raise CompileError(
+                    f"EMITTER-DUC-MANAGED-DEMAND: DUC-managed demand '{managed_name}' "
+                    "must retain the existing construction lifecycle"
+                )
     native_attack_plan = (
         attack_plan.native_plan
         if isinstance(attack_plan, AttackExecution)
