@@ -478,6 +478,7 @@ _IMPERIAL_MILITARY_RESEARCH_PACK = (
     ("research-forging", "military", "feudal-age", "forging", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
     ("research-pikeman", "military", "castle-age", "pikeman", _StrategicPriority.CORE, (Resource.FOOD, Resource.WOOD)),
     ("research-elite-skirmisher", "military", "castle-age", "elite-skirmisher", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.WOOD)),
+    ("research-light-cavalry", "military", "castle-age", "light-cavalry", _StrategicPriority.CORE, (Resource.FOOD, Resource.GOLD)),
     ("research-husbandry", "military", "castle-age", "husbandry", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
     ("research-iron-casting", "military", "castle-age", "iron-casting", _StrategicPriority.DEFENSE, (Resource.FOOD, Resource.GOLD)),
     ("research-padded-archer-armor", "military", "feudal-age", "padded-archer-armor", _StrategicPriority.DEFENSE, (Resource.FOOD,)),
@@ -1370,9 +1371,10 @@ def community_strategy_demands(
 
     imperial_research_gates = {
         "research-forging": ("(current-age >= feudal-age)", "(unit-type-count-total spearman-line >= 6)"),
-        "research-pikeman": ("(current-age >= castle-age)", "(unit-type-count 93 >= 6)"),
+        "research-pikeman": ("(current-age >= castle-age)", "(true)"),
         "research-elite-skirmisher": ("(current-age >= castle-age)", "(unit-type-count 7 >= 6)"),
-        "research-husbandry": ("(current-age >= castle-age)", "(unit-type-count 546 >= 6)"),
+        "research-light-cavalry": ("(current-age >= castle-age)", "(and (building-type-count-total stable >= 1) (unit-type-count-total scout-cavalry-line >= 3))"),
+        "research-husbandry": ("(current-age >= castle-age)", "(or (unit-type-count-total scout-cavalry-line >= 2) (or (unit-type-count-total camel-line >= 2) (unit-type-count-total knight-line >= 1)))"),
         "research-iron-casting": ("(current-age >= castle-age)", "(unit-type-count 358 >= 6)"),
         "research-padded-archer-armor": ("(current-age >= feudal-age)", "(unit-type-count 7 >= 6)"),
         "research-leather-archer-armor": ("(current-age >= castle-age)", "(unit-type-count 6 >= 12)"),
@@ -1405,12 +1407,15 @@ def community_strategy_demands(
             native_tech_symbol={
                 "research-pikeman": "ri-pikeman",
                 "research-elite-skirmisher": "ri-elite-skirmisher",
+                "research-light-cavalry": "ri-light-cavalry",
                 "research-capped-ram": "ri-capped-ram",
                 "research-siege-ram": "ri-siege-ram",
             }.get(identity),
             reason_label=f"Imperial military package: {tech_name}",
             resources=resources,
-            additional_requirements=(unit_gate,),
+            additional_requirements=(
+                () if identity == "research-pikeman" else (unit_gate,)
+            ),
         )
         demands.append(demand)
 
@@ -1449,6 +1454,21 @@ def community_strategy_demands(
                     "(up-research-status c: 98 >= 3)",
                     "(unit-type-count 6 < 18)",
                 ),
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-light-cavalry-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-imperial-age",
+                reason_label="Maintain the six-unit Imperial Light Cavalry bootstrap for Hussar research",
+                line="scout-cavalry-line",
+                minimum=6,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="546",
+                witness_symbol="546",
+                release_symbol="546",
             ),
             _training_demand(
                 effective=effective,

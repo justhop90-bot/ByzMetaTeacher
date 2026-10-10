@@ -180,6 +180,80 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertNotIn("(players-unit-type-count any-enemy mangonel-line >= 2)", rule)
         self.assertNotIn("byzantine-imperial-posture-siege", rule)
 
+    def test_pikeman_research_is_not_blocked_by_spearman_count_and_preempts_training(self) -> None:
+        pike = next(
+            rule for rule in self.rules
+            if "(goal demand-research-pikeman 1)" in rule and "(research ri-pikeman)" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", pike)
+        self.assertIn("(can-research-with-escrow ri-pikeman)", pike)
+        self.assertNotIn("(unit-type-count 93 >= 6)", pike)
+
+        pike_preempt = next(
+            rule for rule in self.rules
+            if "(goal demand-research-pikeman 1)" in rule
+            and "(set-goal byzantine-research-preempt 1)" in rule
+        )
+        self.assertIn("(can-research-with-escrow ri-pikeman)", pike_preempt)
+        for demand, action in (
+            ("demand-counter-mounted-spears", "(train 93)"),
+            ("demand-counter-ranged-skirmishers", "(train 358)"),
+            ("demand-feudal-scout-floor", "(train scout-cavalry-line)"),
+        ):
+            rule = next(
+                item for item in self.rules
+                if f"(goal {demand} 1)" in item and action in item
+            )
+            self.assertIn("(goal byzantine-research-preempt 0)", rule, demand)
+
+    def test_light_cavalry_upgrade_and_imperial_floor_make_hussar_research_reachable(self) -> None:
+        research = next(
+            rule for rule in self.rules
+            if "(goal demand-research-light-cavalry 1)" in rule
+            and "(research ri-light-cavalry)" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", research)
+        self.assertIn("(building-type-count-total stable >= 1)", research)
+        self.assertIn("(unit-type-count-total scout-cavalry-line >= 3)", research)
+        self.assertIn("(can-research-with-escrow ri-light-cavalry)", research)
+
+        floor = next(
+            rule for rule in self.rules
+            if "(goal demand-imperial-light-cavalry-floor 1)" in rule
+            and "(train 546)" in rule
+        )
+        self.assertIn("(current-age >= imperial-age)", floor)
+        self.assertIn("(research-completed ri-light-cavalry)", floor)
+        self.assertIn("(unit-type-count-total 546 < 6)", floor)
+        self.assertIn("(can-train-with-escrow 546)", floor)
+        self.assertIn("(goal production-retry-barrier-imperial-light-cavalry-floor 0)", floor)
+
+    def test_husbandry_research_uses_available_stable_units_and_preempts_queue(self) -> None:
+        demand = next(
+            rule for rule in self.rules
+            if "(goal demand-research-husbandry 0)" in rule
+            and "(set-goal demand-research-husbandry 1)" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", demand)
+        self.assertIn("(building-type-count-total stable >= 1)", demand)
+        self.assertIn("(unit-type-count-total scout-cavalry-line >= 2)", demand)
+        self.assertIn("(unit-type-count-total camel-line >= 2)", demand)
+        self.assertIn("(unit-type-count-total knight-line >= 1)", demand)
+
+        research = next(
+            rule for rule in self.rules
+            if "(goal demand-research-husbandry 1)" in rule
+            and "(research ri-husbandry)" in rule
+        )
+        self.assertIn("(can-research-with-escrow ri-husbandry)", research)
+        self.assertIn("(goal research-retry-barrier-research-husbandry 0)", research)
+
+        preempt = next(
+            rule for rule in self.rules
+            if "(goal demand-research-husbandry 1)" in rule
+            and "(set-goal byzantine-research-preempt 1)" in rule
+        )
+        self.assertIn("(can-research-with-escrow ri-husbandry)", preempt)
 
     def test_secondary_mining_camp_floors_are_age_gated_at_every_build_seam(self) -> None:
         for rule in self.rules:
