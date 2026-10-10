@@ -45,6 +45,9 @@ class FranksBotBuildTests(unittest.TestCase):
             "(train frank-throwing-axeman)",
             "(train frank-mounted-crossbowman)",
             "(research ri-ordonnance-companies)",
+            "(research ri-horse-collar)",
+            "(research ri-heavy-plow)",
+            "(research ri-crop-rotation)",
             "(research ri-cranequins)",
             "(train battering-ram-line)",
             "(train trebuchet)",
@@ -52,6 +55,8 @@ class FranksBotBuildTests(unittest.TestCase):
             "(dropsite-min-distance wood > 8)",
             "(dropsite-min-distance gold > 8)",
             "(dropsite-min-distance stone > 8)",
+            "(up-pending-objects c: frank-c-house == 0)",
+            "(unit-type-count villager >= 25)",
         )
         for fragment in expected:
             with self.subTest(fragment=fragment):
