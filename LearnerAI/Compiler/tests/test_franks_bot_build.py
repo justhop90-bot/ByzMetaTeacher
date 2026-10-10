@@ -60,7 +60,7 @@ class FranksBotBuildTests(unittest.TestCase):
             "(train trebuchet)",
             "(attack-now)",
             "(up-find-player enemy find-closest frank-target-player-goal)",
-            "(dropsite-min-distance wood > 8)",
+            "(dropsite-min-distance wood > 10)",
             "(dropsite-min-distance gold > 8)",
             "(dropsite-min-distance stone > 8)",
             "(up-pending-objects c: frank-c-house == 0)",
