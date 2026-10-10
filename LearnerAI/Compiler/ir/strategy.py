@@ -4685,8 +4685,7 @@ def _default_byzantine_duc_plan(
                 "(goal action-claim-build-pass-singleton 0)",
                 f"(building-type-count {building} >= {floor - 1})",
                 f"(not (building-type-count {building} >= {floor}))",
-                f"(not (up-pending-objects c: {building_id} >= 1))",
-                f"(not (up-pending-placement c: {building_id}))",
+                f"(up-pending-objects c: {building_id} == 0)",
                 *base_facts,
                 count_expression.source,
             ]
