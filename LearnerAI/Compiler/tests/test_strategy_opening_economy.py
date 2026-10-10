@@ -446,6 +446,9 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         canonical = compile_strategy_profile(profile, self.effective)
         self.assertIn("(can-research-with-escrow ri-pikeman)", canonical)
         self.assertIn("(research ri-pikeman)", canonical)
+        pike_action_start = canonical.index("(goal demand-research-pikeman 1)")
+        pike_action_end = canonical.index("(research ri-pikeman)", pike_action_start)
+        self.assertNotIn("(unit-type-count 93 >= 6)", canonical[pike_action_start:pike_action_end])
         self.assertNotIn("(can-research-with-escrow pikeman)", canonical)
         self.assertNotIn("(research pikeman)", canonical)
         self.assertIn("(can-research-with-escrow ri-elite-skirmisher)", canonical)
@@ -471,6 +474,24 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertNotIn("(can-research-with-escrow pikeman)", pike)
         self.assertNotIn("(research pikeman)", pike)
         self.assertIn("(research-completed 197)", pike)
+        self.assertNotIn("(unit-type-count 93 >= 6)", pike)
+
+        light_cav_start = runtime.index("; Pending diagnostics: research-light-cavalry")
+        light_cav_end = runtime.index("; Pending diagnostics: research-hussar", light_cav_start)
+        light_cav = runtime[light_cav_start:light_cav_end]
+        self.assertIn("(current-age >= castle-age)", light_cav)
+        self.assertIn("(building-type-count-total stable >= 1)", light_cav)
+        self.assertIn("(unit-type-count-total scout-cavalry-line >= 3)", light_cav)
+        self.assertIn("(can-research-with-escrow ri-light-cavalry)", light_cav)
+        self.assertIn("(research ri-light-cavalry)", light_cav)
+
+        light_cav_floor_start = runtime.index("; Action issuance: imperial-light-cavalry-floor")
+        light_cav_floor_end = runtime.index("; Pending diagnostics: imperial-onager-floor", light_cav_floor_start)
+        light_cav_floor = runtime[light_cav_floor_start:light_cav_floor_end]
+        self.assertIn("(research-completed ri-light-cavalry)", light_cav_floor)
+        self.assertIn("(can-train-with-escrow 546)", light_cav_floor)
+        self.assertIn("(train 546)", light_cav_floor)
+        self.assertIn("(unit-type-count 546 < 6)", light_cav_floor)
 
         elite_start = runtime.index("; Pending diagnostics: research-elite-skirmisher")
         elite_end = runtime.index("; Pending diagnostics: research-capped-ram", elite_start)
@@ -488,6 +509,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         production = runtime[production_start:production_end]
         self.assertIn("(up-research-status c: 98 >= 3)", production)
         self.assertIn("(unit-type-count 6 < 18)", production)
+        self.assertIn("(unit-type-count-total skirmisher-line < 18)", production)
         self.assertIn("(can-train-with-escrow skirmisher-line)", production)
         self.assertIn("(train skirmisher-line)", production)
 

@@ -635,6 +635,11 @@
 (defconst pending-research-hussar 116)
 (defconst complete-research-hussar 117)
 (defconst research-retry-barrier-research-hussar 243)
+(defconst demand-imperial-light-cavalry-floor 15974)
+(defconst issued-imperial-light-cavalry-floor 16003)
+(defconst pending-imperial-light-cavalry-floor 16001)
+(defconst complete-imperial-light-cavalry-floor 16002)
+(defconst production-retry-barrier-imperial-light-cavalry-floor 15972)
 (defconst demand-research-onager 117)
 (defconst issued-research-onager 120)
 (defconst pending-research-onager 118)
@@ -1137,6 +1142,12 @@
 (defconst pending-research-pikeman 15950)
 (defconst complete-research-pikeman 15951)
 (defconst research-retry-barrier-research-pikeman 15959)
+(defconst byzantine-research-preempt 405)
+(defconst demand-research-light-cavalry 406)
+(defconst pending-research-light-cavalry 407)
+(defconst complete-research-light-cavalry 408)
+(defconst issued-research-light-cavalry 409)
+(defconst research-retry-barrier-research-light-cavalry 15976)
 (defconst demand-research-elite-skirmisher 15961)
 (defconst issued-research-elite-skirmisher 15964)
 (defconst pending-research-elite-skirmisher 15962)
@@ -13293,6 +13304,8 @@
     (set-goal demand-research-fletching 1)
     (set-goal demand-research-cavalier 1)
     (set-goal demand-research-hussar 1)
+    (set-goal demand-research-light-cavalry 0)
+    (set-goal demand-imperial-light-cavalry-floor 1)
     (set-goal demand-research-onager 1)
     (set-goal demand-research-siege-ram 1)
     (set-goal demand-research-arbalester 1)
@@ -14157,6 +14170,7 @@
     (not (unit-type-count 93 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (goal byzantine-research-preempt 0)
     (current-age >= feudal-age)
     (can-train-with-escrow 93)
     (unit-type-count-total 93 < 4)
@@ -14237,6 +14251,7 @@
     (not (unit-type-count 358 >= 4))
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (goal byzantine-research-preempt 0)
     (or
         (current-age < imperial-age)
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
@@ -14404,6 +14419,7 @@
     (building-type-count stable >= 1)
     (goal action-claim-train-arbitration 0)
     (goal byzantine-resource-claim 0)
+    (goal byzantine-research-preempt 0)
     (can-train-with-escrow scout-cavalry-line)
     (unit-type-count-total scout-cavalry-line < bt-feudal-scout-floor)
 =>
@@ -14946,6 +14962,70 @@
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege))
 =>
     (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+)
+
+; Research preemption: one admitted high-value upgrade gets a clean shared-queue pass.
+; Reset-first flag is re-armed only while a blocked, affordable technology can start.
+(defrule
+    (true)
+=>
+    (set-goal byzantine-research-preempt 0)
+    (set-goal research-retry-barrier-research-light-cavalry 0)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-pikeman 1)
+    (not (research-completed 197))
+    (can-research-with-escrow ri-pikeman)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-elite-skirmisher 1)
+    (not (research-completed 98))
+    (unit-type-count 7 >= 6)
+    (can-research-with-escrow ri-elite-skirmisher)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-research-capped-ram 1)
+    (not (research-completed 96))
+    (unit-type-count-total battering-ram-line >= 2)
+    (can-research-with-escrow ri-capped-ram)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-light-cavalry 1)
+    (not (research-completed ri-light-cavalry))
+    (unit-type-count-total scout-cavalry-line >= 3)
+    (can-research-with-escrow ri-light-cavalry)
+=>
+    (set-goal byzantine-research-preempt 1)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal demand-research-husbandry 1)
+    (not (research-completed ri-husbandry))
+    (or
+        (unit-type-count-total scout-cavalry-line >= 2)
+        (or
+            (unit-type-count-total camel-line >= 2)
+            (unit-type-count-total knight-line >= 1)
+        )
+    )
+    (can-research-with-escrow ri-husbandry)
+=>
+    (set-goal byzantine-research-preempt 1)
 )
 
 ; Pending diagnostics: imperial-conversion
@@ -21984,8 +22064,7 @@
     (goal research-retry-barrier-research-pikeman 0)
     (not (up-research-status c: 197 >= 2))
     (current-age >= castle-age)
-    (unit-type-count 93 >= 6)
-    (can-research-with-escrow ri-pikeman)
+        (can-research-with-escrow ri-pikeman)
 =>
     (release-escrow food)
     (release-escrow wood)
@@ -23476,6 +23555,77 @@
     (research cavalier)
     (set-goal demand-research-cavalier 103)
 )
+
+; Pending diagnostics: research-light-cavalry
+; Light Cavalry is the explicit Castle-to-Imperial bridge required by Hussar research.
+;---------------------------------------------------------------
+(defrule
+    (goal demand-research-light-cavalry 16208)
+    (research-completed ri-light-cavalry)
+=>
+    (set-goal demand-research-light-cavalry 0)
+)
+
+(defrule
+    (goal demand-research-light-cavalry 0)
+    (not (research-completed ri-light-cavalry))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (unit-type-count-total scout-cavalry-line >= 3)
+=>
+    (set-goal demand-research-light-cavalry 1)
+)
+
+(defrule
+    (or
+        (goal demand-research-light-cavalry 16209)
+        (goal demand-research-light-cavalry 16207)
+    )
+    (research-completed ri-light-cavalry)
+=>
+    (set-goal demand-research-light-cavalry 16208)
+)
+
+(defrule
+    (or
+        (goal demand-research-light-cavalry 16209)
+        (goal demand-research-light-cavalry 16207)
+    )
+    (not (research-completed ri-light-cavalry))
+    (up-research-status c: 254 >= research-pending)
+=>
+    (set-goal demand-research-light-cavalry 16207)
+)
+
+(defrule
+    (or
+        (goal demand-research-light-cavalry 16209)
+        (goal demand-research-light-cavalry 16207)
+    )
+    (not (research-completed ri-light-cavalry))
+    (not (up-research-status c: 254 >= research-pending))
+=>
+    (set-goal demand-research-light-cavalry 1)
+    (set-goal research-retry-barrier-research-light-cavalry 1)
+)
+
+(defrule
+    (goal demand-research-light-cavalry 1)
+    (goal research-retry-barrier-research-light-cavalry 0)
+    (not (research-completed ri-light-cavalry))
+    (not (up-research-status c: 254 >= research-pending))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (unit-type-count-total scout-cavalry-line >= 3)
+    (can-research-with-escrow ri-light-cavalry)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-light-cavalry)
+    (set-goal demand-research-light-cavalry 16209)
+)
+
+;---------------------------------------------------------------
 
 ; Pending diagnostics: research-hussar
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 115 and cannot reissue from pending goal 116
@@ -25494,6 +25644,79 @@
     (train hussar)
     (set-goal action-claim-train-arbitration 1)
     (set-goal demand-imperial-hussar-floor 91)
+)
+
+; Imperial Light Cavalry bootstrap: maintain six researched Light Cavalry before Hussar admission.
+(defrule
+    (true)
+=>
+    (set-goal production-retry-barrier-imperial-light-cavalry-floor 0)
+)
+
+(defrule
+    (goal demand-imperial-light-cavalry-floor 16002)
+    (unit-type-count 546 >= 6)
+=>
+    (set-goal demand-imperial-light-cavalry-floor 0)
+)
+
+(defrule
+    (goal demand-imperial-light-cavalry-floor 0)
+    (current-age >= imperial-age)
+    (unit-type-count 546 < 6)
+=>
+    (set-goal demand-imperial-light-cavalry-floor 1)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-light-cavalry-floor 16003)
+        (goal demand-imperial-light-cavalry-floor 16001)
+    )
+    (unit-type-count 546 >= 6)
+=>
+    (set-goal demand-imperial-light-cavalry-floor 16002)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-light-cavalry-floor 16003)
+        (goal demand-imperial-light-cavalry-floor 16001)
+    )
+    (not (unit-type-count 546 >= 6))
+    (up-pending-objects c: 312 >= 1)
+=>
+    (set-goal demand-imperial-light-cavalry-floor 16001)
+)
+
+(defrule
+    (or
+        (goal demand-imperial-light-cavalry-floor 16003)
+        (goal demand-imperial-light-cavalry-floor 16001)
+    )
+    (not (unit-type-count 546 >= 6))
+    (not (up-pending-objects c: 312 >= 1))
+=>
+    (set-goal demand-imperial-light-cavalry-floor 1)
+    (set-goal production-retry-barrier-imperial-light-cavalry-floor 1)
+)
+
+; Action issuance: imperial-light-cavalry-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-light-cavalry-floor 1)
+    (not (unit-type-count 546 >= 6))
+    (goal production-retry-barrier-imperial-light-cavalry-floor 0)
+    (not (up-pending-objects c: 312 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (building-type-count-total stable >= 1)
+    (research-completed ri-light-cavalry)
+    (can-train-with-escrow 546)
+    (unit-type-count-total 546 < 6)
+=>
+    (train 546)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-light-cavalry-floor 16003)
 )
 
 ; Pending diagnostics: imperial-onager-floor
