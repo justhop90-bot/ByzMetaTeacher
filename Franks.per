@@ -352,7 +352,7 @@
 
 ; Build a mill on a real forage resource before spending on farms.
 (defrule
-    (resource-found forage)
+    (resource-found food)
     (building-type-count-total mill < 1)
     (up-pending-objects c: frank-c-mill == 0)
     (can-build mill)
@@ -365,8 +365,8 @@
 ; Refresh a remote forage dropsite when current Mill coverage is insufficient.
 (defrule
     (current-age >= feudal-age)
-    (resource-found forage)
-    (dropsite-min-distance forage > 10)
+    (resource-found food)
+    (dropsite-min-distance food > 10)
     (unit-type-count villager >= 24)
     (building-type-count mill >= 1)
     (building-type-count-total mill < 3)
@@ -385,7 +385,7 @@
 (defrule
     (current-age == dark-age)
     (unit-type-count villager >= 8)
-    (not (resource-found forage))
+    (not (resource-found food))
     (resource-found gold)
     (building-type-count-total mill < 1)
     (building-type-count-total mining-camp < 1)
