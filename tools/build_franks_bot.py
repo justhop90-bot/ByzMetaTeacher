@@ -37,6 +37,7 @@ REQUIRED_FRAGMENTS = (
     "(set-strategic-number sn-number-explore-groups 1)",
     "(set-strategic-number sn-total-number-explorers 10)",
     "(set-strategic-number sn-cap-civilian-explorers 0)",
+    "(up-reset-scouts)",
     "(current-age == feudal-age)\n    (goal train-civ-goal 0)\n    (up-research-status c: frank-c-castle-age-tech < research-pending)",
     "(players-unit-type-count any-enemy knight-line < 8)",
     "(players-unit-type-count any-enemy camel-rider-line < 8)",
