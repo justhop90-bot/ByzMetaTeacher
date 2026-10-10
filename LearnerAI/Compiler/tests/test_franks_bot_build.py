@@ -132,8 +132,8 @@ class FranksBotBuildTests(unittest.TestCase):
         mill = source[mill_start:fallback_start]
         fallback = source[fallback_start:gold_start]
         self.assertNotIn("(dropsite-min-distance wood > 8)", lumber)
-        self.assertNotIn("(dropsite-min-distance forage > 7)", mill)
-        self.assertIn("(not (resource-found forage))", fallback)
+        self.assertNotIn("(dropsite-min-distance food > 7)", mill)
+        self.assertIn("(not (resource-found food))", fallback)
         self.assertIn("(can-build mining-camp)", fallback)
 
     def test_age_up_prerequisites_do_not_depend_on_market_or_elephant_response(self):
