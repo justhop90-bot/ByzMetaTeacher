@@ -50,6 +50,9 @@ class FranksBotBuildTests(unittest.TestCase):
             "(research ri-pikeman)",
             "(research ri-halberdier)",
             "(research ri-elite-skirmisher)",
+            "(research ri-fletching)",
+            "(research ri-bodkin-arrow)",
+            "(research ri-ballistics)",
             "(research ri-capped-ram)",
             "(up-reset-attack-now)",
             "(research ri-horse-collar)",
@@ -140,6 +143,32 @@ class FranksBotBuildTests(unittest.TestCase):
         for fragment in expected:
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, source)
+
+
+    def test_late_infantry_counter_can_activate_in_imperial_age(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        elite_start = source.index("; Research Elite Throwing Axeman before adding more base units")
+        base_start = source.index("; Base Throwing Axemen may enter in Imperial Age", elite_start)
+        mounted_start = source.index("; Clear mounted ranged support", base_start)
+        elite_rule = source[elite_start:base_start]
+        base_rule = source[base_start:mounted_start]
+        self.assertIn("(current-age >= imperial-age)", elite_rule)
+        self.assertIn("(unit-type-count frank-throwing-axeman >= 6)", elite_rule)
+        self.assertIn("(current-age >= castle-age)", base_rule)
+        self.assertIn("(up-research-status c: frank-c-elite-throwing-axeman-tech < research-pending)", base_rule)
+        self.assertLess(elite_start, base_start)
+
+    def test_mounted_ranged_techs_are_guarded_by_package_and_resource_reserves(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        self.assertIn("(research ri-fletching)", source)
+        self.assertIn("(research ri-bodkin-arrow)", source)
+        self.assertIn("(research ri-ballistics)", source)
+        for reserve in ("(food-amount >= 1100)", "(gold-amount >= 850)",
+                        "(food-amount >= 1200)", "(gold-amount >= 900)",
+                        "(food-amount >= 1300)", "(gold-amount >= 975)"):
+            with self.subTest(reserve=reserve):
+                self.assertIn(reserve, source)
+        self.assertIn("(building-type-count university >= 1)", source)
 
     def test_attack_cycle_resets_native_attack_loop(self):
         source = SOURCE.read_text(encoding="utf-8")
