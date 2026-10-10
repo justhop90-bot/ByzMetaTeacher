@@ -4684,7 +4684,7 @@ def _default_byzantine_duc_plan(
                 f"(goal construction-retry-barrier-{demand_name} 0)",
                 "(goal action-claim-build-pass-singleton 0)",
                 f"(building-type-count {building} >= {floor - 1})",
-                f"(not (building-type-count {building} >= {floor}))",
+                f"(building-type-count {building} < {floor})",
                 f"(up-pending-objects c: {building_id} == 0)",
                 *base_facts,
                 count_expression.source,
