@@ -5,20 +5,23 @@
 ; STRATEGIC CONTRACT
 ; Dark Age economy -> Feudal Scouts -> Castle Age Knights.
 ; Counter infantry with Throwing Axemen, use Mounted Crossbowmen after Castle Age,
-; and finish with Paladins, Trebuchets, Siege Rams and persistent attack cycles.
+; and finish with Paladins, Trebuchets, Capped Rams and controlled attack cycles.
 ;
 ; FACTUAL BOUNDARY
 ; Mounted Crossbowman=2700, Heavy Mounted Crossbowman=2701,
 ; Throwing Axeman=281, Elite Throwing Axeman=531,
-; Cranequins=1452 and Ordonnance Companies=1496 are pinned to the 185872
-; Frankish tech-tree record. Standard technology aliases remain native AI symbols.
+; Heavy Mounted Crossbowman upgrade=1451, Capped Ram=96, Cranequins=1452 and
+; Ordonnance Companies=1496 are pinned to the current DE technology data. Standard
+; technology aliases remain native AI symbols.
 ;
 ; BOT POLICIES
 ; * Explicitly researches the free Frankish Mill technologies at their legal ages.
 ; * Selects a valid enemy target-player before evaluating counters or attacking.
 ; * Cavalry Archers and Bearded Axe are obsolete in patch 185872. Neither is used.
-; * Stone mining is held until Castle Age; resource camps are refreshed from
-;   resource and dropsite-distance observations rather than a one-time build flag.
+; * Dark Age always has a second-building fallback when the preferred forage Mill is unavailable.
+; * Castle Age has an explicit University fallback when a Castle is not available.
+; * Counter technologies are researched only when the matching unit demand is active.
+; * Stone mining is held until Castle Age; remote dropsite overrides are restored.
 ; * Unit counts include queued production where the native count primitive permits it.
 
 (defconst sn-resource-control 191)
@@ -32,13 +35,14 @@
 (defconst frank-mounted-crossbow-target-goal 745)
 (defconst frank-skirmisher-target-goal 746)
 (defconst frank-monk-target-goal 747)
-(defconst frank-siege-ram-target-goal 748)
+(defconst frank-ram-target-goal 748)
 (defconst frank-trebuchet-target-goal 749)
 (defconst frank-attack-state-goal 750)
 (defconst frank-attack-timer 10)
 (defconst frank-attack-cooldown-timer 11)
 (defconst frank-age-failure-backoff-goal 751)
 (defconst frank-target-player-goal 752)
+(defconst frank-economy-recovery-goal 753)
 (defconst frank-mounted-crossbowman 2700)
 (defconst frank-heavy-mounted-crossbowman 2701)
 (defconst frank-throwing-axeman 281)
@@ -69,6 +73,7 @@
 (defconst frank-c-castle 82)
 (defconst frank-c-town-center 109)
 (defconst frank-c-monastery 104)
+(defconst frank-c-university 209)
 ; Canonical current native technology IDs for c: research-status probes.
 (defconst frank-c-feudal-age-tech 101)
 (defconst frank-c-loom-tech 22)
@@ -78,7 +83,14 @@
 (defconst frank-c-castle-age-tech 102)
 (defconst frank-c-imperial-age-tech 103)
 (defconst frank-c-elite-throwing-axeman-tech 363)
-(defconst frank-c-siege-ram-tech 255)
+(defconst frank-c-heavy-mounted-crossbowman-tech 1451)
+(defconst frank-c-pikeman-tech 197)
+(defconst frank-c-halberdier-tech 429)
+(defconst frank-c-elite-skirmisher-tech 98)
+(defconst frank-c-fletching-tech 199)
+(defconst frank-c-bodkin-arrow-tech 200)
+(defconst frank-c-ballistics-tech 93)
+(defconst frank-c-capped-ram-tech 96)
 (defconst frank-c-double-bit-axe-tech 202)
 (defconst frank-c-wheelbarrow-tech 213)
 (defconst frank-c-gold-mining-tech 55)
@@ -92,7 +104,6 @@
 (defconst frank-c-gold-shaft-mining-tech 182)
 (defconst frank-c-bow-saw-tech 203)
 (defconst frank-c-hand-cart-tech 249)
-(defconst frank-c-two-man-saw-tech 221)
 (defconst frank-c-cavalier-tech 209)
 (defconst frank-c-paladin-tech 265)
 (defconst frank-c-conscription-tech 315)
@@ -115,10 +126,11 @@
     (set-goal frank-mounted-crossbow-target-goal 0)
     (set-goal frank-skirmisher-target-goal 0)
     (set-goal frank-monk-target-goal 0)
-    (set-goal frank-siege-ram-target-goal 0)
+    (set-goal frank-ram-target-goal 0)
     (set-goal frank-trebuchet-target-goal 0)
     (set-goal frank-attack-state-goal 0)
     (set-goal frank-target-player-goal 0)
+    (set-goal frank-economy-recovery-goal 0)
     (set-strategic-number sn-target-player-number 0)
     (set-strategic-number sn-intelligent-gathering 1)
     (set-strategic-number sn-food-gatherer-percentage 55)
@@ -149,7 +161,6 @@
     (goal train-civ-goal 0)
 =>
     (set-goal train-civ-goal 1)
-    (set-goal frank-scout-target-goal 4)
     (set-strategic-number sn-food-gatherer-percentage 50)
     (set-strategic-number sn-wood-gatherer-percentage 35)
     (set-strategic-number sn-gold-gatherer-percentage 15)
@@ -180,18 +191,21 @@
     (set-goal frank-mounted-crossbow-target-goal 10)
     (set-goal frank-thrower-target-goal 8)
     (set-goal frank-trebuchet-target-goal 3)
-    (set-goal frank-siege-ram-target-goal 4)
+    (set-goal frank-ram-target-goal 4)
     (set-strategic-number sn-food-gatherer-percentage 35)
     (set-strategic-number sn-wood-gatherer-percentage 25)
     (set-strategic-number sn-gold-gatherer-percentage 30)
     (set-strategic-number sn-stone-gatherer-percentage 10)
 )
 
-; Research Loom after the early villager safety window, before age-up commitment.
+; Research Loom late and only when the Feudal click is not currently feasible.
+; This avoids spending the opening food bank while an age-up can already start.
 (defrule
     (current-age == dark-age)
-    (unit-type-count villager >= 7)
+    (unit-type-count villager >= 18)
     (unit-type-count villager < frank-feudal-villagers)
+    (not (can-research-with-escrow feudal-age))
+    (food-amount >= 600)
     (up-research-status c: frank-c-loom-tech < research-pending)
     (can-research-with-escrow ri-loom)
 =>
@@ -247,7 +261,6 @@
     (unit-type-count villager >= frank-castle-villagers)
     (building-type-count stable >= 1)
     (building-type-count blacksmith >= 1)
-    (building-type-count market >= 1)
     (up-research-status c: frank-c-castle-age-tech < research-pending)
     (can-research-with-escrow castle-age)
 =>
@@ -263,8 +276,6 @@
     (goal train-civ-goal 1)
     (unit-type-count villager >= frank-imperial-villagers)
     (military-population >= 18)
-    (building-type-count blacksmith >= 1)
-    (building-type-count market >= 1)
     (up-research-status c: frank-c-imperial-age-tech < research-pending)
     (can-research-with-escrow imperial-age)
 =>
@@ -298,7 +309,6 @@
 (defrule
     (unit-type-count villager >= 6)
     (resource-found wood)
-    (dropsite-min-distance wood > 8)
     (building-type-count-total lumber-camp < 1)
     (up-pending-objects c: frank-c-lumber-camp == 0)
     (can-build lumber-camp)
@@ -322,12 +332,13 @@
     (set-strategic-number sn-allow-adjacent-dropsites 1)
     (set-strategic-number sn-dropsite-separation-distance 5)
     (build lumber-camp)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
 )
 
 ; Build a mill on a real forage resource before spending on farms.
 (defrule
     (resource-found forage)
-    (dropsite-min-distance forage > 7)
     (building-type-count-total mill < 1)
     (up-pending-objects c: frank-c-mill == 0)
     (can-build mill)
@@ -351,6 +362,24 @@
     (set-strategic-number sn-allow-adjacent-dropsites 1)
     (set-strategic-number sn-dropsite-separation-distance 5)
     (build mill)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
+)
+
+; If forage is absent, a resource-adjacent Mining Camp is the Dark Age second-building fallback.
+; This keeps the Feudal transition from depending on one resource-class placement succeeding.
+(defrule
+    (current-age == dark-age)
+    (unit-type-count villager >= 8)
+    (not (resource-found forage))
+    (resource-found gold)
+    (building-type-count-total mill < 1)
+    (building-type-count-total mining-camp < 1)
+    (up-pending-objects c: frank-c-mill == 0)
+    (up-pending-objects c: frank-c-mining-camp == 0)
+    (can-build mining-camp)
+=>
+    (build mining-camp)
 )
 
 ; Build a gold camp only when Gold is an active resource priority.
@@ -383,6 +412,8 @@
 =>
     (set-strategic-number sn-allow-adjacent-dropsites 1)
     (build mining-camp)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
 )
 
 ; Expand renewable farm capacity at 16 villagers.
@@ -561,6 +592,20 @@
     (build siege-workshop)
 )
 
+; If a Castle is not presently buildable, secure the University + Siege Workshop path to Imperial Age.
+; The negative capability guard preserves the Castle as the preferred first investment when feasible.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total castle < 1)
+    (not (can-build castle))
+    (building-type-count siege-workshop >= 1)
+    (building-type-count-total university < 1)
+    (up-pending-objects c: frank-c-university == 0)
+    (can-build university)
+=>
+    (build university)
+)
+
 ; Add a second Siege Workshop for Imperial replacement throughput.
 (defrule
     (current-age >= imperial-age)
@@ -599,6 +644,7 @@
 ; Build a second Town Center when Castle Age economy can sustain expansion.
 (defrule
     (current-age >= castle-age)
+    (building-type-count castle >= 1)
     (unit-type-count villager >= 42)
     (building-type-count-total town-center < 2)
     (wood-amount >= 300)
@@ -612,6 +658,7 @@
 ; Build a third Town Center only after military and villager production are stable.
 (defrule
     (current-age >= castle-age)
+    (building-type-count castle >= 1)
     (unit-type-count villager >= 58)
     (military-population >= 10)
     (building-type-count-total town-center < 3)
@@ -729,6 +776,21 @@
     (set-goal frank-spear-target-goal 14)
 )
 
+; Research Pikeman when the anti-cavalry demand has become a real Castle Age package.
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal frank-spear-target-goal >= 8)
+    (unit-type-count-total spearman-line >= 4)
+    (goal train-civ-goal 1)
+    (not (can-research-with-escrow imperial-age))
+    (up-research-status c: frank-c-pikeman-tech < research-pending)
+    (can-research-with-escrow ri-pikeman)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-pikeman)
+)
+
 ; Train the current Spearman-line counter upgrade against enemy cavalry.
 (defrule
     (current-age >= feudal-age)
@@ -739,6 +801,19 @@
     (release-escrow food)
     (release-escrow wood)
     (train spearman-line)
+)
+
+; Upgrade the anti-cavalry line again in Imperial Age when the counter remains needed.
+(defrule
+    (current-age >= imperial-age)
+    (up-compare-goal frank-spear-target-goal >= 8)
+    (unit-type-count-total spearman-line >= 8)
+    (up-research-status c: frank-c-halberdier-tech < research-pending)
+    (can-research-with-escrow ri-halberdier)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-halberdier)
 )
 
 ; Clear Throwing Axeman demand when no enemy infantry wall is observed.
@@ -771,19 +846,8 @@
     (set-goal frank-thrower-target-goal 14)
 )
 
-; Train the base Throwing Axeman line only in Castle Age.
-(defrule
-    (current-age == castle-age)
-    (building-type-count castle >= 1)
-    (unit-type-count-total frank-throwing-axeman < frank-thrower-target-goal)
-    (can-train-with-escrow frank-throwing-axeman)
-=>
-    (release-escrow food)
-    (release-escrow gold)
-    (train frank-throwing-axeman)
-)
-
-; Research Elite Throwing Axeman in Imperial when enough Axemen are committed.
+; Research Elite Throwing Axeman before adding more base units when Imperial pressure warrants it.
+; This rule precedes base-unit production so the upgrade and training demand cannot race each other.
 (defrule
     (current-age >= imperial-age)
     (building-type-count castle >= 1)
@@ -794,6 +858,23 @@
     (release-escrow food)
     (release-escrow gold)
     (research ri-elite-throwing-axeman)
+)
+
+; Base Throwing Axemen may enter in Imperial Age if the counter demand starts late.
+; Stop adding base units once the Elite upgrade has been queued.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (or
+        (current-age == castle-age)
+        (up-research-status c: frank-c-elite-throwing-axeman-tech < research-pending)
+    )
+    (unit-type-count-total frank-throwing-axeman < frank-thrower-target-goal)
+    (can-train-with-escrow frank-throwing-axeman)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (train frank-throwing-axeman)
 )
 
 ; Train Elite Throwing Axemen after the verified upgrade completes.
@@ -807,16 +888,6 @@
     (release-escrow food)
     (release-escrow gold)
     (train frank-elite-throwing-axeman)
-)
-
-; Clear mounted ranged support when the enemy is not infantry-heavy.
-(defrule
-    (current-age >= castle-age)
-    (players-unit-type-count any-enemy spearman-line < 4)
-    (players-unit-type-count any-enemy militiaman-line < 6)
-    (up-compare-goal frank-mounted-crossbow-target-goal != 0)
-=>
-    (set-goal frank-mounted-crossbow-target-goal 0)
 )
 
 ; Add Mounted Crossbowmen to support Knights against spear-heavy armies.
@@ -833,15 +904,16 @@
 (defrule
     (current-age >= castle-age)
     (up-research-status c: ri-ordonnance-companies == research-complete)
-    (up-compare-goal frank-mounted-crossbow-target-goal != 12)
+    (up-compare-goal frank-mounted-crossbow-target-goal != 8)
 =>
-    (set-goal frank-mounted-crossbow-target-goal 12)
+    (set-goal frank-mounted-crossbow-target-goal 8)
 )
 
 ; Train Mounted Crossbowmen by the verified update-185872 unit ID.
 (defrule
     (current-age >= castle-age)
     (building-type-count archery-range >= 1)
+    (up-research-status c: frank-c-heavy-mounted-crossbowman-tech < research-pending)
     (unit-type-count-total frank-mounted-crossbowman < frank-mounted-crossbow-target-goal)
     (can-train-with-escrow frank-mounted-crossbowman)
 =>
@@ -850,10 +922,25 @@
     (train frank-mounted-crossbowman)
 )
 
-; Train Heavy Mounted Crossbowmen whenever the Imperial upgrade is available.
+; Upgrade the Mounted Crossbowman line explicitly in Imperial Age after a real package is fielded.
+; Tech 1451 is the DE 185872 Heavy Mounted Crossbowman upgrade.
 (defrule
     (current-age >= imperial-age)
     (building-type-count archery-range >= 1)
+    (unit-type-count frank-mounted-crossbowman >= 6)
+    (up-research-status c: frank-c-heavy-mounted-crossbowman-tech < research-pending)
+    (can-research-with-escrow 1451)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research 1451)
+)
+
+; Train the Heavy line only after its technology is confirmed complete.
+(defrule
+    (current-age >= imperial-age)
+    (building-type-count archery-range >= 1)
+    (up-research-status c: frank-c-heavy-mounted-crossbowman-tech == research-complete)
     (unit-type-count-total frank-heavy-mounted-crossbowman < frank-mounted-crossbow-target-goal)
     (can-train-with-escrow frank-heavy-mounted-crossbowman)
 =>
@@ -879,13 +966,70 @@
 (defrule
     (current-age >= imperial-age)
     (building-type-count archery-range >= 1)
-    (unit-type-count-total frank-mounted-crossbowman >= 6)
+    (up-research-status c: frank-c-heavy-mounted-crossbowman-tech == research-complete)
     (up-research-status c: ri-cranequins < research-pending)
     (can-research-with-escrow ri-cranequins)
 =>
     (release-escrow food)
     (release-escrow gold)
     (research ri-cranequins)
+)
+
+; Ranged attack upgrades are secondary: preserve the Imperial bank before spending.
+(defrule
+    (current-age >= castle-age)
+    (goal train-civ-goal 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (unit-type-count-total frank-mounted-crossbowman >= 4)
+        (unit-type-count-total frank-heavy-mounted-crossbowman >= 4)
+    )
+    (food-amount >= 1100)
+    (gold-amount >= 850)
+    (up-research-status c: frank-c-fletching-tech < research-pending)
+    (can-research-with-escrow ri-fletching)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-fletching)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal train-civ-goal 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (unit-type-count-total frank-mounted-crossbowman >= 4)
+        (unit-type-count-total frank-heavy-mounted-crossbowman >= 4)
+    )
+    (food-amount >= 1200)
+    (gold-amount >= 900)
+    (up-research-status c: frank-c-bodkin-arrow-tech < research-pending)
+    (can-research-with-escrow ri-bodkin-arrow)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-bodkin-arrow)
+)
+
+; Ballistics requires a University and an active mounted-ranged package.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count university >= 1)
+    (goal train-civ-goal 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (unit-type-count-total frank-mounted-crossbowman >= 4)
+        (unit-type-count-total frank-heavy-mounted-crossbowman >= 4)
+    )
+    (food-amount >= 1300)
+    (gold-amount >= 975)
+    (up-research-status c: frank-c-ballistics-tech < research-pending)
+    (can-research-with-escrow ri-ballistics)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-ballistics)
 )
 
 ; Set a limited skirmisher target against a large enemy foot-archer mass.
@@ -904,6 +1048,21 @@
     (up-compare-goal frank-skirmisher-target-goal != 0)
 =>
     (set-goal frank-skirmisher-target-goal 0)
+)
+
+; Research Elite Skirmisher when the ranged counter is materially committed.
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal frank-skirmisher-target-goal >= 8)
+    (unit-type-count-total skirmisher-line >= 4)
+    (goal train-civ-goal 1)
+    (not (can-research-with-escrow imperial-age))
+    (up-research-status c: frank-c-elite-skirmisher-tech < research-pending)
+    (can-research-with-escrow ri-elite-skirmisher)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (research ri-elite-skirmisher)
 )
 
 ; Train Skirmishers as a bounded defensive counter.
@@ -954,16 +1113,16 @@
     (current-age >= castle-age)
     (players-building-count any-enemy > 0)
     (military-population >= 14)
-    (up-compare-goal frank-siege-ram-target-goal != 2)
+    (up-compare-goal frank-ram-target-goal != 2)
 =>
-    (set-goal frank-siege-ram-target-goal 2)
+    (set-goal frank-ram-target-goal 2)
 )
 
 ; Train Siege Rams after the Workshop is complete.
 (defrule
     (current-age >= castle-age)
     (building-type-count siege-workshop >= 1)
-    (unit-type-count-total battering-ram-line < frank-siege-ram-target-goal)
+    (unit-type-count-total battering-ram-line < frank-ram-target-goal)
     (can-train-with-escrow battering-ram-line)
 =>
     (release-escrow wood)
@@ -983,16 +1142,15 @@
     (train trebuchet)
 )
 
-; Upgrade Siege Rams when a fielded ram core justifies the cost.
+; Upgrade to Capped Ram in Imperial Age; the Siege Ram endpoint is unavailable to Franks.
 (defrule
     (current-age >= imperial-age)
     (unit-type-count battering-ram-line >= 2)
-    (up-research-status c: frank-c-siege-ram-tech < research-pending)
-    (can-research-with-escrow ri-siege-ram)
+    (up-research-status c: frank-c-capped-ram-tech < research-pending)
+    (can-research-with-escrow ri-capped-ram)
 =>
-    (release-escrow wood)
-    (release-escrow gold)
-    (research ri-siege-ram)
+    (release-escrow food)
+    (research ri-capped-ram)
 )
 
 ; Research: Double Bit Axe after Feudal, before Castle Age is affordable.
@@ -1155,17 +1313,6 @@
     (research ri-hand-cart)
 )
 
-; Research: Two-Man Saw during Imperial replacement economy.
-(defrule
-    (current-age >= imperial-age)
-    (up-research-status c: frank-c-two-man-saw-tech < research-pending)
-    (can-research-with-escrow ri-two-man-saw)
-=>
-    (release-escrow wood)
-    (release-escrow gold)
-    (research ri-two-man-saw)
-)
-
 ; Research: Cavalier upgrade once at least eight Knights exist.
 (defrule
     (current-age >= castle-age)
@@ -1250,6 +1397,7 @@
     (timer-triggered frank-attack-timer)
 =>
     (disable-timer frank-attack-timer)
+    (up-reset-attack-now)
     (set-goal attack-goal 0)
     (set-goal frank-attack-state-goal 2)
     (enable-timer frank-attack-cooldown-timer 45)
@@ -1264,34 +1412,117 @@
     (set-goal frank-attack-state-goal 0)
 )
 
-; Protect food production during a food crisis.
+; Recovery clears are evaluated before the normal allocation policy, allowing
+; one recovery owner at a time and deterministic return to the age baseline.
 (defrule
-    (food-amount < 250)
+    (goal frank-economy-recovery-goal 1)
+    (food-amount >= 400)
+=>
+    (set-goal frank-economy-recovery-goal 0)
+)
+(defrule
+    (goal frank-economy-recovery-goal 2)
+    (gold-amount >= 400)
+=>
+    (set-goal frank-economy-recovery-goal 0)
+)
+(defrule
+    (goal frank-economy-recovery-goal 3)
+    (wood-amount >= 300)
+=>
+    (set-goal frank-economy-recovery-goal 0)
+)
+
+; Restore one age baseline whenever no recovery mode owns the gatherer allocation.
+(defrule
+    (current-age == dark-age)
+    (goal frank-economy-recovery-goal 0)
+    (strategic-number sn-food-gatherer-percentage != 55)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 55)
+    (set-strategic-number sn-wood-gatherer-percentage 45)
+    (set-strategic-number sn-gold-gatherer-percentage 0)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+(defrule
+    (current-age == feudal-age)
+    (goal frank-economy-recovery-goal 0)
+    (strategic-number sn-food-gatherer-percentage != 50)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+    (set-strategic-number sn-wood-gatherer-percentage 35)
+    (set-strategic-number sn-gold-gatherer-percentage 15)
+    (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+(defrule
+    (current-age == castle-age)
+    (goal frank-economy-recovery-goal 0)
+    (strategic-number sn-food-gatherer-percentage != 42)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 42)
+    (set-strategic-number sn-wood-gatherer-percentage 30)
+    (set-strategic-number sn-gold-gatherer-percentage 23)
+    (set-strategic-number sn-stone-gatherer-percentage 5)
+)
+(defrule
+    (current-age >= imperial-age)
+    (goal frank-economy-recovery-goal 0)
+    (strategic-number sn-food-gatherer-percentage != 35)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 35)
+    (set-strategic-number sn-wood-gatherer-percentage 25)
+    (set-strategic-number sn-gold-gatherer-percentage 30)
+    (set-strategic-number sn-stone-gatherer-percentage 10)
+)
+
+; Recovery modes have strict priority: food first, then gold, then wood.
+(defrule
     (current-age >= feudal-age)
+    (food-amount < 250)
+    (up-compare-goal frank-economy-recovery-goal != 1)
+=>
+    (set-goal frank-economy-recovery-goal 1)
+)
+(defrule
+    (current-age >= castle-age)
+    (goal frank-economy-recovery-goal 0)
+    (food-amount >= 300)
+    (gold-amount < 250)
+=>
+    (set-goal frank-economy-recovery-goal 2)
+)
+(defrule
+    (current-age >= feudal-age)
+    (goal frank-economy-recovery-goal 0)
+    (food-amount >= 300)
+    (gold-amount >= 250)
+    (wood-amount < 150)
+=>
+    (set-goal frank-economy-recovery-goal 3)
+)
+
+; Enforce only the selected recovery allocation; no peer controller can overwrite it.
+(defrule
+    (goal frank-economy-recovery-goal 1)
+    (strategic-number sn-food-gatherer-percentage != 60)
 =>
     (set-strategic-number sn-food-gatherer-percentage 60)
     (set-strategic-number sn-wood-gatherer-percentage 25)
     (set-strategic-number sn-gold-gatherer-percentage 15)
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
-
-; Protect Gold once Knights and Imperial technologies are the bottleneck.
 (defrule
-    (current-age >= castle-age)
-    (gold-amount < 250)
-    (food-amount >= 300)
+    (goal frank-economy-recovery-goal 2)
+    (strategic-number sn-food-gatherer-percentage != 40)
 =>
     (set-strategic-number sn-food-gatherer-percentage 40)
     (set-strategic-number sn-wood-gatherer-percentage 20)
     (set-strategic-number sn-gold-gatherer-percentage 35)
     (set-strategic-number sn-stone-gatherer-percentage 5)
 )
-
-; Protect Wood when houses, farms, and replacement production are starved.
 (defrule
-    (wood-amount < 150)
-    (current-age >= feudal-age)
-    (food-amount >= 300)
+    (goal frank-economy-recovery-goal 3)
+    (strategic-number sn-food-gatherer-percentage != 45)
 =>
     (set-strategic-number sn-food-gatherer-percentage 45)
     (set-strategic-number sn-wood-gatherer-percentage 40)
