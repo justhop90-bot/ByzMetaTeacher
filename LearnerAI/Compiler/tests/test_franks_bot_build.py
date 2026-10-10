@@ -42,7 +42,7 @@ class FranksBotBuildTests(unittest.TestCase):
         initialization = source[start:end]
         rules = re.findall(r"\(defrule\b(.*?)\n\)", initialization, flags=re.S)
 
-        self.assertEqual(len(rules), 4)
+        self.assertEqual(len(rules), 5)
         form_counts = [
             sum(bool(re.match(r"^ {4}\(", line)) for line in rule.splitlines())
             for rule in rules
@@ -57,8 +57,23 @@ class FranksBotBuildTests(unittest.TestCase):
                 self.assertIn(f"(goal frank-init-stage-goal {stage})", rule)
         for rule in rules[:-1]:
             self.assertNotIn("(set-goal frank-initialized-goal 1)", rule)
-        self.assertIn("(set-goal frank-init-stage-goal 4)", rules[3])
-        self.assertIn("(set-goal frank-initialized-goal 1)", rules[3])
+        self.assertIn("(set-goal frank-init-stage-goal 5)", rules[4])
+        self.assertIn("(set-goal frank-initialized-goal 1)", rules[4])
+        self.assertIn("(set-strategic-number sn-number-explore-groups 1)", rules[4])
+        self.assertIn("(set-strategic-number sn-total-number-explorers 10)", rules[4])
+        self.assertIn("(set-strategic-number sn-cap-civilian-explorers 0)", rules[4])
+
+    def test_villager_production_is_independent_of_age_up_arbitration(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        start = source.index("; Keep Town Centers producing villagers independent of age-up arbitration.")
+        end = source.index("; Build houses before population pressure", start)
+        rule = source[start:end]
+        self.assertIn("(unit-type-count-total villager < 90)", rule)
+        self.assertIn("(can-train villager)", rule)
+        self.assertIn("(train villager)", rule)
+        self.assertNotIn("(goal train-civ-goal", rule)
+        self.assertNotIn("(population-headroom", rule)
+
 
     def test_strategy_contains_full_match_milestones_and_patch_specific_units(self):
         source = SOURCE.read_text(encoding="utf-8")
