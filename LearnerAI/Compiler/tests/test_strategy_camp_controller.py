@@ -117,17 +117,26 @@ class ByzantineCampControllerTests(unittest.TestCase):
                     facts,
                 )
                 self.assertIn(
-                    f"(up-compare-goal resource-camp-remote-count > {floor - 1})",
+                    f"(up-compare-goal resource-camp-remote-count > {floor - 2})",
                     facts,
                 )
                 self.assertIn(
-                    f"(up-set-target-object search-remote c: {floor - 1})",
+                    f"(up-set-target-object search-remote c: {floor - 2})",
                     actions,
                 )
                 self.assertIn(
                     f"(up-build place-point 0 c: {building_id})",
                     actions,
                 )
+                if floor == 2:
+                    self.assertNotIn(
+                        "(up-compare-goal resource-camp-remote-count > 1)",
+                        facts,
+                    )
+                    self.assertNotIn(
+                        "(up-set-target-object search-remote c: 1)",
+                        actions,
+                    )
                 self.assertLess(
                     actions.index("(up-get-point position-object resource-camp-point)"),
                     actions.index("(up-set-target-point resource-camp-point)"),

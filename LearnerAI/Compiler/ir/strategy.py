@@ -4676,7 +4676,7 @@ def _default_byzantine_duc_plan(
             )
 
             count_expression = parse_expression(
-                f"(up-compare-goal resource-camp-remote-count > {floor - 1})",
+                f"(up-compare-goal resource-camp-remote-count > {floor - 2})",
                 SourceLocation(1),
             )
             place_facts = [
@@ -4695,7 +4695,7 @@ def _default_byzantine_duc_plan(
                     order=len(rules),
                     facts=tuple(parse_expression(item, SourceLocation(1)) for item in place_facts),
                     actions=(
-                        parse_expression(f"(up-set-target-object search-remote c: {floor - 1})", SourceLocation(1)),
+                        parse_expression(f"(up-set-target-object search-remote c: {floor - 2})", SourceLocation(1)),
                         parse_expression("(up-get-point position-object resource-camp-point)", SourceLocation(1)),
                         parse_expression("(up-set-target-point resource-camp-point)", SourceLocation(1)),
                         parse_expression(f"(up-build place-point 0 c: {building_id})", SourceLocation(1)),
