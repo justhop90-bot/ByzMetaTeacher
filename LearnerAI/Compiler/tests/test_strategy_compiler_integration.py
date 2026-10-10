@@ -10,8 +10,14 @@ from LearnerAI.Compiler.clients.basilisk import (
 from LearnerAI.Compiler.ast import Expression
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
-from LearnerAI.Compiler.ir.model import GoalSpanKind
-from LearnerAI.Compiler.ir.native_duc import NativeDucPlan, NativeDucRule
+from LearnerAI.Compiler.ir.model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
+from LearnerAI.Compiler.runtime_binding import GoalSpanRequest
+from LearnerAI.Compiler.ir.native_duc import (
+    NativeDucGoalInputRequest,
+    NativeDucOutputRequest,
+    NativeDucPlan,
+    NativeDucRule,
+)
 from LearnerAI.Compiler.ir.strategy import StrategyPosture
 from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
 from LearnerAI.Compiler.clients.basilisk import (
@@ -226,6 +232,131 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-set-target-object search-remote c: 0)", output)
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
+
+
+    def test_duc_goal_input_can_read_a_binder_owned_search_state_offset(self):
+        source_id = StorageRequestId(
+            SemanticId("duc-test", "wood-search"),
+            "up-get-search-state",
+        )
+        search_output = GoalSpanRequest(
+            source_id,
+            role=GoalRole.NATIVE_OUTPUT,
+            width=4,
+            shape=GoalSpanKind.EXTENDED_4,
+            contract_id="up-get-search-state.OutputGoalId",
+            start_min=41,
+            start_max=15996,
+        )
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="resource-search",
+                    order=0,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-get-search-state search-state-output)",
+                            "up-get-search-state",
+                            ("search-state-output",),
+                        ),
+                    ),
+                ),
+                NativeDucRule(
+                    identity="resource-dispatch",
+                    order=1,
+                    facts=(
+                        Expression(
+                            "(up-compare-goal remote-count > 1)",
+                            "up-compare-goal",
+                            ("remote-count", ">", "1"),
+                        ),
+                    ),
+                    actions=(
+                        Expression(
+                            "(up-full-reset-search)",
+                            "up-full-reset-search",
+                            (),
+                        ),
+                    ),
+                ),
+            ),
+            output_requests=(
+                NativeDucOutputRequest(
+                    rule_identity="resource-search",
+                    section="ACTION",
+                    expression_index=0,
+                    request=search_output,
+                    command="up-get-search-state",
+                    argument_index=0,
+                ),
+            ),
+            input_requests=(
+                NativeDucGoalInputRequest(
+                    rule_identity="resource-dispatch",
+                    section="FACT",
+                    expression_index=0,
+                    argument_index=0,
+                    source=source_id,
+                    source_offset=3,
+                ),
+            ),
+        )
+
+        output = compile_strategy_profile(
+            self.profile,
+            self.effective,
+            duc_plan=plan,
+        )
+        search_start = int(
+            __import__("re").search(
+                r"\\(up-get-search-state (\\d+)\\)",
+                output,
+            ).group(1)
+        )
+        remote_count = int(
+            __import__("re").search(
+                r"\\(up-compare-goal (\\d+) > 1\\)",
+                output,
+            ).group(1)
+        )
+        self.assertEqual(remote_count, search_start + 3)
+
+    def test_duc_managed_construction_skips_only_generic_action_issuance(self):
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="resource-front-managed-floor",
+                    order=0,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-full-reset-search)",
+                            "up-full-reset-search",
+                            (),
+                        ),
+                    ),
+                ),
+            ),
+            managed_demand_identities=("economy-wood-camp-floor-2",),
+        )
+        output = compile_strategy_profile(
+            self.stock_profile,
+            self.effective,
+            duc_plan=plan,
+        )
+        self.assertNotIn(
+            "; Action issuance: economy-wood-camp-floor-2 | ACTIVE -> ISSUED",
+            output,
+        )
+        self.assertIn(
+            "; Construction observation: economy-wood-camp-floor-2",
+            output,
+        )
+        self.assertIn(
+            "; Action issuance: economy-wood-camp-floor-1 | ACTIVE -> ISSUED",
+            output,
+        )
 
     def test_strategy_compiler_emits_native_strategos_voice_plan(self):
         first = compile_strategy_profile(self.stock_profile, self.effective)
