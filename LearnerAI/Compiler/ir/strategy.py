@@ -4642,7 +4642,8 @@ def _default_byzantine_duc_plan(
             # The native output span is allocated by RuntimeBinder.  The
             # fourth output is the inserted remote-search count (base + 3).
             search_rule_facts = [
-                f"(goal demand-{demand_name} 0)",
+                f"(or (goal demand-{demand_name} 0) (goal demand-{demand_name} 1))",
+                f"(building-type-count {building} >= {floor - 1})",
                 *base_facts,
             ]
             search_actions = (
@@ -4683,6 +4684,7 @@ def _default_byzantine_duc_plan(
             )
             activate_facts = [
                 f"(goal demand-{demand_name} 0)",
+                f"(building-type-count {building} >= {floor - 1})",
                 *base_facts,
                 count_expression.source,
             ]
@@ -4712,6 +4714,7 @@ def _default_byzantine_duc_plan(
                 f"(goal demand-{demand_name} 1)",
                 f"(goal construction-retry-barrier-{demand_name} 0)",
                 "(goal action-claim-build-pass-singleton 0)",
+                f"(building-type-count {building} >= {floor - 1})",
                 f"(not (building-type-count {building} >= {floor}))",
                 f"(not (up-pending-objects c: {building_id} >= 1))",
                 f"(not (up-pending-placement c: {building_id}))",
