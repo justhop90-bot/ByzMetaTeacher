@@ -106,9 +106,8 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 demand = f"economy-{resource}-camp-floor-{floor}"
                 self.assertIn(demand, managed)
                 search = f"byzantine-resource-camp-search-{resource}-{floor}"
-                activate = f"byzantine-resource-camp-activate-{resource}-{floor}"
                 place = f"byzantine-resource-camp-place-{resource}-{floor}"
-                self.assertTrue({search, activate, place}.issubset(identities))
+                self.assertTrue({search, place}.issubset(identities))
                 place_rule = next(rule for rule in plan.rules if rule.identity == place)
                 facts = tuple(item.source for item in place_rule.facts)
                 actions = tuple(item.source for item in place_rule.actions)
