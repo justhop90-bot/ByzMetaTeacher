@@ -626,7 +626,9 @@ def _remove_marked_rule(source: str, identity: str) -> str:
         elif char == ")":
             depth -= 1
             if depth == 0:
-                return re.sub(r"\n{3,}", "\n\n", source[:start] + source[index + 1:])
+                prefix = source[:start].rstrip("\n")
+                suffix = source[index + 1:].lstrip("\n")
+                return prefix + "\n\n" + suffix
     raise RuntimeError(f"runtime has unterminated DUC rule: {identity}")
 
 
