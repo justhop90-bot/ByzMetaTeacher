@@ -39,7 +39,7 @@ These identifiers are civ-tree facts, not claims that every native AI alias is r
 | Imperial Age | Turn army advantage into a base kill | Cavalier/Paladin, Chivalry, Conscription, siege research, Trebuchets and Siege Rams, scalable production and repeated attack cycles |
 | Recovery | Prevent a single shortfall from freezing the strategy | Shift gather priorities under food/wood/gold pressure; rebuild missing camps when local resource coverage is inadequate; keep Town Center and military production alive where feasible |
 
-The farm policy does not issue standalone Horse Collar or Heavy Plow research requests because Frankish Mill technologies are free in the target patch. The bot should not spend effort on obsolete Bearded Axe or Cavalry Archer rules.
+The bot explicitly researches Horse Collar in Feudal, Heavy Plow in Castle, and Crop Rotation in Imperial through the native research lifecycle; all three Frankish Mill technologies are free in the target patch. It avoids wasting effort on obsolete Bearded Axe or Cavalry Archer rules.
 
 ## Implementation map
 
