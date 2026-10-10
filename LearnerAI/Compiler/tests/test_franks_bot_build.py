@@ -52,6 +52,7 @@ class FranksBotBuildTests(unittest.TestCase):
             "(train battering-ram-line)",
             "(train trebuchet)",
             "(attack-now)",
+            "(up-find-player enemy find-closest frank-target-player-goal)",
             "(dropsite-min-distance wood > 8)",
             "(dropsite-min-distance gold > 8)",
             "(dropsite-min-distance stone > 8)",
