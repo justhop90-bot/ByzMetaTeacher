@@ -66,6 +66,32 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-total-number-explorers 10)", rules[4])
         self.assertIn("(set-strategic-number sn-cap-civilian-explorers 0)", rules[4])
 
+
+    def test_housing_executor_precedes_continuous_villager_production(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        house_start = source.index("; Build houses before population pressure blocks villager and army production.")
+        villager_start = source.index("; Keep Town Centers producing villagers independent of age-up arbitration.")
+        house_rule = source[house_start:villager_start]
+        self.assertLess(house_start, villager_start)
+        self.assertIn("(population-headroom < 8)", house_rule)
+        self.assertIn("(up-pending-objects c: frank-c-house == 0)", house_rule)
+        self.assertIn("(can-build house)", house_rule)
+        self.assertIn("(build house)", house_rule)
+
+    def test_native_exploration_resets_existing_villager_scout_assignments(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        start = source.index("(goal frank-init-stage-goal 4)")
+        end = source.index("; Acquire a valid enemy player", start)
+        init_stage = source[start:end]
+        self.assertIn("(set-strategic-number sn-number-explore-groups 1)", init_stage)
+        self.assertIn("(set-strategic-number sn-total-number-explorers 10)", init_stage)
+        self.assertIn("(set-strategic-number sn-cap-civilian-explorers 0)", init_stage)
+        self.assertIn("(up-reset-scouts)", init_stage)
+        self.assertLess(
+            init_stage.index("(set-strategic-number sn-cap-civilian-explorers 0)"),
+            init_stage.index("(up-reset-scouts)"),
+        )
+
     def test_villager_production_is_independent_of_age_up_arbitration(self):
         source = SOURCE.read_text(encoding="utf-8")
         start = source.index("; Keep Town Centers producing villagers independent of age-up arbitration.")
