@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -63,6 +64,22 @@ class FranksBotBuildTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, source)
         self.assertGreaterEqual(source.count("(defrule"), 80)
+
+    def test_goal_comparisons_use_native_comparison_primitive(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        invalid = re.findall(
+            r"\(goal\s+[^\s()]+\s+(?:==|!=|<=|>=|<|>)\s+[^()]+\)",
+            source,
+        )
+        self.assertEqual(
+            invalid,
+            [],
+            "goal is equality-only; ordered and inequality comparisons must use up-compare-goal",
+        )
+        self.assertIn(
+            "(up-compare-goal frank-target-player-goal >= 1)",
+            source,
+        )
 
     def test_no_byzantine_or_removed_frankish_strategy_leaks_into_bot(self):
         source = SOURCE.read_text(encoding="utf-8").lower()
