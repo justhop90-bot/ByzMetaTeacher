@@ -102,6 +102,7 @@ class ByzantineCampControllerTests(unittest.TestCase):
         managed = set(plan.managed_demand_identities)
         for resource, floors in expected_floors.items():
             building = "lumber-camp" if resource == "wood" else "mining-camp"
+            building_id = 562 if resource == "wood" else 584
             for floor in floors:
                 demand = f"economy-{resource}-camp-floor-{floor}"
                 self.assertIn(demand, managed)
@@ -124,7 +125,7 @@ class ByzantineCampControllerTests(unittest.TestCase):
                     actions,
                 )
                 self.assertIn(
-                    f"(up-build place-point 0 c: {building})",
+                    f"(up-build place-point 0 c: {building_id})",
                     actions,
                 )
                 self.assertLess(
@@ -137,9 +138,11 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 )
 
                 search_rule = next(rule for rule in plan.rules if rule.identity == search)
+                search_actions = tuple(item.source for item in search_rule.actions)
+                self.assertIn("(up-filter-status c: 3 c: 0)", search_actions)
                 self.assertIn(
                     "(up-get-search-state resource-camp-search-state)",
-                    tuple(item.source for item in search_rule.actions),
+                    search_actions,
                 )
                 output = next(
                     request for request in plan.output_requests

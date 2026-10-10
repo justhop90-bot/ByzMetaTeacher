@@ -4647,7 +4647,7 @@ def _default_byzantine_duc_plan(
             ]
             search_actions = (
                 parse_expression("(up-full-reset-search)", SourceLocation(1)),
-                parse_expression("(up-filter-status c: status-resource c: list-active)", SourceLocation(1)),
+                parse_expression("(up-filter-status c: 3 c: 0)", SourceLocation(1)),
                 parse_expression(f"(up-find-resource c: {resource} c: 40)", SourceLocation(1)),
                 parse_expression("(up-get-search-state resource-camp-search-state)", SourceLocation(1)),
             )
@@ -4698,7 +4698,7 @@ def _default_byzantine_duc_plan(
                         parse_expression(f"(up-set-target-object search-remote c: {floor - 1})", SourceLocation(1)),
                         parse_expression("(up-get-point position-object resource-camp-point)", SourceLocation(1)),
                         parse_expression("(up-set-target-point resource-camp-point)", SourceLocation(1)),
-                        parse_expression(f"(up-build place-point 0 c: {building})", SourceLocation(1)),
+                        parse_expression(f"(up-build place-point 0 c: {building_id})", SourceLocation(1)),
                         parse_expression("(set-goal action-claim-build-pass-singleton 1)", SourceLocation(1)),
                         parse_expression(f"(set-goal demand-{demand_name} issued-{demand_name})", SourceLocation(1)),
                     ),
