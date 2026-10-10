@@ -115,7 +115,7 @@
 (defconst frank-imperial-villagers 55)
 
 ; Initialize all Frankish strategic state in short, ordered one-shot stages.
-; The conservative native rule budget is kept below ten forms per stage.
+; Keep each rule small and configure native scouting before completing initialization.
 (defrule
     (goal frank-initialized-goal 0)
     (goal frank-init-stage-goal 0)
@@ -155,6 +155,14 @@
     (set-strategic-number sn-gold-gatherer-percentage 0)
     (set-strategic-number sn-stone-gatherer-percentage 0)
     (set-goal frank-init-stage-goal 4)
+)
+(defrule
+    (goal frank-init-stage-goal 4)
+=>
+    (set-strategic-number sn-number-explore-groups 1)
+    (set-strategic-number sn-total-number-explorers 10)
+    (set-strategic-number sn-cap-civilian-explorers 0)
+    (set-goal frank-init-stage-goal 5)
     (set-goal frank-initialized-goal 1)
 )
 
@@ -304,11 +312,11 @@
     (research imperial-age)
 )
 
-; Keep Town Centers producing villagers until the sustainable target.
+; Keep Town Centers producing villagers independent of age-up arbitration.
+; can-train villager already checks resources, housing headroom, queue capacity,
+; and availability of a ready Town Center; do not duplicate those gates.
 (defrule
-    (goal train-civ-goal 1)
     (unit-type-count-total villager < 90)
-    (population-headroom > 0)
     (can-train villager)
 =>
     (train villager)
