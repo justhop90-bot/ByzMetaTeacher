@@ -196,20 +196,7 @@ def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
 
 def _choose_voice_goal_slots(runtime: str, count: int) -> list[int]:
     """Choose deterministic Goal ids that are free in the non-voice runtime overlay."""
-    occupied = set()
-    for start, end, _kind in _storage_intervals(runtime):
-        occupied.update(range(max(1, start), min(16_000, end) + 1))
-
-    # Avoid reusing any named constant already present in the hybrid runtime,
-    # even if that constant is not currently exercised by a storage operation.
-    definitions = {
-        match.group(1): int(match.group(2))
-        for match in re.finditer(
-            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
-            runtime,
-        )
-    }
-    occupied.update(value for value in definitions.values() if 1 <= value <= 16_000)
+    occupied = _occupied_goal_slots(runtime)
 
     chosen: list[int] = []
     for candidate in range(16_000, 0, -1):
@@ -303,17 +290,9 @@ def _remap_voice_storage(runtime: str, generated_voice: str) -> str:
     )
 
     goal_values = [generated_definitions[name] for name in goal_names]
-    goal_intervals = _storage_intervals(voice_base)
-    goal_occupied = {
-        value
-        for start, end, _kind in goal_intervals
-        for value in range(max(1, start), min(16_000, end) + 1)
-    }
-    goal_occupied.update(
-        value
-        for name, value in _defconst_values(voice_base).items()
-        if 1 <= value <= 16_000
-    )
+    # DUC camp search/point spans are emitted as numeric Goal ids, so include
+    # literal storage slots as well as aliases when checking voice occupancy.
+    goal_occupied = _occupied_goal_slots(voice_base)
     goals_valid = (
         len(goal_values) == len(set(goal_values))
         and all(1 <= value <= 16_000 and value not in goal_occupied for value in goal_values)
