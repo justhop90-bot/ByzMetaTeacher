@@ -106,7 +106,7 @@ class FranksBotBuildTests(unittest.TestCase):
 
     def test_every_optional_research_rule_defers_during_age_up(self):
         source = SOURCE.read_text(encoding="utf-8")
-        rules = re.findall(r"\(defrule\\b(.*?)\n\)", source, flags=re.S)
+        rules = re.findall(r"\(defrule\b(.*?)\n\)", source, flags=re.S)
         missing = []
         for index, body in enumerate(rules, start=1):
             arrow = body.find("=>")
