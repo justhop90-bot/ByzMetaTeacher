@@ -34,7 +34,7 @@ REQUIRED_FRAGMENTS = (
     "(set-strategic-number sn-number-explore-groups 1)",
     "(set-strategic-number sn-total-number-explorers 10)",
     "(set-strategic-number sn-cap-civilian-explorers 0)",
-    "(unit-type-count-total villager < 90)\\n    (can-train villager)\\n=>\\n    (train villager)",
+    "(unit-type-count-total villager < 90)\n    (can-train villager)\n=>\n    (train villager)",
     "(current-age >= castle-age)\n    (building-type-count castle >= 1)\n    (or\n        (current-age == castle-age)\n        (up-research-status c: frank-c-elite-throwing-axeman-tech < research-pending)",
     "(up-reset-attack-now)",
     "(building-type-count-total university < 1)",
@@ -162,3 +162,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
