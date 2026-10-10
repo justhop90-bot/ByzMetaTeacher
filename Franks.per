@@ -64,6 +64,7 @@
 (defconst sn-number-explore-groups 42)
 (defconst sn-total-number-explorers 18)
 (defconst sn-cap-civilian-explorers 3)
+(defconst sn-percent-half-exploration 179)
 ; Building object IDs used only in c: parameter positions.
 (defconst frank-c-house 70)
 (defconst frank-c-lumber-camp 562)
@@ -167,6 +168,8 @@
     (set-strategic-number sn-number-explore-groups 1)
     (set-strategic-number sn-total-number-explorers 10)
     (set-strategic-number sn-cap-civilian-explorers 0)
+    ; Avoid automatic exploration-group reduction after partial map discovery.
+    (set-strategic-number sn-percent-half-exploration 100)
     ; SN changes do not cancel villagers already assigned to explore.
     ; Reset native scout tasks so the military Scout can take the explore group.
     (up-reset-scouts)
@@ -329,7 +332,7 @@
 
 ; Build houses before population pressure blocks villager and army production.
 (defrule
-    (population-headroom < 8)
+    (population-headroom < 10)
     (building-type-count-total house < 36)
     (up-pending-objects c: frank-c-house == 0)
     (can-build house)
