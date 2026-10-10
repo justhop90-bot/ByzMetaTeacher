@@ -299,8 +299,11 @@ class ProductionArbitrationDerivationTests(unittest.TestCase):
 
 class DucDirectedTrainTests(unittest.TestCase):
     def test_duc_head_inventory_matches_pinned_specs(self):
-        pinned = frozenset(
-            command for command, _ in _DUC_COMMAND_SPECS
+        # up-build is a DUC execution action, not a search/target reference
+        # that should classify an otherwise ordinary train demand as DUC-directed.
+        pinned = (
+            frozenset(command for command, _ in _DUC_COMMAND_SPECS)
+            - {"up-build"}
         ) | {"up-target-point"}
         self.assertEqual(DUC_DIRECTED_COMMAND_HEADS, pinned)
 
