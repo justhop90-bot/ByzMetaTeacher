@@ -45,7 +45,13 @@ class FranksBotBuildTests(unittest.TestCase):
             "(train knight-line)",
             "(train frank-throwing-axeman)",
             "(train frank-mounted-crossbowman)",
+            "(research 1451)",
             "(research ri-ordonnance-companies)",
+            "(research ri-pikeman)",
+            "(research ri-halberdier)",
+            "(research ri-elite-skirmisher)",
+            "(research ri-capped-ram)",
+            "(up-reset-attack-now)",
             "(research ri-horse-collar)",
             "(research ri-heavy-plow)",
             "(research ri-crop-rotation)",
@@ -80,6 +86,81 @@ class FranksBotBuildTests(unittest.TestCase):
             "(up-compare-goal frank-target-player-goal >= 1)",
             source,
         )
+
+
+    def test_no_franks_unavailable_research_endpoints_are_requested(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        self.assertNotIn("(research ri-siege-ram)", source)
+        self.assertNotIn("(research ri-two-man-saw)", source)
+        self.assertIn("(research ri-capped-ram)", source)
+        self.assertIn("(defconst frank-c-capped-ram-tech 96)", source)
+
+    def test_dark_age_has_second_building_fallback_without_distance_deadlock(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        lumber_start = source.index("; Build the first lumber camp")
+        mill_start = source.index("; Build a mill on a real forage resource")
+        fallback_start = source.index("; If forage is absent, a resource-adjacent Mining Camp")
+        gold_start = source.index("; Build a gold camp only when Gold")
+        lumber = source[lumber_start:mill_start]
+        mill = source[mill_start:fallback_start]
+        fallback = source[fallback_start:gold_start]
+        self.assertNotIn("(dropsite-min-distance wood > 8)", lumber)
+        self.assertNotIn("(dropsite-min-distance forage > 7)", mill)
+        self.assertIn("(not (resource-found forage))", fallback)
+        self.assertIn("(can-build mining-camp)", fallback)
+
+    def test_age_up_prerequisites_do_not_depend_on_market_or_elephant_response(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        castle_start = source.index("; Commit Castle Age once")
+        imperial_start = source.index("; Commit Imperial Age")
+        villager_start = source.index("; Keep Town Centers producing villagers")
+        castle_rule = source[castle_start:imperial_start]
+        imperial_rule = source[imperial_start:villager_start]
+        self.assertIn("(building-type-count stable >= 1)", castle_rule)
+        self.assertIn("(building-type-count blacksmith >= 1)", castle_rule)
+        self.assertNotIn("(building-type-count market >= 1)", castle_rule)
+        self.assertIn("(can-research-with-escrow imperial-age)", imperial_rule)
+        self.assertNotIn("(building-type-count market >= 1)", imperial_rule)
+        self.assertIn("(building-type-count-total university < 1)", source)
+        self.assertIn("(building-type-count siege-workshop >= 1)", source)
+
+    def test_counter_upgrades_and_new_mounted_crossbow_upgrade_have_witnesses(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        expected = (
+            "(research ri-pikeman)",
+            "(research ri-halberdier)",
+            "(research ri-elite-skirmisher)",
+            "(up-research-status c: frank-c-heavy-mounted-crossbowman-tech < research-pending)",
+            "(can-research-with-escrow 1451)",
+            "(research 1451)",
+            "(up-research-status c: frank-c-heavy-mounted-crossbowman-tech == research-complete)",
+            "(research ri-cranequins)",
+        )
+        for fragment in expected:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, source)
+
+    def test_attack_cycle_resets_native_attack_loop(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        start = source.index("; Complete the timed attack cycle")
+        end = source.index("; Reassess attack readiness", start)
+        attack_reset_rule = source[start:end]
+        self.assertIn("(up-reset-attack-now)", attack_reset_rule)
+        self.assertLess(
+            attack_reset_rule.index("(up-reset-attack-now)"),
+            attack_reset_rule.index("(enable-timer frank-attack-cooldown-timer 45)"),
+        )
+
+    def test_economy_recovery_modes_are_exclusive_and_recover(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        for mode in (1, 2, 3):
+            with self.subTest(mode=mode):
+                self.assertIn(f"(set-goal frank-economy-recovery-goal {mode})", source)
+                self.assertIn(f"(goal frank-economy-recovery-goal {mode})", source)
+        self.assertIn("(food-amount >= 400)", source)
+        self.assertIn("(gold-amount >= 400)", source)
+        self.assertIn("(wood-amount >= 300)", source)
+        self.assertNotIn("; Protect food production during a food crisis.", source)
 
     def test_no_byzantine_or_removed_frankish_strategy_leaks_into_bot(self):
         source = SOURCE.read_text(encoding="utf-8").lower()
