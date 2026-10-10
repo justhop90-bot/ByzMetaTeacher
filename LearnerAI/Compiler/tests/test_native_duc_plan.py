@@ -230,6 +230,30 @@ class NativeDucPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "is an Action and cannot be emitted as a Fact"):
             registry.validate_duc_plan(bad_plan)
 
+    def test_registry_accepts_up_build_as_contracted_point_execution_action(self):
+        catalog = default_native_contract_catalog()
+        self.assertIn("up-build", catalog.duc_command_names)
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="build-at-selected-resource-point",
+                    order=1,
+                    facts=(_expr("(true)", "true"),),
+                    actions=(
+                        _expr(
+                            "(up-build place-point 0 c: 562)",
+                            "up-build",
+                            "place-point",
+                            "0",
+                            "c:",
+                            "562",
+                        ),
+                    ),
+                ),
+            )
+        )
+        default_de_registry().validate_duc_plan(plan)
+
     def test_registry_accepts_up_get_fact_as_fact_output(self):
         plan = NativeDucPlan(
             rules=(
