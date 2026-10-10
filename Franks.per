@@ -137,7 +137,7 @@
     (up-find-player enemy find-closest frank-target-player-goal)
 )
 (defrule
-    (goal frank-target-player-goal > 0)
+    (up-compare-goal frank-target-player-goal >= 1)
     (strategic-number sn-target-player-number != frank-target-player-goal)
 =>
     (up-modify-sn sn-target-player-number g:= frank-target-player-goal)
@@ -634,7 +634,7 @@
 ; Retire Scout expansion when Castle Age is reached.
 (defrule
     (current-age >= castle-age)
-    (goal frank-scout-target-goal > 0)
+    (up-compare-goal frank-scout-target-goal >= 1)
 =>
     (set-goal frank-scout-target-goal 0)
 )
@@ -643,7 +643,7 @@
 (defrule
     (current-age == castle-age)
     (unit-type-count villager < 45)
-    (goal frank-cavalry-target-goal != 6)
+    (up-compare-goal frank-cavalry-target-goal != 6)
 =>
     (set-goal frank-cavalry-target-goal 6)
 )
@@ -653,7 +653,7 @@
     (current-age == castle-age)
     (unit-type-count villager >= 45)
     (unit-type-count villager < 60)
-    (goal frank-cavalry-target-goal != 12)
+    (up-compare-goal frank-cavalry-target-goal != 12)
 =>
     (set-goal frank-cavalry-target-goal 12)
 )
@@ -662,7 +662,7 @@
 (defrule
     (current-age == castle-age)
     (unit-type-count villager >= 60)
-    (goal frank-cavalry-target-goal != 18)
+    (up-compare-goal frank-cavalry-target-goal != 18)
 =>
     (set-goal frank-cavalry-target-goal 18)
 )
@@ -670,7 +670,7 @@
 ; Scale Imperial cavalry target to twenty-four.
 (defrule
     (current-age >= imperial-age)
-    (goal frank-cavalry-target-goal != 24)
+    (up-compare-goal frank-cavalry-target-goal != 24)
 =>
     (set-goal frank-cavalry-target-goal 24)
 )
@@ -678,7 +678,7 @@
 ; Train Scouts only while Castle Age is not ready to start.
 (defrule
     (current-age == feudal-age)
-    (goal frank-scout-target-goal > 0)
+    (up-compare-goal frank-scout-target-goal >= 1)
     (building-type-count stable >= 1)
     (unit-type-count-total scout-cavalry < frank-scout-target-goal)
     (not (can-research-with-escrow castle-age))
@@ -691,7 +691,7 @@
 (defrule
     (current-age >= castle-age)
     (building-type-count stable >= 1)
-    (goal frank-cavalry-target-goal > 0)
+    (up-compare-goal frank-cavalry-target-goal >= 1)
     (unit-type-count-total knight-line < frank-cavalry-target-goal)
     (can-train-with-escrow knight-line)
 =>
@@ -706,7 +706,7 @@
     (players-unit-type-count any-enemy knight-line < 3)
     (players-unit-type-count any-enemy camel-rider-line < 3)
     (players-unit-type-count any-enemy scout-cavalry-line < 5)
-    (goal frank-spear-target-goal != 0)
+    (up-compare-goal frank-spear-target-goal != 0)
 =>
     (set-goal frank-spear-target-goal 0)
 )
@@ -715,7 +715,7 @@
 (defrule
     (current-age >= feudal-age)
     (or (players-unit-type-count any-enemy knight-line >= 3) (players-unit-type-count any-enemy camel-rider-line >= 3))
-    (goal frank-spear-target-goal != 8)
+    (up-compare-goal frank-spear-target-goal != 8)
 =>
     (set-goal frank-spear-target-goal 8)
 )
@@ -724,7 +724,7 @@
 (defrule
     (current-age >= castle-age)
     (or (players-unit-type-count any-enemy knight-line >= 8) (players-unit-type-count any-enemy camel-rider-line >= 8))
-    (goal frank-spear-target-goal != 14)
+    (up-compare-goal frank-spear-target-goal != 14)
 =>
     (set-goal frank-spear-target-goal 14)
 )
@@ -732,7 +732,7 @@
 ; Train the current Spearman-line counter upgrade against enemy cavalry.
 (defrule
     (current-age >= feudal-age)
-    (goal frank-spear-target-goal > 0)
+    (up-compare-goal frank-spear-target-goal >= 1)
     (unit-type-count-total spearman-line < frank-spear-target-goal)
     (can-train-with-escrow spearman-line)
 =>
@@ -746,7 +746,7 @@
     (current-age >= castle-age)
     (players-unit-type-count any-enemy spearman-line < 4)
     (players-unit-type-count any-enemy militiaman-line < 6)
-    (goal frank-thrower-target-goal != 0)
+    (up-compare-goal frank-thrower-target-goal != 0)
 =>
     (set-goal frank-thrower-target-goal 0)
 )
@@ -756,7 +756,7 @@
     (current-age >= castle-age)
     (building-type-count castle >= 1)
     (or (players-unit-type-count any-enemy spearman-line >= 4) (players-unit-type-count any-enemy militiaman-line >= 6))
-    (goal frank-thrower-target-goal != 8)
+    (up-compare-goal frank-thrower-target-goal != 8)
 =>
     (set-goal frank-thrower-target-goal 8)
 )
@@ -766,7 +766,7 @@
     (current-age >= castle-age)
     (building-type-count castle >= 1)
     (or (players-unit-type-count any-enemy spearman-line >= 9) (players-unit-type-count any-enemy militiaman-line >= 12))
-    (goal frank-thrower-target-goal != 14)
+    (up-compare-goal frank-thrower-target-goal != 14)
 =>
     (set-goal frank-thrower-target-goal 14)
 )
@@ -814,7 +814,7 @@
     (current-age >= castle-age)
     (players-unit-type-count any-enemy spearman-line < 4)
     (players-unit-type-count any-enemy militiaman-line < 6)
-    (goal frank-mounted-crossbow-target-goal != 0)
+    (up-compare-goal frank-mounted-crossbow-target-goal != 0)
 =>
     (set-goal frank-mounted-crossbow-target-goal 0)
 )
@@ -824,7 +824,7 @@
     (current-age >= castle-age)
     (building-type-count archery-range >= 1)
     (or (players-unit-type-count any-enemy spearman-line >= 4) (players-unit-type-count any-enemy militiaman-line >= 8))
-    (goal frank-mounted-crossbow-target-goal != 6)
+    (up-compare-goal frank-mounted-crossbow-target-goal != 6)
 =>
     (set-goal frank-mounted-crossbow-target-goal 6)
 )
@@ -833,7 +833,7 @@
 (defrule
     (current-age >= castle-age)
     (up-research-status c: ri-ordonnance-companies == research-complete)
-    (goal frank-mounted-crossbow-target-goal != 12)
+    (up-compare-goal frank-mounted-crossbow-target-goal != 12)
 =>
     (set-goal frank-mounted-crossbow-target-goal 12)
 )
@@ -892,7 +892,7 @@
 (defrule
     (current-age >= feudal-age)
     (players-unit-type-count any-enemy archer-line >= 8)
-    (goal frank-skirmisher-target-goal != 8)
+    (up-compare-goal frank-skirmisher-target-goal != 8)
 =>
     (set-goal frank-skirmisher-target-goal 8)
 )
@@ -901,7 +901,7 @@
 (defrule
     (current-age >= feudal-age)
     (players-unit-type-count any-enemy archer-line < 5)
-    (goal frank-skirmisher-target-goal != 0)
+    (up-compare-goal frank-skirmisher-target-goal != 0)
 =>
     (set-goal frank-skirmisher-target-goal 0)
 )
@@ -922,7 +922,7 @@
 (defrule
     (current-age >= castle-age)
     (players-unit-type-count any-enemy elephant-line >= 3)
-    (goal frank-monk-target-goal != 3)
+    (up-compare-goal frank-monk-target-goal != 3)
 =>
     (set-goal frank-monk-target-goal 3)
 )
@@ -930,7 +930,7 @@
 ; Build a Monastery only when the Monk package is active.
 (defrule
     (current-age >= castle-age)
-    (goal frank-monk-target-goal > 0)
+    (up-compare-goal frank-monk-target-goal >= 1)
     (building-type-count-total monastery < 1)
     (up-pending-objects c: frank-c-monastery == 0)
     (can-build monastery)
@@ -954,7 +954,7 @@
     (current-age >= castle-age)
     (players-building-count any-enemy > 0)
     (military-population >= 14)
-    (goal frank-siege-ram-target-goal != 2)
+    (up-compare-goal frank-siege-ram-target-goal != 2)
 =>
     (set-goal frank-siege-ram-target-goal 2)
 )
