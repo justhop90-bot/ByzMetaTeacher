@@ -11,7 +11,7 @@ Runtime observation: after the first lumberyard or mining camp is placed, later 
 
 - **ENGINE FACT:** AIRef identifies `up-get-search-state` as a four-consecutive-Goal output, and the native Goal namespace ends at 16000. Sources: [AIRef command index](https://airef.github.io/commands/commands-index.html), [AIRef data limits](https://airef.github.io/resources/articles/data-limits.html), and [AIRef DUC guide, search-state output order](https://airef.github.io/resources/articles/enmipho-intro-to-duc.html#first-example-local-search-and-target-point).
 - **COMMUNITY EVIDENCE:** the DUC example in [lewisc64/aoe2ai](https://github.com/lewisc64/aoe2ai) calls `up-get-search-state 1` and consumes Goals 1 and 3 in subsequent rules, supporting the conventional four-field local/remote search-state layout. AIRef's DUC guide defines the outputs as: local list total, latest local-search count, remote list total, latest remote-search count. The remote-list total is the third member (start + 2) and is the correct cardinality guard before indexing `search-remote`; the fourth member is a last-search count and must not be confused with current list size.
-- **COMPILER POLICY:** each remote index must have a count gate proving the stored remote list contains that index; an incomplete search or build attempt must not release the camp demand.
+- **COMPILER POLICY:** each remote index must have a count gate proving the stored remote list contains that index; an incomplete search or build attempt must not release the camp demand. The `start+2` Goal already belongs to the four-slot search-state span, so its numeric GoalId is read directly. A separate `defconst` for that slot would duplicate storage and violate the live Goal/GoalSpan isolation invariant.
 - **OPEN / UNKNOWN:** the exact in-game order and spatial distribution of resource objects, placement success, and whether a selected resource point is a sufficiently distinct frontier require runtime observation.
 
 ## Task-by-task plan
@@ -22,9 +22,9 @@ Runtime observation: after the first lumberyard or mining camp is placed, later 
 - [ ] Assert candidate count and index sequence for wood, gold, and stone, accounting for the first-floor implementation rather than applying a blanket index shift.
 
 ### Task 2: Correct search-result Goal binding
-- [ ] Remap each `*-search-remote-count-*` constant to `*-search-state-* + 2`.
+- [ ] Remove the orphan `*-search-remote-count-*` constants and use numeric GoalId `search-state-start + 2` directly in the `up-compare-goal` guards.
 - [ ] Include the Dark Age mill search because it uses the same mismatched output/count contract.
-- [ ] Preserve separate storage for point pairs and other search-state spans.
+- [ ] Preserve the complete four-Goal search-state spans and separate point-pair storage; do not allocate a duplicate Goal slot inside a span.
 
 ### Task 3: Repair candidate count and index admission
 - [ ] Keep gold's sequential DUC indices: floor 1 selects index 0; each subsequent floor advances to the next index.

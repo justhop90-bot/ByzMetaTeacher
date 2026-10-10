@@ -25,8 +25,8 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = ARTIFACT.read_text(encoding="utf-8")
 
-    def test_remote_list_count_reads_third_goal_written_by_search_state(self):
-        searches = [
+    def test_remote_list_count_uses_third_search_state_goal_without_duplicate_storage(self):
+        searches = (
             ("byzantine-dark-gold-camp-search-state-1", "byzantine-dark-gold-camp-search-remote-count-1"),
             ("byzantine-dark-gold-camp-search-state-2", "byzantine-dark-gold-camp-search-remote-count-2"),
             ("byzantine-dark-gold-camp-search-state-3", "byzantine-dark-gold-camp-search-remote-count-3"),
@@ -39,18 +39,22 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             ("byzantine-dark-stone-camp-search-state-4", "byzantine-dark-stone-camp-search-remote-count-4"),
             ("byzantine-dark-stone-camp-search-state-5", "byzantine-dark-stone-camp-search-remote-count-5"),
             ("byzantine-dark-mill-search-state", "byzantine-dark-mill-search-remote-count"),
-        ]
+        )
         spans = []
-        for state_name, remote_count_name in searches:
+        for state_name, obsolete_alias in searches:
             start = _const_value(self.source, state_name)
-            remote_count = _const_value(self.source, remote_count_name)
+            remote_goal = start + 2
             self.assertGreaterEqual(start, 41, state_name)
             self.assertLessEqual(start + 3, 16000, state_name)
-            self.assertEqual(
-                remote_count,
-                start + 2,
-                f"{remote_count_name} must refer to the stored remote-list count, "
-                f"the third output of {state_name}",
+            self.assertNotRegex(
+                self.source,
+                rf"\(defconst {re.escape(obsolete_alias)}\s",
+                f"{obsolete_alias} must not allocate a second Goal inside a GoalSpan",
+            )
+            self.assertIn(
+                f"(up-compare-goal {remote_goal} > ",
+                self.source,
+                f"{state_name}: compare remote-list total from output slot start+2",
             )
             spans.append((start, start + 3, state_name))
 
@@ -58,8 +62,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             for other_start, other_end, other_name in spans[index + 1:]:
                 self.assertTrue(
                     end < other_start or other_end < start,
-                    f"search-state spans overlap: {name} {(start, end)} and "
-                    f"{other_name} {(other_start, other_end)}",
+                    f"search-state spans overlap: {name} {(start, end)} and {other_name} {(other_start, other_end)}",
                 )
 
     def test_gold_camp_floors_advance_past_the_candidate_used_by_the_prior_floor(self):
@@ -75,17 +78,12 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
                 end_marker,
             )
             index = floor - 1
+            state_name = f"byzantine-dark-gold-camp-search-state-{floor}"
+            remote_goal = _const_value(self.source, state_name) + 2
             expected_search_size = 1 if floor == 1 else 40
-            remote_name = f"byzantine-dark-gold-camp-search-remote-count-{floor}"
-            self.assertIn(
-                f"(up-find-resource c: gold c: {expected_search_size})",
-                section,
-            )
-            self.assertIn(f"(up-compare-goal {remote_name} > {index})", section)
-            self.assertIn(
-                f"(up-set-target-object search-remote c: {index})",
-                section,
-            )
+            self.assertIn(f"(up-find-resource c: gold c: {expected_search_size})", section)
+            self.assertIn(f"(up-compare-goal {remote_goal} > {index})", section)
+            self.assertIn(f"(up-set-target-object search-remote c: {index})", section)
 
     def test_wood_second_camp_searches_enough_candidates_and_advances_index(self):
         section = _section(
@@ -93,11 +91,10 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             "; Action issuance: economy-lumber-camp-floor-2 | ACTIVE -> ISSUED",
             "; RESOURCE-SPECIFIC BYZANTINE CAMP LIFECYCLES",
         )
+        state_name = "byzantine-dark-wood-camp-search-state-2"
+        remote_goal = _const_value(self.source, state_name) + 2
         self.assertIn("(up-find-resource c: wood c: 40)", section)
-        self.assertIn(
-            "(up-compare-goal byzantine-dark-wood-camp-search-remote-count-2 > 1)",
-            section,
-        )
+        self.assertIn(f"(up-compare-goal {remote_goal} > 1)", section)
         self.assertIn("(up-set-target-object search-remote c: 1)", section)
         self.assertIn("(up-build place-point 0 c: lumber-camp)", section)
 
@@ -114,15 +111,12 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
                 end_marker,
             )
             index = floor - 2
-            remote_name = f"byzantine-dark-stone-camp-search-remote-count-{floor}"
             state_name = f"byzantine-dark-stone-camp-search-state-{floor}"
+            remote_goal = _const_value(self.source, state_name) + 2
             self.assertIn(f"(up-get-search-state {state_name})", section)
             self.assertIn("(up-find-resource c: stone c: 40)", section)
-            self.assertIn(f"(up-compare-goal {remote_name} > {index})", section)
-            self.assertIn(
-                f"(up-set-target-object search-remote c: {index})",
-                section,
-            )
+            self.assertIn(f"(up-compare-goal {remote_goal} > {index})", section)
+            self.assertIn(f"(up-set-target-object search-remote c: {index})", section)
             self.assertIn("(up-build place-point 0 c: mining-camp)", section)
 
 

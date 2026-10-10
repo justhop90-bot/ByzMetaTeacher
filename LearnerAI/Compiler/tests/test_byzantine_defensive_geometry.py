@@ -637,7 +637,8 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             return int(matches[0])
 
         search_state = defconst_value("byzantine-dark-mill-search-state")
-        remote_count = defconst_value("byzantine-dark-mill-search-remote-count")
+        remote_count = search_state + 2
+        self.assertNotIn("(defconst byzantine-dark-mill-search-remote-count ", self.per)
 
         # Native up-get-search-state consumes a contiguous four-Goal span.
         self.assertGreaterEqual(search_state, 41)

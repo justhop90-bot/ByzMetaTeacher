@@ -71,10 +71,8 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         names = (
             "byzantine-dark-wood-camp-point-1",
             "byzantine-dark-wood-camp-search-state-1",
-            "byzantine-dark-wood-camp-search-remote-count-1",
             "byzantine-dark-wood-camp-point-2",
             "byzantine-dark-wood-camp-search-state-2",
-            "byzantine-dark-wood-camp-search-remote-count-2",
         )
         values = {}
         for name in names:
@@ -85,14 +83,18 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             self.assertEqual(len(matches), 1, name)
             values[name] = int(matches[0])
 
-        for state_name, remote_name in (
+        for state_name, obsolete_alias in (
             ("byzantine-dark-wood-camp-search-state-1", "byzantine-dark-wood-camp-search-remote-count-1"),
             ("byzantine-dark-wood-camp-search-state-2", "byzantine-dark-wood-camp-search-remote-count-2"),
         ):
-            self.assertEqual(
-                values[remote_name],
-                values[state_name] + 2,
-                "remote-list count must alias the third up-get-search-state output",
+            self.assertNotRegex(
+                self.source,
+                rf"\(defconst {re.escape(obsolete_alias)}\s",
+            )
+            remote_goal = values[state_name] + 2
+            self.assertRegex(
+                self.source,
+                rf"\(up-compare-goal {remote_goal} > \d+\)",
             )
 
         intervals = (
@@ -126,12 +128,11 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 )
 
     def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
-        for floor, point, state, remote, search_limit, target_index, old_distance in (
+        for floor, point, state, search_limit, target_index, old_distance in (
             (
                 1,
                 "byzantine-dark-wood-camp-point-1",
                 "byzantine-dark-wood-camp-search-state-1",
-                "byzantine-dark-wood-camp-search-remote-count-1",
                 1,
                 0,
                 "5",
@@ -140,7 +141,6 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 2,
                 "byzantine-dark-wood-camp-point-2",
                 "byzantine-dark-wood-camp-search-state-2",
-                "byzantine-dark-wood-camp-search-remote-count-2",
                 40,
                 1,
                 "12",
@@ -160,7 +160,8 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             self.assertIn(f"(up-get-search-state {state})", search_rule)
             self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
 
-            self.assertIn(f"(up-compare-goal {remote} > {target_index})", execution_rule)
+            remote_goal = values[state] + 2
+            self.assertIn(f"(up-compare-goal {remote_goal} > {target_index})", execution_rule)
             self.assertIn(f"(up-set-target-object search-remote c: {target_index})", execution_rule)
             self.assertIn(f"(up-get-point position-object {point})", execution_rule)
             self.assertIn(f"(up-set-target-point {point})", execution_rule)

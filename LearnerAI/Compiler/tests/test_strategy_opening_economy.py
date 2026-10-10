@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 from LearnerAI.Compiler.clients.basilisk import (
@@ -547,14 +548,19 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     f"byzantine-dark-{resource}-camp-search-state-{floor}",
                     section,
                 )
-                self.assertIn(
-                    f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
-                    section,
+                state_name = f"byzantine-dark-{resource}-camp-search-state-{floor}"
+                state_match = re.search(
+                    rf"\(defconst {re.escape(state_name)} (\d+)\)",
+                    runtime,
                 )
+                self.assertIsNotNone(state_match)
+                assert state_match is not None
+                remote_goal = int(state_match.group(1)) + 2
+                obsolete_alias = f"byzantine-dark-{resource}-camp-search-remote-count-{floor}"
+                self.assertNotIn(f"(defconst {obsolete_alias} ", runtime)
                 remote_index = floor - 1 if resource == "gold" else floor - 2
-                remote_threshold = remote_index
                 self.assertIn(
-                    f"(up-compare-goal byzantine-dark-{resource}-camp-search-remote-count-{floor} > {remote_threshold})",
+                    f"(up-compare-goal {remote_goal} > {remote_index})",
                     section,
                 )
                 self.assertIn(
@@ -577,10 +583,14 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
         self.assertNotIn("(dropsite-min-distance gold", floor_two)
         self.assertIn("(up-find-resource c: gold c: 40)", floor_two)
-        self.assertIn(
-            "(up-compare-goal byzantine-dark-gold-camp-search-remote-count-2 > 1)",
-            floor_two,
+        state_match = re.search(
+            r"\(defconst byzantine-dark-gold-camp-search-state-2 (\d+)\)",
+            runtime,
         )
+        self.assertIsNotNone(state_match)
+        assert state_match is not None
+        remote_goal = int(state_match.group(1)) + 2
+        self.assertIn(f"(up-compare-goal {remote_goal} > 1)", floor_two)
         self.assertIn(
             "(up-set-target-object search-remote c: 1)",
             floor_two,
