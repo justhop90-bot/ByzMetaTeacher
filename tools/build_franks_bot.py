@@ -37,6 +37,7 @@ REQUIRED_FRAGMENTS = (
     "(set-strategic-number sn-number-explore-groups 1)",
     "(set-strategic-number sn-total-number-explorers 10)",
     "(set-strategic-number sn-cap-civilian-explorers 0)",
+    "(current-age == feudal-age)\n    (goal train-civ-goal 0)\n    (up-research-status c: frank-c-castle-age-tech < research-pending)",
     "(unit-type-count-total villager < 90)\n    (can-train villager)\n=>\n    (train villager)",
     "(current-age >= castle-age)\n    (building-type-count castle >= 1)\n    (or\n        (current-age == castle-age)\n        (up-research-status c: frank-c-elite-throwing-axeman-tech < research-pending)",
     "(up-reset-attack-now)",
