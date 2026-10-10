@@ -69,6 +69,10 @@
 (defconst frank-c-monastery 104)
 ; Canonical current native technology IDs for c: research-status probes.
 (defconst frank-c-feudal-age-tech 101)
+(defconst frank-c-loom-tech 22)
+(defconst frank-c-horse-collar-tech 14)
+(defconst frank-c-heavy-plow-tech 13)
+(defconst frank-c-crop-rotation-tech 12)
 (defconst frank-c-castle-age-tech 102)
 (defconst frank-c-imperial-age-tech 103)
 (defconst frank-c-elite-throwing-axeman-tech 363)
@@ -163,6 +167,45 @@
     (set-strategic-number sn-stone-gatherer-percentage 10)
 )
 
+; Research Loom after the early villager safety window, before age-up commitment.
+(defrule
+    (current-age == dark-age)
+    (unit-type-count villager >= 7)
+    (unit-type-count villager < frank-feudal-villagers)
+    (up-research-status c: frank-c-loom-tech < research-pending)
+    (can-research-with-escrow ri-loom)
+=>
+    (release-escrow food)
+    (research ri-loom)
+)
+
+; Frankish Mill technologies are free in the target patch, but still require
+; explicit research actions and verified completion state.
+(defrule
+    (current-age >= feudal-age)
+    (building-type-count mill >= 1)
+    (up-research-status c: frank-c-horse-collar-tech < research-pending)
+    (can-research-with-escrow ri-horse-collar)
+=>
+    (research ri-horse-collar)
+)
+(defrule
+    (current-age >= castle-age)
+    (building-type-count mill >= 1)
+    (up-research-status c: frank-c-heavy-plow-tech < research-pending)
+    (can-research-with-escrow ri-heavy-plow)
+=>
+    (research ri-heavy-plow)
+)
+(defrule
+    (current-age >= imperial-age)
+    (building-type-count mill >= 1)
+    (up-research-status c: frank-c-crop-rotation-tech < research-pending)
+    (can-research-with-escrow ri-crop-rotation)
+=>
+    (research ri-crop-rotation)
+)
+
 ; Commit Feudal Age at a focused 21-villager opening.
 (defrule
     (current-age == dark-age)
@@ -236,11 +279,13 @@
     (unit-type-count villager >= 6)
     (resource-found wood)
     (dropsite-min-distance wood > 8)
-    (building-type-count-total lumber-camp < 6)
+    (building-type-count-total lumber-camp < 1)
     (up-pending-objects c: frank-c-lumber-camp == 0)
     (can-build lumber-camp)
 =>
     (build lumber-camp)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
 )
 
 ; Refresh remote wood dropsites during sustained wood gathering.
@@ -249,7 +294,8 @@
     (strategic-number sn-wood-gatherer-percentage > 0)
     (resource-found wood)
     (dropsite-min-distance wood > 10)
-    (building-type-count-total lumber-camp < 8)
+    (unit-type-count villager >= 25)
+    (building-type-count-total lumber-camp < 4)
     (up-pending-objects c: frank-c-lumber-camp == 0)
     (can-build lumber-camp)
 =>
@@ -262,11 +308,13 @@
 (defrule
     (resource-found forage)
     (dropsite-min-distance forage > 7)
-    (building-type-count-total mill < 3)
+    (building-type-count-total mill < 1)
     (up-pending-objects c: frank-c-mill == 0)
     (can-build mill)
 =>
     (build mill)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
 )
 
 ; Refresh a remote forage dropsite when current Mill coverage is insufficient.
@@ -274,6 +322,8 @@
     (current-age >= feudal-age)
     (resource-found forage)
     (dropsite-min-distance forage > 10)
+    (unit-type-count villager >= 24)
+    (building-type-count mill >= 1)
     (building-type-count-total mill < 3)
     (up-pending-objects c: frank-c-mill == 0)
     (can-build mill)
@@ -289,12 +339,15 @@
     (strategic-number sn-gold-gatherer-percentage > 0)
     (resource-found gold)
     (dropsite-min-distance gold > 8)
-    (building-type-count-total mining-camp < 8)
+    (unit-type-count villager >= 24)
+    (building-type-count-total mining-camp < 5)
     (up-pending-objects c: frank-c-mining-camp == 0)
     (can-build mining-camp)
 =>
     (set-strategic-number sn-allow-adjacent-dropsites 1)
     (build mining-camp)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
 )
 
 ; Build a stone camp only after Castle Age or when the first Castle is planned.
@@ -303,7 +356,8 @@
     (strategic-number sn-stone-gatherer-percentage > 0)
     (resource-found stone)
     (dropsite-min-distance stone > 8)
-    (building-type-count-total mining-camp < 8)
+    (unit-type-count villager >= 30)
+    (building-type-count-total mining-camp < 5)
     (up-pending-objects c: frank-c-mining-camp == 0)
     (can-build mining-camp)
 =>
@@ -961,6 +1015,7 @@
 (defrule
     (current-age >= feudal-age)
     (unit-type-count-total scout-cavalry >= 3)
+    (not (can-research-with-escrow castle-age))
     (up-research-status c: frank-c-scale-barding-tech < research-pending)
     (can-research-with-escrow ri-scale-barding)
 =>
@@ -972,6 +1027,7 @@
 (defrule
     (current-age >= feudal-age)
     (unit-type-count-total scout-cavalry >= 3)
+    (not (can-research-with-escrow castle-age))
     (up-research-status c: frank-c-forging-tech < research-pending)
     (can-research-with-escrow ri-forging)
 =>
@@ -1043,6 +1099,7 @@
 (defrule
     (current-age >= castle-age)
     (strategic-number sn-gold-gatherer-percentage > 0)
+    (not (can-research-with-escrow imperial-age))
     (up-research-status c: frank-c-gold-shaft-mining-tech < research-pending)
     (can-research-with-escrow ri-gold-shaft-mining)
 =>
@@ -1069,6 +1126,7 @@
     (current-age >= castle-age)
     (unit-type-count villager >= 52)
     (building-type-count town-center >= 2)
+    (not (can-research-with-escrow imperial-age))
     (up-research-status c: frank-c-hand-cart-tech < research-pending)
     (can-research-with-escrow ri-hand-cart)
 =>
