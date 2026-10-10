@@ -551,8 +551,8 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
                     f"byzantine-dark-{resource}-camp-search-remote-count-{floor}",
                     section,
                 )
-                remote_index = floor - 1
-                remote_threshold = floor - 1
+                remote_index = floor - 1 if resource == "gold" else floor - 2
+                remote_threshold = remote_index
                 self.assertIn(
                     f"(up-compare-goal byzantine-dark-{resource}-camp-search-remote-count-{floor} > {remote_threshold})",
                     section,

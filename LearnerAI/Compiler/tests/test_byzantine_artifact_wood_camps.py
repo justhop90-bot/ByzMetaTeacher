@@ -67,7 +67,7 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         self.assertIn("(building-type-count-total lumber-camp < 1)", fallback)
         self.assertIn("(goal action-claim-build-pass-singleton 0)", fallback)
 
-    def test_point_search_constants_are_unique_and_bound_to_unused_goal_slots(self):
+    def test_point_search_constants_are_bound_to_nonoverlapping_goal_slots(self):
         names = (
             "byzantine-dark-wood-camp-point-1",
             "byzantine-dark-wood-camp-search-state-1",
@@ -85,7 +85,15 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
             self.assertEqual(len(matches), 1, name)
             values[name] = int(matches[0])
 
-        self.assertEqual(len(values), len(set(values.values())))
+        for state_name, remote_name in (
+            ("byzantine-dark-wood-camp-search-state-1", "byzantine-dark-wood-camp-search-remote-count-1"),
+            ("byzantine-dark-wood-camp-search-state-2", "byzantine-dark-wood-camp-search-remote-count-2"),
+        ):
+            self.assertEqual(
+                values[remote_name],
+                values[state_name] + 3,
+                "remote-list count must alias the fourth up-get-search-state output",
+            )
 
         intervals = (
             (
@@ -97,10 +105,6 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 values["byzantine-dark-wood-camp-search-state-1"] + 3,
             ),
             (
-                values["byzantine-dark-wood-camp-search-remote-count-1"],
-                values["byzantine-dark-wood-camp-search-remote-count-1"],
-            ),
-            (
                 values["byzantine-dark-wood-camp-point-2"],
                 values["byzantine-dark-wood-camp-point-2"] + 1,
             ),
@@ -108,36 +112,28 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 values["byzantine-dark-wood-camp-search-state-2"],
                 values["byzantine-dark-wood-camp-search-state-2"] + 3,
             ),
-            (
-                values["byzantine-dark-wood-camp-search-remote-count-2"],
-                values["byzantine-dark-wood-camp-search-remote-count-2"],
-            ),
         )
-
         for index, (start, end) in enumerate(intervals):
-            if index in (0, 3):
+            if index in (0, 2):
                 self.assertTrue(41 <= start <= 15998)
-            elif index in (1, 4):
-                self.assertTrue(41 <= start <= 15996)
             else:
-                self.assertTrue(1 <= start <= 16000)
+                self.assertTrue(41 <= start <= 15996)
             self.assertTrue(start <= end <= 16000)
-
-        for index, (start, end) in enumerate(intervals):
             for other_start, other_end in intervals[index + 1 :]:
                 self.assertTrue(
                     end < other_start or other_end < start,
-                    f"wood-camp storage overlaps: {(start, end)} with "
-                    f"{(other_start, other_end)}",
+                    f"wood-camp storage overlaps: {(start, end)} with {(other_start, other_end)}",
                 )
 
     def test_first_two_lumber_camps_use_witnessed_resource_point_placement(self):
-        for floor, point, state, remote, old_distance in (
+        for floor, point, state, remote, search_limit, target_index, old_distance in (
             (
                 1,
                 "byzantine-dark-wood-camp-point-1",
                 "byzantine-dark-wood-camp-search-state-1",
                 "byzantine-dark-wood-camp-search-remote-count-1",
+                1,
+                0,
                 "5",
             ),
             (
@@ -145,25 +141,27 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
                 "byzantine-dark-wood-camp-point-2",
                 "byzantine-dark-wood-camp-search-state-2",
                 "byzantine-dark-wood-camp-search-remote-count-2",
+                40,
+                1,
                 "12",
             ),
         ):
             rules = self._active_rules(floor)
             search_rule = next(
                 rule for rule in rules
-                if "(up-find-resource c: wood c: 1)" in rule
+                if f"(up-find-resource c: wood c: {search_limit})" in rule
             )
             execution_rule = next(
                 rule for rule in rules
                 if "(up-build place-point 0 c: lumber-camp)" in rule
             )
 
-            self.assertIn("(up-find-resource c: wood c: 1)", search_rule)
+            self.assertIn(f"(up-find-resource c: wood c: {search_limit})", search_rule)
             self.assertIn(f"(up-get-search-state {state})", search_rule)
             self.assertIn("(up-filter-status c: status-resource c: list-active)", search_rule)
 
-            self.assertIn(f"(up-compare-goal {remote} > 0)", execution_rule)
-            self.assertIn("(up-set-target-object search-remote c: 0)", execution_rule)
+            self.assertIn(f"(up-compare-goal {remote} > {target_index})", execution_rule)
+            self.assertIn(f"(up-set-target-object search-remote c: {target_index})", execution_rule)
             self.assertIn(f"(up-get-point position-object {point})", execution_rule)
             self.assertIn(f"(up-set-target-point {point})", execution_rule)
             self.assertIn("(up-build place-point 0 c: lumber-camp)", execution_rule)
