@@ -103,3 +103,6 @@ This tranche keeps the existing Scouts → Knights → conditional counters → 
 6. Full match with available Castle resources: Castle before second/third TC; Capped Ram research; Trebuchet production; two distinct attack cycles.
 7. Castle delayed/unavailable but Siege Workshop exists: University fallback and native Imperial-age eligibility.
 8. Resource crisis: only one gatherer recovery mode owns percentages at a time, then age baseline resumes after recovery witnesses.
+
+- Follow-up within tranche 1: late Imperial infantry pressure can now activate base Throwing Axemen until Elite Throwing Axeman research is submitted; the elite-research rule precedes base production to prevent the two policies from continually expanding against each other.
+- Added Fletching and Bodkin Arrow for the Mounted Crossbowman support package, plus Ballistics only when a University exists. These upgrades require explicit food/gold reserve thresholds and are suppressed when Imperial Age is currently researchable, so they do not casually displace the age-up.
