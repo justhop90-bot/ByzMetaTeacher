@@ -1148,6 +1148,11 @@
 (defconst complete-research-light-cavalry 408)
 (defconst issued-research-light-cavalry 409)
 (defconst research-retry-barrier-research-light-cavalry 15976)
+(defconst demand-research-husbandry 15973)
+(defconst pending-research-husbandry 416)
+(defconst complete-research-husbandry 417)
+(defconst issued-research-husbandry 432)
+(defconst research-retry-barrier-research-husbandry 15975)
 (defconst demand-research-elite-skirmisher 15961)
 (defconst issued-research-elite-skirmisher 15964)
 (defconst pending-research-elite-skirmisher 15962)
@@ -13305,6 +13310,7 @@
     (set-goal demand-research-cavalier 1)
     (set-goal demand-research-hussar 1)
     (set-goal demand-research-light-cavalry 0)
+    (set-goal demand-research-husbandry 0)
     (set-goal demand-imperial-light-cavalry-floor 1)
     (set-goal demand-research-onager 1)
     (set-goal demand-research-siege-ram 1)
@@ -14971,6 +14977,7 @@
 =>
     (set-goal byzantine-research-preempt 0)
     (set-goal research-retry-barrier-research-light-cavalry 0)
+    (set-goal research-retry-barrier-research-husbandry 0)
 )
 
 (defrule
@@ -23623,6 +23630,81 @@
     (release-escrow gold)
     (research ri-light-cavalry)
     (set-goal demand-research-light-cavalry 16209)
+)
+
+;---------------------------------------------------------------
+
+; HUSBANDRY (stable speed for the scout/camel lines this bot finally fields)
+;---------------------------------------------------------------
+(defrule
+    (goal demand-research-husbandry 16213)
+    (research-completed ri-husbandry)
+=>
+    (set-goal demand-research-husbandry 0)
+)
+
+(defrule
+    (goal demand-research-husbandry 0)
+    (not (research-completed ri-husbandry))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (or
+        (unit-type-count-total scout-cavalry-line >= 2)
+        (or
+            (unit-type-count-total camel-line >= 2)
+            (unit-type-count-total knight-line >= 1)
+        )
+    )
+=>
+    (set-goal demand-research-husbandry 1)
+)
+
+(defrule
+    (or
+        (goal demand-research-husbandry 16214)
+        (goal demand-research-husbandry 16212)
+    )
+    (research-completed ri-husbandry)
+=>
+    (set-goal demand-research-husbandry 16213)
+)
+
+(defrule
+    (or
+        (goal demand-research-husbandry 16214)
+        (goal demand-research-husbandry 16212)
+    )
+    (not (research-completed ri-husbandry))
+    (up-research-status c: 39 >= research-pending)
+=>
+    (set-goal demand-research-husbandry 16212)
+)
+
+(defrule
+    (or
+        (goal demand-research-husbandry 16214)
+        (goal demand-research-husbandry 16212)
+    )
+    (not (research-completed ri-husbandry))
+    (not (up-research-status c: 39 >= research-pending))
+=>
+    (set-goal demand-research-husbandry 1)
+    (set-goal research-retry-barrier-research-husbandry 1)
+)
+
+(defrule
+    (goal demand-research-husbandry 1)
+    (goal research-retry-barrier-research-husbandry 0)
+    (not (research-completed ri-husbandry))
+    (not (up-research-status c: 39 >= research-pending))
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (can-research-with-escrow ri-husbandry)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-husbandry)
+    (set-goal demand-research-husbandry 16214)
 )
 
 ;---------------------------------------------------------------

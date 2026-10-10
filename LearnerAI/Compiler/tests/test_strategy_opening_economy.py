@@ -491,7 +491,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(current-age >= imperial-age)", light_cav_floor)
         self.assertIn("(can-train-with-escrow 546)", light_cav_floor)
         self.assertIn("(train 546)", light_cav_floor)
-        self.assertIn("(unit-type-count 546 < 6)", light_cav_floor)
+        self.assertIn("(unit-type-count-total 546 < 6)", light_cav_floor)
 
         elite_start = runtime.index("; Pending diagnostics: research-elite-skirmisher")
         elite_end = runtime.index("; Pending diagnostics: research-capped-ram", elite_start)

@@ -224,9 +224,36 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         )
         self.assertIn("(current-age >= imperial-age)", floor)
         self.assertIn("(research-completed ri-light-cavalry)", floor)
-        self.assertIn("(unit-type-count 546 < 6)", floor)
+        self.assertIn("(unit-type-count-total 546 < 6)", floor)
         self.assertIn("(can-train-with-escrow 546)", floor)
         self.assertIn("(goal production-retry-barrier-imperial-light-cavalry-floor 0)", floor)
+
+    def test_husbandry_research_uses_available_stable_units_and_preempts_queue(self) -> None:
+        demand = next(
+            rule for rule in self.rules
+            if "(goal demand-research-husbandry 0)" in rule
+            and "(set-goal demand-research-husbandry 1)" in rule
+        )
+        self.assertIn("(current-age >= castle-age)", demand)
+        self.assertIn("(building-type-count-total stable >= 1)", demand)
+        self.assertIn("(unit-type-count-total scout-cavalry-line >= 2)", demand)
+        self.assertIn("(unit-type-count-total camel-line >= 2)", demand)
+        self.assertIn("(unit-type-count-total knight-line >= 1)", demand)
+
+        research = next(
+            rule for rule in self.rules
+            if "(goal demand-research-husbandry 1)" in rule
+            and "(research ri-husbandry)" in rule
+        )
+        self.assertIn("(can-research-with-escrow ri-husbandry)", research)
+        self.assertIn("(goal research-retry-barrier-research-husbandry 0)", research)
+
+        preempt = next(
+            rule for rule in self.rules
+            if "(goal demand-research-husbandry 1)" in rule
+            and "(set-goal byzantine-research-preempt 1)" in rule
+        )
+        self.assertIn("(can-research-with-escrow ri-husbandry)", preempt)
 
     def test_secondary_mining_camp_floors_are_age_gated_at_every_build_seam(self) -> None:
         for rule in self.rules:
