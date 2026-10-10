@@ -197,7 +197,7 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
         self.assertIn("(can-research-with-escrow ri-pikeman)", pike_preempt)
         for demand, action in (
             ("demand-counter-mounted-spears", "(train 93)"),
-            ("demand-counter-ranged-skirmishers", "(train 358)"),
+            ("demand-counter-ranged-skirmishers", "(train skirmisher-line)"),
             ("demand-feudal-scout-floor", "(train scout-cavalry-line)"),
         ):
             rule = next(
@@ -205,6 +205,25 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
                 if f"(goal {demand} 1)" in item and action in item
             )
             self.assertIn("(goal byzantine-research-preempt 0)", rule, demand)
+
+    def test_ranged_skirmisher_responses_train_skirmishers_not_pikemen(self) -> None:
+        for demand in (
+            "demand-expected-ranged-skirmishers",
+            "demand-counter-ranged-skirmishers",
+        ):
+            with self.subTest(demand=demand):
+                matches = [
+                    rule for rule in self.rules
+                    if f"(goal {demand} 1)" in rule
+                    and "(train skirmisher-line)" in rule
+                ]
+                self.assertEqual(len(matches), 1, demand)
+                rule = matches[0]
+                self.assertIn("(can-train-with-escrow skirmisher-line)", rule)
+                self.assertIn("(unit-type-count-total skirmisher-line <", rule)
+                self.assertNotIn("(train 358)", rule)
+                self.assertNotIn("(unit-type-count 358", rule)
+                self.assertNotIn("(unit-type-count-total 358", rule)
 
     def test_research_preemption_covers_shared_queue_producers(self) -> None:
         # An affordable upgrade must not be starved by another active train rule
@@ -214,8 +233,8 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             ("demand-early-defensive-spears", "(train 93)"),
             ("demand-expected-mounted-spears", "(train 93)"),
             ("demand-counter-mounted-spears", "(train 93)"),
-            ("demand-expected-ranged-skirmishers", "(train 358)"),
-            ("demand-counter-ranged-skirmishers", "(train 358)"),
+            ("demand-expected-ranged-skirmishers", "(train skirmisher-line)"),
+            ("demand-counter-ranged-skirmishers", "(train skirmisher-line)"),
             ("demand-counter-castle-camels", "(train 329)"),
             ("demand-counter-castle-siege-response", "(train knight-line)"),
             ("demand-castle-camel-transition-floor", "(train 329)"),
