@@ -149,7 +149,7 @@ class FranksBotBuildTests(unittest.TestCase):
         source = SOURCE.read_text(encoding="utf-8")
         elite_start = source.index("; Research Elite Throwing Axeman before adding more base units")
         base_start = source.index("; Base Throwing Axemen may enter in Imperial Age", elite_start)
-        mounted_start = source.index("; Clear mounted ranged support", base_start)
+        mounted_start = source.index("; Add Mounted Crossbowmen to support Knights", base_start)
         elite_rule = source[elite_start:base_start]
         base_rule = source[base_start:mounted_start]
         self.assertIn("(current-age >= imperial-age)", elite_rule)
