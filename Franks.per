@@ -14,8 +14,8 @@
 ; Frankish tech-tree record. Standard technology aliases remain native AI symbols.
 ;
 ; BOT POLICIES
-; * Franks' free Mill technologies are left to the game; the bot does not waste
-;   research attempts on Horse Collar or Heavy Plow.
+; * Explicitly researches the free Frankish Mill technologies at their legal ages.
+; * Selects a valid enemy target-player before evaluating counters or attacking.
 ; * Cavalry Archers and Bearded Axe are obsolete in patch 185872. Neither is used.
 ; * Stone mining is held until Castle Age; resource camps are refreshed from
 ;   resource and dropsite-distance observations rather than a one-time build flag.
@@ -38,6 +38,7 @@
 (defconst frank-attack-timer 10)
 (defconst frank-attack-cooldown-timer 11)
 (defconst frank-age-failure-backoff-goal 751)
+(defconst frank-target-player-goal 752)
 (defconst frank-mounted-crossbowman 2700)
 (defconst frank-heavy-mounted-crossbowman 2701)
 (defconst frank-throwing-axeman 281)
@@ -52,6 +53,7 @@
 (defconst sn-stone-gatherer-percentage 119)
 (defconst sn-allow-adjacent-dropsites 272)
 (defconst sn-dropsite-separation-distance 248)
+(defconst sn-target-player-number 249)
 ; Building object IDs used only in c: parameter positions.
 (defconst frank-c-house 70)
 (defconst frank-c-lumber-camp 562)
@@ -116,11 +118,28 @@
     (set-goal frank-siege-ram-target-goal 0)
     (set-goal frank-trebuchet-target-goal 0)
     (set-goal frank-attack-state-goal 0)
+    (set-goal frank-target-player-goal 0)
     (set-strategic-number sn-intelligent-gathering 1)
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 45)
     (set-strategic-number sn-gold-gatherer-percentage 0)
     (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; Acquire a valid enemy player before target-player facts and attack control depend on it.
+(defrule
+    (or
+        (strategic-number sn-target-player-number <= 0)
+        (not (player-in-game target-player))
+    )
+=>
+    (up-find-player enemy find-closest frank-target-player-goal)
+)
+(defrule
+    (goal frank-target-player-goal > 0)
+    (strategic-number sn-target-player-number != frank-target-player-goal)
+=>
+    (up-modify-sn sn-target-player-number g:= frank-target-player-goal)
 )
 
 ; Feudal completion restores Town Center economy and Scout pressure.
