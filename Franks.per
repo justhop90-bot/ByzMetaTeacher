@@ -44,6 +44,53 @@
 (defconst frank-elite-throwing-axeman 531)
 (defconst ri-ordonnance-companies 1496)
 (defconst ri-cranequins 1452)
+; Native aliases for strategic-number parameters used by this standalone script.
+(defconst sn-intelligent-gathering 142)
+(defconst sn-food-gatherer-percentage 117)
+(defconst sn-wood-gatherer-percentage 120)
+(defconst sn-gold-gatherer-percentage 118)
+(defconst sn-stone-gatherer-percentage 119)
+(defconst sn-allow-adjacent-dropsites 272)
+(defconst sn-dropsite-separation-distance 248)
+; Building object IDs used only in c: parameter positions.
+(defconst frank-c-house 70)
+(defconst frank-c-lumber-camp 562)
+(defconst frank-c-mill 68)
+(defconst frank-c-mining-camp 584)
+(defconst frank-c-farm 50)
+(defconst frank-c-barracks 12)
+(defconst frank-c-stable 101)
+(defconst frank-c-blacksmith 103)
+(defconst frank-c-market 84)
+(defconst frank-c-archery-range 87)
+(defconst frank-c-siege-workshop 49)
+(defconst frank-c-castle 82)
+(defconst frank-c-town-center 109)
+(defconst frank-c-monastery 104)
+; Canonical current native technology IDs for c: research-status probes.
+(defconst frank-c-castle-age-tech 102)
+(defconst frank-c-imperial-age-tech 103)
+(defconst frank-c-elite-throwing-axeman-tech 363)
+(defconst frank-c-siege-ram-tech 255)
+(defconst frank-c-double-bit-axe-tech 202)
+(defconst frank-c-wheelbarrow-tech 213)
+(defconst frank-c-gold-mining-tech 55)
+(defconst frank-c-scale-barding-tech 81)
+(defconst frank-c-forging-tech 67)
+(defconst frank-c-chain-barding-tech 82)
+(defconst frank-c-plate-barding-tech 80)
+(defconst frank-c-iron-casting-tech 68)
+(defconst frank-c-blast-furnace-tech 75)
+(defconst frank-c-husbandry-tech 39)
+(defconst frank-c-gold-shaft-mining-tech 182)
+(defconst frank-c-bow-saw-tech 203)
+(defconst frank-c-hand-cart-tech 249)
+(defconst frank-c-two-man-saw-tech 221)
+(defconst frank-c-cavalier-tech 209)
+(defconst frank-c-paladin-tech 265)
+(defconst frank-c-conscription-tech 315)
+(defconst frank-c-chivalry-tech 493)
+(defconst frank-c-siege-engineers-tech 377)
 (defconst frank-feudal-villagers 21)
 (defconst frank-castle-villagers 31)
 (defconst frank-imperial-villagers 55)
@@ -137,7 +184,7 @@
     (building-type-count stable >= 1)
     (building-type-count blacksmith >= 1)
     (building-type-count market >= 1)
-    (up-research-status c: castle-age < research-pending)
+    (up-research-status c: frank-c-castle-age-tech < research-pending)
     (can-research-with-escrow castle-age)
 =>
     (set-goal train-civ-goal 0)
@@ -154,7 +201,7 @@
     (military-population >= 18)
     (building-type-count blacksmith >= 1)
     (building-type-count market >= 1)
-    (up-research-status c: imperial-age < research-pending)
+    (up-research-status c: frank-c-imperial-age-tech < research-pending)
     (can-research-with-escrow imperial-age)
 =>
     (set-goal train-civ-goal 0)
@@ -177,7 +224,7 @@
 (defrule
     (population-headroom < 8)
     (building-type-count-total house < 36)
-    (up-pending-objects c: house == 0)
+    (up-pending-objects c: frank-c-house == 0)
     (can-build house)
 =>
     (build house)
@@ -189,7 +236,7 @@
     (resource-found wood)
     (dropsite-min-distance wood > 8)
     (building-type-count-total lumber-camp < 6)
-    (up-pending-objects c: lumber-camp == 0)
+    (up-pending-objects c: frank-c-lumber-camp == 0)
     (can-build lumber-camp)
 =>
     (build lumber-camp)
@@ -202,7 +249,7 @@
     (resource-found wood)
     (dropsite-min-distance wood > 10)
     (building-type-count-total lumber-camp < 8)
-    (up-pending-objects c: lumber-camp == 0)
+    (up-pending-objects c: frank-c-lumber-camp == 0)
     (can-build lumber-camp)
 =>
     (set-strategic-number sn-allow-adjacent-dropsites 1)
@@ -215,7 +262,7 @@
     (resource-found forage)
     (dropsite-min-distance forage > 7)
     (building-type-count-total mill < 3)
-    (up-pending-objects c: mill == 0)
+    (up-pending-objects c: frank-c-mill == 0)
     (can-build mill)
 =>
     (build mill)
@@ -227,7 +274,7 @@
     (resource-found forage)
     (dropsite-min-distance forage > 10)
     (building-type-count-total mill < 3)
-    (up-pending-objects c: mill == 0)
+    (up-pending-objects c: frank-c-mill == 0)
     (can-build mill)
 =>
     (set-strategic-number sn-allow-adjacent-dropsites 1)
@@ -242,7 +289,7 @@
     (resource-found gold)
     (dropsite-min-distance gold > 8)
     (building-type-count-total mining-camp < 8)
-    (up-pending-objects c: mining-camp == 0)
+    (up-pending-objects c: frank-c-mining-camp == 0)
     (can-build mining-camp)
 =>
     (set-strategic-number sn-allow-adjacent-dropsites 1)
@@ -256,7 +303,7 @@
     (resource-found stone)
     (dropsite-min-distance stone > 8)
     (building-type-count-total mining-camp < 8)
-    (up-pending-objects c: mining-camp == 0)
+    (up-pending-objects c: frank-c-mining-camp == 0)
     (can-build mining-camp)
 =>
     (set-strategic-number sn-allow-adjacent-dropsites 1)
@@ -271,7 +318,7 @@
     (building-type-count-total farm < 5)
     (food-amount < 900)
     (wood-amount >= 60)
-    (up-pending-objects c: farm == 0)
+    (up-pending-objects c: frank-c-farm == 0)
     (can-build farm)
 =>
     (build farm)
@@ -285,7 +332,7 @@
     (building-type-count-total farm < 12)
     (food-amount < 900)
     (wood-amount >= 60)
-    (up-pending-objects c: farm == 0)
+    (up-pending-objects c: frank-c-farm == 0)
     (can-build farm)
 =>
     (build farm)
@@ -299,7 +346,7 @@
     (building-type-count-total farm < 22)
     (food-amount < 900)
     (wood-amount >= 60)
-    (up-pending-objects c: farm == 0)
+    (up-pending-objects c: frank-c-farm == 0)
     (can-build farm)
 =>
     (build farm)
@@ -313,7 +360,7 @@
     (building-type-count-total farm < 32)
     (food-amount < 900)
     (wood-amount >= 60)
-    (up-pending-objects c: farm == 0)
+    (up-pending-objects c: frank-c-farm == 0)
     (can-build farm)
 =>
     (build farm)
@@ -327,7 +374,7 @@
     (building-type-count-total farm < 42)
     (food-amount < 900)
     (wood-amount >= 60)
-    (up-pending-objects c: farm == 0)
+    (up-pending-objects c: frank-c-farm == 0)
     (can-build farm)
 =>
     (build farm)
@@ -337,7 +384,7 @@
 (defrule
     (current-age >= feudal-age)
     (building-type-count-total barracks < 1)
-    (up-pending-objects c: barracks == 0)
+    (up-pending-objects c: frank-c-barracks == 0)
     (can-build barracks)
 =>
     (build barracks)
@@ -347,7 +394,7 @@
 (defrule
     (current-age >= feudal-age)
     (building-type-count-total stable < 1)
-    (up-pending-objects c: stable == 0)
+    (up-pending-objects c: frank-c-stable == 0)
     (can-build stable)
 =>
     (build stable)
@@ -357,7 +404,7 @@
 (defrule
     (current-age >= feudal-age)
     (building-type-count-total blacksmith < 1)
-    (up-pending-objects c: blacksmith == 0)
+    (up-pending-objects c: frank-c-blacksmith == 0)
     (can-build blacksmith)
 =>
     (build blacksmith)
@@ -368,7 +415,7 @@
     (current-age >= feudal-age)
     (building-type-count blacksmith >= 1)
     (building-type-count-total market < 1)
-    (up-pending-objects c: market == 0)
+    (up-pending-objects c: frank-c-market == 0)
     (can-build market)
 =>
     (build market)
@@ -379,7 +426,7 @@
     (current-age >= castle-age)
     (unit-type-count villager >= 40)
     (building-type-count-total stable < 2)
-    (up-pending-objects c: stable == 0)
+    (up-pending-objects c: frank-c-stable == 0)
     (can-build stable)
 =>
     (build stable)
@@ -390,7 +437,7 @@
     (current-age >= castle-age)
     (unit-type-count villager >= 55)
     (building-type-count-total stable < 3)
-    (up-pending-objects c: stable == 0)
+    (up-pending-objects c: frank-c-stable == 0)
     (can-build stable)
 =>
     (build stable)
@@ -401,7 +448,7 @@
     (current-age >= imperial-age)
     (unit-type-count villager >= 70)
     (building-type-count-total stable < 4)
-    (up-pending-objects c: stable == 0)
+    (up-pending-objects c: frank-c-stable == 0)
     (can-build stable)
 =>
     (build stable)
@@ -411,7 +458,7 @@
 (defrule
     (current-age >= castle-age)
     (building-type-count-total archery-range < 1)
-    (up-pending-objects c: archery-range == 0)
+    (up-pending-objects c: frank-c-archery-range == 0)
     (can-build archery-range)
 =>
     (build archery-range)
@@ -422,7 +469,7 @@
     (current-age >= castle-age)
     (unit-type-count villager >= 50)
     (building-type-count-total archery-range < 2)
-    (up-pending-objects c: archery-range == 0)
+    (up-pending-objects c: frank-c-archery-range == 0)
     (can-build archery-range)
 =>
     (build archery-range)
@@ -433,7 +480,7 @@
     (current-age >= castle-age)
     (military-population >= 8)
     (building-type-count-total siege-workshop < 1)
-    (up-pending-objects c: siege-workshop == 0)
+    (up-pending-objects c: frank-c-siege-workshop == 0)
     (can-build siege-workshop)
 =>
     (build siege-workshop)
@@ -444,7 +491,7 @@
     (current-age >= imperial-age)
     (unit-type-count villager >= 65)
     (building-type-count-total siege-workshop < 2)
-    (up-pending-objects c: siege-workshop == 0)
+    (up-pending-objects c: frank-c-siege-workshop == 0)
     (can-build siege-workshop)
 =>
     (build siege-workshop)
@@ -455,7 +502,7 @@
     (current-age >= castle-age)
     (building-type-count-total castle < 1)
     (stone-amount >= 500)
-    (up-pending-objects c: castle == 0)
+    (up-pending-objects c: frank-c-castle == 0)
     (can-build castle)
 =>
     (build castle)
@@ -468,7 +515,7 @@
     (building-type-count-total castle < 3)
     (stone-amount >= 400)
     (unit-type-count villager >= 65)
-    (up-pending-objects c: castle == 0)
+    (up-pending-objects c: frank-c-castle == 0)
     (can-build castle)
 =>
     (build castle)
@@ -481,7 +528,7 @@
     (building-type-count-total town-center < 2)
     (wood-amount >= 300)
     (stone-amount >= 100)
-    (up-pending-objects c: town-center == 0)
+    (up-pending-objects c: frank-c-town-center == 0)
     (can-build town-center)
 =>
     (build town-center)
@@ -495,7 +542,7 @@
     (building-type-count-total town-center < 3)
     (wood-amount >= 350)
     (stone-amount >= 100)
-    (up-pending-objects c: town-center == 0)
+    (up-pending-objects c: frank-c-town-center == 0)
     (can-build town-center)
 =>
     (build town-center)
@@ -666,7 +713,7 @@
     (current-age >= imperial-age)
     (building-type-count castle >= 1)
     (unit-type-count frank-throwing-axeman >= 6)
-    (up-research-status c: ri-elite-throwing-axeman < research-pending)
+    (up-research-status c: frank-c-elite-throwing-axeman-tech < research-pending)
     (can-research-with-escrow ri-elite-throwing-axeman)
 =>
     (release-escrow food)
@@ -678,7 +725,7 @@
 (defrule
     (current-age >= imperial-age)
     (building-type-count castle >= 1)
-    (up-research-status c: ri-elite-throwing-axeman == research-complete)
+    (up-research-status c: frank-c-elite-throwing-axeman-tech == research-complete)
     (unit-type-count-total frank-elite-throwing-axeman < frank-thrower-target-goal)
     (can-train-with-escrow frank-elite-throwing-axeman)
 =>
@@ -810,7 +857,7 @@
     (current-age >= castle-age)
     (goal frank-monk-target-goal > 0)
     (building-type-count-total monastery < 1)
-    (up-pending-objects c: monastery == 0)
+    (up-pending-objects c: frank-c-monastery == 0)
     (can-build monastery)
 =>
     (build monastery)
@@ -865,7 +912,7 @@
 (defrule
     (current-age >= imperial-age)
     (unit-type-count battering-ram-line >= 2)
-    (up-research-status c: ri-siege-ram < research-pending)
+    (up-research-status c: frank-c-siege-ram-tech < research-pending)
     (can-research-with-escrow ri-siege-ram)
 =>
     (release-escrow wood)
@@ -877,7 +924,7 @@
 (defrule
     (current-age >= feudal-age)
     (not (can-research-with-escrow castle-age))
-    (up-research-status c: ri-double-bit-axe < research-pending)
+    (up-research-status c: frank-c-double-bit-axe-tech < research-pending)
     (can-research-with-escrow ri-double-bit-axe)
 =>
     (release-escrow food)
@@ -890,11 +937,11 @@
     (current-age >= feudal-age)
     (unit-type-count villager >= 28)
     (not (can-research-with-escrow castle-age))
-    (up-research-status c: ri-wheelbarrow < research-pending)
-    (can-research-with-escrow ri-wheelbarrow)
+    (up-research-status c: frank-c-wheelbarrow-tech < research-pending)
+    (can-research-with-escrow ri-wheel-barrow)
 =>
     (release-escrow food)
-    (research ri-wheelbarrow)
+    (research ri-wheel-barrow)
 )
 
 ; Research: Gold Mining when the Gold economy is live.
@@ -902,7 +949,7 @@
     (current-age >= feudal-age)
     (strategic-number sn-gold-gatherer-percentage > 0)
     (not (can-research-with-escrow castle-age))
-    (up-research-status c: ri-gold-mining < research-pending)
+    (up-research-status c: frank-c-gold-mining-tech < research-pending)
     (can-research-with-escrow ri-gold-mining)
 =>
     (release-escrow food)
@@ -913,18 +960,18 @@
 (defrule
     (current-age >= feudal-age)
     (unit-type-count-total scout-cavalry >= 3)
-    (up-research-status c: ri-scale-barding-armor < research-pending)
-    (can-research-with-escrow ri-scale-barding-armor)
+    (up-research-status c: frank-c-scale-barding-tech < research-pending)
+    (can-research-with-escrow ri-scale-barding)
 =>
     (release-escrow food)
-    (research ri-scale-barding-armor)
+    (research ri-scale-barding)
 )
 
 ; Research: Forging after cavalry pressure is already fielded.
 (defrule
     (current-age >= feudal-age)
     (unit-type-count-total scout-cavalry >= 3)
-    (up-research-status c: ri-forging < research-pending)
+    (up-research-status c: frank-c-forging-tech < research-pending)
     (can-research-with-escrow ri-forging)
 =>
     (release-escrow food)
@@ -936,31 +983,31 @@
 (defrule
     (current-age >= castle-age)
     (unit-type-count-total knight-line >= 4)
-    (up-research-status c: ri-chain-barding-armor < research-pending)
-    (can-research-with-escrow ri-chain-barding-armor)
+    (up-research-status c: frank-c-chain-barding-tech < research-pending)
+    (can-research-with-escrow ri-chain-barding)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research ri-chain-barding-armor)
+    (research ri-chain-barding)
 )
 
 ; Research: Plate Barding Armor for the Imperial cavalry core.
 (defrule
     (current-age >= imperial-age)
     (unit-type-count-total knight-line >= 8)
-    (up-research-status c: ri-plate-barding-armor < research-pending)
-    (can-research-with-escrow ri-plate-barding-armor)
+    (up-research-status c: frank-c-plate-barding-tech < research-pending)
+    (can-research-with-escrow ri-plate-barding)
 =>
     (release-escrow food)
     (release-escrow gold)
-    (research ri-plate-barding-armor)
+    (research ri-plate-barding)
 )
 
 ; Research: Iron Casting for Castle Age cavalry.
 (defrule
     (current-age >= castle-age)
     (unit-type-count-total knight-line >= 6)
-    (up-research-status c: ri-iron-casting < research-pending)
+    (up-research-status c: frank-c-iron-casting-tech < research-pending)
     (can-research-with-escrow ri-iron-casting)
 =>
     (release-escrow food)
@@ -972,7 +1019,7 @@
 (defrule
     (current-age >= imperial-age)
     (unit-type-count-total knight-line >= 10)
-    (up-research-status c: ri-blast-furnace < research-pending)
+    (up-research-status c: frank-c-blast-furnace-tech < research-pending)
     (can-research-with-escrow ri-blast-furnace)
 =>
     (release-escrow food)
@@ -984,7 +1031,7 @@
 (defrule
     (current-age >= castle-age)
     (unit-type-count-total knight-line >= 4)
-    (up-research-status c: ri-husbandry < research-pending)
+    (up-research-status c: frank-c-husbandry-tech < research-pending)
     (can-research-with-escrow ri-husbandry)
 =>
     (release-escrow food)
@@ -995,7 +1042,7 @@
 (defrule
     (current-age >= castle-age)
     (strategic-number sn-gold-gatherer-percentage > 0)
-    (up-research-status c: ri-gold-shaft-mining < research-pending)
+    (up-research-status c: frank-c-gold-shaft-mining-tech < research-pending)
     (can-research-with-escrow ri-gold-shaft-mining)
 =>
     (release-escrow food)
@@ -1008,7 +1055,7 @@
     (current-age >= castle-age)
     (unit-type-count villager >= 40)
     (not (can-research-with-escrow imperial-age))
-    (up-research-status c: ri-bow-saw < research-pending)
+    (up-research-status c: frank-c-bow-saw-tech < research-pending)
     (can-research-with-escrow ri-bow-saw)
 =>
     (release-escrow food)
@@ -1021,7 +1068,7 @@
     (current-age >= castle-age)
     (unit-type-count villager >= 52)
     (building-type-count town-center >= 2)
-    (up-research-status c: ri-hand-cart < research-pending)
+    (up-research-status c: frank-c-hand-cart-tech < research-pending)
     (can-research-with-escrow ri-hand-cart)
 =>
     (release-escrow food)
@@ -1032,7 +1079,7 @@
 ; Research: Two-Man Saw during Imperial replacement economy.
 (defrule
     (current-age >= imperial-age)
-    (up-research-status c: ri-two-man-saw < research-pending)
+    (up-research-status c: frank-c-two-man-saw-tech < research-pending)
     (can-research-with-escrow ri-two-man-saw)
 =>
     (release-escrow wood)
@@ -1044,7 +1091,7 @@
 (defrule
     (current-age >= castle-age)
     (unit-type-count-total knight-line >= 8)
-    (up-research-status c: ri-cavalier < research-pending)
+    (up-research-status c: frank-c-cavalier-tech < research-pending)
     (can-research-with-escrow ri-cavalier)
 =>
     (release-escrow food)
@@ -1056,7 +1103,7 @@
 (defrule
     (current-age >= imperial-age)
     (unit-type-count-total knight-line >= 10)
-    (up-research-status c: ri-paladin < research-pending)
+    (up-research-status c: frank-c-paladin-tech < research-pending)
     (can-research-with-escrow ri-paladin)
 =>
     (release-escrow food)
@@ -1068,7 +1115,7 @@
 (defrule
     (current-age >= imperial-age)
     (unit-type-count-total knight-line >= 10)
-    (up-research-status c: ri-conscription < research-pending)
+    (up-research-status c: frank-c-conscription-tech < research-pending)
     (can-research-with-escrow ri-conscription)
 =>
     (release-escrow food)
@@ -1081,7 +1128,7 @@
     (current-age >= imperial-age)
     (building-type-count castle >= 1)
     (building-type-count stable >= 2)
-    (up-research-status c: ri-chivalry < research-pending)
+    (up-research-status c: frank-c-chivalry-tech < research-pending)
     (can-research-with-escrow ri-chivalry)
 =>
     (release-escrow food)
@@ -1094,7 +1141,7 @@
     (current-age >= imperial-age)
     (building-type-count siege-workshop >= 1)
     (unit-type-count-total battering-ram-line >= 2)
-    (up-research-status c: ri-siege-engineers < research-pending)
+    (up-research-status c: frank-c-siege-engineers-tech < research-pending)
     (can-research-with-escrow ri-siege-engineers)
 =>
     (release-escrow food)
