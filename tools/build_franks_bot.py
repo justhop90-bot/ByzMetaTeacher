@@ -25,6 +25,10 @@ REQUIRED_FRAGMENTS = (
     "(train battering-ram-line)",
     "(train trebuchet)",
     "(attack-now)",
+    "(up-find-player enemy find-closest frank-target-player-goal)",
+    "(research ri-horse-collar)",
+    "(research ri-heavy-plow)",
+    "(research ri-crop-rotation)",
 )
 
 
