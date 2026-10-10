@@ -4734,10 +4734,7 @@ def _default_byzantine_duc_plan(
                         parse_expression("(set-goal action-claim-build-pass-singleton 1)", SourceLocation(1)),
                         parse_expression(f"(set-goal demand-{demand_name} issued-{demand_name})", SourceLocation(1)),
                     ),
-                    lifecycle=(
-                        NativeDucLifecycleStage.DISPATCH,
-                        NativeDucLifecycleStage.EXECUTION,
-                    ),
+                    lifecycle=(NativeDucLifecycleStage.DISPATCH,),
                 )
             )
             outputs.append(
