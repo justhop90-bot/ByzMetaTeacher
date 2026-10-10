@@ -91,8 +91,8 @@ class ByzantineOpeningWoodCampArtifactTests(unittest.TestCase):
         ):
             self.assertEqual(
                 values[remote_name],
-                values[state_name] + 3,
-                "remote-list count must alias the fourth up-get-search-state output",
+                values[state_name] + 2,
+                "remote-list count must alias the third up-get-search-state output",
             )
 
         intervals = (

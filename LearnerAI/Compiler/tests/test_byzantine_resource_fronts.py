@@ -25,7 +25,7 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = ARTIFACT.read_text(encoding="utf-8")
 
-    def test_remote_list_count_reads_fourth_goal_written_by_search_state(self):
+    def test_remote_list_count_reads_third_goal_written_by_search_state(self):
         searches = [
             ("byzantine-dark-gold-camp-search-state-1", "byzantine-dark-gold-camp-search-remote-count-1"),
             ("byzantine-dark-gold-camp-search-state-2", "byzantine-dark-gold-camp-search-remote-count-2"),
@@ -45,14 +45,14 @@ class ByzantineResourceFrontLivenessTests(unittest.TestCase):
             start = _const_value(self.source, state_name)
             remote_count = _const_value(self.source, remote_count_name)
             self.assertGreaterEqual(start, 41, state_name)
-            self.assertLessEqual(start + 3, 16000, state_name)
+            self.assertLessEqual(start + 2, 16000, state_name)
             self.assertEqual(
                 remote_count,
-                start + 3,
+                start + 2,
                 f"{remote_count_name} must refer to the stored remote-list count, "
-                f"the fourth output of {state_name}",
+                f"the third output of {state_name}",
             )
-            spans.append((start, start + 3, state_name))
+            spans.append((start, start + 2, state_name))
 
         for index, (start, end, name) in enumerate(spans):
             for other_start, other_end, other_name in spans[index + 1:]:

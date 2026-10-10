@@ -646,8 +646,8 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
         self.assertLessEqual(remote_count, 16000)
         self.assertEqual(
             remote_count,
-            search_state + 3,
-            "remote-count Goal must alias the fourth search-state output",
+            search_state + 2,
+            "remote-count Goal must alias the third search-state output (remote-list total)",
         )
         self.assertIn(
             "(up-compare-goal byzantine-dark-mill-search-remote-count > 0)",

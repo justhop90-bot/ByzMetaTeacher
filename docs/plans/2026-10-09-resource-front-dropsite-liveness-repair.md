@@ -9,26 +9,26 @@ Runtime observation: after the first lumberyard or mining camp is placed, later 
 
 ## Evidence classes
 
-- **ENGINE FACT:** AIRef identifies `up-get-search-state` as a four-consecutive-Goal output, and the native Goal namespace ends at 16000. Sources: [AIRef command index](https://airef.github.io/commands/commands-index.html), [AIRef data limits](https://airef.github.io/resources/articles/data-limits.html).
-- **COMMUNITY EVIDENCE:** the DUC example in [lewisc64/aoe2ai](https://github.com/lewisc64/aoe2ai) calls `up-get-search-state 1` and consumes Goals 1 and 3 in subsequent rules, supporting the conventional four-field local/remote search-state layout. The stored remote-list count is the fourth member (start + 3), which is the correct guard before indexing `search-remote`.
+- **ENGINE FACT:** AIRef identifies `up-get-search-state` as a four-consecutive-Goal output, and the native Goal namespace ends at 16000. Sources: [AIRef command index](https://airef.github.io/commands/commands-index.html), [AIRef data limits](https://airef.github.io/resources/articles/data-limits.html), and [AIRef DUC guide, search-state output order](https://airef.github.io/resources/articles/enmipho-intro-to-duc.html#first-example-local-search-and-target-point).
+- **COMMUNITY EVIDENCE:** the DUC example in [lewisc64/aoe2ai](https://github.com/lewisc64/aoe2ai) calls `up-get-search-state 1` and consumes Goals 1 and 3 in subsequent rules, supporting the conventional four-field local/remote search-state layout. AIRef's DUC guide defines the outputs as: local list total, latest local-search count, remote list total, latest remote-search count. The remote-list total is the third member (start + 2) and is the correct cardinality guard before indexing `search-remote`; the fourth member is a last-search count and must not be confused with current list size.
 - **COMPILER POLICY:** each remote index must have a count gate proving the stored remote list contains that index; an incomplete search or build attempt must not release the camp demand.
 - **OPEN / UNKNOWN:** the exact in-game order and spatial distribution of resource objects, placement success, and whether a selected resource point is a sufficiently distinct frontier require runtime observation.
 
 ## Task-by-task plan
 
 ### Task 1: Lock the output-slot and indexing contract
-- [ ] Add a regression that maps every resource-camp `up-get-search-state` to its fourth output Goal.
+- [ ] Add a regression that maps every resource-camp `up-get-search-state` to its third output Goal (remote-list total).
 - [ ] Assert that output spans do not overlap and remain within the native Goal limit.
 - [ ] Assert candidate count and index sequence for wood, gold, and stone, accounting for the first-floor implementation rather than applying a blanket index shift.
 
 ### Task 2: Correct search-result Goal binding
-- [ ] Remap each `*-search-remote-count-*` constant to `*-search-state-* + 3`.
+- [ ] Remap each `*-search-remote-count-*` constant to `*-search-state-* + 2`.
 - [ ] Include the Dark Age mill search because it uses the same mismatched output/count contract.
 - [ ] Preserve separate storage for point pairs and other search-state spans.
 
 ### Task 3: Repair candidate count and index admission
 - [ ] Keep gold's sequential DUC indices: floor 1 selects index 0; each subsequent floor advances to the next index.
-- [ ] Make wood floor 2 search enough candidates to advance beyond floor 1's index 0, then select index 1 only when the fourth search-state output proves it exists.
+- [ ] Make wood floor 2 search enough candidates to advance beyond floor 1's index 0, then select index 1 only when the third search-state output proves the remote list contains it.
 - [ ] Since stone floor 1 uses native direct construction rather than an indexed DUC target, make stone floor 2 select index 0 and increment subsequent floors.
 - [ ] Keep the existing singleton build claim, capability gate, pending/placement-pending guards, completion witness, and retry barrier intact.
 
