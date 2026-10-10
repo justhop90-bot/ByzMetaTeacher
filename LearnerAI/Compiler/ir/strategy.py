@@ -4593,6 +4593,181 @@ def _default_byzantine_duc_plan(
             managed_demand_identities=tuple(managed_demand_identities),
         )
 
+    # Secondary camp floors are issued through AIRef-native resource-front
+    # selection.  Demand lifecycle remains in the normal compiler emitter.
+    camp_specs = (
+        ("wood", "lumber-camp", 562, 6, False),
+        ("gold", "mining-camp", 584, 5, False),
+        ("stone", "mining-camp", 584, 5, True),
+    )
+    for resource, building, building_id, max_floor, feudal_only in camp_specs:
+        for floor in range(2, max_floor + 1):
+            demand_name = f"economy-{resource}-camp-floor-{floor}"
+            search_identity = f"byzantine-resource-camp-search-{resource}-{floor}"
+            activate_identity = f"byzantine-resource-camp-activate-{resource}-{floor}"
+            place_identity = f"byzantine-resource-camp-place-{resource}-{floor}"
+
+            search_output = GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId(profile_id, f"resource-camp-search:{resource}:{floor}"),
+                    "up-get-search-state",
+                ),
+                width=4,
+                shape=GoalSpanKind.EXTENDED_4,
+                contract_id="up-get-search-state.OutputGoalId",
+                start_min=41,
+                start_max=15996,
+                role=GoalRole.NATIVE_OUTPUT,
+            )
+            point_output = GoalSpanRequest(
+                StorageRequestId(
+                    SemanticId(profile_id, f"resource-camp-point:{resource}:{floor}"),
+                    "up-get-point",
+                ),
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="up-get-point.Point",
+                start_min=41,
+                start_max=15998,
+                role=GoalRole.NATIVE_OUTPUT,
+            )
+            base_facts = [
+                f"(building-type-count-total {building} < {floor})",
+                f"(can-build {building})",
+                f"(resource-found {resource})",
+            ]
+            if feudal_only or resource == "gold":
+                base_facts.insert(0, "(current-age >= feudal-age)")
+
+            # The native output span is allocated by RuntimeBinder.  The
+            # fourth output is the inserted remote-search count (base + 3).
+            search_rule_facts = [
+                f"(goal demand-{demand_name} 0)",
+                *base_facts,
+            ]
+            search_actions = (
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression("(up-modify-sn sn-focus-player-number c:= 0)", SourceLocation(1)),
+                parse_expression("(up-filter-status c: status-resource c: list-active)", SourceLocation(1)),
+                parse_expression(f"(up-find-resource c: {resource} c: 40)", SourceLocation(1)),
+                parse_expression("(up-get-search-state resource-camp-search-state)", SourceLocation(1)),
+                parse_expression("(up-modify-sn sn-focus-player-number g:= byzantine-scout-focus-player)", SourceLocation(1)),
+            )
+            rules.append(
+                NativeDucRule(
+                    identity=search_identity,
+                    order=len(rules),
+                    facts=tuple(parse_expression(item, SourceLocation(1)) for item in search_rule_facts),
+                    actions=search_actions,
+                    lifecycle=(
+                        NativeDucLifecycleStage.ADMISSIBILITY,
+                        NativeDucLifecycleStage.TARGET,
+                        NativeDucLifecycleStage.PICKUP_WITNESS,
+                    ),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=search_identity,
+                    section="ACTION",
+                    expression_index=4,
+                    request=search_output,
+                    command="up-get-search-state",
+                    argument_index=0,
+                )
+            )
+
+            count_expression = parse_expression(
+                f"(up-compare-goal resource-camp-remote-count > {floor - 1})",
+                SourceLocation(1),
+            )
+            activate_facts = [
+                f"(goal demand-{demand_name} 0)",
+                *base_facts,
+                count_expression.source,
+            ]
+            rules.append(
+                NativeDucRule(
+                    identity=activate_identity,
+                    order=len(rules),
+                    facts=tuple(parse_expression(item, SourceLocation(1)) for item in activate_facts),
+                    actions=(
+                        parse_expression(f"(set-goal demand-{demand_name} 1)", SourceLocation(1)),
+                    ),
+                    lifecycle=(NativeDucLifecycleStage.ADMISSIBILITY,),
+                )
+            )
+            inputs.append(
+                NativeDucGoalInputRequest(
+                    rule_identity=activate_identity,
+                    section="FACT",
+                    expression_index=len(activate_facts) - 1,
+                    argument_index=0,
+                    source=search_output.request_id,
+                    source_offset=3,
+                )
+            )
+
+            place_facts = [
+                f"(goal demand-{demand_name} 1)",
+                f"(goal construction-retry-barrier-{demand_name} 0)",
+                "(goal action-claim-build-pass-singleton 0)",
+                f"(not (building-type-count {building} >= {floor}))",
+                f"(not (up-pending-objects c: {building_id} >= 1))",
+                f"(not (up-pending-placement c: {building_id}))",
+                *base_facts,
+                count_expression.source,
+            ]
+            rules.append(
+                NativeDucRule(
+                    identity=place_identity,
+                    order=len(rules),
+                    facts=tuple(parse_expression(item, SourceLocation(1)) for item in place_facts),
+                    actions=(
+                        parse_expression(f"(up-set-target-object search-remote c: {floor - 1})", SourceLocation(1)),
+                        parse_expression("(up-get-point position-object resource-camp-point)", SourceLocation(1)),
+                        parse_expression("(up-set-target-point resource-camp-point)", SourceLocation(1)),
+                        parse_expression(f"(up-build place-point 0 c: {building})", SourceLocation(1)),
+                        parse_expression("(set-goal action-claim-build-pass-singleton 1)", SourceLocation(1)),
+                        parse_expression(f"(set-goal demand-{demand_name} issued-{demand_name})", SourceLocation(1)),
+                    ),
+                    lifecycle=(
+                        NativeDucLifecycleStage.DISPATCH,
+                        NativeDucLifecycleStage.EXECUTION,
+                    ),
+                )
+            )
+            outputs.append(
+                NativeDucOutputRequest(
+                    rule_identity=place_identity,
+                    section="ACTION",
+                    expression_index=1,
+                    request=point_output,
+                    command="up-get-point",
+                    argument_index=1,
+                )
+            )
+            inputs.extend(
+                (
+                    NativeDucGoalInputRequest(
+                        rule_identity=place_identity,
+                        section="FACT",
+                        expression_index=len(place_facts) - 1,
+                        argument_index=0,
+                        source=search_output.request_id,
+                        source_offset=3,
+                    ),
+                    NativeDucGoalInputRequest(
+                        rule_identity=place_identity,
+                        section="ACTION",
+                        expression_index=2,
+                        argument_index=0,
+                        source=point_output.request_id,
+                    ),
+                )
+            )
+            managed_demand_identities.append(demand_name)
+
     if target_control is not None:
         from .endgame import EndgameFrontierState, EndgameTargetQueryKind
         from .model import GoalRole
