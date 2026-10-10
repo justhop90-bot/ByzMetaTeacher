@@ -4682,7 +4682,6 @@ def _default_byzantine_duc_plan(
                 SourceLocation(1),
             )
             place_facts = [
-            place_facts = [
                 f"(goal demand-{demand_name} 1)",
                 f"(goal construction-retry-barrier-{demand_name} 0)",
                 "(goal action-claim-build-pass-singleton 0)",
