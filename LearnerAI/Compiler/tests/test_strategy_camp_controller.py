@@ -143,7 +143,7 @@ class ByzantineCampControllerTests(unittest.TestCase):
                 )
                 self.assertLess(
                     actions.index("(up-set-target-point resource-camp-point)"),
-                    actions.index(f"(up-build place-point 0 c: {building})"),
+                    actions.index(f"(up-build place-point 0 c: {building_id})"),
                 )
 
                 search_rule = next(rule for rule in plan.rules if rule.identity == search)
