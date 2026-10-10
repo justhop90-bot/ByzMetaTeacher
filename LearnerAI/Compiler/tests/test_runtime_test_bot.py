@@ -206,6 +206,38 @@ class ByzantineRuntimeTestBot(unittest.TestCase):
             )
             self.assertIn("(goal byzantine-research-preempt 0)", rule, demand)
 
+    def test_research_preemption_covers_shared_queue_producers(self) -> None:
+        # An affordable upgrade must not be starved by another active train rule
+        # using the same military building queue. Verify the checked-in artifact,
+        # not merely the policy declarations in the compiler source.
+        queue_actions = (
+            ("demand-early-defensive-spears", "(train 93)"),
+            ("demand-expected-mounted-spears", "(train 93)"),
+            ("demand-counter-mounted-spears", "(train 93)"),
+            ("demand-expected-ranged-skirmishers", "(train 358)"),
+            ("demand-counter-ranged-skirmishers", "(train 358)"),
+            ("demand-counter-castle-camels", "(train 329)"),
+            ("demand-counter-castle-siege-response", "(train knight-line)"),
+            ("demand-castle-camel-transition-floor", "(train 329)"),
+            ("demand-imperial-cavalier-floor", "(train cavalier)"),
+            ("demand-imperial-hussar-floor", "(train hussar)"),
+            ("demand-imperial-light-cavalry-floor", "(train 546)"),
+            ("demand-imperial-heavy-camel-floor", "(train 330)"),
+            ("demand-imperial-siege-ram-floor", "(train battering-ram-line)"),
+        )
+        for demand, action in queue_actions:
+            with self.subTest(demand=demand):
+                matches = [
+                    rule for rule in self.rules
+                    if f"(goal {demand} 1)" in rule and action in rule
+                ]
+                self.assertEqual(len(matches), 1, demand)
+                self.assertIn(
+                    "(goal byzantine-research-preempt 0)",
+                    matches[0],
+                    f"{demand} can occupy a queue needed by an affordable upgrade",
+                )
+
     def test_light_cavalry_upgrade_and_imperial_floor_make_hussar_research_reachable(self) -> None:
         research = next(
             rule for rule in self.rules
