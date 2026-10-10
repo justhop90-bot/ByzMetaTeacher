@@ -18,6 +18,7 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
             runtime_path = root / "Byzantine.per"
             generated_path = root / "generated.per"
             base_runtime = sync_runtime.RUNTIME.read_text(encoding="utf-8")
+            base_occupied_goals = sync_runtime._occupied_goal_slots(base_runtime)
             generated = sync_runtime.GENERATED.read_text(encoding="utf-8")
             marker = "; Native Strategos voice plan"
             voice_start = generated.find(marker)
@@ -45,6 +46,57 @@ class ByzantineRuntimeVoiceStorageIsolationTests(unittest.TestCase):
                 sync_runtime.GENERATED = original_generated
 
         self.assertEqual(before_second_sync, after_second_sync)
+
+        camp_intervals: list[tuple[str, int, int]] = []
+        for resource, floors, building_id in (
+            ("wood", range(2, 7), 562),
+            ("gold", range(2, 6), 584),
+            ("stone", range(2, 6), 584),
+        ):
+            for floor in floors:
+                search_identity = f"byzantine-resource-camp-search-{resource}-{floor}"
+                place_identity = f"byzantine-resource-camp-place-{resource}-{floor}"
+                search_block = sync_runtime._rule_block(
+                    synchronized, search_identity, marker_prefix="; Native DUC rule:"
+                )
+                place_block = sync_runtime._rule_block(
+                    synchronized, place_identity, marker_prefix="; Native DUC rule:"
+                )
+                search_match = re.search(r"\(up-get-search-state\s+(\d+)\)", search_block)
+                count_match = re.search(r"\(up-compare-goal\s+(\d+)\s*>\s*(\d+)\)", place_block)
+                point_match = re.search(r"\(up-get-point\s+position-object\s+(\d+)\)", place_block)
+                target_point_match = re.search(r"\(up-set-target-point\s+(\d+)\)", place_block)
+                target_index_match = re.search(r"\(up-set-target-object\s+search-remote\s+c:\s*(\d+)\)", place_block)
+                build_match = re.search(r"\(up-build\s+place-point\s+0\s+c:\s*(\d+)\)", place_block)
+                self.assertIsNotNone(search_match, search_identity)
+                self.assertIsNotNone(count_match, place_identity)
+                self.assertIsNotNone(point_match, place_identity)
+                self.assertIsNotNone(target_point_match, place_identity)
+                self.assertIsNotNone(target_index_match, place_identity)
+                self.assertIsNotNone(build_match, place_identity)
+                search_base = int(search_match.group(1))
+                point_base = int(point_match.group(1))
+                self.assertEqual(int(count_match.group(1)), search_base + 3, place_identity)
+                self.assertEqual(int(count_match.group(2)), floor - 2, place_identity)
+                self.assertEqual(int(target_index_match.group(1)), floor - 2, place_identity)
+                self.assertEqual(int(target_point_match.group(1)), point_base, place_identity)
+                self.assertEqual(int(build_match.group(1)), building_id, place_identity)
+                self.assertIn("(up-filter-status c: 3 c: 0)", search_block, search_identity)
+                camp_intervals.extend((
+                    (search_identity, search_base, search_base + 3),
+                    (place_identity, point_base, point_base + 1),
+                ))
+
+        for index, (first_name, first_start, first_end) in enumerate(camp_intervals):
+            self.assertTrue(
+                set(range(first_start, first_end + 1)).isdisjoint(base_occupied_goals),
+                f"{first_name} overlaps pre-existing Goal storage",
+            )
+            for second_name, second_start, second_end in camp_intervals[index + 1:]:
+                self.assertTrue(
+                    first_end < second_start or second_end < first_start,
+                    f"resource-camp Goal spans overlap: {first_name} and {second_name}",
+                )
 
         base_source = synchronized.split("; Native Strategos voice plan", 1)[0]
         base_goal_ids = {

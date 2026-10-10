@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Synchronize compiler-owned opening recovery into the checked-in Byzantine runtime artifact.
+"""Synchronize compiler-owned strategy slices into the checked-in Byzantine runtime artifact.
 
 The checked-in Byzantine.per is a controlled hybrid: the canonical compiler owns the
 strategy core, while the file also contains runtime-only repairs that are not yet
-compiler policy. This script ports only the opening-recovery/economy-control slice
-from the freshly generated canonical artifact and preserves the runtime overlay.
+compiler policy. This script ports selected canonical sections and resource-camp DUC
+execution from the freshly generated artifact while preserving the runtime overlay.
 """
 
 from __future__ import annotations
@@ -179,9 +179,10 @@ def _storage_intervals(source: str) -> list[tuple[int, int, str]]:
         )
     }
     patterns = (
-        (re.compile(r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\\s+([^\\s()]+)"), 1, "GOAL_SLOT"),
-        (re.compile(r"\(up-get-point\\s+position-object\\s+([^\\s()]+)"), 2, "POINT_PAIR"),
-        (re.compile(r"\(up-get-search-state\\s+([^\\s()]+)"), 4, "SEARCH_STATE"),
+        (re.compile(r"\((?:goal|set-goal|up-compare-goal|up-modify-goal)\s+([^\s()]+)"), 1, "GOAL_SLOT"),
+        (re.compile(r"\(up-get-point\s+position-object\s+([^\s()]+)"), 2, "POINT_PAIR"),
+        (re.compile(r"\(up-set-target-point\s+([^\s()]+)"), 2, "POINT_PAIR"),
+        (re.compile(r"\(up-get-search-state\s+([^\s()]+)"), 4, "SEARCH_STATE"),
     )
     intervals: list[tuple[int, int, str]] = []
     for pattern, width, kind in patterns:
@@ -535,6 +536,191 @@ def _replace_rule(runtime: str, generated: str, identity: str) -> str:
     raise RuntimeError(f"runtime artifact has unterminated rule: {identity}")
 
 
+def _resource_camp_rule_identities() -> tuple[tuple[str, str, int, int], ...]:
+    identities: list[tuple[str, str, int, int]] = []
+    for resource, floors, building_id in (
+        ("wood", range(2, 7), 562),
+        ("gold", range(2, 6), 584),
+        ("stone", range(2, 6), 584),
+    ):
+        for floor in floors:
+            identities.append((
+                resource,
+                f"byzantine-resource-camp-search-{resource}-{floor}",
+                floor,
+                building_id,
+            ))
+            identities.append((
+                resource,
+                f"byzantine-resource-camp-place-{resource}-{floor}",
+                floor,
+                building_id,
+            ))
+    return tuple(identities)
+
+
+def _occupied_goal_slots(source: str) -> set[int]:
+    """Conservatively find Goal ids that a remapped DUC span must not reuse."""
+    occupied = {
+        int(match.group(1))
+        for match in re.finditer(r"(?<![A-Za-z0-9_-])-?\d+", source)
+        if 1 <= int(match.group(1)) <= 16_000
+    }
+    definitions = {
+        match.group(1): int(match.group(2))
+        for match in re.finditer(
+            r"\(defconst\s+([^\s()]+)\s+(-?\d+)\)",
+            source,
+        )
+    }
+    occupied.update(value for value in definitions.values() if 1 <= value <= 16_000)
+    for start, end, _kind in _storage_intervals(source):
+        occupied.update(range(max(1, start), min(16_000, end) + 1))
+    for pattern, width in (
+        (r"\(up-get-search-state\s+(-?\d+)\)", 4),
+        (r"\(up-get-point\s+position-object\s+(-?\d+)\)", 2),
+        (r"\(up-set-target-point\s+(-?\d+)\)", 2),
+    ):
+        for match in re.finditer(pattern, source):
+            start = int(match.group(1))
+            occupied.update(range(max(1, start), min(16_000, start + width - 1) + 1))
+    return occupied
+
+
+def _allocate_goal_span(occupied: set[int], width: int) -> int:
+    if width < 1:
+        raise ValueError("Goal span width must be positive")
+    for start in range(16_000 - width + 1, 0, -1):
+        slots = set(range(start, start + width))
+        if slots.isdisjoint(occupied):
+            occupied.update(slots)
+            return start
+    raise RuntimeError(f"no free native Goal span remains for width {width}")
+
+
+def _remove_marked_rule(source: str, identity: str) -> str:
+    marker = f"; Native DUC rule: {identity}"
+    start = source.find(marker)
+    if start < 0:
+        return source
+    rule_start = source.find("(defrule", start)
+    if rule_start < 0:
+        raise RuntimeError(f"runtime has DUC marker without defrule: {identity}")
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(rule_start, len(source)):
+        char = source[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == chr(92):
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return re.sub(r"\n{3,}", "\n\n", source[:start] + source[index + 1:])
+    raise RuntimeError(f"runtime has unterminated DUC rule: {identity}")
+
+
+def _rewrite_once(source: str, pattern: str, replacement: str, identity: str) -> str:
+    updated, count = re.subn(pattern, replacement, source, count=1)
+    if count != 1:
+        raise RuntimeError(f"cannot safely remap resource-camp DUC operand for {identity}")
+    return updated
+
+
+def _sync_resource_camp_duc_rules(runtime: str, generated: str) -> str:
+    """Install resource-front DUC rules with Goal spans remapped around the runtime overlay."""
+    entries = _resource_camp_rule_identities()
+    for _resource, identity, _floor, _building_id in entries:
+        runtime = _remove_marked_rule(runtime, identity)
+
+    occupied = _occupied_goal_slots(runtime)
+    remapped_blocks: list[str] = []
+    by_resource_floor = sorted(
+        {(resource, floor, building_id) for resource, _identity, floor, building_id in entries},
+        key=lambda item: ({"wood": 0, "gold": 1, "stone": 2}[item[0]], item[1]),
+    )
+    for resource, floor, building_id in by_resource_floor:
+        search_identity = f"byzantine-resource-camp-search-{resource}-{floor}"
+        place_identity = f"byzantine-resource-camp-place-{resource}-{floor}"
+        search_block = _rule_block(generated, search_identity, marker_prefix="; Native DUC rule:")
+        place_block = _rule_block(generated, place_identity, marker_prefix="; Native DUC rule:")
+
+        search_match = re.search(r"\(up-get-search-state\s+(-?\d+)\)", search_block)
+        count_match = re.search(r"\(up-compare-goal\s+(-?\d+)\s*>\s*(-?\d+)\)", place_block)
+        point_match = re.search(r"\(up-get-point\s+position-object\s+(-?\d+)\)", place_block)
+        target_point_match = re.search(r"\(up-set-target-point\s+(-?\d+)\)", place_block)
+        target_index_match = re.search(r"\(up-set-target-object\s+search-remote\s+c:\s*(-?\d+)\)", place_block)
+        build_match = re.search(r"\(up-build\s+place-point\s+0\s+c:\s*(\d+)\)", place_block)
+        if not all((search_match, count_match, point_match, target_point_match, target_index_match, build_match)):
+            raise RuntimeError(f"generated resource-camp DUC rule pair is incomplete: {resource} floor {floor}")
+
+        search_base = int(search_match.group(1))
+        if int(count_match.group(1)) != search_base + 3:
+            raise RuntimeError(
+                f"generated resource-camp search-state/count contract is inconsistent: "
+                f"{resource} floor {floor}"
+            )
+        expected_index = floor - 2
+        if int(count_match.group(2)) != expected_index or int(target_index_match.group(1)) != expected_index:
+            raise RuntimeError(
+                f"generated resource-camp selector is not zero-based for {resource} floor {floor}"
+            )
+        if int(build_match.group(1)) != building_id:
+            raise RuntimeError(
+                f"generated resource-camp building id is incorrect for {resource} floor {floor}"
+            )
+        point_base = int(point_match.group(1))
+        if int(target_point_match.group(1)) != point_base:
+            raise RuntimeError(
+                f"generated resource-camp point writer/reader mismatch for {resource} floor {floor}"
+            )
+
+        new_search_base = _allocate_goal_span(occupied, 4)
+        new_point_base = _allocate_goal_span(occupied, 2)
+        search_block = _rewrite_once(
+            search_block,
+            r"\(up-get-search-state\s+-?\d+\)",
+            f"(up-get-search-state {new_search_base})",
+            search_identity,
+        )
+        place_block = _rewrite_once(
+            place_block,
+            r"\(up-compare-goal\s+-?\d+(\s*>\s*-?\d+\))",
+            f"(up-compare-goal {new_search_base + 3}" + r"\1",
+            place_identity,
+        )
+        place_block = _rewrite_once(
+            place_block,
+            r"\(up-get-point\s+position-object\s+-?\d+\)",
+            f"(up-get-point position-object {new_point_base})",
+            place_identity,
+        )
+        place_block = _rewrite_once(
+            place_block,
+            r"\(up-set-target-point\s+-?\d+\)",
+            f"(up-set-target-point {new_point_base})",
+            place_identity,
+        )
+        remapped_blocks.extend((search_block.rstrip(), place_block.rstrip()))
+
+    marker = "; Native attack lifecycle plan"
+    insertion = runtime.find(marker)
+    if insertion < 0:
+        raise RuntimeError("runtime artifact is missing Native attack lifecycle insertion marker")
+    camp_section = "\n\n".join(remapped_blocks) + "\n\n"
+    return runtime[:insertion].rstrip() + "\n\n" + camp_section + runtime[insertion:]
+
+
 def synchronize() -> bool:
     runtime = RUNTIME.read_text(encoding="utf-8")
     generated = GENERATED.read_text(encoding="utf-8")
@@ -584,6 +770,8 @@ def synchronize() -> bool:
 
     for identity in ECONOMY_RULES:
         runtime = _replace_rule(runtime, generated, identity)
+
+    runtime = _sync_resource_camp_duc_rules(runtime, generated)
 
     voice_marker = "; Native Strategos voice plan"
     voice_start = generated.find(voice_marker)
