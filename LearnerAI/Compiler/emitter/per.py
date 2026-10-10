@@ -700,17 +700,32 @@ def emit(
                 arguments[request.argument_index] = str(output_goal)
             for reader in readers:
                 writer_binding = bindings.binding_for(reader.source)
-                if not isinstance(writer_binding, GoalSlot):
+                if isinstance(writer_binding, GoalSlot):
+                    if reader.source_offset != 0:
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: GoalSlot input '{reader.site_key}' "
+                            "cannot use a non-zero source offset"
+                        )
+                    source_goal = writer_binding.id.value
+                elif isinstance(writer_binding, GoalSpan):
+                    if reader.source_offset >= writer_binding.width:
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
+                            f"offset {reader.source_offset} is outside span width "
+                            f"{writer_binding.width}"
+                        )
+                    source_goal = writer_binding.start.value + reader.source_offset
+                else:
                     raise CompileError(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
-                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
+                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot or GoalSpan"
                     )
                 if reader.argument_index >= len(arguments):
                     raise CompileError(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
                         "argument index is outside the expression"
                     )
-                arguments[reader.argument_index] = str(writer_binding.id.value)
+                arguments[reader.argument_index] = str(source_goal)
             return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
 
         for current_rule in duc_plan.rules:
@@ -1237,6 +1252,15 @@ def emit(
                 ")",
                 "",
             ]
+
+        if (
+            duc_plan is not None
+            and demand.name in duc_plan.managed_demand_identities
+        ):
+            # The DUC plan owns action issuance for this construction demand.
+            # Keep the construction lifecycle above so pending, completion, and
+            # retry continue to use the existing world-state witnesses.
+            continue
 
         out += [
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",
