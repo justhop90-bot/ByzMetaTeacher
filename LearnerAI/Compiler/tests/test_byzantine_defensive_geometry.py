@@ -651,7 +651,7 @@ class ByzantineDefensiveGeometryTest(unittest.TestCase):
             "remote-count Goal must alias the third search-state output (remote-list total)",
         )
         self.assertIn(
-            "(up-compare-goal byzantine-dark-mill-search-remote-count > 0)",
+            f"(up-compare-goal {remote_count} > 0)",
             build_rule,
         )
         self.assertNotIn(
