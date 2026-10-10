@@ -62,9 +62,11 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertIn("(defconst sn-number-explore-groups 42)", source)
         self.assertIn("(defconst sn-total-number-explorers 18)", source)
         self.assertIn("(defconst sn-cap-civilian-explorers 3)", source)
+        self.assertIn("(defconst sn-percent-half-exploration 179)", source)
         self.assertIn("(set-strategic-number sn-number-explore-groups 1)", rules[4])
         self.assertIn("(set-strategic-number sn-total-number-explorers 10)", rules[4])
         self.assertIn("(set-strategic-number sn-cap-civilian-explorers 0)", rules[4])
+        self.assertIn("(set-strategic-number sn-percent-half-exploration 100)", rules[4])
 
 
     def test_housing_executor_precedes_continuous_villager_production(self):
@@ -73,7 +75,7 @@ class FranksBotBuildTests(unittest.TestCase):
         villager_start = source.index("; Keep Town Centers producing villagers independent of age-up arbitration.")
         house_rule = source[house_start:villager_start]
         self.assertLess(house_start, villager_start)
-        self.assertIn("(population-headroom < 8)", house_rule)
+        self.assertIn("(population-headroom < 10)", house_rule)
         self.assertIn("(up-pending-objects c: frank-c-house == 0)", house_rule)
         self.assertIn("(can-build house)", house_rule)
         self.assertIn("(build house)", house_rule)
@@ -87,6 +89,7 @@ class FranksBotBuildTests(unittest.TestCase):
         self.assertIn("(set-strategic-number sn-total-number-explorers 10)", init_stage)
         self.assertIn("(set-strategic-number sn-cap-civilian-explorers 0)", init_stage)
         self.assertIn("(up-reset-scouts)", init_stage)
+        self.assertIn("(set-strategic-number sn-percent-half-exploration 100)", init_stage)
         self.assertLess(
             init_stage.index("(set-strategic-number sn-cap-civilian-explorers 0)"),
             init_stage.index("(up-reset-scouts)"),
