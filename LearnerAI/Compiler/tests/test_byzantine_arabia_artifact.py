@@ -110,11 +110,11 @@ class ByzantineArabiaArtifactTests(unittest.TestCase):
                     state_name = f"byzantine-dark-{resource}-camp-search-state-{floor}"
                     remote_name = f"byzantine-dark-{resource}-camp-search-remote-count-{floor}"
                     state_match = re.search(
-                        rf"\\(defconst {re.escape(state_name)} (\\d+)\\)",
+                        rf"\(defconst {re.escape(state_name)} (\d+)\)",
                         self.artifact,
                     )
                     remote_match = re.search(
-                        rf"\\(defconst {re.escape(remote_name)} (\\d+)\\)",
+                        rf"\(defconst {re.escape(remote_name)} (\d+)\)",
                         self.artifact,
                     )
                     self.assertIsNotNone(state_match, state_name)
