@@ -311,13 +311,13 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         search_start = int(
             re.search(
-                r"\\(up-get-search-state (\\d+)\\)",
+                r"\(up-get-search-state (\d+)\)",
                 output,
             ).group(1)
         )
         remote_count = int(
-            __import__("re").search(
-                r"\\(up-compare-goal (\\d+) > 1\\)",
+            re.search(
+                r"\(up-compare-goal (\d+) > 1\)",
                 output,
             ).group(1)
         )
