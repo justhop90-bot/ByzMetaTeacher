@@ -67,3 +67,39 @@ Run Franks on Arabia, 1v1, standard resources, no treaty, against Moderate first
 - stalls: which demand remains active, which predicate stays false, and whether required building/queue/resource evidence exists.
 
 Do not claim win-rate, build-order timing, or runtime liveness until matches have actually been run. The accepted result for this PR is a deterministic, native-parseable test artifact ready for those runs.
+
+
+## Runtime repair tranche 1 — 2026-10-10
+
+This tranche keeps the existing Scouts → Knights → conditional counters → cavalry/siege plan, but repairs control paths that could prevent the planned strategy from reaching the game.
+
+### Changes
+
+- Removed the distance-only failure condition from the first Lumber Camp and first Mill. If the map exposes no forage, a Dark Age Mining Camp on a found gold resource is the fallback second building.
+- Delayed Loom from 7 to 18 villagers and only allows it when Feudal Age is not currently researchable, protecting the opening food/TC queue.
+- Removed the Market as a hard Castle Age prerequisite. Native `can-research-with-escrow` remains the feasibility authority.
+- Added University construction when no Castle has been completed and the Siege Workshop exists, making the University + Workshop Imperial path available without relying on enemy elephant units.
+- Held second/third Town Center construction until a Castle is completed to protect stone and wood focus for the Frankish unique-unit/tech path.
+- Added conditional Pikeman, Halberdier and Elite Skirmisher research; replaced the unavailable Frankish Siege Ram endpoint with Capped Ram; removed Two-Man Saw, which the current Frankish tech tree marks unavailable.
+- Added explicit Heavy Mounted Crossbowman upgrade research using DE TechId 1451, stopped base-unit production when that upgrade is pending, and only trains the heavy unit after completion. Cranequins is gated on the Heavy upgrade being complete.
+- Kept the four-unit Mounted Crossbowman baseline from being reset to zero by an unrelated enemy-composition rule; reduced the post-Ordonnance target from 12 to 8 to keep it a support package instead of a second primary army.
+- Added `up-reset-attack-now` when the timed attack cycle closes.
+- Replaced three overlapping gatherer-percentage emergency overrides with a mutually exclusive food → gold → wood recovery state. Recovery clears at food 400, gold 400, or wood 300 respectively, then returns to age baseline allocation.
+
+### Evidence classes and constraints
+
+- Civilization-specific technology availability was cross-checked against the current Franks technology tree in `SiegeEngineers/aoe2techtree`.
+- Native tech IDs for Pikeman (197), Halberdier (429), Elite Skirmisher (98), Capped Ram (96), and Heavy Mounted Crossbowman (1451) were cross-checked against the current DE tech data. Heavy Mounted Crossbowman uses the documented numeric TechId form because its alias is not present in the checked-in AIRef technology inventory.
+- Native parser/build acceptance proves the source parses and packaging is reproducible. It does not prove runtime behavior; match execution still needs to validate the intended second-building fallback, actual age-up timings, counters, and repeated attack cycles.
+- This is still a hand-authored native `.per` strategy artifact, not a typed compiler-generated Franks profile.
+
+### Runtime acceptance matrix
+
+1. Arabia with standard resources: Feudal without an early Loom stall; first Lumber Camp and Mill; Castle Age without Market gating.
+2. Arabia with nonstandard forage availability: second Dark Age building fallback; no Feudal deadlock.
+3. Enemy cavalry pressure: Spearman production, Pikeman upgrade in Castle Age, Halberdier in Imperial when still needed.
+4. Enemy archer pressure: Skirmisher counter demand and Elite Skirmisher upgrade.
+5. Infantry-heavy opponent: Throwing Axemen, Ordonnance Companies, Mounted Crossbowman/Heavy upgrade and Cranequins.
+6. Full match with available Castle resources: Castle before second/third TC; Capped Ram research; Trebuchet production; two distinct attack cycles.
+7. Castle delayed/unavailable but Siege Workshop exists: University fallback and native Imperial-age eligibility.
+8. Resource crisis: only one gatherer recovery mode owns percentages at a time, then age baseline resumes after recovery witnesses.
