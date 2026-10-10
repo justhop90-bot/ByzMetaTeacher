@@ -706,13 +706,17 @@ class PrimitiveRegistry:
                 raise ValueError(
                     f"DUC input request '{input_request.site_key}' has no plan expression"
                 )
-            if expression.head != "up-set-target-by-id":
-                if expression.head != "up-create-group":
+            if expression.head == "up-set-target-by-id":
+                if input_request.argument_index != 1 or len(expression.args) != 2:
                     raise ValueError(
-                        f"DUC input request '{input_request.site_key}' targets "
-                        f"'{expression.head}': only up-set-target-by-id and "
-                        "up-create-group reads are supported"
+                        f"DUC input request '{input_request.site_key}' must bind argument 1 "
+                        "of a two-argument up-set-target-by-id"
                     )
+                if str(expression.args[0]) != "g:":
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' requires a literal g: typeOp"
+                    )
+            elif expression.head == "up-create-group":
                 if input_request.argument_index not in (0, 1) or len(expression.args) != 4:
                     raise ValueError(
                         f"DUC input request '{input_request.site_key}' must bind argument 0 "
@@ -723,25 +727,48 @@ class PrimitiveRegistry:
                         f"DUC input request '{input_request.site_key}' requires a bare "
                         "goal operand: up-create-group window arguments take no typeOp prefix"
                     )
+            elif expression.head == "up-compare-goal":
+                if input_request.argument_index != 0 or len(expression.args) != 3:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' must bind argument 0 "
+                        "of a three-argument up-compare-goal"
+                    )
+            elif expression.head == "up-set-target-point":
+                if input_request.argument_index != 0 or len(expression.args) != 1:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' must bind argument 0 "
+                        "of a one-argument up-set-target-point"
+                    )
             else:
-                if input_request.argument_index != 1 or len(expression.args) != 2:
-                    raise ValueError(
-                        f"DUC input request '{input_request.site_key}' must bind argument 1 "
-                        "of a two-argument up-set-target-by-id"
-                    )
-                if str(expression.args[0]) != "g:":
-                    raise ValueError(
-                        f"DUC input request '{input_request.site_key}' requires a literal g: typeOp"
-                    )
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' targets "
+                    f"'{expression.head}': supported reads are up-set-target-by-id, "
+                    "up-create-group, up-compare-goal, and up-set-target-point"
+                )
+
             writer = writer_by_id.get(input_request.source)
             if writer is None:
                 raise ValueError(
                     f"DUC input request '{input_request.site_key}' has no writer output "
                     "request for its storage id"
                 )
-            if not isinstance(writer.request, GoalSlotRequest):
+            if isinstance(writer.request, GoalSlotRequest):
+                if input_request.source_offset != 0:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' has a non-zero "
+                        "offset into a single GoalSlot"
+                    )
+            elif isinstance(writer.request, GoalSpanRequest):
+                if input_request.source_offset >= writer.request.width:
+                    raise ValueError(
+                        f"DUC input request '{input_request.site_key}' offset "
+                        f"{input_request.source_offset} is outside writer span width "
+                        f"{writer.request.width}"
+                    )
+            else:
                 raise ValueError(
-                    f"DUC input request '{input_request.site_key}' writer is not a GoalSlot"
+                    f"DUC input request '{input_request.site_key}' writer is neither "
+                    "a GoalSlot nor a GoalSpan"
                 )
 
         identities = tuple(rule.identity for rule in plan.rules)
