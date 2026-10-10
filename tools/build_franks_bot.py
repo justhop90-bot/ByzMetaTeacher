@@ -30,6 +30,7 @@ REQUIRED_FRAGMENTS = (
     "(research ri-bodkin-arrow)",
     "(research ri-ballistics)",
     "(research ri-capped-ram)",
+    "(players-unit-type-count any-enemy armored-elephant-line >= 3)",
     "(current-age >= castle-age)\n    (building-type-count castle >= 1)\n    (or\n        (current-age == castle-age)\n        (up-research-status c: frank-c-elite-throwing-axeman-tech < research-pending)",
     "(up-reset-attack-now)",
     "(building-type-count-total university < 1)",
