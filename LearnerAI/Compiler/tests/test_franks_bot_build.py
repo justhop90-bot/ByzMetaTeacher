@@ -37,27 +37,28 @@ class FranksBotBuildTests(unittest.TestCase):
 
     def test_initialization_is_staged_below_native_rule_size_budget(self):
         source = SOURCE.read_text(encoding="utf-8")
-        start = source.index("; Initialize all Frankish strategic state in bounded, one-shot stages.")
+        start = source.index("; Initialize all Frankish strategic state in short, ordered one-shot stages.")
         end = source.index("; Acquire a valid enemy player", start)
         initialization = source[start:end]
         rules = re.findall(r"\(defrule\b(.*?)\n\)", initialization, flags=re.S)
 
-        self.assertEqual(len(rules), 3)
+        self.assertEqual(len(rules), 4)
         form_counts = [
             sum(bool(re.match(r"^ {4}\(", line)) for line in rule.splitlines())
             for rule in rules
         ]
         self.assertLessEqual(
             max(form_counts),
-            16,
+            10,
             f"initialization stage exceeds conservative native rule budget: {form_counts}",
         )
-        self.assertIn("(goal frank-init-stage-goal 0)", rules[0])
-        self.assertIn("(goal frank-init-stage-goal 1)", rules[1])
-        self.assertIn("(goal frank-init-stage-goal 2)", rules[2])
-        self.assertNotIn("(set-goal frank-initialized-goal 1)", rules[0])
-        self.assertNotIn("(set-goal frank-initialized-goal 1)", rules[1])
-        self.assertIn("(set-goal frank-initialized-goal 1)", rules[2])
+        for stage, rule in enumerate(rules):
+            with self.subTest(stage=stage):
+                self.assertIn(f"(goal frank-init-stage-goal {stage})", rule)
+        for rule in rules[:-1]:
+            self.assertNotIn("(set-goal frank-initialized-goal 1)", rule)
+        self.assertIn("(set-goal frank-init-stage-goal 4)", rules[3])
+        self.assertIn("(set-goal frank-initialized-goal 1)", rules[3])
 
     def test_strategy_contains_full_match_milestones_and_patch_specific_units(self):
         source = SOURCE.read_text(encoding="utf-8")
