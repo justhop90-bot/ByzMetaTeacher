@@ -4604,7 +4604,6 @@ def _default_byzantine_duc_plan(
         for floor in range(2, max_floor + 1):
             demand_name = f"economy-{resource}-camp-floor-{floor}"
             search_identity = f"byzantine-resource-camp-search-{resource}-{floor}"
-            activate_identity = f"byzantine-resource-camp-activate-{resource}-{floor}"
             place_identity = f"byzantine-resource-camp-place-{resource}-{floor}"
 
             search_output = GoalSpanRequest(
@@ -4642,7 +4641,7 @@ def _default_byzantine_duc_plan(
             # The native output span is allocated by RuntimeBinder.  The
             # fourth output is the inserted remote-search count (base + 3).
             search_rule_facts = [
-                f"(or (goal demand-{demand_name} 0) (goal demand-{demand_name} 1))",
+                f"(goal demand-{demand_name} 1)",
                 f"(building-type-count {building} >= {floor - 1})",
                 *base_facts,
             ]
@@ -4682,34 +4681,7 @@ def _default_byzantine_duc_plan(
                 f"(up-compare-goal resource-camp-remote-count > {floor - 1})",
                 SourceLocation(1),
             )
-            activate_facts = [
-                f"(goal demand-{demand_name} 0)",
-                f"(building-type-count {building} >= {floor - 1})",
-                *base_facts,
-                count_expression.source,
-            ]
-            rules.append(
-                NativeDucRule(
-                    identity=activate_identity,
-                    order=len(rules),
-                    facts=tuple(parse_expression(item, SourceLocation(1)) for item in activate_facts),
-                    actions=(
-                        parse_expression(f"(set-goal demand-{demand_name} 1)", SourceLocation(1)),
-                    ),
-                    lifecycle=(NativeDucLifecycleStage.ADMISSIBILITY,),
-                )
-            )
-            inputs.append(
-                NativeDucGoalInputRequest(
-                    rule_identity=activate_identity,
-                    section="FACT",
-                    expression_index=len(activate_facts) - 1,
-                    argument_index=0,
-                    source=search_output.request_id,
-                    source_offset=3,
-                )
-            )
-
+            place_facts = [
             place_facts = [
                 f"(goal demand-{demand_name} 1)",
                 f"(goal construction-retry-barrier-{demand_name} 0)",
