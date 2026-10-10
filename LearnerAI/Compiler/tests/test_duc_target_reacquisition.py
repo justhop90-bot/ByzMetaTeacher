@@ -286,7 +286,7 @@ class DucGoalHandoffTests(unittest.TestCase):
             output_requests=plan.output_requests,
             input_requests=(reader,),
         )
-        with self.assertRaisesRegex(ValueError, "only up-set-target-by-id and up-create-group reads"):
+        with self.assertRaisesRegex(ValueError, "supported reads are"):
             default_de_registry().validate_duc_plan(plan)
 
     def test_input_non_goal_operand_rejected(self):
@@ -331,7 +331,7 @@ class DucGoalHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires a literal g: typeOp"):
             default_de_registry().validate_duc_plan(plan)
 
-    def test_input_span_writer_rejected(self):
+    def test_input_span_writer_offset_out_of_range_rejected(self):
         span_request = GoalSpanRequest(
             request_id=StorageRequestId(
                 SemanticId("test", "reacquire"), "up-get-search-state"
@@ -378,10 +378,11 @@ class DucGoalHandoffTests(unittest.TestCase):
                     expression_index=0,
                     argument_index=1,
                     source=span_request.request_id,
+                    source_offset=4,
                 ),
             ),
         )
-        with self.assertRaisesRegex(ValueError, "writer is not a GoalSlot"):
+        with self.assertRaisesRegex(ValueError, "offset 4 is outside writer span width 4"):
             default_de_registry().validate_duc_plan(plan)
 
     def test_duplicate_input_site_rejected(self):

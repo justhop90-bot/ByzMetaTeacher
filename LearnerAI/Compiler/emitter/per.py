@@ -288,6 +288,18 @@ def emit(
         )
     if duc_plan is not None:
         registry.validate_duc_plan(duc_plan)
+        demand_by_name = {demand.name: demand for demand in demands}
+        for managed_name in duc_plan.managed_demand_identities:
+            managed_demand = demand_by_name.get(managed_name)
+            if managed_demand is None:
+                raise CompileError(
+                    f"EMITTER-DUC-MANAGED-DEMAND: DUC plan references unknown demand '{managed_name}'"
+                )
+            if managed_demand.construction_lifecycle is None:
+                raise CompileError(
+                    f"EMITTER-DUC-MANAGED-DEMAND: DUC-managed demand '{managed_name}' "
+                    "must retain the existing construction lifecycle"
+                )
     native_attack_plan = (
         attack_plan.native_plan
         if isinstance(attack_plan, AttackExecution)
@@ -700,17 +712,32 @@ def emit(
                 arguments[request.argument_index] = str(output_goal)
             for reader in readers:
                 writer_binding = bindings.binding_for(reader.source)
-                if not isinstance(writer_binding, GoalSlot):
+                if isinstance(writer_binding, GoalSlot):
+                    if reader.source_offset != 0:
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: GoalSlot input '{reader.site_key}' "
+                            "cannot use a non-zero source offset"
+                        )
+                    source_goal = writer_binding.id.value
+                elif isinstance(writer_binding, GoalSpan):
+                    if reader.source_offset >= writer_binding.width:
+                        raise CompileError(
+                            f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
+                            f"offset {reader.source_offset} is outside span width "
+                            f"{writer_binding.width}"
+                        )
+                    source_goal = writer_binding.start.value + reader.source_offset
+                else:
                     raise CompileError(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
-                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
+                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot or GoalSpan"
                     )
                 if reader.argument_index >= len(arguments):
                     raise CompileError(
                         f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
                         "argument index is outside the expression"
                     )
-                arguments[reader.argument_index] = str(writer_binding.id.value)
+                arguments[reader.argument_index] = str(source_goal)
             return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
 
         for current_rule in duc_plan.rules:
@@ -1237,6 +1264,15 @@ def emit(
                 ")",
                 "",
             ]
+
+        if (
+            duc_plan is not None
+            and demand.name in duc_plan.managed_demand_identities
+        ):
+            # The DUC plan owns action issuance for this construction demand.
+            # Keep the construction lifecycle above so pending, completion, and
+            # retry continue to use the existing world-state witnesses.
+            continue
 
         out += [
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",

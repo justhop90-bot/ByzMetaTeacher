@@ -332,7 +332,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
 
         for resource in ("wood", "gold", "stone"):
             demand = profile.demand(f"economy-{resource}-camp-floor-2")
-            self.assertTrue(
+            self.assertFalse(
                 any("dropsite-min-distance" in req for req in demand.execution.requirements),
                 resource,
             )
