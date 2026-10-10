@@ -11,8 +11,13 @@ from LearnerAI.Compiler.clients.basilisk import (
 from LearnerAI.Compiler.ast import Expression
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
-from LearnerAI.Compiler.ir.model import GoalRole, GoalSpanKind, SemanticId, StorageRequestId
-from LearnerAI.Compiler.runtime_binding import GoalSpanRequest
+from LearnerAI.Compiler.ir.model import (
+    GoalRole,
+    GoalSpanKind,
+    GoalSpanRequest,
+    SemanticId,
+    StorageRequestId,
+)
 from LearnerAI.Compiler.ir.native_duc import (
     NativeDucGoalInputRequest,
     NativeDucOutputRequest,
