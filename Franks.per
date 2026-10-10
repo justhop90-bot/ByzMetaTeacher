@@ -114,8 +114,8 @@
 (defconst frank-castle-villagers 31)
 (defconst frank-imperial-villagers 55)
 
-; Initialize all Frankish strategic state in bounded, one-shot stages. Keep the
-; initialized sentinel unset until every state value has been established.
+; Initialize all Frankish strategic state in short, ordered one-shot stages.
+; The conservative native rule budget is kept below ten forms per stage.
 (defrule
     (goal frank-initialized-goal 0)
     (goal frank-init-stage-goal 0)
@@ -133,23 +133,28 @@
     (set-goal frank-thrower-target-goal 0)
     (set-goal frank-mounted-crossbow-target-goal 0)
     (set-goal frank-skirmisher-target-goal 0)
+    (set-goal frank-init-stage-goal 2)
+)
+(defrule
+    (goal frank-init-stage-goal 2)
+=>
     (set-goal frank-monk-target-goal 0)
     (set-goal frank-ram-target-goal 0)
     (set-goal frank-trebuchet-target-goal 0)
     (set-goal frank-attack-state-goal 0)
     (set-goal frank-target-player-goal 0)
     (set-goal frank-economy-recovery-goal 0)
-    (set-goal frank-init-stage-goal 2)
+    (set-goal frank-init-stage-goal 3)
 )
 (defrule
-    (goal frank-init-stage-goal 2)
+    (goal frank-init-stage-goal 3)
 =>
     (set-strategic-number sn-intelligent-gathering 1)
     (set-strategic-number sn-food-gatherer-percentage 55)
     (set-strategic-number sn-wood-gatherer-percentage 45)
     (set-strategic-number sn-gold-gatherer-percentage 0)
     (set-strategic-number sn-stone-gatherer-percentage 0)
-    (set-goal frank-init-stage-goal 3)
+    (set-goal frank-init-stage-goal 4)
     (set-goal frank-initialized-goal 1)
 )
 
