@@ -14810,28 +14810,44 @@
 
 (defrule
     (goal byzantine-house-construction-state byzantine-house-construction-foundation)
-    (or
-        (and
-            (goal byzantine-house-construction-target 1)
-            (building-type-count house >= 1)
-        )
-        (and
-            (goal byzantine-house-construction-target 4)
-            (building-type-count house >= 4)
-        )
-        (and
-            (goal byzantine-house-construction-target 8)
-            (building-type-count house >= 8)
-        )
-        (and
-            (goal byzantine-house-construction-target 12)
-            (building-type-count house >= 12)
-        )
-        (and
-            (goal byzantine-house-construction-target 16)
-            (building-type-count house >= 16)
-        )
-    )
+    (goal byzantine-house-construction-target 1)
+    (building-type-count house >= 1)
+=>
+    (disable-timer byzantine-house-construction-timer)
+    (set-goal byzantine-house-construction-state byzantine-house-construction-complete)
+)
+
+(defrule
+    (goal byzantine-house-construction-state byzantine-house-construction-foundation)
+    (goal byzantine-house-construction-target 4)
+    (building-type-count house >= 4)
+=>
+    (disable-timer byzantine-house-construction-timer)
+    (set-goal byzantine-house-construction-state byzantine-house-construction-complete)
+)
+
+(defrule
+    (goal byzantine-house-construction-state byzantine-house-construction-foundation)
+    (goal byzantine-house-construction-target 8)
+    (building-type-count house >= 8)
+=>
+    (disable-timer byzantine-house-construction-timer)
+    (set-goal byzantine-house-construction-state byzantine-house-construction-complete)
+)
+
+(defrule
+    (goal byzantine-house-construction-state byzantine-house-construction-foundation)
+    (goal byzantine-house-construction-target 12)
+    (building-type-count house >= 12)
+=>
+    (disable-timer byzantine-house-construction-timer)
+    (set-goal byzantine-house-construction-state byzantine-house-construction-complete)
+)
+
+(defrule
+    (goal byzantine-house-construction-state byzantine-house-construction-foundation)
+    (goal byzantine-house-construction-target 16)
+    (building-type-count house >= 16)
 =>
     (disable-timer byzantine-house-construction-timer)
     (set-goal byzantine-house-construction-state byzantine-house-construction-complete)
