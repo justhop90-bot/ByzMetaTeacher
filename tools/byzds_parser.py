@@ -472,6 +472,7 @@ class BYZDSParser:
                               case_id: str, scenario: str) -> list[ConstraintResult]:
         ctx = {
             "event": event.fields,
+            **{name: name for name in STATES | RELEASE_REASONS | ACTIONS | FAILURE_REASONS | ERROR_CODES},
             "state": state.snapshot(),
             "previous_event": {"type": previous_event.type, **previous_event.fields} if previous_event else None,
             "previous_state": previous,
