@@ -384,15 +384,11 @@
       "trigger": {
         "event": "CASE_END"
       },
-      "expression": "state.active_target == state.foundation_target && state.completion_seen == true",
+      "expression": "scenario_terminal_state_satisfied == true",
       "requires": [
         {
-          "kind": "PRIOR_EVENT",
-          "value": "FOUNDATION"
-        },
-        {
-          "kind": "DERIVED_STATE",
-          "value": "active_target|foundation_target|completion_seen"
+          "kind": "SCENARIO",
+          "value": "current scenario"
         }
       ],
       "onViolation": {
