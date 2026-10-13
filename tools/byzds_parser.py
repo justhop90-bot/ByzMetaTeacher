@@ -460,7 +460,10 @@ class BYZDSParser:
             errors.append({"code": "EVENT_COUNT_MISMATCH", "reason": "CASE_END event_count does not match parsed event count"})
         result = "INFRA_ERROR" if any(e.type == "ERROR" for e in events) else "PASS"
         if errors:
-            result = "INFRA_ERROR" if any(x["code"] == "PARSE_ERROR" for x in errors) else "INVALID"
+            if any(x["code"] == "PARSE_ERROR" for x in errors) or any(e.type == "ERROR" for e in events):
+                result = "INFRA_ERROR"
+            else:
+                result = "INVALID"
         for r in results:
             if not r.satisfied:
                 if self.precedence.get(r.classification, 0) > self.precedence.get(result, 0):
