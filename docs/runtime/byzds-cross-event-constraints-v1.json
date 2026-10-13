@@ -73,7 +73,7 @@
       "trigger": {
         "event": "COMPLETION"
       },
-      "expression": "event.target == state.active_target",
+      "expression": "state.active_target == state.foundation_target && state.completion_target == state.active_target",
       "requires": [
         {
           "kind": "PRIOR_EVENT",
@@ -81,7 +81,7 @@
         },
         {
           "kind": "DERIVED_STATE",
-          "value": "active_target"
+          "value": "active_target|foundation_target|completion_target"
         }
       ],
       "onViolation": {
@@ -384,11 +384,15 @@
       "trigger": {
         "event": "CASE_END"
       },
-      "expression": "scenario_terminal_state_satisfied == true",
+      "expression": "state.completion_target == state.active_target",
       "requires": [
         {
-          "kind": "SCENARIO",
-          "value": "current scenario"
+          "kind": "PRIOR_EVENT",
+          "value": "FOUNDATION"
+        },
+        {
+          "kind": "DERIVED_STATE",
+          "value": "completion_target"
         }
       ],
       "onViolation": {
