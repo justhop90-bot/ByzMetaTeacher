@@ -33,7 +33,7 @@ class BYZDSParserTests(unittest.TestCase):
             line("FOUNDATION", "gold-A", 1),
             line("COMPLETION", 1, 2),
             line("RELEASE", "COMPLETED"),
-            line("CASE_END", "PASS", 8),
+            line("CASE_END", "PASS", 9),
         ])
         result = self.parser.parse(text)
         self.assertEqual(result["matrix"]["result"], "PASS")
