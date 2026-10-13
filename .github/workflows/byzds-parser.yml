@@ -127,6 +127,7 @@ jobs:
               }
 
           artifact = {
+              "schema_version": "1",
               "result": base["result"],
               "test_count": base["test_count"],
               "cases": report.get("cases", []),
@@ -153,6 +154,28 @@ jobs:
           PY
 
           python -m json.tool byzds-result.json > /dev/null
+
+      - name: Verify BYZDS artifact schema version
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          schema = json.loads(Path("docs/runtime/byzds-parser-result-v1.schema.json").read_text(encoding="utf-8"))
+          artifact = json.loads(Path("byzds-result.json").read_text(encoding="utf-8"))
+
+          expected = schema["properties"]["schema_version"]["const"]
+          actual = artifact.get("schema_version")
+          if actual != expected:
+              raise SystemExit(
+                  f"BYZDS_SCHEMA_VERSION_MISMATCH: artifact={actual!r} schema={expected!r}"
+              )
+
+          print(f"BYZDS_SCHEMA_VERSION=PASS ({actual})")
+          PY
 
       - name: Validate BYZDS JSON artifact
         if: always()
