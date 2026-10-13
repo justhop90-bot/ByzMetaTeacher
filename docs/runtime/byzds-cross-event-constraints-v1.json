@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.local/schema/byzds-cross-event-constraints-v1.json",
+  "version": "1",
+  "evaluation": {
+    "order": [
+      "PAYLOAD",
+      "STATE_TRANSITION",
+      "CROSS_EVENT",
+      "TERMINAL"
+    ],
+    "precedence": [
+      "INFRA_ERROR",
+      "INVALID",
+      "FAIL",
+      "PASS"
+    ],
+    "unknownPolicy": "FAIL_CLOSED"
+  },
+  "constraints": [
+    {
+      "id": "X001",
+      "name": "Action target matches active target",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "ACTION"
+      },
+      "expression": "event.target == state.active_target",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "TARGET_SELECTED"
+        },
+        {
+          "kind": "CURRENT_STATE",
+          "value": "ADMITTED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "ACTIVE_TARGET_MISMATCH",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X002",
+      "name": "Foundation target matches active target",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "FOUNDATION"
+      },
+      "expression": "event.target == state.active_target",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "ACTION"
+        },
+        {
+          "kind": "CURRENT_STATE",
+          "value": "ISSUED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "FOUNDATION_TARGET_MISMATCH",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X003",
+      "name": "Completion target equals active target",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "COMPLETION"
+      },
+      "expression": "event.target == state.active_target",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "FOUNDATION"
+        },
+        {
+          "kind": "DERIVED_STATE",
+          "value": "active_target"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "COMPLETION_TARGET_MISMATCH",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X004",
+      "name": "Retry follows failure",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "RETRY"
+      },
+      "expression": "previous_event.type == FAILURE",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "FAILURE"
+        }
+      ],
+      "onViolation": {
+        "classification": "INVALID",
+        "code": "RETRY_WITHOUT_FAILURE",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X005",
+      "name": "Retry follows target invalidation",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "RETRY"
+      },
+      "expression": "last_failure.target_invalidated == true",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "TARGET_INVALIDATED"
+        },
+        {
+          "kind": "DERIVED_STATE",
+          "value": "target_invalidated"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "STALE_TARGET_NOT_INVALIDATED",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X006",
+      "name": "Invalidated target cannot be silently reused",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "ACTION"
+      },
+      "expression": "state.target_invalidated == false || current_attempt.fresh_target_selection == true",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "TARGET_INVALIDATED"
+        },
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "TARGET_SELECTED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "STALE_TARGET_REUSE",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X007",
+      "name": "Action after invalidation requires fresh target selection",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "ACTION"
+      },
+      "expression": "current_attempt.target_selected_after_invalidation == true",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "TARGET_INVALIDATED"
+        },
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "TARGET_SELECTED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "MISSING_FRESH_TARGET_SELECTION",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X008",
+      "name": "Admission attempt equals retry count plus one",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "ADMITTED"
+      },
+      "expression": "event.attempt == state.retry_count + 1",
+      "requires": [
+        {
+          "kind": "CURRENT_STATE",
+          "value": "DEMANDED|RETRY_READY"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "ATTEMPT_RETRY_MISMATCH",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X009",
+      "name": "Retry increments exactly one attempt",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "RETRY"
+      },
+      "expression": "event.next_attempt == event.retry_count + 1",
+      "requires": [],
+      "onViolation": {
+        "classification": "INVALID",
+        "code": "INVALID_RETRY_INCREMENT",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X010",
+      "name": "Blocked requires third failure",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "BLOCKED"
+      },
+      "expression": "event.retry_count == 3 && last_failure.exists == true",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "FAILURE"
+        }
+      ],
+      "onViolation": {
+        "classification": "INVALID",
+        "code": "BLOCKED_WITHOUT_THIRD_FAILURE",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X011",
+      "name": "No action while blocked",
+      "scope": "CASE",
+      "trigger": {
+        "event": "ACTION"
+      },
+      "expression": "state.lifecycle_state != BLOCKED",
+      "requires": [
+        {
+          "kind": "CURRENT_STATE",
+          "value": "BLOCKED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "BLOCKED_ACTION",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X012",
+      "name": "No admission while blocked",
+      "scope": "CASE",
+      "trigger": {
+        "event": "ADMITTED"
+      },
+      "expression": "state.lifecycle_state != BLOCKED",
+      "requires": [
+        {
+          "kind": "CURRENT_STATE",
+          "value": "BLOCKED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "BLOCKED_ADMISSION",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X013",
+      "name": "Recovery originates from blocked",
+      "scope": "CASE",
+      "trigger": {
+        "event": "RECOVERED"
+      },
+      "expression": "event.previous_state == BLOCKED && state.lifecycle_state == BLOCKED",
+      "requires": [
+        {
+          "kind": "CURRENT_STATE",
+          "value": "BLOCKED"
+        }
+      ],
+      "onViolation": {
+        "classification": "INVALID",
+        "code": "INVALID_RECOVERY_ORIGIN",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X014",
+      "name": "Recovery resets retry count",
+      "scope": "CASE",
+      "trigger": {
+        "event": "RECOVERED"
+      },
+      "expression": "event.new_state == IDLE && event.retry_count == 0",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "BLOCKED"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "RECOVERY_RETRY_NOT_RESET",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X015",
+      "name": "Completion requires foundation witness",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "COMPLETION"
+      },
+      "expression": "state.foundation_seen == true",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "FOUNDATION"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "COMPLETION_WITHOUT_FOUNDATION",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X016",
+      "name": "Completion requires building-count witness",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "COMPLETION"
+      },
+      "expression": "event.building_count > state.building_count_before_attempt",
+      "requires": [
+        {
+          "kind": "DERIVED_STATE",
+          "value": "building_count_before_attempt"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "BUILDING_COMPLETION_WITNESS_ABSENT",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X017",
+      "name": "Completion release requires completion witness and resets retry",
+      "scope": "ATTEMPT",
+      "trigger": {
+        "event": "RELEASE"
+      },
+      "expression": "event.reason != COMPLETED || (state.completion_seen == true && state.retry_count == 0)",
+      "requires": [
+        {
+          "kind": "PRIOR_EVENT",
+          "value": "COMPLETION"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "COMPLETION_RELEASE_STATE_INVALID",
+        "terminal": true
+      }
+    },
+    {
+      "id": "X018",
+      "name": "Case end requires scenario terminal state",
+      "scope": "CASE",
+      "trigger": {
+        "event": "CASE_END"
+      },
+      "expression": "scenario_terminal_state_satisfied == true",
+      "requires": [
+        {
+          "kind": "SCENARIO",
+          "value": "current scenario"
+        }
+      ],
+      "onViolation": {
+        "classification": "FAIL",
+        "code": "CASE_ENDED_BEFORE_EXPECTED_TERMINAL",
+        "terminal": true
+      }
+    }
+  ]
+}
