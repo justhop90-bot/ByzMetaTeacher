@@ -45,20 +45,22 @@ jobs:
         run: |
           set -euo pipefail
           if [[ ! -f byzds-test-output.txt ]]; then
-            echo "BYZDS_RESULT=INFRA_ERROR" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          if grep -q '^OK$' byzds-test-output.txt; then
-            result=PASS
-          elif grep -q '^FAILED' byzds-test-output.txt; then
-            result=FAIL
-          else
             result=INFRA_ERROR
+            tests=0
+          else
+            if grep -q '^OK$' byzds-test-output.txt; then
+              result=PASS
+            elif grep -q '^FAILED' byzds-test-output.txt; then
+              result=FAIL
+            else
+              result=INFRA_ERROR
+            fi
+
+            tests=$(grep -oE '^Ran [0-9]+ tests? in ' byzds-test-output.txt | grep -oE '[0-9]+' | tail -1 || true)
+            tests=${tests:-0}
           fi
 
-          tests=$(grep -oE '^Ran [0-9]+ tests? in ' byzds-test-output.txt | grep -oE '[0-9]+' | tail -1 || true)
-          tests=${tests:-0}
+          printf '{"result":"%s","test_count":%s}\n' "$result" "$tests" > byzds-result.json
 
           {
             echo "## BYZDS parser"
@@ -74,3 +76,12 @@ jobs:
           if [[ "$result" != "PASS" ]]; then
             exit 1
           fi
+
+      - name: Upload BYZDS result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: byzds-parser-result
+          path: byzds-result.json
+          if-no-files-found: error
+          retention-days: 14
