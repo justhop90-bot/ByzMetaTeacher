@@ -226,7 +226,7 @@ class SafeExpression:
     ALLOWED = {
         ast.Expression, ast.BoolOp, ast.And, ast.Or, ast.UnaryOp, ast.Not,
         ast.Compare, ast.Eq, ast.NotEq, ast.Gt, ast.GtE, ast.Lt, ast.LtE,
-        ast.Name, ast.Attribute, ast.Constant, ast.Add, ast.Sub, ast.Is,
+        ast.Name, ast.Attribute, ast.Constant, ast.BinOp, ast.Add, ast.Sub, ast.Is,
         ast.IsNot, ast.Load,
     }
 
