@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.local/schema/byzds-cross-event-constraints-v1.schema.json",
+  "title": "BYZDS Cross-Event Constraint Definitions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "constraints",
+    "evaluation"
+  ],
+  "properties": {
+    "version": {
+      "const": "1"
+    },
+    "constraints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/constraint"
+      }
+    },
+    "evaluation": {
+      "$ref": "#/$defs/evaluation"
+    }
+  },
+  "$defs": {
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "CASE_START",
+        "CASE_END",
+        "DEMAND_ON",
+        "DEMAND_OFF",
+        "ADMITTED",
+        "TARGET_SELECTED",
+        "TARGET_INVALIDATED",
+        "ACTION",
+        "FOUNDATION",
+        "COMPLETION",
+        "FAILURE",
+        "RETRY",
+        "BLOCKED",
+        "RECOVERED",
+        "RELEASE",
+        "ERROR"
+      ]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "UNINITIALIZED",
+        "IDLE",
+        "DEMANDED",
+        "ADMITTED",
+        "ISSUED",
+        "FOUNDATION",
+        "FAILED",
+        "RETRY_READY",
+        "BLOCKED",
+        "RECOVERED",
+        "COMPLETED",
+        "RELEASED",
+        "ENDED"
+      ]
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "FAIL",
+        "INVALID",
+        "INFRA_ERROR"
+      ]
+    },
+    "constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "scope",
+        "trigger",
+        "expression",
+        "onViolation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^X[0-9]{3}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "EVENT",
+            "ATTEMPT",
+            "CASE"
+          ]
+        },
+        "trigger": {
+          "$ref": "#/$defs/eventTrigger"
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/prerequisite"
+          }
+        },
+        "onViolation": {
+          "$ref": "#/$defs/violation"
+        }
+      }
+    },
+    "eventTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event"
+      ],
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/eventType"
+        }
+      }
+    },
+    "prerequisite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "PRIOR_EVENT",
+            "CURRENT_STATE",
+            "DERIVED_STATE",
+            "SAME_ATTEMPT",
+            "SCENARIO"
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "code",
+        "terminal"
+      ],
+      "properties": {
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "terminal": {
+          "type": "boolean"
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "precedence",
+        "unknownPolicy"
+      ],
+      "properties": {
+        "order": {
+          "type": "array",
+          "const": [
+            "PAYLOAD",
+            "STATE_TRANSITION",
+            "CROSS_EVENT",
+            "TERMINAL"
+          ]
+        },
+        "precedence": {
+          "type": "array",
+          "const": [
+            "INFRA_ERROR",
+            "INVALID",
+            "FAIL",
+            "PASS"
+          ]
+        },
+        "unknownPolicy": {
+          "const": "FAIL_CLOSED"
+        }
+      }
+    }
+  }
+}
