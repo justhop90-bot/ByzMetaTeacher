@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byzmetateacher.local/schema/byzds-parser-result-v1.schema.json",
+  "title": "BYZDS Parser CI Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "result",
+    "test_count",
+    "cases",
+    "matrix"
+  ],
+  "properties": {
+    "result": {
+      "$ref": "#/$defs/result"
+    },
+    "test_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    },
+    "matrix": {
+      "$ref": "#/$defs/matrix"
+    }
+  },
+  "$defs": {
+    "result": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "INVALID",
+        "INFRA_ERROR"
+      ]
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "INVALID",
+        "INFRA_ERROR"
+      ]
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "controller",
+        "scenario",
+        "result",
+        "event_count",
+        "constraint_results",
+        "errors"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "controller": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario": {
+          "type": "string",
+          "enum": [
+            "R1_FIRST_FAILURE",
+            "R2_SECOND_FAILURE",
+            "R3_THIRD_FAILURE",
+            "R4_BLOCKED_RECOVERY",
+            "R5_STALE_TARGET",
+            "R6_COMPLETION"
+          ]
+        },
+        "result": {
+          "$ref": "#/$defs/result"
+        },
+        "event_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "constraint_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constraint_result"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/error"
+          }
+        }
+      }
+    },
+    "constraint_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constraint_id",
+        "event_index",
+        "case_id",
+        "satisfied",
+        "classification",
+        "code",
+        "terminal",
+        "observed"
+      ],
+      "properties": {
+        "constraint_id": {
+          "type": "string",
+          "pattern": "^X[0-9]{3}$"
+        },
+        "event_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "satisfied": {
+          "type": "boolean"
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "terminal": {
+          "type": "boolean"
+        },
+        "observed": {
+          "type": "object"
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "reason"
+      ],
+      "properties": {
+        "event_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "case_count",
+        "result_counts",
+        "constraint_counts"
+      ],
+      "properties": {
+        "result": {
+          "$ref": "#/$defs/result"
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "result_counts": {
+          "$ref": "#/$defs/result_counts"
+        },
+        "constraint_counts": {
+          "type": "object",
+          "patternProperties": {
+            "^X[0-9]{3}$": {
+              "$ref": "#/$defs/constraint_count"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "result_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "PASS",
+        "FAIL",
+        "INVALID",
+        "INFRA_ERROR"
+      ],
+      "properties": {
+        "PASS": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "FAIL": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "INVALID": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "INFRA_ERROR": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "constraint_count": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "PASS",
+        "VIOLATION"
+      ],
+      "properties": {
+        "PASS": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "VIOLATION": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
