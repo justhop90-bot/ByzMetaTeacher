@@ -7,6 +7,7 @@ on:
       - "tests/test_byzds_parser.py"
       - "tests/fixtures/byzds-ci.log"
       - "docs/runtime/byzds-cross-event-constraints-v1.json"
+      - "docs/runtime/byzds-parser-result-v1.schema.json"
       - ".github/workflows/byzds-parser.yml"
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - "tests/test_byzds_parser.py"
       - "tests/fixtures/byzds-ci.log"
       - "docs/runtime/byzds-cross-event-constraints-v1.json"
+      - "docs/runtime/byzds-parser-result-v1.schema.json"
       - ".github/workflows/byzds-parser.yml"
   workflow_dispatch:
 
@@ -151,6 +153,15 @@ jobs:
           PY
 
           python -m json.tool byzds-result.json > /dev/null
+
+      - name: Validate BYZDS JSON artifact
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-input "jsonschema==4.25.1"
+          python -m jsonschema -i byzds-result.json \
+            docs/runtime/byzds-parser-result-v1.schema.json
 
       - name: Upload BYZDS result artifact
         if: always()
