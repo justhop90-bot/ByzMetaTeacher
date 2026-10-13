@@ -97,7 +97,7 @@
       "trigger": {
         "event": "RETRY"
       },
-      "expression": "previous_event.type == FAILURE",
+      "expression": "last_failure.exists == true",
       "requires": [
         {
           "kind": "PRIOR_EVENT",
