@@ -458,7 +458,7 @@ class BYZDSParser:
             errors.append({"code": "MISSING_CASE_END", "reason": "case has no CASE_END"})
         if end_events and end_events[-1].fields["event_count"] != len(events):
             errors.append({"code": "EVENT_COUNT_MISMATCH", "reason": "CASE_END event_count does not match parsed event count"})
-        result = "PASS"
+        result = "INFRA_ERROR" if any(e.type == "ERROR" for e in events) else "PASS"
         if errors:
             result = "INFRA_ERROR" if any(x["code"] == "PARSE_ERROR" for x in errors) else "INVALID"
         for r in results:
