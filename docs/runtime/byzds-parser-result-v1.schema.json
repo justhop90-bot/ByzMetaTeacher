@@ -5,12 +5,17 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "result",
     "test_count",
     "cases",
     "matrix"
   ],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
     "result": {
       "$ref": "#/$defs/result"
     },
