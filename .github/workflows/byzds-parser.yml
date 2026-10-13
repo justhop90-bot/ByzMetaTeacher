@@ -5,12 +5,14 @@ on:
     paths:
       - "tools/byzds_parser.py"
       - "tests/test_byzds_parser.py"
+      - "tests/fixtures/byzds-ci.log"
       - "docs/runtime/byzds-cross-event-constraints-v1.json"
       - ".github/workflows/byzds-parser.yml"
   pull_request:
     paths:
       - "tools/byzds_parser.py"
       - "tests/test_byzds_parser.py"
+      - "tests/fixtures/byzds-ci.log"
       - "docs/runtime/byzds-cross-event-constraints-v1.json"
       - ".github/workflows/byzds-parser.yml"
   workflow_dispatch:
@@ -76,6 +78,79 @@ jobs:
           if [[ "$result" != "PASS" ]]; then
             exit 1
           fi
+
+      - name: Generate deterministic parser JSON
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          if python -m tools.byzds_parser \
+              docs/runtime/byzds-cross-event-constraints-v1.json \
+              tests/fixtures/byzds-ci.log > byzds-parser-report.json; then
+            parser_status=0
+          else
+            parser_status=$?
+          fi
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          base = json.loads(Path("byzds-result.json").read_text(encoding="utf-8"))
+          report_path = Path("byzds-parser-report.json")
+
+          if report_path.exists():
+              try:
+                  report = json.loads(report_path.read_text(encoding="utf-8"))
+              except (json.JSONDecodeError, OSError):
+                  report = None
+          else:
+              report = None
+
+          if not isinstance(report, dict):
+              report = {
+                  "cases": [],
+                  "matrix": {
+                      "result": "INFRA_ERROR",
+                      "case_count": 0,
+                      "result_counts": {
+                          "PASS": 0,
+                          "FAIL": 0,
+                          "INVALID": 0,
+                          "INFRA_ERROR": 0
+                      },
+                      "constraint_counts": {}
+                  }
+              }
+
+          artifact = {
+              "result": base["result"],
+              "test_count": base["test_count"],
+              "cases": report.get("cases", []),
+              "matrix": report.get("matrix", {
+                  "result": "INFRA_ERROR",
+                  "case_count": 0,
+                  "result_counts": {
+                      "PASS": 0,
+                      "FAIL": 0,
+                      "INVALID": 0,
+                      "INFRA_ERROR": 0
+                  },
+                  "constraint_counts": {}
+              })
+          }
+
+          if parser_status != 0:
+              artifact["matrix"]["result"] = "INFRA_ERROR"
+
+          Path("byzds-result.json").write_text(
+              json.dumps(artifact, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          python -m json.tool byzds-result.json > /dev/null
 
       - name: Upload BYZDS result artifact
         if: always()
