@@ -366,6 +366,8 @@ def _payload_errors(event: Event) -> list[tuple[str, str]]:
     elif t in {"ADMITTED", "TARGET_SELECTED", "TARGET_INVALIDATED", "ACTION", "FOUNDATION", "COMPLETION", "FAILURE"}:
         if f["attempt"] not in {1, 2, 3}:
             errors.append(("INVALID_ATTEMPT", "attempt must be 1..3"))
+    if t in {"TARGET_SELECTED", "TARGET_INVALIDATED", "ACTION", "FOUNDATION"} and not f["target"]:
+        errors.append(("EMPTY_TARGET", "target must be non-empty"))
     if t == "ACTION" and f["action"] not in ACTIONS:
         errors.append(("INVALID_ACTION", "unknown action"))
     if t == "FAILURE" and f["reason"] not in FAILURE_REASONS:
@@ -438,6 +440,7 @@ class BYZDSParser:
             return CaseResult(case_id, controller, scenario, "INVALID", len(events), results,
                               [{"code": "MISSING_CASE_START", "reason": "case does not start with CASE_START"}])
 
+        previous_event: Event | None = None
         for event in events:
             for code, reason in _payload_errors(event):
                 errors.append({"event_index": event.index, "code": code, "reason": reason})
@@ -445,14 +448,18 @@ class BYZDSParser:
                 continue
             previous = state.snapshot()
             try:
-                results.extend(self._evaluate_constraints(event, state, previous, case_id, scenario))
+                results.extend(self._evaluate_constraints(event, state, previous, previous_event, case_id, scenario))
             except (KeyError, BYZDSInvalid) as exc:
                 errors.append({"event_index": event.index, "code": "CONSTRAINT_EVALUATION_ERROR",
                                 "reason": str(exc)})
             _set_state_for_event(state, event)
+            previous_event = event
 
-        if not any(e.type == "CASE_END" for e in events):
+        end_events = [e for e in events if e.type == "CASE_END"]
+        if not end_events:
             errors.append({"code": "MISSING_CASE_END", "reason": "case has no CASE_END"})
+        if end_events and end_events[-1].fields["event_count"] != len(events):
+            errors.append({"code": "EVENT_COUNT_MISMATCH", "reason": "CASE_END event_count does not match parsed event count"})
         result = "PASS"
         if errors:
             result = "INFRA_ERROR" if any(x["code"] == "PARSE_ERROR" for x in errors) else "INVALID"
@@ -463,11 +470,12 @@ class BYZDSParser:
         return CaseResult(case_id, controller, scenario, result, len(events), results, errors)
 
     def _evaluate_constraints(self, event: Event, state: RuntimeState,
-                              previous: dict[str, Any], case_id: str,
-                              scenario: str) -> list[ConstraintResult]:
+                              previous: dict[str, Any], previous_event: Event | None,
+                              case_id: str, scenario: str) -> list[ConstraintResult]:
         ctx = {
             "event": event.fields,
             "state": state.snapshot(),
+            "previous_event": {"type": previous_event.type, **previous_event.fields} if previous_event else None,
             "previous_state": previous,
             "scenario_terminal_state_satisfied": self._scenario_terminal(event, state, scenario),
             "last_failure": {"target_invalidated": state.target_invalidated, "exists": state.failure_seen},
