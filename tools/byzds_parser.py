@@ -444,8 +444,6 @@ class BYZDSParser:
         for event in events:
             for code, reason in _payload_errors(event):
                 errors.append({"event_index": event.index, "code": code, "reason": reason})
-            if event.type == "CASE_END":
-                continue
             previous = state.snapshot()
             try:
                 results.extend(self._evaluate_constraints(event, state, previous, previous_event, case_id, scenario))
