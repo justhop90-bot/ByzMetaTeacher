@@ -154,8 +154,8 @@ For DUC execution assert:
 ```lisp
 (up-filter-status c: status-resource c: list-active)
 (up-find-resource c: <resource> c: 40)
-(up-compare-goal <remote-count> > <floor-1>)
-(up-set-target-object search-remote c: <floor-1>)
+(up-compare-goal <remote-count> > <floor-2>)
+(up-set-target-object search-remote c: <floor-2>)
 (up-get-point position-object <point>)
 (up-set-target-point <point>)
 (up-build place-point 0 c: <camp>)

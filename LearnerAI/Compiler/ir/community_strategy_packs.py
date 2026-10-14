@@ -1030,9 +1030,11 @@ def community_strategy_demands(
                 f"(can-build {_slug(building.name)})",
             ]
             if floor >= 2:
+                # Remote-resource existence is proved by the binder-owned DUC
+                # search-count witness. A nearest-dropsite distance must not
+                # suppress demand for a separate resource front.
                 requirements = [
                     floor_active_expression,
-                    remote_expression,
                     count_guard,
                     f"(can-build {_slug(building.name)})",
                 ]

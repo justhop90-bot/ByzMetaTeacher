@@ -83,8 +83,10 @@ class NativeDucGoalInputRequest:
 
     The reader operand at (rule_identity, section, expression_index,
     argument_index) is rewritten at emission to the bound goal of the
-    writer's storage request (`source`). The writer must be a GoalSlot
-    output request in the same plan. Position contracts are
+    writer's storage request (`source`). The writer must be a GoalSlot or
+    GoalSpan output request in the same plan. GoalSpan readers use
+    `source_offset` to name a slot inside the allocated span, such as the
+    fourth output of `up-get-search-state`. Position contracts are
     head-specific and registry-validated. Readers never allocate
     storage: without an input request the operand emits verbatim.
     """
@@ -94,6 +96,7 @@ class NativeDucGoalInputRequest:
     expression_index: int
     argument_index: int
     source: StorageRequestId
+    source_offset: int = 0
 
     def __post_init__(self) -> None:
         if not self.rule_identity.strip():
@@ -102,6 +105,8 @@ class NativeDucGoalInputRequest:
             raise ValueError("native DUC input request section must be FACT or ACTION")
         if self.expression_index < 0 or self.argument_index < 0:
             raise ValueError("native DUC input request indexes must be non-negative")
+        if self.source_offset < 0:
+            raise ValueError("native DUC input request source_offset must be non-negative")
 
     @property
     def site_key(self) -> tuple[str, str, int, int]:
@@ -120,8 +125,15 @@ class NativeDucPlan:
     rules: tuple[NativeDucRule, ...] = ()
     output_requests: tuple[NativeDucOutputRequest, ...] = ()
     input_requests: tuple[NativeDucGoalInputRequest, ...] = ()
+    managed_demand_identities: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        if not isinstance(self.managed_demand_identities, tuple):
+            raise TypeError("native DUC managed demand identities must be a tuple")
+        if any(not identity.strip() for identity in self.managed_demand_identities):
+            raise ValueError("native DUC managed demand identities must not be empty")
+        if len(self.managed_demand_identities) != len(set(self.managed_demand_identities)):
+            raise ValueError("duplicate native DUC managed demand identity")
         identities = tuple(rule.identity for rule in self.rules)
         if len(identities) != len(set(identities)):
             raise ValueError("duplicate native DUC rule identity")

@@ -207,7 +207,7 @@ class DucGroupInputTests(unittest.TestCase):
             input_requests=(reader,),
         )
         with self.assertRaisesRegex(
-            ValueError, "only up-set-target-by-id and up-create-group reads"
+            ValueError, "supported reads are"
         ):
             default_de_registry().validate_duc_plan(plan)
 
